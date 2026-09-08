@@ -13,7 +13,8 @@ const placeholder =
   Astro.props.placeholder ?? (isEn ? 'Search docs and help center…' : '搜索文档与帮助中心:错误码、命令、环境变量、问题关键词…');
 ---
 
-<button type="button" class="hero-search" data-hero-search aria-label={isEn ? 'Search' : '搜索'}>
+{/* 可访问名 = 可见文字(placeholder);不另设 aria-label,否则 Lighthouse label-content-name-mismatch 红(DS-21) */}
+<button type="button" class="hero-search" data-hero-search>
   <Icon name="magnifier" size="1.25rem" />
   <span class="hero-search-text">{placeholder}</span>
   <kbd class="sl-hidden md:sl-flex" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></kbd>
