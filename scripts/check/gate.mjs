@@ -1,5 +1,5 @@
 /**
- * `pnpm gate`:check → build → gen:check → lint:text → links → frontmatter → i18n:coverage(只报不红),顺序执行、首红即停。
+ * `pnpm gate`:check → build → gen:check → lint:text → links → frontmatter → release-notes → i18n:coverage(只报不红),顺序执行、首红即停。
  * 每步都走 package.json 的脚本名(与 CI / 本地一致);DIRECT_STEPS 里的步直跑脚本文件。末尾打印各步耗时与终态。
  *
  * 用法:node scripts/check/gate.mjs [--from <step>](从某步开始,便于本地重跑后半段)
@@ -7,7 +7,7 @@
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
-export const STEPS = Object.freeze(['check', 'build', 'gen:check', 'lint:text', 'links', 'frontmatter', 'i18n:coverage']);
+export const STEPS = Object.freeze(['check', 'build', 'gen:check', 'lint:text', 'links', 'frontmatter', 'release-notes', 'i18n:coverage']);
 
 /** 末尾的「只报不红」步:直跑脚本文件(不占 package.json 脚本名);其余步走 `pnpm run <step>` */
 export const DIRECT_STEPS = Object.freeze({ 'i18n:coverage': ['scripts/check/i18n-coverage.mjs'] });

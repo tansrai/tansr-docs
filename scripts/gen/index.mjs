@@ -7,6 +7,7 @@
  *   可选 --root <docsRepo>(卷用)
  *
  * 生成器顺序 = 依赖顺序(openapi.public 先于其余无关;全部只读 contract/)。
+ * 生成器的 `generate(root)` 同步或返回 Promise 皆可(sdk-api 经 typedoc,异步);本入口统一 await。
  */
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,37 +18,47 @@ import * as openapiPublic from './openapi-public.mjs';
 import * as serveEnv from './serve-env.mjs';
 import * as cliCommands from './cli-commands.mjs';
 import * as releases from './releases.mjs';
+import * as sdkApi from './sdk-api.mjs';
 import * as i18nCoverage from './i18n-coverage.mjs';
 
-export const GENERATORS = [openapiPublic, errorCodes, serveEnv, cliCommands, releases, i18nCoverage];
+// i18nCoverage 恒末位:它扫全部内容页(含 sdkApi 产物)的 slug 集
+export const GENERATORS = [openapiPublic, errorCodes, serveEnv, cliCommands, releases, sdkApi, i18nCoverage];
 
 /** 跑全部生成器(纯内存),返回 [{ script, rel, content, stats? }]。 */
-export function generateAll(root) {
+export async function generateAll(root) {
   const out = [];
   for (const g of GENERATORS) {
-    for (const o of g.generate(root)) out.push({ script: g.SCRIPT, rel: o.rel, content: toLf(o.content), stats: o.stats });
+    for (const o of await g.generate(root)) out.push({ script: g.SCRIPT, rel: o.rel, content: toLf(o.content), stats: o.stats });
   }
   return out;
 }
 
-export function writeAll(root, log = console.log) {
-  const outputs = generateAll(root);
+export async function writeAll(root, log = console.log) {
+  const outputs = await generateAll(root);
+  let quiet = 0;
   for (const o of outputs) {
     writeLf(join(root, o.rel), o.content);
+    if (isSdkApiPage(o.rel) && !o.stats) {
+      quiet += 1;
+      continue;
+    }
     log(`[gen] wrote ${o.rel}${o.stats ? '  ' + JSON.stringify(o.stats) : ''}`);
   }
+  if (quiet) log(`[gen] wrote sdk/api/** 另 ${quiet} 页(不逐行打)`);
   return outputs;
 }
 
 /**
  * --check:生成到临时目录,再与在库文件逐字节比对。返回 { ok, differing: string[], missing: string[] }。
+ * sdk/api/** 页数多,逐页 ok 行不打,只打差 / 缺;末行汇总数。
  */
-export function checkAll(root, log = console.log) {
+export async function checkAll(root, log = console.log) {
   const tmp = mkdtempSync(join(tmpdir(), 'tansr-docs-gen-check-'));
   const differing = [];
   const missing = [];
+  let okCount = 0;
   try {
-    const outputs = generateAll(root);
+    const outputs = await generateAll(root);
     for (const o of outputs) {
       const tmpPath = join(tmp, o.rel);
       writeLf(tmpPath, o.content);
@@ -60,13 +71,19 @@ export function checkAll(root, log = console.log) {
         differing.push(o.rel);
         log(`[gen:check] DIFF     ${o.rel}`);
       } else {
-        log(`[gen:check] ok       ${o.rel}`);
+        okCount += 1;
+        if (!isSdkApiPage(o.rel)) log(`[gen:check] ok       ${o.rel}`);
       }
     }
+    log(`[gen:check] ok 计 ${okCount} 文件(sdk/api/** 页不逐行打;差 ${differing.length} / 缺 ${missing.length})`);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
   return { ok: differing.length === 0 && missing.length === 0, differing, missing };
+}
+
+function isSdkApiPage(rel) {
+  return rel.split('\\').join('/').includes('/sdk/api/');
 }
 
 if (isMainModule(import.meta.url)) {
@@ -74,14 +91,16 @@ if (isMainModule(import.meta.url)) {
   const root = typeof args.root === 'string' ? args.root : repoRootFrom(import.meta.url);
   try {
     if (args.check) {
-      const r = checkAll(root);
+      const r = await checkAll(root);
       if (!r.ok) {
-        console.error(`[gen:check] FAIL  差 ${r.differing.length} / 缺 ${r.missing.length}:\n  ${[...r.differing, ...r.missing].join('\n  ')}\n  → 跑 node scripts/gen/index.mjs 再生后提交`);
+        const list = [...r.differing, ...r.missing];
+        const shown = list.length > 20 ? [...list.slice(0, 20), `… 共 ${list.length} 文件`] : list;
+        console.error(`[gen:check] FAIL  差 ${r.differing.length} / 缺 ${r.missing.length}:\n  ${shown.join('\n  ')}\n  → 跑 node scripts/gen/index.mjs 再生后提交`);
         process.exit(1);
       }
       console.log('[gen:check] ok(全部生成物零 diff)');
     } else {
-      const outputs = writeAll(root);
+      const outputs = await writeAll(root);
       console.log(`[gen] done  ${outputs.length} 文件`);
     }
   } catch (err) {

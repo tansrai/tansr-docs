@@ -82,12 +82,13 @@ export function slug(title) {
 }
 
 /**
- * 生成器统一入口:`generate(root) → [{ rel, content }]`;`--check` 与在库文件逐字节比对;`--root` 指向他处(卷用)。
+ * 生成器统一入口:`generate(root) → [{ rel, content }]`(同步或 Promise 皆可;sdk-api 走 typedoc 为异步);
+ * `--check` 与在库文件逐字节比对;`--root` 指向他处(卷用)。
  */
-export function runGenerator(mod, argv = process.argv.slice(2)) {
+export async function runGenerator(mod, argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const root = typeof args.root === 'string' ? args.root : repoRootFrom(import.meta.url);
-  const outputs = mod.generate(root).map((o) => ({ ...o, content: toLf(o.content) }));
+  const outputs = (await mod.generate(root)).map((o) => ({ ...o, content: toLf(o.content) }));
   if (args.check) {
     const diff = outputs.filter((o) => readTextIfExists(join(root, o.rel)) !== o.content);
     if (diff.length) {

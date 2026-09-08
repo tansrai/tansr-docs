@@ -19,6 +19,8 @@
     "lint:text": "node scripts/check/lint-text.mjs",
     "links": "node scripts/check/links.mjs",
     "frontmatter": "node scripts/check/frontmatter.mjs",
+    "release-notes": "node scripts/check/release-notes.mjs",
+    "search-rank": "node scripts/check/search-rank.mjs",
     "gate": "node scripts/check/gate.mjs",
     "test": "node --test scripts/**/*.test.mjs"
   },
@@ -30,6 +32,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.0",
     "typescript": "^6.0.3"
   }
 }

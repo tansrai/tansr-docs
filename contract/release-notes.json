@@ -1,0 +1,183 @@
+{
+  "cli": {
+    "0.5.0": {
+      "added": [
+        "`tansr serve --v2`(或环境变量 `TANSR_SERVE_V2=1`)可显式开启 /v2 接口面;默认关闭,行为不变。`/healthz` 与 `/readyz` 探针始终可用。",
+        "`doctor` 输出新增「被忽略的配置段」逐条提示、沙箱 `env` 归因行,并显示 `http.allowedAuthEnvVars` 的生效来源(用户层 / 托管层 / 组织远程下发)。",
+        "npm 包与单文件可执行版随附 `NOTICE`(内联第三方依赖的名称、版本与许可全文)。",
+        "acp 的 `session/new` / `session/load` 工作目录改经统一策略闸,被拒时返回 JSON-RPC `-32602`,`data.code` 为 `cwd_unavailable` 并附原因。"
+      ],
+      "changed": [
+        "出网请求(WebFetch / Http / hooks / 音频下载)统一经一处出口,并在 DNS 解析后拦截私网、环回与链路本地地址:指向内网或云元数据地址的抓取会被拒绝并给出原因。",
+        "Http 工具与 hooks 的 `auth` 只能引用 `~/.tansr/settings` 中 `http.allowedAuthEnvVars` 名单内的环境变量;名单外不再发请求(错误码 `auth_env_not_allowed`)。迁移:把原先在 `auth` 里引用的变量名加进该名单;该段只在用户层生效,项目层写入会被忽略。",
+        "携带凭据的 Http 调用在所有权限模式下都会征求确认,不再被 `auto` / `acceptEdits` / `bypass` 放行;确认卡新增「安全层」理由行。",
+        "未接入确认通道、且令牌档裁决人未授予资格档的宿主(acp / mcp-serve 令牌档),工作区内的写 / 删不再自动放行,改为征求确认(无通道即拒绝)。要保留放行,请为应用授予资格档或接入确认通道。",
+        "`tansr update` 只接受 https 绝对地址的 `update.manifestUrl`,且产物地址须与 manifest 同源;项目层的 `update.manifestUrl` 不再生效。未签名产物默认拒绝安装,`--allow-unsigned` 需二次确认。",
+        "更新分发改读带签名的版本指针 `sea/latest.json`,每个版本独立目录、保留最近 6 版;旧的扁平布局仍兼容一版。",
+        "`sandbox` / `update` 两个配置段只在用户层生效,项目层写入会被忽略并在 `doctor` 中提示;沙箱 `env` 只能收紧,不能放宽。",
+        "`/cd` 之后,hooks、权限门、执行器、沙箱写边界与快照全部跟随新目录(此前有部分仍沿用启动时的目录)。",
+        "`tansr bg show` / `tansr bg kill` 的 id 须为完整形 `bg-<n>-<nnnn>`,旧短形 `bg-1` 不再接受。",
+        "图像 / 语音 / 视频 / 转写四类媒体工具超时或供应商失败时统一按「工具失败」呈现,超时提示改为「可能仍会完成并计费」;错误提示按使用者受众给出,未知错误码回落通用指引。",
+        "mcp-serve 的工具调用在执行前后各做一次提权检查,沙箱旁路、直接携带或 hook 注入三种越权形一律拒绝(`escalation_denied`)。",
+        "会话锁在持锁进程存活期间不再被抢占;只读操作不再清理他人的锁。"
+      ],
+      "fixed": [
+        "读取图片改按当前模型的能力判定:支持图片输入的模型可正常读取,此前在 serve / acp / SDK 面一律拒绝且提示文案有误(误称「模型不支持」)。",
+        "单个损坏的快照不再让整个会话的快照列表报错;快照清理不再误删其他快照。",
+        "超过整读上限的大文件改为分页流式读取,不再整读进内存。",
+        "四个宿主入口(serve / acp / mcp-serve / headless)对未处理的 Promise 拒绝有了统一兜底,不再静默吞掉或直接崩溃。",
+        "套餐配额被拒时,错误会明确标注为套餐范围(`detail.scope = 'plan'`),便于端上区分处理。",
+        "机器放行的工具调用也会记录到审计事件流(此前只记录拒绝)。"
+      ]
+    },
+    "0.4.0": {
+      "date": "2026-09-06",
+      "added": [
+        "会话持久化:会话可保存、恢复与分叉。",
+        "权限裁决姿态:令牌档默认装配平台裁决人,由是否接入确认通道决定「人在环」或「无人值守」姿态。",
+        "音频模态与媒体能力内核化:语音、转写等媒体工具可用。",
+        "套餐(plan)信息在端上可见。"
+      ],
+      "changed": [
+        "MCP 重连契约升级(v0.21–v0.24)。",
+        "示例项目 electron-chat / token-server 补齐 MIT 许可声明。"
+      ],
+      "fixed": []
+    },
+    "0.3.0": {
+      "date": "2026-09-01",
+      "added": [
+        "思考过程分上下半场在端侧呈现。",
+        "呈现档位与运行中动态切换。",
+        "媒体任务异步执行。",
+        "上下文提醒(reminder)机制。"
+      ],
+      "changed": [
+        "随 `@tansr/serve` 0.2.0 发版:serve 出流不再包含 reminder 帧。"
+      ],
+      "fixed": []
+    },
+    "0.2.x": {
+      "added": [
+        "0.2.3(2026-08-28):fast 系模型动态供给,切换模型后自动跟随。"
+      ],
+      "changed": [
+        "0.2.3(2026-08-28):记忆治理与缓存优化;重试过程可见,失败影响范围收敛;上游计数虚报哨兵;幂等冲突(409)自愈。",
+        "0.2.2(2026-08-25):降档守卫口径校准(记忆 / 压缩辅助面成本修正)。",
+        "0.2.1(2026-08-23):版本号更新;0.2.0 未实际分发即被本版接替。"
+      ],
+      "fixed": [
+        "0.2.3(2026-08-28):Windows PowerShell 5.1 下 TUI 三处显示修复。"
+      ]
+    }
+  },
+  "sdk": {
+    "0.12.0": {
+      "added": [
+        "`zeroAppCapabilities(platform)`、`AppBundle.capabilitiesIssues`、`PlatformWarning.detail`:capabilities 段解析失败时可拿到具体问题。",
+        "快照:`listCheckpointsDetailed` / `planCheckpointRetention`、类型 `CheckpointRetention`、`WriteCheckpointResult.retentionWarning`。",
+        "裁决人通报码集 `ADJUDICATOR_UNAVAILABLE_WARNING` 与 `DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES`。",
+        "令牌失效码集与谓词:`TOKEN_INVALIDATING_CODES` / `APP_TOKEN_REJECT_REASONS` / `APP_TOKEN_TRANSIENT_REASONS`、`isTokenInvalidatingCode` / `isTransientAppTokenReason` 及类型 `TokenInvalidatingCode` / `AppTokenRejectReason`(由平台 OpenAPI 生成,随平台新增错误码自动跟进)。",
+        "bundle `governance.sessionRetentionDays` 透传:`parseAppBundle` 产物新增 `governance`,类型 `AppBundleGovernance`。",
+        "媒体错误提示:`hintFor(face, code, audience?)`、类型 `MediaHintAudience` / `MediaHintFace`;`PlatformMediaProviderOptions` 新增 `audience` 与 `hintOf` 覆写缝。",
+        "`assembleTooling` / `buildSdkToolSet` 选项 `imageInput`(读取图片的能力判定注入缝;`createSession` / `query` 已内部接好)。",
+        "`ErrorView.detail`(透传 `turn.error.detail`,首个取值 `{ scope: 'plan' }`)。",
+        "`AppTokenMinter.invalidate`:按平台返回的失效原因逐出缓存令牌。",
+        "类型 `AssembleToolingAdjudication`。"
+      ],
+      "changed": [
+        "`permission.mode` 与默认注入的裁决人不再互斥抛错:显式给了 `permission.mode` 即视为「自管模式」,裁决人不装,并经 `onPlatformWarning` / `onWarning` 通报 `adjudicator_skipped_by_mode`;显式 `adjudication` 与 `permission.mode` 同现仍抛 `invalid_options`。要静默自管:`adjudication: { enabled: false }`。",
+        "未接 `permission.askUser`、且裁决人未授予资格档的会话不再切换到 `auto` 模式:工作区内写 / 删从自动放行变为征求确认(无通道即拒绝,`decisionSource: 'policy'`)。要保留放行:在控制台为应用的裁决人授予资格档(≥ low),或接入 `permission.askUser`。",
+        "机器放行也会发出 `tool.permission.decided` 事件(`decisionSource: 'classifier'`;模式放行对非只读调用为 `'mode'`),`onDecision` 形不变。",
+        "`ErrorView.recoverable` 由可选改为必填;可恢复的咨询类错误进入 `SessionView.notices`(最多保留 20 条),不再覆盖 `lastError`。自定义投影请补该字段。",
+        "工具失败以 `tool.completed.isError` 出线,不再伪装成 `tool.failed`;reducer 把 `isError: true` 归为失败卡。",
+        "capabilities 段在场但整段坏形时回落零能力档(此前回落默认档,等于放开七项能力)并通报 `capabilities_unparsed`;段内未知键改为剥除而非整段判坏。段缺席时行为不变。",
+        "`AppBundleModel.modelId` 改为可选:平台剥掉该键后条目照收,读取方按 `string | undefined` 处置。",
+        "词表外媒体错误码的 `MediaProviderError.hint` 从空串变为缺席;按 `hint === ''` 判「无指引」的宿主请改判缺席。`not_found` 新增提示。",
+        "`assembleTooling` 选项 `adjudicator` 改为 `adjudication`(`{ classifier, posture, tier, explicit }`);仅直接调用该函数的进阶用户受影响,`createSession` / `query` 用户无需改动。",
+        "`turn.error` 新增可选 `detail`;套餐配额拒绝(`plan_concurrency_exceeded` / `plan_end_users_exceeded` / `plan_required` / `plan_tier_insufficient`)携 `detail.scope = 'plan'`,与 serve HTTP 面同键同值。",
+        "平台 bundle 缓存键改为四维(基址 / 应用 / 径别 / 能力位),不同径别或能力位组合不再串档。"
+      ],
+      "fixed": [
+        "读取图片改按当前模型能力放行(`setModel` 热切换即时生效);此前 SDK 面一律拒绝且提示文案有误。",
+        "分叉出的会话读历史分页时 `total` 少一。",
+        "权限门重判改为按替换后参数的真实归因判定;hook 明示 `ask` 不再被裁决人代批;两处重判不再重跑 hooks 或二次咨询。"
+      ]
+    },
+    "0.11.1": {
+      "date": "2026-09-06",
+      "added": [
+        "存储出口补齐:`createFsBlobStore` / `createChaosBlobStore` / `runStorageConformance`(会话存储一致性套件)及相关类型经 `@tansr/sdk` 导出。"
+      ],
+      "changed": [],
+      "fixed": [],
+      "note": "无其他行为变化。"
+    },
+    "0.11.0": {
+      "date": "2026-09-06",
+      "added": [
+        "权限裁决姿态:`adjudication` 选项(`posture` / `callBudget` / `enabled` / `endUser`),姿态缺席时按 `permission.askUser` 是否在场推导;`askUser` 第三参 `decision` 携来源与理由。",
+        "裁决协议 v4 与应用协议单阶段;bundle 裁决人资格档解析;`onPlatformWarning` 新增六种裁决人通报码(`adjudicator_unavailable` 等)。",
+        "会话持久化:`SessionStore` / `createFileSessionStore`,会话可分叉与恢复。"
+      ],
+      "changed": [
+        "**破坏性变更**:令牌档默认装配 bundle 裁决人,`permission.mode` 与之同现会抛 `TansrSdkError('invalid_options')`(0.10 及更早为静默择一)。当时的迁移方式:删 `permission.mode`,或传 `adjudication: { enabled: false }` 自管模式。0.12.0 起以兼容径收回。"
+      ],
+      "fixed": []
+    }
+  },
+  "serve": {
+    "0.7.0": {
+      "added": [
+        "就绪帧 `TANSR_READY {json}` 与 `/readyz` 探针(`/healthz` / `/readyz` 在 CLI 入口始终开启);建会返回 429 / 503 时携 `Retry-After`。部署件探针建议由 `/healthz` 改为 `/readyz`。",
+        "会话保留期:`sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }` 与 `store.sweepRetention`;环境变量 `TANSR_SERVE_SESSION_MAX_AGE_DAYS` / `TANSR_SERVE_SESSION_MAX_PER_END_USER`;保留天数可按组织在平台配置的值生效,缺省 30 天。",
+        "轮末 webhook 出站:环境变量 `TANSR_SERVE_NOTIFY_URL` / `TANSR_SERVE_NOTIFY_SECRET`,`tansr serve --v2` 进程可直接发送;签名双版本 `x-tansr-signature: v2=…, v1=…`,可配 `webhook.signatureVersions`;导出 `signWebhookDelivery`。",
+        "指标暴露独立开关 `TANSR_SERVE_EXPOSE_METRICS`;就绪帧输出流选择 `TANSR_SERVE_READY_STREAM`;运维环境变量表增至 30 键,`.env.example` 与 README 由表生成。",
+        "新导出:`installProcessGuards` 一族、`V2_ROUTE_TABLE` / `V2_SESSION_ACTIONS`、就绪帧解析与格式化函数、`ReplayGapNotice.reason`、`PermissionReceiptSchema.reason`、`AgentSessionFactory.sweepRetention`、`AppTokenMinter.invalidate`、`SECRET_WARNING_VALUE` 等(均为可选,缺席即现状)。",
+        "新指标 `tansr_serve_pump_errors_total` / `tansr_serve_token_invalidations_total{reason}`;新日志事件 `process.unhandled_rejection` / `process.uncaught_exception` / `process.drain_failed` / `store.error` / `session.retention_swept` / `bridge.permission_receipt`。",
+        "tarball 随附 `NOTICE`(内联第三方依赖的名称、版本与许可文本)。"
+      ],
+      "changed": [
+        "同一 `sessionId` 并发建会,后到者返回 200 并附着到已有会话(此前触发 500 并可能留下未处理拒绝)。",
+        "/v2 错误信封的 `message` 改为固定文案,原始错误(含服务器本机路径)只进结构化日志;依赖 `message` 原文判因的客户端请改读 `error.code` / `detail`。",
+        "/v2 事件泵抛错即关闭驱动(`driver.status()` 为 `'ended'`),不再静默挂起。",
+        "恢复会话时的工作目录默认取存储值(`'stored'`)并重过策略闸,被拒返回 409 `cwd_unavailable`(`detail.reason` 四值);`TANSR_SERVE_CWD_ON_RESUME=current` 可显式回到旧行为。",
+        "会话落盘失败不再只进日志,改以可恢复的 `turn.error{ recoverable: true, scope: 'server.persistence' }` 出线;端侧按 `recoverable` 位区分咨询与失败。",
+        "客户端超前订阅(`afterSeq` 大于日志末序)也会收到 gap 帧,`reason` 为 `'ahead_of_log'`。",
+        "控制帧一律携 `ts`;`server.tool.request` / `permission.request` / `question.request` 携 `ttlMs`;权限请求的应答(`PermissionReceipt`)可带 `reason`(目前仅 `expired_on_arrival`)。",
+        "指标与日志的 `route` 标签值集按新路由表变动(9 条),仪表板与告警请随动。",
+        "缓存的应用令牌收到 401 且属失效码时自动逐出、重铸并重试一次;失效码集与 SDK 同源。",
+        "bundle 缓存键改为四维(基址 / 应用 / 径别 / 能力位);自实现 bundle 缓存的宿主请按四维键对齐。",
+        "裁决装配与 SDK 同源:未接确认通道且裁决人未授予资格档的会话不再切换到 `auto` 模式,工作区内写 / 删改为征求确认(无通道即拒绝);机器放行帧 `tool.permission.decided` 经既有通道出线。",
+        "会话文件存储切到统一内核实现;应急开关 `TANSR_SESSION_STORE_CORE=legacy`(一版后删除)。",
+        "库内不再自行挂载进程级兜底;自托管 `@tansr/serve` 的宿主须在入口调用 `installProcessGuards`(`tansr serve` 已内置),否则未处理拒绝按 Node 缺省行为崩溃(与 0.6.x 相同,无回归)。"
+      ],
+      "fixed": [
+        "分叉会话读历史分页时 `total` 偏 1 导致翻页漏项。",
+        "运行时外部依赖声明与实际打包一致(`zod`),包内说明文字同步订正。"
+      ]
+    },
+    "0.6.1": {
+      "date": "2026-09-06",
+      "added": [
+        "存储出口补齐:`createFsBlobStore` / `createChaosBlobStore` / `runStorageConformance` 及相关类型经 `@tansr/serve` 再导出,第三方适配器不再需要直装内核包。"
+      ],
+      "changed": [],
+      "fixed": [],
+      "note": "无其他行为变化。"
+    },
+    "0.6.0": {
+      "date": "2026-09-06",
+      "added": [
+        "/v2 会话持久化:会话存储、分叉与恢复。",
+        "权限裁决姿态与裁决协议 v4 / 应用协议。",
+        "音频模态与媒体能力内核化。",
+        "套餐(plan)信息在端上可见。"
+      ],
+      "changed": [
+        "MCP 重连契约升级(v0.21–v0.24)。"
+      ],
+      "fixed": []
+    }
+  }
+}

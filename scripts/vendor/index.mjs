@@ -45,6 +45,8 @@ import { CLI_BUNDLE_REL, collectCliHelp } from './cli-help.mjs';
 export const VENDORED_FILE = 'vendored.json';
 /** 生成物,不登记、不对表 */
 export const GENERATED_IN_CONTRACT = new Set(['openapi.public.json']);
+/** 本仓手维护的契约(非兄弟仓副本),不登记、不对表;各有自己的门(release-notes.json → scripts/check/release-notes.mjs) */
+export const HAND_MAINTAINED_IN_CONTRACT = new Set(['release-notes.json']);
 
 /** 登记表(键序 = 落盘序) */
 export const VENDOR_TABLE = [
@@ -192,7 +194,7 @@ export function check({ root, log = console.log }) {
     }
   }
   for (const rel of listContractFiles(contractDir)) {
-    if (rel === VENDORED_FILE || GENERATED_IN_CONTRACT.has(rel)) continue;
+    if (rel === VENDORED_FILE || GENERATED_IN_CONTRACT.has(rel) || HAND_MAINTAINED_IN_CONTRACT.has(rel)) continue;
     if (!(rel in vendored)) {
       problems.push(`UNLISTED  contract/${rel}`);
       log(`[vendor:check] UNLISTED  contract/${rel}(不在 vendored.json)`);

@@ -2,16 +2,22 @@
 /**
  * 正文容器覆写:沿 Starlight 默认 `.sl-markdown-content`,在文章页(template: doc)尾部挂
  * 「相关文章」与「本文是否有帮助」;splash 页(首页 / 帮助中心首页)与 404 不挂。
+ * 搜索权重(DS-27):查表页(src/lib/search-weights.mjs KEY_PAGES)把行键层标题(codes / env 的 h3,commands 的 h2)写成 Pagefind 元字段 `keys`
+ * (空元素、不进布局、不进正文索引),配 astro.config `pagefind.ranking.metaWeights` 让行键命中压过标题片段命中。
  */
 import Default from '@astrojs/starlight/components/MarkdownContent.astro';
 import Related from './Related.astro';
 import Feedback from './Feedback.astro';
+import { keyPageOf, keysMetaValue } from '../lib/search-weights.mjs';
 
-const { entry } = Astro.locals.starlightRoute;
+const { entry, headings } = Astro.locals.starlightRoute;
 const isArticle = entry.data.template === 'doc' && entry.id !== '404' && !entry.id.endsWith('/404');
+const keyPage = keyPageOf(Astro.url.pathname);
+const keysMeta = keyPage ? keysMetaValue(headings, keyPage.depth) : undefined;
 ---
 
 <Default>
+  {keysMeta && <span data-pagefind-meta={keysMeta} hidden></span>}
   <slot />
   {
     isArticle && (
