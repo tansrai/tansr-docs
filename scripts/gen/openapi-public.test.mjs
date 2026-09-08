@@ -5,9 +5,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRootFrom } from '../lib/text.mjs';
-import { danglingRefs, filterPublic, generate, OUT_REL, PUBLIC_TITLE } from './openapi-public.mjs';
+import { danglingRefs, filterPublic, generate, OUT_REL, PUBLIC_TITLE, sanitizeMarkdownText } from './openapi-public.mjs';
 
 const root = repoRootFrom(import.meta.url);
+
+test('openapi-public:描述 Markdown 安全化——`[](…)` 空链接形转义(收编 links 门实证:context-selection selected 描述「无档回 [](未配置=空集)」曾成死链),其余文本不动;公开副本零残留', () => {
+  assert.equal(sanitizeMarkdownText('恒数组,无档回 [](未配置=空集);原样回读'), '恒数组,无档回 []\\(未配置=空集);原样回读');
+  assert.equal(sanitizeMarkdownText('正常 [链接](https://example.com) 与 [] 单独'), '正常 [链接](https://example.com) 与 [] 单独');
+  const { doc } = filterPublic(source);
+  assert.equal(JSON.stringify(doc).includes('[](未配置'), false, '公开副本内不得残留 [](… 形');
+});
 const script = fileURLToPath(new URL('./openapi-public.mjs', import.meta.url));
 const source = JSON.parse(readFileSync(join(root, 'contract', 'openapi.json'), 'utf8'));
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);

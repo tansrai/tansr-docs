@@ -147,6 +147,7 @@ export function filterPublic(source) {
       out[k] = v;
     }
   }
+  sanitizeMarkdownInPlace(out);
   return {
     doc: out,
     stats: {
@@ -159,6 +160,23 @@ export function filterPublic(source) {
       droppedByTag: dropped.tag.length,
     },
   };
+}
+
+/**
+ * 描述文本按 Markdown 渲染(starlight-openapi):api 契约里「无档回 [](未配置=空集)」这类 `[](…)` 形会被解析成
+ * 空文本链接 → 站内死链(收编 links 门实证)。只对 `description` / `summary` 字段做一处保守转义:紧跟 `[]` 的 `(` 转为 `\(`,
+ * 语义不变、其余 Markdown 照旧。源头改口(api 契约文案)另登敞口;本函数保证公开副本可渲染。
+ */
+export function sanitizeMarkdownText(text) {
+  return text.replace(/\[\]\(/g, '[]\\(');
+}
+function sanitizeMarkdownInPlace(node) {
+  if (Array.isArray(node)) { for (const v of node) sanitizeMarkdownInPlace(v); return; }
+  if (node === null || typeof node !== 'object') return;
+  for (const [k, v] of Object.entries(node)) {
+    if ((k === 'description' || k === 'summary') && typeof v === 'string') node[k] = sanitizeMarkdownText(v);
+    else sanitizeMarkdownInPlace(v);
+  }
 }
 
 function isPrivateServer(url) {

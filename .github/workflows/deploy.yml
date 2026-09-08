@@ -38,15 +38,28 @@ jobs:
       # 门先过(含 build);下面不再单独 build,dist/ 即门里构建的产物
       - run: pnpm gate
 
+      # 部署密钥未交割(doc/134 §六 2)时:门照跑、发布步跳过并在日志明说,不把每次 push 标红;交割后自动生效
+      - name: Deploy secrets present?
+        id: cfg
+        env:
+          DOCS_DEPLOY_KEY: ${{ secrets.DOCS_DEPLOY_KEY }}
+          DOCS_HOST: ${{ secrets.DOCS_HOST }}
+        run: |
+          if [ -n "$DOCS_DEPLOY_KEY" ] && [ -n "$DOCS_HOST" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::DOCS_DEPLOY_KEY / DOCS_HOST 未配置——本次只跑门与构建,不发布(交割 secrets 后 main 推送即自动发布;首发由主线手动 rsync)"
+          fi
+
       - name: Configure SSH
+        if: steps.cfg.outputs.configured == 'true'
         env:
           DOCS_DEPLOY_KEY: ${{ secrets.DOCS_DEPLOY_KEY }}
           DOCS_HOST: ${{ secrets.DOCS_HOST }}
           DOCS_HOST_KEY: ${{ secrets.DOCS_HOST_KEY }}
         run: |
           set -euo pipefail
-          test -n "$DOCS_DEPLOY_KEY" || { echo "secret DOCS_DEPLOY_KEY 未配置" >&2; exit 1; }
-          test -n "$DOCS_HOST" || { echo "secret DOCS_HOST 未配置" >&2; exit 1; }
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$DOCS_DEPLOY_KEY" > ~/.ssh/docs_deploy_key
           chmod 600 ~/.ssh/docs_deploy_key
@@ -69,6 +82,7 @@ jobs:
           printf '  HostName %s\n  User %s\n' "$host" "$user" >> ~/.ssh/config
 
       - name: Publish
+        if: steps.cfg.outputs.configured == 'true'
         run: bash scripts/deploy/publish.sh dist docs-ecs "${GITHUB_SHA}"
 
       - name: Cleanup key

@@ -13,19 +13,25 @@ import { CATEGORY_VALUES, DATE_PATTERN, SLUG_PATTERN, SOURCE_PATTERN, ZONE_VALUE
  * - lastVerified:最近一次对表事实源的日期
  * - generated:生成页 true(由生成脚本产出,不手改)
  * 常量在 src/lib/contract.mjs,与 scripts/check/frontmatter.mjs 同源。
+ *
+ * zone / category / lastVerified 在 schema 层为可选:插件页(starlight-openapi 经 `<StarlightPage>` 渲染的 /api/*)
+ * 不带这三键,必填会让 `/api/` 构建期红(收编实证);对本仓手写 / 生成文章的「必填」由 `pnpm frontmatter` 门执行,
+ * 两处同源常量,不因此放松。
  */
 export const articleSchema = z.object({
-  zone: z.enum(ZONE_VALUES as unknown as [string, ...string[]]),
-  category: z.enum(CATEGORY_VALUES as unknown as [string, ...string[]]),
+  zone: z.enum(ZONE_VALUES as unknown as [string, ...string[]]).optional(),
+  category: z.enum(CATEGORY_VALUES as unknown as [string, ...string[]]).optional(),
   related: z.array(z.string().regex(SLUG_PATTERN, 'related 须为站内 slug,如 errors/codes')).optional(),
   sources: z
     .array(z.string().regex(SOURCE_PATTERN, 'sources 须为 contract/<path> 或 tansr-cli: / tansr-api: / tansr-android: / tansr-ios: 前缀 + 仓内路径'))
     .optional(),
   // YAML 里 `lastVerified: 2026-09-08` 会被解析成 Date;`'2026-09-08'`(带引号)是字符串。两形都收,统一为 YYYY-MM-DD 字符串
-  lastVerified: z.union([
-    z.string().regex(DATE_PATTERN, 'lastVerified 须为 YYYY-MM-DD'),
-    z.date().transform((d) => d.toISOString().slice(0, 10)),
-  ]),
+  lastVerified: z
+    .union([
+      z.string().regex(DATE_PATTERN, 'lastVerified 须为 YYYY-MM-DD'),
+      z.date().transform((d) => d.toISOString().slice(0, 10)),
+    ])
+    .optional(),
   generated: z.boolean().optional(),
 });
 

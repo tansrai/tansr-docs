@@ -41,7 +41,8 @@ export function slugToHref(locale: string | undefined, slug: string): string {
  * `api` 目录由 starlight-openapi 生成(不在内容集合里),vendored 契约在场即视为存在。
  */
 export async function resolveDirectoryHref(locale: string | undefined, directory: string): Promise<string | null> {
-  if (directory === 'api' && hasOpenApi(pathToFileURL(process.cwd() + sep))) return slugToHref(locale, 'api');
+  // starlight-openapi 只产根 locale 的 /api/**(不随 en 回落生成);各 locale 的「REST 参考」卡一律指根路径,免 /en/api/ 死链(收编 links 门实证)
+  if (directory === 'api' && hasOpenApi(pathToFileURL(process.cwd() + sep))) return slugToHref(undefined, 'api');
   const entries = await localeEntries(locale);
   if (entries.some((e) => e.id === directory)) return slugToHref(locale, directory);
   const first = entries

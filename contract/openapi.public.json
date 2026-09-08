@@ -16207,7 +16207,7 @@
         ],
         "properties": {
           "selected": {
-            "description": "恒数组,无档回 [](未配置=空集);原样回读不清洗(停用/围栏收回由消费点谓词 fail-closed 挡下)",
+            "description": "恒数组,无档回 []\\(未配置=空集);原样回读不清洗(停用/围栏收回由消费点谓词 fail-closed 挡下)",
             "type": "array",
             "items": {
               "type": "string"
