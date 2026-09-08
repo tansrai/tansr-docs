@@ -1,35 +1,84 @@
 ---
-title: 快速开始总览
-description: 五条 5 分钟跑通路径的入口:TS / Node SDK、CLI、会话服务、Android 与 iOS。
+title: 快速开始：选一条路，5 分钟跑通
+description: tansr 有五种接入方式——Node SDK、命令行、自托管会话服务、Android 与 iOS。这一页帮你判断该从哪一篇开始，并说明五条路共用的账号与凭据模型。
 zone: docs
 category: getting-started
 related:
-  - support/faq-sample
+  - getting-started/sdk
+  - getting-started/cli
+  - getting-started/serve
+  - getting-started/android
+  - security
 sources:
   - tansr-cli:doc/11-用户手册.md
-lastVerified: 2026-09-08
+  - tansr-cli:packages/sdk/README.md
+  - tansr-cli:packages/server/README.md
+  - tansr-cli:doc/90-SDK技术手册.md
+lastVerified: '2026-09-08'
 ---
 
-<!-- 样板文章:演示 frontmatter 契约与文章页尾组件;正式内容到位后本文会被覆写。 -->
+tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。
 
-本页是「快速开始」的总览占位。正式内容将按接入方式分五篇,每篇都按同一条路径写:
+## 先回答一个问题：智能体跑在哪里？
 
-1. 安装
-2. 拿到凭据
-3. 发起第一个会话
-4. 看到事件流
-5. 下一步去哪
+| 你的情形 | 推荐入口 | 对应文章 |
+|---|---|---|
+| 我想在终端里直接和智能体对话、改代码、跑脚本 | `tansr` 命令行 | [命令行 5 分钟跑通](/getting-started/cli/) |
+| 我在写 Node.js / Electron 程序，想把智能体嵌进自己的进程 | `@tansr/sdk` | [Node SDK 5 分钟跑通](/getting-started/sdk/) |
+| 我要给自己的移动端或 Web 用户提供智能体，需要一个多用户的后端服务 | `@tansr/serve` 自托管会话服务 | [会话服务 5 分钟跑通](/getting-started/serve/) |
+| 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk` | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
+| 我在写 iOS / macOS App，后端同上 | Swift 包 `tansr-ios` | 同上一篇的「iOS 同法」一节 |
 
-## 选一条路径
+两条经验法则：
 
-| 你要做的事 | 去读 |
+- **单人使用选命令行，给别人用选 SDK 或会话服务。** 命令行是给开发者自己的；SDK 和会话服务是给你的产品用户的。
+- **移动端永远经过你自己的服务端。** Android / iOS SDK 是薄协议客户端，不直接持有任何平台凭据；智能体内核跑在你部署的 `@tansr/serve` 里。
+
+## 五条路共用的账号模型
+
+不论走哪条路，凭据都分三层，越往下越不能外泄：
+
+1. **个人访问令牌（PAT）**：你在控制台创建，只给 `tansr init` 登录本机命令行用。它代表你本人。
+2. **应用密钥（appid / appkey）**：你在控制台为一个「应用」签发。appkey 只能放在你的服务端（Node 进程或 `@tansr/serve`），用来为你的终端用户换取短期令牌。**appkey 永远不下发到终端设备、不写日志、不进版本库。**
+3. **短期 app_user 令牌**：由你的服务端用 appkey 换出，交给终端（Electron 主进程、或由 `@tansr/serve` 内部持有）。到期即失效，泄露的影响面被 TTL 限住。
+
+命令行用户只需要第 1 层；SDK 与会话服务开发者需要第 2、3 层。详细的放置与轮换建议见[安全与隐私](/security/)。
+
+## 每一篇快速开始都是同一个骨架
+
+四篇形态文章（Android 与 iOS 合为一篇）按同一顺序展开，便于你在不同形态之间对照：
+
+1. **前提**：运行环境与版本要求（Node ≥ 22.19 是共同基线）。
+2. **安装**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`，或 Maven / SwiftPM 坐标。
+3. **凭据**：该形态需要哪一层凭据，从哪里拿。
+4. **第一个会话**：最短的可运行代码。
+5. **看到事件**：智能体的一切输出都是事件流（`msg.text.delta`、`tool.completed` 等），这一步让你亲眼看到它。
+6. **下一步**：指向对应的深入指南。
+
+## 运行环境速查
+
+| 形态 | 最低要求 |
 |---|---|
-| 在 Node / TypeScript 服务里嵌入会话 | TS / Node SDK 快速开始 |
-| 在终端里直接用 | CLI 快速开始 |
-| 自托管会话服务,给自己的前端用 | 会话服务快速开始 |
-| 在 Android 应用里接入 | Android 快速开始 |
-| 在 iOS 应用里接入 | iOS 快速开始 |
+| 命令行（npm 包） | Node.js ≥ 22.19；Windows / macOS / Linux。单文件可执行版自带运行时，无需 Node |
+| `@tansr/sdk` | Node.js ≥ 22.19;Electron ≥ 39;ESM only;TypeScript target ≥ ES2022 |
+| `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
+| Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
+| iOS SDK | iOS 16+ / macOS 13+;SwiftPM |
+
+## 一次跑通后，接下来看什么
+
+| 你关心的 | 去哪里 |
+|---|---|
+| 会话怎么持久化、断线怎么恢复 | [检查点与恢复](/sdk/checkpoints/)(SDK)· [v2 协议与 webhook](/serve/v2-and-webhooks/)（会话服务） |
+| 平台给我的应用下发了什么能力、怎么在控制台开关 | [平台装配与 bundle](/sdk/platform-bundle/) |
+| 某个错误码是什么意思、能不能重试 | [错误处理与重试](/sdk/errors-and-retries/) · [错误码表](/errors/codes) |
+| 服务端怎么部署、怎么优雅关闭、多副本怎么分片 | [部署与鉴权](/serve/deploy-and-auth/) |
+| 会话保留多久、什么时候被回收 | [保留期与治理](/serve/retention-and-governance/) |
+| 命令行配置文件在哪、`tansr doctor` 输出怎么读 | [设置与 doctor](/cli/settings-and-doctor/) |
+| 数据存在哪、密钥怎么轮换、出网去了哪 | [安全与隐私](/security/) |
 
 ## 遇到问题
 
-先看帮助中心的排障页;找不到答案再联系支持。
+- 命令行侧先跑 `tansr doctor`，它是零网络的装配自检；读法见[排障指南](/support/troubleshooting/)。
+- 所有错误都有稳定的机器码，可在[错误码表](/errors/codes)按码查含义。
+- 账号、密钥、套餐问题见[账号与计费](/support/account/)；仍未解决可[联系支持](/support/contact/)。
