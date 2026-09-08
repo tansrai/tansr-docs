@@ -1,0 +1,90 @@
+---
+title: Contact support
+description: 'Two entry points — scan the WeChat code to join the support group, or email support@tansr.com; which one fits; the four things to include so we can help faster; and which problems you can solve without talking to anyone.'
+zone: support
+category: support
+related:
+  - support
+  - support/troubleshooting
+  - support/account
+  - security
+sources:
+  - tansr-cli:doc/11-用户手册.md
+lastVerified: '2026-09-09'
+---
+
+import ContactForm from '../../../../components/ContactForm.astro';
+
+Before you contact us, spend a minute on the [help center](/en/support/) groups and the [troubleshooting guide](/en/support/troubleshooting/) — most problems are solved there. If a person really needs to look, use either entry point below.
+
+## Entry point one: WeChat
+
+![WeChat support QR code (to be uploaded)](/wechat-support.png)
+
+**The QR code is not uploaded yet.** The image above is a placeholder and will be replaced once the official code is ready; until then please use the email entry point below.
+
+After joining the group, post your problem description directly (see "The four things to include" below); no need to say hello first and wait for a reply.
+
+## Entry point two: email
+
+[support@tansr.com](mailto:support@tansr.com)
+
+A good subject line is "[form] one-sentence problem", for example "[CLI] tansr init says the PAT is invalid" or "[session service] resume always returns 409". We reply as soon as we can during business hours; email received outside business hours is handled in the order received.
+
+If you would rather not open a mail client, fill in the form below — it reaches the support mailbox as an email too. A successful submission gives you a ticket id; if it cannot be submitted right now, the page gives you a mail link with your subject and details already filled in.
+
+<ContactForm />
+
+## Which entry point fits
+
+| Situation | Suggestion |
+|---|---|
+| One sentence explains it and you just want to confirm "am I using this wrong" | The WeChat group |
+| You need to attach longer material: diagnostic output, logs, transcripts | Email |
+| Billing, invoices, account ownership — anything that needs identity verification | Email, sent from your registered address |
+| A security vulnerability | Email, subject starting with "[security]"; do not post it in the group |
+| A documentation error | Email, with the page address |
+
+Please use only one entry point per problem so it is not handled twice.
+
+## The four things to include
+
+Bring these four and most problems are located in one round:
+
+1. **Which form and which version.** CLI: `tansr --version`; SDK / session service: the `@tansr/sdk` / `@tansr/serve` version in `package.json`; mobile: the SDK coordinate version and the OS version.
+2. **Diagnostic output.** CLI: paste `tansr doctor --json` (it contains no key values; credentials appear only as fingerprints); session service: paste the `GET /readyz` response and the relevant structured log lines.
+3. **The error code and the full message.** For example `429 plan_concurrency_exceeded`, `409 resume_unavailable`; for the session service also the `x-request-id` response header; for mobile the sequence of `connectionState` changes.
+4. **Steps to reproduce and the time.** For billing, the order number or billing month, plus your account fingerprint (as shown on the `tansr init` summary card).
+
+If you need to show us the conversation, export the transcript with `tansr sessions export <id>` — keys are already redacted to the form `sk-...` plus the last 4 characters, so it can be attached as is.
+
+## Please do not send us
+
+- **Any key value**: personal access tokens, app keys (appkey), model-provider API keys, session-service Bearer tokens. We do not need them to troubleshoot; if you sent one by accident, rotate it in the console right away.
+- The contents of `.env` files.
+- Full logs containing real customer data; redact them or include only the relevant lines.
+
+## After you hear back
+
+- We may ask you to run `tansr doctor --json` once more or to fetch some endpoint's response; please reply in the same email thread / the same group message thread so it stays linked.
+- If the problem is confirmed as a defect, we tell you which release the fix is expected in; once released, you can check the [CLI release notes](/releases/cli), the [SDK release notes](/releases/sdk) and the [session service release notes](/releases/serve).
+- Once it is solved, if convenient, reply "solved" so we can close the follow-up.
+
+## Problems you can solve yourself
+
+| Problem | Where to go |
+|---|---|
+| What an error code means, whether it can be retried | [Error codes](/errors/codes) · [Troubleshooting](/en/support/troubleshooting/) |
+| PAT / app key / plan / balance / invoices | [Account and billing](/en/support/account/) |
+| A section of `tansr doctor` you cannot read | [Settings and doctor](/en/cli/settings-and-doctor/) |
+| Deploying the session service, graceful shutdown, multiple replicas | [Deployment and authentication](/en/serve/deploy-and-auth/) |
+| Mobile disconnect recovery, foreground/background, push | [Android integration guide](/en/android/) · [iOS integration guide](/en/ios/) |
+| Where data lives, where credentials go, how to rotate | [Security and privacy](/en/security/) |
+
+## Security issues
+
+If what you found is a security vulnerability (a credential leak path, privilege escalation, an injection surface), please do **not** post it in the group; email [support@tansr.com](mailto:support@tansr.com) directly with a subject starting with "[security]". We prioritize it and stay in touch until it is fixed.
+
+## Feedback on the docs
+
+Every article has "Was this page helpful?" at the bottom; documentation errors are also welcome by email — include the page address and what is wrong.

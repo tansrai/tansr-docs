@@ -17,8 +17,9 @@ import * as openapiPublic from './openapi-public.mjs';
 import * as serveEnv from './serve-env.mjs';
 import * as cliCommands from './cli-commands.mjs';
 import * as releases from './releases.mjs';
+import * as i18nCoverage from './i18n-coverage.mjs';
 
-export const GENERATORS = [openapiPublic, errorCodes, serveEnv, cliCommands, releases];
+export const GENERATORS = [openapiPublic, errorCodes, serveEnv, cliCommands, releases, i18nCoverage];
 
 /** 跑全部生成器(纯内存),返回 [{ script, rel, content, stats? }]。 */
 export function generateAll(root) {

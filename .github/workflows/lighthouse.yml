@@ -1,0 +1,53 @@
+name: lighthouse
+
+# 资料站 Lighthouse CI(DS-21):main 推送与手动触发时,对构建产物 dist 跑 Lighthouse(移动端模拟),
+# 断言 performance ≥ 0.9 · accessibility / best-practices / seo ≥ 0.95(见 lighthouserc.json;三条 url:/ · /errors/codes/ · /support/)。
+# 不上传到任何外部存储(upload.target = filesystem);报告以 workflow artifact 形式保留 14 天。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: lighthouse (node 22 · pnpm 11 · @lhci/cli 0.15.1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # actions 全部 pin 到 commit sha(供应链律,与 ci.yml 同形);版本注释供人读
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # lastUpdated 读 git log,浅克隆会全部显示为「构建日」
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      # 固定版本;ubuntu-latest runner 自带 Chrome。断言红则本步红。
+      - run: npx --yes @lhci/cli@0.15.1 autorun
+
+      - if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          retention-days: 14
+          if-no-files-found: ignore

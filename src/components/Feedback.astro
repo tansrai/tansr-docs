@@ -1,15 +1,20 @@
 ---
 /**
- * 「本文是否有帮助」:两钮,零网络。本期只记 localStorage(键 `tansr-docs:feedback:<pathname>`)并显示感谢;
- * 再次进入同页时按记录回显已选态。后续接反馈接口时只换 <script> 里的 record()。
+ * 「本文是否有帮助」:两钮。点击即显感谢并记 localStorage(键 `tansr-docs:feedback:<pathname>`,再次进入同页回显已选态),
+ * 同时 `POST {API_BASE}/v1/docs/feedback { path, helpful, locale }`(端点契约:202 `{ ok: true }`;无鉴权;每 IP 60 / h)。
+ * 任何非 2xx / 网络错 / 超时 → 只留 localStorage 形(delivered: false),界面恒显感谢、不暴露错误细节(console.debug 一条)。
+ * 零第三方脚本;文案两语按 Astro.currentLocale。
  */
-const isEn = Astro.locals.starlightRoute.locale === 'en';
-const t = isEn
-  ? { q: 'Was this page helpful?', yes: 'Yes', no: 'No', thanks: 'Thanks for your feedback.' }
-  : { q: '本文是否有帮助?', yes: '有帮助', no: '没帮助', thanks: '感谢反馈,我们会持续改进这篇文章。' };
+import { normalizeLocale } from '../lib/docs-api.mjs';
+
+const lang = normalizeLocale(Astro.currentLocale ?? Astro.locals.starlightRoute.locale);
+const t =
+  lang === 'en'
+    ? { q: 'Was this page helpful?', yes: 'Yes', no: 'No', thanks: 'Thanks for your feedback.' }
+    : { q: '本文是否有帮助?', yes: '有帮助', no: '没帮助', thanks: '感谢反馈,我们会持续改进这篇文章。' };
 ---
 
-<section class="feedback" aria-labelledby="feedback-title" data-feedback>
+<section class="feedback" aria-labelledby="feedback-title" data-feedback data-feedback-locale={lang}>
   <h2 id="feedback-title">{t.q}</h2>
   <div class="feedback-actions">
     <button type="button" data-feedback-value="yes" aria-pressed="false">{t.yes}</button>
@@ -19,8 +24,12 @@ const t = isEn
 </section>
 
 <script>
+  import { API_BASE } from '../lib/api-base';
+  import { feedbackPayload, feedbackUrl, shouldFallback } from '../lib/docs-api.mjs';
+
   const KEY_PREFIX = 'tansr-docs:feedback:';
   const key = KEY_PREFIX + location.pathname;
+  const TIMEOUT_MS = 5000;
 
   function read(): string | null {
     try {
@@ -29,17 +38,42 @@ const t = isEn
       return null;
     }
   }
-  function record(value: string): void {
+  function record(value: string, delivered: boolean): void {
     try {
-      localStorage.setItem(key, JSON.stringify({ value, at: new Date().toISOString() }));
+      localStorage.setItem(key, JSON.stringify({ value, at: new Date().toISOString(), delivered }));
     } catch {
       /* 隐私模式等不可写:仍显示感谢,不报错 */
+    }
+  }
+
+  /** 发到 api;任何失败都归为回退(返回 false),不抛、不弹。 */
+  async function send(value: string, locale: string | undefined): Promise<boolean> {
+    const payload = feedbackPayload({ pathname: location.pathname, value, locale });
+    if (!payload) return false;
+    try {
+      const res = await fetch(feedbackUrl(API_BASE), {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+        keepalive: true,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (shouldFallback(res)) {
+        console.debug('[tansr-docs] feedback not delivered (status %d); kept locally', res.status);
+        return false;
+      }
+      return true;
+    } catch {
+      console.debug('[tansr-docs] feedback not delivered (network); kept locally');
+      return false;
     }
   }
 
   document.querySelectorAll<HTMLElement>('[data-feedback]').forEach((root) => {
     const buttons = root.querySelectorAll<HTMLButtonElement>('button[data-feedback-value]');
     const thanks = root.querySelector<HTMLElement>('[data-feedback-thanks]');
+    const locale = root.dataset.feedbackLocale;
     const paint = (value: string | null) => {
       buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.feedbackValue === value)));
       if (thanks) thanks.hidden = value === null;
@@ -55,8 +89,12 @@ const t = isEn
     buttons.forEach((b) =>
       b.addEventListener('click', () => {
         const value = b.dataset.feedbackValue ?? '';
-        record(value);
+        // 先落本地、先显感谢:界面不等网络
+        record(value, false);
         paint(value);
+        void send(value, locale).then((delivered) => {
+          if (delivered) record(value, true);
+        });
       }),
     );
   });
