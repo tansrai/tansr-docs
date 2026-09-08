@@ -6,6 +6,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { CATEGORIES, EXTRA_LOCALES, OPENAPI_PUBLIC, ROOT_LOCALE, hasOpenApi } from './src/lib/categories.mjs';
 import { KINDS as SDK_API_KINDS } from './scripts/gen/sdk-api.mjs';
+import { META_WEIGHTS } from './src/lib/search-weights.mjs';
 
 /**
  * REST 参考(/api/)来自 vendored 公开子集 `contract/openapi.public.json`。
@@ -65,7 +66,11 @@ export default defineConfig({
       defaultLocale: 'root',
       locales: { root: { ...ROOT_LOCALE }, ...EXTRA_LOCALES },
       sidebar,
-      pagefind: true,
+      /**
+       * 搜索权重(DS-27):排序参数沿 Starlight 缺省(pageLength 0.1 · termFrequency 0.1 · termSaturation 2 · termSimilarity 9),
+       * 只加元权重——查表页行键元字段 `keys`(MarkdownContent.astro 挂)8 > 标题 5;理由与实测见 src/lib/search-weights.mjs。
+       */
+      pagefind: { ranking: { metaWeights: { ...META_WEIGHTS } } },
       editLink: { baseUrl: 'https://github.com/cpple/tansr-docs/edit/main/' },
       lastUpdated: true,
       customCss: ['./src/styles/custom.css'],

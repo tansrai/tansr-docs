@@ -20,6 +20,7 @@
     "links": "node scripts/check/links.mjs",
     "frontmatter": "node scripts/check/frontmatter.mjs",
     "release-notes": "node scripts/check/release-notes.mjs",
+    "search-rank": "node scripts/check/search-rank.mjs",
     "gate": "node scripts/check/gate.mjs",
     "test": "node --test scripts/**/*.test.mjs"
   },
