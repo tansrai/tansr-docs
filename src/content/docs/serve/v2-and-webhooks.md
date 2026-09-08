@@ -76,7 +76,7 @@ lastVerified: '2026-09-08'
 | `internal_error` | 500 | 路由层统一错误边界兜底，进程恒不退出 |
 | `store_corrupted` | 500 | 会话存储损坏，恒不静默回残缺历史 |
 
-客户端退避纪律：429 / 503 携 `Retry-After` 时按整秒值等待；5xx 无 `Retry-After` 时指数退避 + 抖动；未知 code 按状态码兜底。平台原码（`asr_not_configured`、`insufficient_balance`、`plan_required` 等）在音频端点与铸令牌拒绝处原样透传，含义见[错误码表]（/errors/codes）。
+客户端退避纪律：429 / 503 携 `Retry-After` 时按整秒值等待；5xx 无 `Retry-After` 时指数退避 + 抖动；未知 code 按状态码兜底。平台原码（`asr_not_configured`、`insufficient_balance`、`plan_required` 等）在音频端点与铸令牌拒绝处原样透传，含义见[错误码表](/errors/codes)。
 
 ## SSE 帧形
 
@@ -129,6 +129,6 @@ const v2: AgentSessionsOptions = {
 
 **投递纪律**:2xx 即成功；否则指数退避重试（单次 5 s 超时，退避 500 ms ×2，至多重试 3 次）；有界并发 32、有界队列 1024（满则丢最新到达者）、目标级熔断（连续 5 次终败开 30 s）；全程 fire-and-forget，恒不阻断会话主链；终败经 `onDeliveryFailure` 结构化通报；优雅关闭期恒不出站。有订阅者时不立即裁「不发」，延后 2 s 复判（断线事件与终局帧几乎同刻抵达的情形）。
 
-**命令行形态两键**:[`TANSR_SERVE_NOTIFY_URL`]（/serve/env#tansr_serve_notify_url）（绝对 http(s) URL）与 [`TANSR_SERVE_NOTIFY_SECRET`]（/serve/env#tansr_serve_notify_secret）（取值恒不入日志）把同一缝接给 `tansr serve --v2`，无 URL 即不出站——**即将随 @tansr/serve 0.7.0 与 tansr 命令行 0.5.0 提供**；npm 嵌入形今天就用上文的 `onTurnEndNotify` 选项。
+**命令行形态两键**:[`TANSR_SERVE_NOTIFY_URL`](/serve/env#tansr_serve_notify_url)（绝对 http(s) URL）与 [`TANSR_SERVE_NOTIFY_SECRET`](/serve/env#tansr_serve_notify_secret)（取值恒不入日志）把同一缝接给 `tansr serve --v2`，无 URL 即不出站——**即将随 @tansr/serve 0.7.0 与 tansr 命令行 0.5.0 提供**；npm 嵌入形今天就用上文的 `onTurnEndNotify` 选项。
 
 你的半场：收 webhook → 验签 → 把 `endUserId` 映射到设备推送令牌 → 发一条只携 `sessionId` 的推送 data 消息 → App 点击后经 SDK 既有三级链恢复（进程还在 → L1；进程已死 → 冷启 resume 即 L3）。全程不涉及新 SDK API。

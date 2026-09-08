@@ -42,7 +42,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 2. **应用密钥（appid / appkey）**：你在控制台为一个「应用」签发。appkey 只能放在你的服务端（Node 进程或 `@tansr/serve`），用来为你的终端用户换取短期令牌。**appkey 永远不下发到终端设备、不写日志、不进版本库。**
 3. **短期 app_user 令牌**：由你的服务端用 appkey 换出，交给终端（Electron 主进程、或由 `@tansr/serve` 内部持有）。到期即失效，泄露的影响面被 TTL 限住。
 
-命令行用户只需要第 1 层；SDK 与会话服务开发者需要第 2、3 层。详细的放置与轮换建议见[安全与隐私]（/security/）。
+命令行用户只需要第 1 层；SDK 与会话服务开发者需要第 2、3 层。详细的放置与轮换建议见[安全与隐私](/security/)。
 
 ## 每一篇快速开始都是同一个骨架
 
@@ -69,7 +69,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 
 | 你关心的 | 去哪里 |
 |---|---|
-| 会话怎么持久化、断线怎么恢复 | [检查点与恢复](/sdk/checkpoints/)(SDK)· [v2 协议与 webhook]（/serve/v2-and-webhooks/）（会话服务） |
+| 会话怎么持久化、断线怎么恢复 | [检查点与恢复](/sdk/checkpoints/)(SDK)· [v2 协议与 webhook](/serve/v2-and-webhooks/)（会话服务） |
 | 平台给我的应用下发了什么能力、怎么在控制台开关 | [平台装配与 bundle](/sdk/platform-bundle/) |
 | 某个错误码是什么意思、能不能重试 | [错误处理与重试](/sdk/errors-and-retries/) · [错误码表](/errors/codes) |
 | 服务端怎么部署、怎么优雅关闭、多副本怎么分片 | [部署与鉴权](/serve/deploy-and-auth/) |
@@ -79,6 +79,6 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 
 ## 遇到问题
 
-- 命令行侧先跑 `tansr doctor`，它是零网络的装配自检；读法见[排障指南]（/support/troubleshooting/）。
-- 所有错误都有稳定的机器码，可在[错误码表]（/errors/codes）按码查含义。
-- 账号、密钥、套餐问题见[账号与计费]（/support/account/）；仍未解决可[联系支持]（/support/contact/）。
+- 命令行侧先跑 `tansr doctor`，它是零网络的装配自检；读法见[排障指南](/support/troubleshooting/)。
+- 所有错误都有稳定的机器码，可在[错误码表](/errors/codes)按码查含义。
+- 账号、密钥、套餐问题见[账号与计费](/support/account/)；仍未解决可[联系支持](/support/contact/)。

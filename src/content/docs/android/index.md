@@ -118,7 +118,7 @@ val speech = client.audio.speak(session.sessionId, assistantText)               
 
 ## 推送唤醒：自接
 
-SDK 恒不内置任何推送 SDK。服务端在轮终态且无活跃订阅者时向你的 webhook POST 最小载荷 `{ sessionId, endUserId, turnId?, status, reason?, lastSeq, ts }`（恒无消息内容、恒无凭据），详见[v2 协议与 webhook]（/serve/v2-and-webhooks/）。你这半场：收 webhook → 验签 → `endUserId` 映射到设备推送令牌 → 发一条只携 `sessionId` 的 FCM **data** 消息（或厂商通道）→ `onMessageReceived` 弹本地通知 → 点击后经既有三级链恢复（热态自动 L1 / L2；冷启 `CreateSessionRequest(resumeSessionId = sessionId)` 即 L3）。全程不涉及新 SDK API。
+SDK 恒不内置任何推送 SDK。服务端在轮终态且无活跃订阅者时向你的 webhook POST 最小载荷 `{ sessionId, endUserId, turnId?, status, reason?, lastSeq, ts }`（恒无消息内容、恒无凭据），详见[v2 协议与 webhook](/serve/v2-and-webhooks/)。你这半场：收 webhook → 验签 → `endUserId` 映射到设备推送令牌 → 发一条只携 `sessionId` 的 FCM **data** 消息（或厂商通道）→ `onMessageReceived` 弹本地通知 → 点击后经既有三级链恢复（热态自动 L1 / L2；冷启 `CreateSessionRequest(resumeSessionId = sessionId)` 即 L3）。全程不涉及新 SDK API。
 
 ## 凭据与日志纪律
 

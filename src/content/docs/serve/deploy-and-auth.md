@@ -81,19 +81,19 @@ process.on('SIGINT', shutdown);
 
 三端点免 Bearer：`GET /healthz`（存活）、`GET /readyz`（就绪，`!closing ∧ 全部就绪探针 ready`）、`GET /metrics`（OpenMetrics 文本）。因为免鉴权，暴露面必须显式：`host` 为回环时缺省暴露；绑 `0.0.0.0` 时缺省**不暴露**，须 [`TANSR_SERVE_EXPOSE_OBSERVABILITY=1`](/serve/env#tansr_serve_expose_observability) 或 `observability: { expose: true }`。未暴露时这三条路径与任何未知路径响应一致，不泄漏存在性。反代恒不把 `/metrics` 转到公网；探针与抓取器走内网直连副本。
 
-每个请求采纳合法入站 `x-request-id`（否则取 `traceparent` 的 trace-id，再否则自铸 UUID），恒回响应头 `x-request-id`，作 `request.completed{ requestId, method, route, status, durationMs }` 的关联键。结构化日志走 [`TANSR_SERVE_LOG_FORMAT=json`]（/serve/env#tansr_serve_log_format），字段恒不含令牌与消息内容。
+每个请求采纳合法入站 `x-request-id`（否则取 `traceparent` 的 trace-id，再否则自铸 UUID），恒回响应头 `x-request-id`，作 `request.completed{ requestId, method, route, status, durationMs }` 的关联键。结构化日志走 [`TANSR_SERVE_LOG_FORMAT=json`](/serve/env#tansr_serve_log_format)，字段恒不含令牌与消息内容。
 
 ## 准入帽与运维旋钮
 
-引擎的全部运维位都是库选项；进程形态经 `resolveServeRuntimeOptions(process.env)` 一次解析成结构化结果再展开，与命令行 `tansr serve` 同名同义。纪律：**任一变量缺席 / 空串即不落键 = 库缺省，行为零漂移**；非法值进 `warnings` 由宿主一行告警后忽略，恒不拒启。全表见[环境变量表]（/serve/env），这里点名生产最常调的几组：
+引擎的全部运维位都是库选项；进程形态经 `resolveServeRuntimeOptions(process.env)` 一次解析成结构化结果再展开，与命令行 `tansr serve` 同名同义。纪律：**任一变量缺席 / 空串即不落键 = 库缺省，行为零漂移**；非法值进 `warnings` 由宿主一行告警后忽略，恒不拒启。全表见[环境变量表](/serve/env)，这里点名生产最常调的几组：
 
 | 目的 | 变量 |
 |---|---|
 | 有界拒绝而非拖垮 | [`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions) · [`TANSR_SERVE_MAX_SSE_CONNECTIONS`](/serve/env#tansr_serve_max_sse_connections) · [`TANSR_SERVE_MAX_INFLIGHT_BODY_BYTES`](/serve/env#tansr_serve_max_inflight_body_bytes) · [`TANSR_SERVE_ELD_THRESHOLD_MS`](/serve/env#tansr_serve_eld_threshold_ms) |
 | 上游连接隔离舱 | [`TANSR_SERVE_UPSTREAM_MAX_INFLIGHT`](/serve/env#tansr_serve_upstream_max_inflight) |
 | 分层超时与每轮墙钟 | [`TANSR_SERVE_UPSTREAM_CONNECT_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_connect_timeout_ms) · [`TANSR_SERVE_UPSTREAM_IDLE_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_idle_timeout_ms) · [`TANSR_SERVE_UPSTREAM_TOTAL_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_total_timeout_ms) · [`TANSR_SERVE_TURN_WALL_CLOCK_MS`](/serve/env#tansr_serve_turn_wall_clock_ms) |
-| SSE 背压 | [`TANSR_SERVE_SSE_MAX_BUFFER_BYTES`](/serve/env#tansr_serve_sse_max_buffer_bytes) · [`TANSR_SERVE_SSE_SLOW_POLICY`]（/serve/env#tansr_serve_sse_slow_policy）（`disconnect` 缺省 / `drop-oldest`）· [`TANSR_SERVE_SSE_RETRY_MS`](/serve/env#tansr_serve_sse_retry_ms) |
-| 重放窗字节帽 | [`TANSR_SERVE_EVENT_BUFFER_MAX_BYTES`]（/serve/env#tansr_serve_event_buffer_max_bytes）（部署建议 4 MiB / 会话） |
+| SSE 背压 | [`TANSR_SERVE_SSE_MAX_BUFFER_BYTES`](/serve/env#tansr_serve_sse_max_buffer_bytes) · [`TANSR_SERVE_SSE_SLOW_POLICY`](/serve/env#tansr_serve_sse_slow_policy)（`disconnect` 缺省 / `drop-oldest`）· [`TANSR_SERVE_SSE_RETRY_MS`](/serve/env#tansr_serve_sse_retry_ms) |
+| 重放窗字节帽 | [`TANSR_SERVE_EVENT_BUFFER_MAX_BYTES`](/serve/env#tansr_serve_event_buffer_max_bytes)（部署建议 4 MiB / 会话） |
 
 准入拒绝恒 `503 overloaded` 携 `Retry-After`（「本机忙，稍后再来」）；平台铸令牌撞 429 / 5xx / 网络错则 `503 upstream_unavailable`（「上游坏，加压无益」），两者刻意分开。缺省全部不设硬帽。
 
@@ -101,7 +101,7 @@ process.on('SIGINT', shutdown);
 
 ## 多副本：分片前缀路由 + 副本私有存储
 
-会话运行态在副本内存 + 私有 store，`/v2/sessions/<id>/…` 必须回到创建它的副本。做法：每副本持分片码 [`TANSR_SERVE_SESSION_SHARD`]（/serve/env#tansr_serve_session_shard）（0–255，= 副本序号），引擎给**全新会话**生成的 sessionId 前两位十六进制恒 = 分片码（其余仍是 UUID v4 随机位），反代读 id 前两位做静态 `map` 路由回创建副本；创建请求（路径无 id）任意副本轮询。客户端零改动，无 cookie、无端侧头。
+会话运行态在副本内存 + 私有 store，`/v2/sessions/<id>/…` 必须回到创建它的副本。做法：每副本持分片码 [`TANSR_SERVE_SESSION_SHARD`](/serve/env#tansr_serve_session_shard)（0–255，= 副本序号），引擎给**全新会话**生成的 sessionId 前两位十六进制恒 = 分片码（其余仍是 UUID v4 随机位），反代读 id 前两位做静态 `map` 路由回创建副本；创建请求（路径无 id）任意副本轮询。客户端零改动，无 cookie、无端侧头。
 
 三条禁忌：**不能按路径 sessionId 做一致性哈希**（创建请求没有 id，会话生在随机副本，后续按 id 哈希落别处 → 404 → 分叉）；**恒不共享存储目录**（NFS / EFS / 同一卷挂两副本——会话锁按本机 PID 判活，容器下必然误判，并发写同一 journal → `500 store_corrupted`；这是不安全配置，不是「慢一点」）；自定义 `AgentSessionFactory` 须采用 `init.sessionId`，否则失去粘性。
 

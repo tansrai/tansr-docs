@@ -21,7 +21,7 @@ Android 与 iOS SDK 都是 tansr 会话服务（`/v2` 协议）的**薄协议客
 
 ## 前提
 
-- 一个可达的 `@tansr/serve` 服务（见[会话服务 5 分钟跑通]（/getting-started/serve/））。本地开发可以先起仓内示例 `examples/serve-demo`，它缺省监听 `127.0.0.1:8788`;Android 模拟器经 `10.0.2.2:8788` 访问宿主机，iOS 模拟器直接用 `127.0.0.1`。
+- 一个可达的 `@tansr/serve` 服务（见[会话服务 5 分钟跑通](/getting-started/serve/)）。本地开发可以先起仓内示例 `examples/serve-demo`，它缺省监听 `127.0.0.1:8788`;Android 模拟器经 `10.0.2.2:8788` 访问宿主机，iOS 模拟器直接用 `127.0.0.1`。
 - Android:minSdk 26；Kotlin 协程、kotlinx.serialization、OkHttp。iOS:iOS 16+ / macOS 13+，Xcode 15+。
 - 你自己的登录体系：SDK 需要你按次提供请求头（通常是 `Authorization: Bearer <你的登录 token>`），服务端的 `authenticate` 缝据此解出 `endUserId`。
 
@@ -146,5 +146,5 @@ iOS 特有的两处注意：本地联调明文 http 需在 App 的 Info.plist �
 
 ## 下一步
 
-- [Android 接入指南]（/android/）与[iOS 接入指南]（/ios/）：事件归约、错误呈现、离线与前后台、语音两条链、推送唤醒。
-- [v2 协议与 webhook]（/serve/v2-and-webhooks/）：服务端半场怎么把轮末通知交给你的推送后端。
+- [Android 接入指南](/android/)与[iOS 接入指南](/ios/)：事件归约、错误呈现、离线与前后台、语音两条链、推送唤醒。
+- [v2 协议与 webhook](/serve/v2-and-webhooks/)：服务端半场怎么把轮末通知交给你的推送后端。

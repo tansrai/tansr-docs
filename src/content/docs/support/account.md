@@ -92,4 +92,4 @@ lastVerified: '2026-09-08'
 
 - 登录 / 密钥问题：先跑 `tansr doctor`，把凭据存储段与 `localProviders` 段截图或复制（不含密钥值）。
 - 计费问题：准备好账号指纹（`tansr init` 摘要卡上的形态，不是 PAT 本身）、订单号或账单月份。
-- 然后去[联系支持]（/support/contact/）。
+- 然后去[联系支持](/support/contact/)。

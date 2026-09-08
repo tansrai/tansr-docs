@@ -109,7 +109,7 @@ speech.url ?? speech.b64
 
 ## 推送唤醒：自接
 
-SDK 恒不内置任何推送 SDK（APNs / FCM / 厂商通道归你）。服务端 webhook 缝在轮终态且无活跃订阅者时 POST 最小载荷，见[v2 协议与 webhook]（/serve/v2-and-webhooks/）。App 收到推送唤起后恒走既有三级链，零新 API：进程还在 → 回前台自动 L1 重连；进程已死 → 冷启 `openSession(CreateSessionRequest(resumeSessionId: id))` 即 L3。
+SDK 恒不内置任何推送 SDK（APNs / FCM / 厂商通道归你）。服务端 webhook 缝在轮终态且无活跃订阅者时 POST 最小载荷，见[v2 协议与 webhook](/serve/v2-and-webhooks/)。App 收到推送唤起后恒走既有三级链，零新 API：进程还在 → 回前台自动 L1 重连；进程已死 → 冷启 `openSession(CreateSessionRequest(resumeSessionId: id))` 即 L3。
 
 ## 联调与构建
 

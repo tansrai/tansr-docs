@@ -69,7 +69,7 @@ await pump;
 - `setModel(next)`：对后续轮生效。令牌 / 托管档传别名字符串（重解析失败抛 `assembly_failed`，会话状态不变）；注入档传 `{ client, model }`。
 - `signal` 选项：AbortSignal，abort 即 close。
 - `initialMessages`：历史预载（恢复场景；低阶径，不过配对治理）。
-- `onHistoryCommit(history, meta)`：每轮终态携全量历史深拷贝回调；`meta.rewritten === true` 表示历史前缀被就地改写（压缩折叠 / 存根化），落盘方必须整卷轮换。多数场景直接用 `store` 字段，由内置实现代劳，见[检查点与恢复]（/sdk/checkpoints/）。
+- `onHistoryCommit(history, meta)`：每轮终态携全量历史深拷贝回调；`meta.rewritten === true` 表示历史前缀被就地改写（压缩折叠 / 存根化），落盘方必须整卷轮换。多数场景直接用 `store` 字段，由内置实现代劳，见[检查点与恢复](/sdk/checkpoints/)。
 
 会话缺省纯内存；平台不存终端会话内容，只计量。
 
@@ -116,6 +116,6 @@ await pump;
 
 ## 相关
 
-- [检查点与恢复]（/sdk/checkpoints/）：`store`、`resume`、手动压缩与快照。
-- [平台装配与 bundle]（/sdk/platform-bundle/）：令牌档下发了什么，工具三环怎么选。
-- [错误处理与重试]（/sdk/errors-and-retries/）：`turn.error` 与 `TansrSdkError` 的分支处理。
+- [检查点与恢复](/sdk/checkpoints/)：`store`、`resume`、手动压缩与快照。
+- [平台装配与 bundle](/sdk/platform-bundle/)：令牌档下发了什么，工具三环怎么选。
+- [错误处理与重试](/sdk/errors-and-retries/)：`turn.error` 与 `TansrSdkError` 的分支处理。

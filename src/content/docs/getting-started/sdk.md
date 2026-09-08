@@ -106,7 +106,7 @@ for await (const event of session.events) {
 
 ## 下一步
 
-- [会话与事件流]（/sdk/sessions-and-events/）：多轮语义、事件族、SessionView 投影。
-- [检查点与恢复]（/sdk/checkpoints/）：持久化、跨重启恢复、手动压缩与快照。
-- [平台装配与 bundle]（/sdk/platform-bundle/）：能力位、工具三环、令牌档下发了什么。
+- [会话与事件流](/sdk/sessions-and-events/)：多轮语义、事件族、SessionView 投影。
+- [检查点与恢复](/sdk/checkpoints/)：持久化、跨重启恢复、手动压缩与快照。
+- [平台装配与 bundle](/sdk/platform-bundle/)：能力位、工具三环、令牌档下发了什么。
 - [错误处理与重试](/sdk/errors-and-retries/):SDK 错误码、平台错误码、什么该重试什么不该。

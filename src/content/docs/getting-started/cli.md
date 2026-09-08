@@ -124,6 +124,6 @@ for await (const line of createInterface({ input: child.stdout })) {
 
 ## 下一步
 
-- [设置与 doctor]（/cli/settings-and-doctor/）：五层配置、常用环境变量、`tansr doctor` 各段怎么读。
-- [命令与旗标参考]（/cli/commands）：全部子命令与旗标。
-- 想让别人也能用你的智能体？看[会话服务 5 分钟跑通]（/getting-started/serve/）。
+- [设置与 doctor](/cli/settings-and-doctor/)：五层配置、常用环境变量、`tansr doctor` 各段怎么读。
+- [命令与旗标参考](/cli/commands)：全部子命令与旗标。
+- 想让别人也能用你的智能体？看[会话服务 5 分钟跑通](/getting-started/serve/)。

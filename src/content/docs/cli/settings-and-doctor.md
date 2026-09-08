@@ -72,9 +72,9 @@ lastVerified: '2026-09-08'
 | `TANSR_UPDATE_CHANNEL` / `TANSR_UPDATE_PINNED_VERSION` / `TANSR_NO_UPDATE_CHECK` / `TANSR_UPDATE_MANIFEST_URL` | 更新通道 / 组织锁定版本 / 个人退出检查 / 自托管清单 |
 | `TANSR_WEBSEARCH_ENDPOINT` / `TANSR_WEBSEARCH_API_KEY` | WebSearch 自带端点（显式设置恒压过登录态平台搜索） |
 | `TANSR_IMAGEGEN_*` / `TANSR_ASR_*` / `TANSR_TTS_*` | 媒体工具自带端点三件（`_ENDPOINT` / `_API_KEY` / `_MODEL`,+ `TANSR_TTS_VOICE`） |
-| [`TANSR_SERVE_TOKEN`](/serve/env#tansr_serve_token) | `tansr serve` 的 Bearer（`--token` 缺省时回退） |
+| `TANSR_SERVE_TOKEN` | `tansr serve` 的 Bearer（`--token` 缺省时回退） |
 
-`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，全表见[环境变量表]（/serve/env）；例如 [`TANSR_SERVE_LOG_FORMAT`]（/serve/env#tansr_serve_log_format）、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`]（/serve/env#tansr_serve_max_active_sessions）。
+`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，全表见[环境变量表](/serve/env)；例如 [`TANSR_SERVE_LOG_FORMAT`](/serve/env#tansr_serve_log_format)、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions)。
 
 ## `tansr doctor` 怎么读
 
@@ -83,7 +83,7 @@ tansr doctor          # 人读报告;退出码 0 可用、1 有阻断问题
 tansr doctor --json   # 机器可读
 ```
 
-它零模型调用、零网络、零子进程，全部取装配期缓存事实，适合 CI 预检；TUI 内 `/doctor` 是同一份。命令面参考见[命令参考]（/cli/commands#doctor）。
+它零模型调用、零网络、零子进程，全部取装配期缓存事实，适合 CI 预检；TUI 内 `/doctor` 是同一份。命令面参考见[命令参考](/cli/commands#doctor)。
 
 **检查项（按输出序；以实际输出为准）**：
 
@@ -117,4 +117,4 @@ doctor 呈现的是最近一次装配拉取的事实：控制台改了套餐或�
 - `tansr -p "…" --json`：完整事件流是最细的排障数据，权限判定、hook 结果、供应商切换全在流内。
 - Shell 工具长输出全量落盘到 `<工作目录>/.tansr/shell-output/<toolCallId>.log`。
 - `tansr sessions export <id>`：导出转录（密钥自动脱敏），可直接进工单。
-- 常见错误码与 doctor 段位的对照表见[排障指南]（/support/troubleshooting/）。
+- 常见错误码与 doctor 段位的对照表见[排障指南](/support/troubleshooting/)。

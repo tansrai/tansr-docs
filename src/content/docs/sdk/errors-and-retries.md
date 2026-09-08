@@ -66,7 +66,7 @@ try {
 
 ## 第三类：平台网关错误码
 
-令牌档下，平台的错误码会出现在 `turn.error` 文案首段、`tool.completed.data.errorCode`、`PlatformRequestError.platformCode`，以及你服务端换发令牌的响应里。全部码的权威表在[错误码表]（/errors/codes），这里只讲最常撞到的十几个与处置：
+令牌档下，平台的错误码会出现在 `turn.error` 文案首段、`tool.completed.data.errorCode`、`PlatformRequestError.platformCode`，以及你服务端换发令牌的响应里。全部码的权威表在[错误码表](/errors/codes)，这里只讲最常撞到的十几个与处置：
 
 ### 该重试，按 `Retry-After` 等
 
@@ -105,4 +105,4 @@ try {
 
 ## 在会话服务形态怎么看
 
-用 `@tansr/serve` 时，同一批平台码经服务端映射后到达移动端：套餐并发帽映射为 `429 rate_limited` + `Retry-After` + `detail: { scope: 'plan' }`;`plan_required` / `plan_tier_insufficient` 以 403 原码透传 + `detail.scope: 'plan'`；上游限流 / 5xx / 网络错映射为 `503 upstream_unavailable`。端侧退避纪律不变：429 / 503 携 `Retry-After` 时按整秒值等待，5xx 无 `Retry-After` 时指数退避 + 抖动。详见[v2 协议与 webhook]（/serve/v2-and-webhooks/）。
+用 `@tansr/serve` 时，同一批平台码经服务端映射后到达移动端：套餐并发帽映射为 `429 rate_limited` + `Retry-After` + `detail: { scope: 'plan' }`;`plan_required` / `plan_tier_insufficient` 以 403 原码透传 + `detail.scope: 'plan'`；上游限流 / 5xx / 网络错映射为 `503 upstream_unavailable`。端侧退避纪律不变：429 / 503 携 `Retry-After` 时按整秒值等待，5xx 无 `Retry-After` 时指数退避 + 抖动。详见[v2 协议与 webhook](/serve/v2-and-webhooks/)。

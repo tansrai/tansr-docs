@@ -62,7 +62,7 @@ tansr doctor --json   # 机器可读
 
 ## 十个最常见的错误码
 
-全部码的权威表在[错误码表]（/errors/codes），这里只列最常撞到的十个与第一处置。
+全部码的权威表在[错误码表](/errors/codes)，这里只列最常撞到的十个与第一处置。
 
 | 码 | HTTP | 你在哪会看到 | 第一处置 |
 |---|---|---|---|
@@ -77,11 +77,11 @@ tansr doctor --json   # 机器可读
 | [`payload_too_large`](/errors/codes#payload_too_large) | 413 | 超体帽（如语音原始音频 > 24 MiB） | 切分或压缩；不可重试 |
 | [`session_archived`](/errors/codes#session_archived) | 410 | 平台会话已归档（30 天不活跃） | 新建会话；这条不能再续 |
 
-再补几个高频但含义直白的：[`upstream_error`]（/errors/codes#upstream_error）（502，上游模型故障，退避重试）、[`upstream_timeout`]（/errors/codes#upstream_timeout）（504，同上）、[`quota_exceeded`]（/errors/codes#quota_exceeded）（429，日配额）、[`forbidden`]（/errors/codes#forbidden）（403，能力位关或归属不符）、[`context_window_exceeded`]（/errors/codes#context_window_exceeded）（400，先压缩）。
+再补几个高频但含义直白的：[`upstream_error`](/errors/codes#upstream_error)（502，上游模型故障，退避重试）、[`upstream_timeout`](/errors/codes#upstream_timeout)（504，同上）、[`quota_exceeded`](/errors/codes#quota_exceeded)（429，日配额）、[`forbidden`](/errors/codes#forbidden)（403，能力位关或归属不符）、[`context_window_exceeded`](/errors/codes#context_window_exceeded)（400，先压缩）。
 
 ## 各形态的排障第一步
 
-**SDK(Node / Electron)**：分清是装配期还是运行期。装配期 `TansrSdkError` 读 `code`（`invalid_options` 改代码；`assembly_failed` 看 `cause`;`capability_disabled` 去控制台开位）；运行期看事件流 `turn.error.recoverable`——`true` 是咨询，`false` 才是失败。事件流「卡住不动」几乎都是忘了 `session.close()`；「工具全被拒」几乎都是没接 `permission.askUser`。详见[错误处理与重试]（/sdk/errors-and-retries/）。
+**SDK(Node / Electron)**：分清是装配期还是运行期。装配期 `TansrSdkError` 读 `code`（`invalid_options` 改代码；`assembly_failed` 看 `cause`;`capability_disabled` 去控制台开位）；运行期看事件流 `turn.error.recoverable`——`true` 是咨询，`false` 才是失败。事件流「卡住不动」几乎都是忘了 `session.close()`；「工具全被拒」几乎都是没接 `permission.askUser`。详见[错误处理与重试](/sdk/errors-and-retries/)。
 
 **会话服务（`@tansr/serve`）**：先看 `GET /readyz`（503 带 `reasons`）；再看结构化日志的 `request.completed` / `store.commit_failed` / `session.rejected`，用响应头 `x-request-id` 关联。`resume` 恒 `409 resume_unavailable` = 没接 store；`500 store_corrupted` 常见于共享存储目录（不安全配置）；建会话 `503 upstream_unavailable` 是平台侧铸令牌不可用，`503 overloaded` 是本机准入帽，`503 draining` 是正在优雅关闭。
 
@@ -94,4 +94,4 @@ tansr doctor --json   # 机器可读
 - 复现步骤与时间点；涉及计费带订单号或账单月份。
 - 如果方便，`tansr sessions export <id>` 的转录（密钥已自动脱敏）。
 
-入口见[联系支持]（/support/contact/）。
+入口见[联系支持](/support/contact/)。

@@ -62,7 +62,7 @@ await startServer({ v2: { authenticate, createSession: build.factory, store: bui
 
 布局按终端用户物理分域：`endUserKey` 是 `endUserId` 的 sha256 前 16 hex（路径安全，不是身份）。每会话目录 `journal.jsonl`（活段，哈希链）+ `meta.json` + `attachments/`；长会话按阈值封段（缺省 16 MiB / 5000 记录）为 `segments/` + `manifest.json`。每 endUser 域旁挂 `index.jsonl` 供列表 O(1) 读，但**journal + meta.json 是唯一事实源**，索引损坏可随时重建。落盘失败不再只进日志：该会话事件流签发 `turn.error { scope: 'server.persistence', recoverable: true, errorKind: 'store_commit_failed' | 'store_create_failed' }`，端侧归入 notices；下一轮 commit 由持久闩强制整卷轮换补齐，客户端无需动作。
 
-热层恒本地盘、**恒不共享目录**（共享盘是不安全配置，见[部署与鉴权]（/serve/deploy-and-auth/））。
+热层恒本地盘、**恒不共享目录**（共享盘是不安全配置，见[部署与鉴权](/serve/deploy-and-auth/)）。
 
 ## 冷层：把长会话历史接到对象存储
 
@@ -85,7 +85,7 @@ const store = createServeAgentSessionStore({
 
 ## 存储保留期扫描（即将提供）
 
-今天的 store **缺省永存**：休眠会话不会被服务端自动删除。**即将随 @tansr/serve 0.7.0 提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`]（/serve/env#tansr_serve_session_max_per_end_user）。同批还会让控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
+今天的 store **缺省永存**：休眠会话不会被服务端自动删除。**即将随 @tansr/serve 0.7.0 提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`](/serve/env#tansr_serve_session_max_per_end_user)。同批还会让控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
 
 ## `/v1` 面的终结记录保留窗
 

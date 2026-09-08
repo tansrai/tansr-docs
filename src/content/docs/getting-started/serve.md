@@ -95,7 +95,7 @@ const server = await startServer({
 
 `store` 一定要接：不接的话进程一重启，全部活跃会话的上下文全量灭失，客户端 `resume` 恒 `409 resume_unavailable`。
 
-进程信号归宿主：引擎不会替你监听 SIGTERM。至少接上 `server.drain({ timeoutMs: 30_000 })` 再退出，详见[部署与鉴权]（/serve/deploy-and-auth/）。
+进程信号归宿主：引擎不会替你监听 SIGTERM。至少接上 `server.drain({ timeoutMs: 30_000 })` 再退出，详见[部署与鉴权](/serve/deploy-and-auth/)。
 
 想先离线看协议、不接真平台？仓内示例 `examples/serve-demo` 用一个回显 Agent 打通了全部 `/v2` 协议层，起服务一条命令：`pnpm --filter tansr-example-serve-demo start`，缺省监听 `127.0.0.1:8788`。
 
@@ -152,7 +152,7 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## 下一步
 
-- [部署与鉴权]（/serve/deploy-and-auth/）：鉴权缝、优雅关闭、观测端点、多副本分片。
-- [v2 协议与 webhook]（/serve/v2-and-webhooks/）：端点全形、三级恢复链、轮末出站通知与签名。
-- [保留期与治理]（/serve/retention-and-governance/）：保留窗、闲置回收、并发帽、会话存储。
-- [环境变量表]（/serve/env）：全部 `TANSR_SERVE_*` 旋钮。
+- [部署与鉴权](/serve/deploy-and-auth/)：鉴权缝、优雅关闭、观测端点、多副本分片。
+- [v2 协议与 webhook](/serve/v2-and-webhooks/)：端点全形、三级恢复链、轮末出站通知与签名。
+- [保留期与治理](/serve/retention-and-governance/)：保留窗、闲置回收、并发帽、会话存储。
+- [环境变量表](/serve/env)：全部 `TANSR_SERVE_*` 旋钮。

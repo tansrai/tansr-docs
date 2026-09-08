@@ -158,4 +158,4 @@ const last = await session.history({ offset: Math.max(0, total - 50), limit: 50 
 
 ## 与会话服务的关系
 
-`@tansr/serve` 的 `/v2` 面有同一组能力的 HTTP 形态（`compact` / `checkpoints` / `restore` / `history` 分页 / fork / export / import），语义与本文一致；服务端的会话保留与物理删除策略见[保留期与治理]（/serve/retention-and-governance/）。
+`@tansr/serve` 的 `/v2` 面有同一组能力的 HTTP 形态（`compact` / `checkpoints` / `restore` / `history` 分页 / fork / export / import），语义与本文一致；服务端的会话保留与物理删除策略见[保留期与治理](/serve/retention-and-governance/)。
