@@ -1,0 +1,76 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同分支排队(不取消在途发布,避免半途切换);后到的等前一个完成
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: gate → build → publish to ECS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # 门先过(含 build);下面不再单独 build,dist/ 即门里构建的产物
+      - run: pnpm gate
+
+      - name: Configure SSH
+        env:
+          DOCS_DEPLOY_KEY: ${{ secrets.DOCS_DEPLOY_KEY }}
+          DOCS_HOST: ${{ secrets.DOCS_HOST }}
+          DOCS_HOST_KEY: ${{ secrets.DOCS_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$DOCS_DEPLOY_KEY" || { echo "secret DOCS_DEPLOY_KEY 未配置" >&2; exit 1; }
+          test -n "$DOCS_HOST" || { echo "secret DOCS_HOST 未配置" >&2; exit 1; }
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DOCS_DEPLOY_KEY" > ~/.ssh/docs_deploy_key
+          chmod 600 ~/.ssh/docs_deploy_key
+          # 主机指纹:优先用 secret DOCS_HOST_KEY(known_hosts 行,可选);缺席时 ssh-keyscan 取一次
+          if [ -n "$DOCS_HOST_KEY" ]; then
+            printf '%s\n' "$DOCS_HOST_KEY" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "${DOCS_HOST#*@}" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 644 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host docs-ecs
+            IdentitiesOnly yes
+            IdentityFile ~/.ssh/docs_deploy_key
+            StrictHostKeyChecking yes
+          EOF
+          # DOCS_HOST 形:host 或 user@host(缺 user 时用 root)
+          host="${DOCS_HOST#*@}"; user="root"
+          case "$DOCS_HOST" in *@*) user="${DOCS_HOST%@*}";; esac
+          printf '  HostName %s\n  User %s\n' "$host" "$user" >> ~/.ssh/config
+
+      - name: Publish
+        run: bash scripts/deploy/publish.sh dist docs-ecs "${GITHUB_SHA}"
+
+      - name: Cleanup key
+        if: always()
+        run: rm -f ~/.ssh/docs_deploy_key
