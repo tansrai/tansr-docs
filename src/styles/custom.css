@@ -1,0 +1,4 @@
+/* tansr 资料站自定义样式:品牌色与组件样式在后续卡补齐 */
+:root {
+  --sl-font: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
