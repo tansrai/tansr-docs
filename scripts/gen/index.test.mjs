@@ -10,6 +10,7 @@ import { slug } from './lib.mjs';
 import * as serveEnv from './serve-env.mjs';
 import * as cliCommands from './cli-commands.mjs';
 import * as releases from './releases.mjs';
+import * as sdkApi from './sdk-api.mjs';
 import { checkAll, generateAll, GENERATORS } from './index.mjs';
 
 const root = repoRootFrom(import.meta.url);
@@ -105,16 +106,16 @@ test('releases:三包各一页,正文 = CHANGELOG 去 H1 后逐字节;「未发�
 });
 
 // ———— index(汇总门) ————
-test('gen index:全部生成器在库零 diff(checkAll ok;--check exit 0)', () => {
-  for (const g of GENERATORS) for (const o of g.generate(root)) assert.ok(existsSync(join(root, o.rel)), `${o.rel} 须已生成并提交`);
-  const r = checkAll(root, () => {});
+test('gen index:全部生成器在库零 diff(checkAll ok;--check exit 0)', async () => {
+  for (const g of GENERATORS) for (const o of await g.generate(root)) assert.ok(existsSync(join(root, o.rel)), `${o.rel} 须已生成并提交`);
+  const r = await checkAll(root, () => {});
   assert.deepEqual(r, { ok: true, differing: [], missing: [] });
   const p = spawnSync(process.execPath, [indexScript, '--check'], { encoding: 'utf8' });
   assert.equal(p.status, 0, p.stdout + p.stderr);
   assert.match(p.stdout, /全部生成物零 diff/);
 });
 
-test('gen index --check:改一字节 / 删一文件 → 红(exit 1 并列出文件)', () => {
+test('gen index --check:改一字节 / 删一文件 → 红(exit 1 并列出文件)', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'tansr-docs-gen-red-'));
   try {
     cpSync(join(root, 'contract'), join(tmp, 'contract'), { recursive: true });
@@ -129,7 +130,9 @@ test('gen index --check:改一字节 / 删一文件 → 红(exit 1 并列出文�
     assert.equal(red.status, 1);
     assert.match(red.stdout + red.stderr, /DIFF\s+src[\\/]content[\\/]docs[\\/]errors[\\/]codes\.md/);
     assert.match(red.stdout + red.stderr, /MISSING\s+src[\\/]content[\\/]docs[\\/]releases[\\/]sdk\.md/);
-    assert.equal(generateAll(root).length, 7);
+    const all = await generateAll(root);
+    assert.equal(all.filter((o) => !o.rel.split('\\').join('/').includes('/sdk/api/')).length, 7, 'sdk/api 之外仍是 7 件');
+    assert.equal(all.length, 7 + (await sdkApi.generate(root)).length);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
