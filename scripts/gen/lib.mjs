@@ -87,7 +87,7 @@ export function slug(title) {
 export function runGenerator(mod, argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const root = typeof args.root === 'string' ? args.root : repoRootFrom(import.meta.url);
-  const outputs = mod.generate(root);
+  const outputs = mod.generate(root).map((o) => ({ ...o, content: toLf(o.content) }));
   if (args.check) {
     const diff = outputs.filter((o) => readTextIfExists(join(root, o.rel)) !== o.content);
     if (diff.length) {
