@@ -1,0 +1,22 @@
+---
+title: 帮助中心
+description: tansr 帮助中心:账号、密钥、套餐与计费;常见问题排障;联系支持。
+template: splash
+hero:
+  title: 帮助中心
+  tagline: 账号与计费、排障、联系支持。找不到答案?先搜一搜,再联系我们。
+  actions:
+    - text: 返回开发者文档
+      link: /
+      icon: left-arrow
+      variant: minimal
+---
+
+import HeroSearch from '../../../components/HeroSearch.astro';
+import FaqGroups from '../../../components/FaqGroups.astro';
+
+<HeroSearch placeholder="搜索帮助中心:密钥、套餐、账单、错误码…" />
+
+<h2 id="faq" class="home-section-title">常见问题分组</h2>
+
+<FaqGroups />

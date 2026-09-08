@@ -1,4 +1,248 @@
-/* tansr 资料站自定义样式:品牌色与组件样式在后续卡补齐 */
+/* tansr 资料站:品牌色 + 首页 / 帮助中心组件样式(其余沿 Starlight 缺省) */
+
 :root {
   --sl-font: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 品牌主色:深青 */
+  --sl-color-accent-low: #0f2f33;
+  --sl-color-accent: #0e8a8a;
+  --sl-color-accent-high: #9fe1dd;
+  --tansr-card-radius: 0.875rem;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d5f2ef;
+  --sl-color-accent: #0b7a7a;
+  --sl-color-accent-high: #0f3f42;
+}
+
+/* ---------- 首页 hero 搜索入口 ---------- */
+.hero-search {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto 2.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--tansr-card-radius);
+  background: var(--sl-color-black);
+  color: var(--sl-color-gray-2);
+  font-size: var(--sl-text-base);
+  text-align: start;
+  cursor: text;
+  box-shadow: var(--sl-shadow-sm);
+}
+.hero-search:hover,
+.hero-search:focus-visible {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+.hero-search-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hero-search > kbd {
+  gap: 0.25rem;
+  align-items: center;
+  font-family: var(--sl-font-system);
+  font-size: var(--sl-text-2xs);
+}
+.hero-search > kbd > kbd {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.4;
+  font: inherit;
+  color: var(--sl-color-gray-3);
+}
+
+.home-section-title {
+  margin-top: 1rem;
+  font-size: var(--sl-text-xl);
+}
+
+/* ---------- 分类卡片网格:375 px 单列;≥ 40rem 两列;≥ 64rem 三列 ---------- */
+.category-grid {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 40rem) {
+  .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 64rem) {
+  .category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.category-card {
+  margin: 0 !important;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--tansr-card-radius);
+  background: var(--sl-color-black);
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+.category-card:hover {
+  border-color: var(--sl-color-accent);
+  box-shadow: var(--sl-shadow-md);
+  transform: translateY(-1px);
+}
+.category-card.is-pending {
+  opacity: 0.75;
+}
+.category-card.is-pending:hover {
+  transform: none;
+  border-color: var(--sl-color-gray-5);
+  box-shadow: none;
+}
+.category-link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'icon title'
+    'icon desc';
+  column-gap: 0.9rem;
+  row-gap: 0.25rem;
+  padding: 1.1rem 1.2rem;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+.category-icon {
+  grid-area: icon;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+}
+.category-title {
+  grid-area: title;
+  font-weight: 600;
+  color: var(--sl-color-white);
+  line-height: 1.4;
+}
+.category-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.category-title a:hover {
+  text-decoration: underline;
+}
+.category-desc {
+  grid-area: desc;
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+  line-height: 1.5;
+}
+.category-badge {
+  display: inline-block;
+  margin-inline-start: 0.4rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: var(--sl-text-2xs);
+  font-weight: 500;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-2);
+  vertical-align: middle;
+}
+
+/* 帮助中心 FAQ 分组卡:要点列表 */
+.faq-groups .category-link {
+  grid-template-areas:
+    'icon title'
+    'icon points';
+}
+.faq-points {
+  grid-area: points;
+  margin: 0.25rem 0 0;
+  padding-inline-start: 1.1rem;
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+  line-height: 1.6;
+}
+.faq-points li {
+  margin: 0;
+}
+
+/* ---------- 热门文章 ---------- */
+.hot-articles h2 {
+  font-size: var(--sl-text-xl);
+}
+.hot-list {
+  padding-inline-start: 1.25rem;
+  columns: 1;
+  column-gap: 2rem;
+}
+@media (min-width: 40rem) {
+  .hot-list {
+    columns: 2;
+  }
+}
+.hot-list li {
+  break-inside: avoid;
+}
+.hot-empty {
+  color: var(--sl-color-gray-3);
+}
+
+/* ---------- 文章页尾:相关文章 / 有帮助吗 ---------- */
+.article-tail {
+  margin-top: 3rem;
+  display: grid;
+  gap: 1.5rem;
+}
+.related h2,
+.feedback h2 {
+  font-size: var(--sl-text-lg);
+  margin: 0 0 0.75rem;
+}
+.related ul {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+.feedback {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--tansr-card-radius);
+  padding: 1.1rem 1.2rem;
+  background: var(--sl-color-black);
+}
+.feedback-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.feedback-actions button {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sl-color-white);
+  font: inherit;
+  cursor: pointer;
+}
+.feedback-actions button:hover {
+  border-color: var(--sl-color-accent);
+}
+.feedback-actions button[aria-pressed='true'] {
+  background: var(--sl-color-accent-low);
+  border-color: var(--sl-color-accent);
+}
+.feedback-thanks {
+  margin: 0.75rem 0 0;
+  color: var(--sl-color-gray-2);
+}
+.feedback-thanks[hidden] {
+  display: none;
 }

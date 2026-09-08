@@ -1,0 +1,79 @@
+---
+/**
+ * 页脚覆写:沿 Starlight 默认(编辑链接 / 最近更新 / 上下页),末尾加法律条目行:
+ * 服务条款 · 隐私政策(门户既有页)· ICP 备案号(操作者填)· 版权。
+ */
+import EditLink from '@astrojs/starlight/components/EditLink.astro';
+import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro';
+import Pagination from '@astrojs/starlight/components/Pagination.astro';
+
+const isEn = Astro.locals.starlightRoute.locale === 'en';
+const year = new Date().getFullYear();
+const legal = [
+  { href: 'https://www.tansr.com/terms', label: isEn ? 'Terms of service' : '服务条款' },
+  { href: 'https://www.tansr.com/privacy', label: isEn ? 'Privacy policy' : '隐私政策' },
+];
+/** 页脚展示文本;门户页脚已有则同值(操作者项) */
+const ICP = '{ICP 备案号待填}';
+---
+
+<footer class="sl-flex">
+  <div class="meta sl-flex">
+    <EditLink />
+    <LastUpdated />
+  </div>
+  <Pagination />
+  <div class="legal">
+    <nav aria-label={isEn ? 'Legal' : '法律条目'} class="legal-links">
+      {legal.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
+      <span class="icp">{ICP}</span>
+    </nav>
+    <p class="copyright">© {year} tansr · {isEn ? 'Site code MIT; content all rights reserved.' : '站点代码 MIT;文档内容保留所有权利。'}</p>
+  </div>
+</footer>
+
+<style>
+  @layer starlight.core {
+    footer {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .meta {
+      gap: 0.75rem 3rem;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+      font-size: var(--sl-text-sm);
+      color: var(--sl-color-gray-3);
+    }
+    .meta > :global(p:only-child) {
+      margin-inline-start: auto;
+    }
+    .legal {
+      border-top: 1px solid var(--sl-color-gray-6);
+      padding-top: 1rem;
+      font-size: var(--sl-text-xs);
+      color: var(--sl-color-gray-3);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .legal-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      align-items: center;
+    }
+    .legal-links a {
+      color: var(--sl-color-gray-2);
+      text-decoration: none;
+    }
+    .legal-links a:hover {
+      color: var(--sl-color-white);
+      text-decoration: underline;
+    }
+    .copyright {
+      margin: 0;
+    }
+  }
+</style>

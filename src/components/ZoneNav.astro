@@ -1,0 +1,55 @@
+---
+/**
+ * 一站两区入口:「开发者文档」(/)与「帮助中心」(/support/)。
+ * 顶栏(Header)与移动端菜单页脚(MobileMenuFooter)共用;当前区按路径判定并加 aria-current。
+ */
+interface Props {
+  class?: string;
+}
+
+const { locale } = Astro.locals.starlightRoute;
+const prefix = locale ? `/${locale}` : '';
+const pathname = Astro.url.pathname;
+const inSupport = pathname === `${prefix}/support` || pathname.startsWith(`${prefix}/support/`);
+
+const isEn = locale === 'en';
+const entries = [
+  { href: `${prefix}/`, label: isEn ? 'Developer docs' : '开发者文档', current: !inSupport },
+  { href: `${prefix}/support/`, label: isEn ? 'Help center' : '帮助中心', current: inSupport },
+];
+---
+
+<nav class:list={['zone-nav', Astro.props.class]} aria-label={isEn ? 'Site zones' : '站点分区'}>
+  {
+    entries.map((e) => (
+      <a href={e.href} aria-current={e.current ? 'page' : undefined}>
+        {e.label}
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  /* display 由调用方的 sl-flex / md:sl-flex 工具类决定(窄屏顶栏隐藏,交给移动端菜单页脚) */
+  .zone-nav {
+    gap: 0.25rem;
+    align-items: center;
+  }
+  .zone-nav a {
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    font-size: var(--sl-text-sm);
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .zone-nav a:hover {
+    color: var(--sl-color-white);
+    background: var(--sl-color-gray-6);
+  }
+  .zone-nav a[aria-current='page'] {
+    color: var(--sl-color-text-invert);
+    background: var(--sl-color-text-accent);
+  }
+</style>
