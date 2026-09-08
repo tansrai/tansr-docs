@@ -246,3 +246,126 @@
 .feedback-thanks[hidden] {
   display: none;
 }
+
+/* ---------- 联系支持表单(ContactForm) ---------- */
+.contact-form {
+  margin: 1.5rem 0 2rem;
+}
+.contact-form fieldset {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--tansr-card-radius);
+  padding: 1.1rem 1.2rem 1.25rem;
+  background: var(--sl-color-black);
+  margin: 0;
+}
+.contact-form legend {
+  padding: 0 0.4rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+.cf-intro {
+  margin: 0 0 1rem;
+  color: var(--sl-color-gray-3);
+  font-size: var(--sl-text-sm);
+}
+.cf-field {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+.cf-field label {
+  font-weight: 500;
+  color: var(--sl-color-white);
+}
+.cf-field input,
+.cf-field textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-white);
+  font: inherit;
+  line-height: 1.5;
+}
+.cf-field input:focus-visible,
+.cf-field textarea:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 1px;
+  border-color: var(--sl-color-accent);
+}
+.cf-field [aria-invalid='true'] {
+  border-color: var(--sl-color-red);
+}
+.cf-hint {
+  margin: 0;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}
+.cf-err {
+  margin: 0;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-red-high);
+}
+.cf-err[hidden],
+.cf-success[hidden],
+.cf-error[hidden],
+.contact-form [hidden] {
+  display: none;
+}
+/* 蜜罐:移出视口但仍在 DOM(display:none 会被部分机器人识别为蜜罐而跳过) */
+.cf-hp {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.cf-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.cf-actions button {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--sl-color-accent);
+  border-radius: 999px;
+  background: var(--sl-color-accent);
+  color: var(--sl-color-black);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cf-actions button:hover {
+  filter: brightness(1.08);
+}
+.cf-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  filter: none;
+}
+.contact-form[aria-busy='true'] .cf-actions button {
+  cursor: progress;
+}
+.cf-status {
+  margin-top: 0.9rem;
+}
+.cf-success,
+.cf-error {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-radius: 0.625rem;
+  line-height: 1.6;
+}
+.cf-success {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-white);
+}
+.cf-error {
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
+}
+.cf-error a {
+  color: var(--sl-color-text-accent);
+}

@@ -1,0 +1,229 @@
+---
+/**
+ * 联系支持表单:subject / body / email(可选)+ 蜜罐 `website`(隐藏字段,机器人填了即本地假成功、不发请求)。
+ * 提交 → `POST {API_BASE}/v1/support/tickets { subject, body, email?, page?, locale }`(端点契约:202 `{ ok, ticketId }`;
+ * 每 IP 5 / h → 429;邮件通道未配 → 503)。状态:idle → submitting → success(显 ticketId)| error(显「暂时无法提交,请发邮件」
+ * + 带主题 / 正文的 mailto 回退)。任何非 2xx / 网络错 / 超时一律 error 态,页面不假死、不暴露错误细节(console.debug 一条)。
+ * 零第三方脚本;文案两语按 Astro.currentLocale;无 JS 时 <noscript> 给 mailto。
+ */
+import { LIMITS, SUPPORT_MAILBOX, normalizeLocale } from '../lib/docs-api.mjs';
+
+const lang = normalizeLocale(Astro.currentLocale ?? Astro.locals.starlightRoute.locale);
+const t =
+  lang === 'en'
+    ? {
+        legend: 'Send us a message',
+        intro: 'The form is delivered to our support mailbox as an email. No account required.',
+        subject: 'Subject',
+        subjectHint: 'e.g. "[CLI] tansr init says the PAT is invalid"',
+        body: 'Details',
+        bodyHint: 'Which product and version, the diagnostic output, the error code and message, how to reproduce. Never paste secrets.',
+        email: 'Your email (optional)',
+        emailHint: 'We reply here. Leave it empty if you only want to report something.',
+        submit: 'Send',
+        submitting: 'Sending…',
+        successTitle: 'Received.',
+        successId: 'Ticket',
+        successNote: 'We reply to the email you left, in business hours, in the order received.',
+        errTitle: 'We could not deliver the form right now.',
+        errRate: 'Too many submissions from your network in the last hour. Please try again later, or email',
+        errUnavailable: 'Please email',
+        errTail: 'instead — your subject and details are pre-filled in the link.',
+        noscript: 'The form needs JavaScript. Without it, please email',
+        required: 'Required.',
+        tooLong: 'Too long.',
+        invalidEmail: 'That does not look like an email address.',
+        hp: 'Website',
+      }
+    : {
+        legend: '给我们留言',
+        intro: '表单会以邮件形式送到支持邮箱,无需登录。',
+        subject: '主题',
+        subjectHint: '例如「[命令行] tansr init 提示 PAT 无效」',
+        body: '问题描述',
+        bodyHint: '形态与版本、诊断输出、错误码与完整消息、复现步骤。不要贴任何密钥值。',
+        email: '你的邮箱(可选)',
+        emailHint: '我们回复到这里;只是反馈、不需要回复可以留空。',
+        submit: '提交',
+        submitting: '提交中…',
+        successTitle: '已收到。',
+        successId: '工单编号',
+        successNote: '我们会在工作时间内按收到顺序回复到你填写的邮箱。',
+        errTitle: '暂时无法提交。',
+        errRate: '你所在网络一小时内提交次数过多,请稍后再试,或发邮件到',
+        errUnavailable: '请发邮件到',
+        errTail: '——链接里已带上你填写的主题与描述。',
+        noscript: '表单需要 JavaScript;无法启用时请发邮件到',
+        required: '必填。',
+        tooLong: '超出长度上限。',
+        invalidEmail: '邮箱格式不对。',
+        hp: '网站',
+      };
+const mailto = `mailto:${SUPPORT_MAILBOX}`;
+---
+
+<form class="contact-form" data-contact-form data-contact-locale={lang} data-state="idle" novalidate>
+  <fieldset>
+    <legend>{t.legend}</legend>
+    <p class="cf-intro">{t.intro}</p>
+
+    <div class="cf-field">
+      <label for="cf-subject">{t.subject}</label>
+      <input id="cf-subject" name="subject" type="text" required maxlength={LIMITS.subject} autocomplete="off" aria-describedby="cf-subject-hint cf-subject-err" />
+      <p id="cf-subject-hint" class="cf-hint">{t.subjectHint}</p>
+      <p id="cf-subject-err" class="cf-err" data-cf-err="subject" hidden></p>
+    </div>
+
+    <div class="cf-field">
+      <label for="cf-body">{t.body}</label>
+      <textarea id="cf-body" name="body" required maxlength={LIMITS.body} rows="8" aria-describedby="cf-body-hint cf-body-err"></textarea>
+      <p id="cf-body-hint" class="cf-hint">{t.bodyHint}</p>
+      <p id="cf-body-err" class="cf-err" data-cf-err="body" hidden></p>
+    </div>
+
+    <div class="cf-field">
+      <label for="cf-email">{t.email}</label>
+      <input id="cf-email" name="email" type="email" maxlength={LIMITS.email} autocomplete="email" inputmode="email" aria-describedby="cf-email-hint cf-email-err" />
+      <p id="cf-email-hint" class="cf-hint">{t.emailHint}</p>
+      <p id="cf-email-err" class="cf-err" data-cf-err="email" hidden></p>
+    </div>
+
+    <!-- 蜜罐:人看不见、读屏跳过、Tab 不停;机器人填了即视为垃圾 -->
+    <div class="cf-hp" aria-hidden="true">
+      <label for="cf-website">{t.hp}</label>
+      <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <div class="cf-actions">
+      <button type="submit" data-cf-submit>{t.submit}</button>
+    </div>
+  </fieldset>
+
+  <div class="cf-status" role="status" aria-live="polite">
+    <p class="cf-success" data-cf-success hidden>
+      <strong>{t.successTitle}</strong>
+      <span data-cf-ticket-wrap hidden>{t.successId} <code data-cf-ticket></code>。</span>
+      <span>{t.successNote}</span>
+    </p>
+    <p class="cf-error" data-cf-error hidden>
+      <strong>{t.errTitle}</strong>
+      <span data-cf-err-rate hidden>{t.errRate}</span>
+      <span data-cf-err-unavailable>{t.errUnavailable}</span>
+      <a data-cf-mailto href={mailto}>{SUPPORT_MAILBOX}</a>
+      <span>{t.errTail}</span>
+    </p>
+  </div>
+  <noscript>
+    <p class="cf-error">{t.noscript} <a href={mailto}>{SUPPORT_MAILBOX}</a>。</p>
+  </noscript>
+</form>
+
+<script>
+  import { API_BASE } from '../lib/api-base';
+  import { failureKind, isHoneypotTripped, mailtoFallback, shouldFallback, ticketIdOf, ticketPayload, ticketsUrl, validateTicket } from '../lib/docs-api.mjs';
+
+  const TIMEOUT_MS = 10000;
+
+  type State = 'idle' | 'submitting' | 'success' | 'error';
+
+  document.querySelectorAll<HTMLFormElement>('[data-contact-form]').forEach((form) => {
+    const locale = form.dataset.contactLocale;
+    const isEn = locale === 'en';
+    const submit = form.querySelector<HTMLButtonElement>('[data-cf-submit]')!;
+    const submitLabel = submit.textContent ?? '';
+    const submittingLabel = isEn ? 'Sending…' : '提交中…';
+    const success = form.querySelector<HTMLElement>('[data-cf-success]')!;
+    const ticketWrap = form.querySelector<HTMLElement>('[data-cf-ticket-wrap]')!;
+    const ticketEl = form.querySelector<HTMLElement>('[data-cf-ticket]')!;
+    const error = form.querySelector<HTMLElement>('[data-cf-error]')!;
+    const errRate = form.querySelector<HTMLElement>('[data-cf-err-rate]')!;
+    const errUnavailable = form.querySelector<HTMLElement>('[data-cf-err-unavailable]')!;
+    const mailto = form.querySelector<HTMLAnchorElement>('[data-cf-mailto]')!;
+    const msgs = isEn
+      ? { required: 'Required.', 'too-long': 'Too long.', invalid: 'That does not look like an email address.' }
+      : { required: '必填。', 'too-long': '超出长度上限。', invalid: '邮箱格式不对。' };
+
+    const fields = () => {
+      const fd = new FormData(form);
+      const s = (k: string) => String(fd.get(k) ?? '');
+      return { subject: s('subject'), body: s('body'), email: s('email'), website: s('website') };
+    };
+
+    const setState = (state: State) => {
+      form.dataset.state = state;
+      const busy = state === 'submitting';
+      submit.disabled = busy || state === 'success';
+      submit.textContent = busy ? submittingLabel : submitLabel;
+      form.setAttribute('aria-busy', String(busy));
+      success.hidden = state !== 'success';
+      error.hidden = state !== 'error';
+    };
+
+    const paintErrors = (errors: Record<string, 'required' | 'too-long' | 'invalid'>) => {
+      form.querySelectorAll<HTMLElement>('[data-cf-err]').forEach((el) => {
+        const code = errors[el.dataset.cfErr ?? ''];
+        el.hidden = !code;
+        el.textContent = code ? msgs[code] : '';
+        const input = form.elements.namedItem(el.dataset.cfErr ?? '') as HTMLElement | null;
+        input?.setAttribute('aria-invalid', String(Boolean(code)));
+      });
+    };
+
+    const showError = (res: { status?: number } | null, f: { subject: string; body: string }) => {
+      const kind = failureKind(res);
+      errRate.hidden = kind !== 'rate-limited';
+      errUnavailable.hidden = kind === 'rate-limited';
+      mailto.href = mailtoFallback({ subject: f.subject, body: f.body });
+      setState('error');
+    };
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (form.dataset.state === 'submitting') return;
+      const f = fields();
+      const v = validateTicket(f);
+      paintErrors(v.errors);
+      if (!v.ok) {
+        (form.querySelector<HTMLElement>('[aria-invalid="true"]') ?? submit).focus();
+        return;
+      }
+      if (isHoneypotTripped(f.website)) {
+        // 与服务端「非空即 202 假成功」同律:本地直接假成功,不发请求、不显编号
+        ticketWrap.hidden = true;
+        setState('success');
+        return;
+      }
+      const payload = ticketPayload({ ...f, page: location.pathname, locale });
+      if (!payload) return;
+      setState('submitting');
+      let res: Response | null = null;
+      try {
+        res = await fetch(ticketsUrl(API_BASE), {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+      } catch {
+        console.debug('[tansr-docs] ticket not delivered (network)');
+        showError(null, f);
+        return;
+      }
+      if (shouldFallback(res)) {
+        console.debug('[tansr-docs] ticket not delivered (status %d)', res.status);
+        showError(res, f);
+        return;
+      }
+      let ticketId: string | null = null;
+      try {
+        ticketId = ticketIdOf(await res.json());
+      } catch {
+        ticketId = null;
+      }
+      ticketWrap.hidden = ticketId === null;
+      ticketEl.textContent = ticketId ?? '';
+      setState('success');
+    });
+  });
+</script>
