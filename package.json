@@ -1,0 +1,35 @@
+{
+  "name": "tansr-docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "tansr 资料站(docs.tansr.com):开发者文档 + 帮助中心",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check",
+    "gen": "node scripts/gen/index.mjs",
+    "gen:check": "node scripts/gen/index.mjs --check",
+    "vendor": "node scripts/vendor/index.mjs",
+    "vendor:check": "node scripts/vendor/index.mjs --check",
+    "lint:text": "node scripts/check/lint-text.mjs",
+    "links": "node scripts/check/links.mjs",
+    "frontmatter": "node scripts/check/frontmatter.mjs",
+    "gate": "node scripts/check/gate.mjs",
+    "test": "node --test scripts/**/*.test.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.0",
+    "astro": "^7.3.1",
+    "sharp": "^0.35.4",
+    "starlight-openapi": "^0.26.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}

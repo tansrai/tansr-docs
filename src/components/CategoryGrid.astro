@@ -1,0 +1,50 @@
+---
+/**
+ * 首页 11 类卡片网格。链接构建期解析(目录 index → 首篇 → 无则「即将上线」),不产死链。
+ * 375 px 单列;≥ 40rem 两列;≥ 64rem 三列(见 custom.css `.category-grid`)。
+ */
+import { Icon } from '@astrojs/starlight/components';
+import { CATEGORIES } from '../lib/categories.mjs';
+import { resolveDirectoryHref } from '../lib/resolve';
+
+interface Props {
+  /** 只显示某一区的类(缺省全部) */
+  zone?: 'docs' | 'support';
+}
+
+const { locale } = Astro.locals.starlightRoute;
+const isEn = locale === 'en';
+const wanted = CATEGORIES.filter((c) => !Astro.props.zone || c.zone === Astro.props.zone);
+const cards = await Promise.all(
+  wanted.map(async (c) => ({ ...c, href: await resolveDirectoryHref(locale, c.directory) })),
+);
+const soon = isEn ? 'Coming soon' : '即将上线';
+---
+
+<ul class="category-grid" role="list">
+  {
+    cards.map((c) => (
+      <li class:list={['category-card', { 'is-pending': !c.href }]} data-category={c.directory}>
+        {c.href ? (
+          <a href={c.href} class="category-link">
+            <span class="category-icon" aria-hidden="true">
+              <Icon name={c.icon as Parameters<typeof Icon>[0]['name']} size="1.5rem" />
+            </span>
+            <span class="category-title">{isEn ? c.en : c.label}</span>
+            <span class="category-desc">{c.description}</span>
+          </a>
+        ) : (
+          <div class="category-link" aria-disabled="true">
+            <span class="category-icon" aria-hidden="true">
+              <Icon name={c.icon as Parameters<typeof Icon>[0]['name']} size="1.5rem" />
+            </span>
+            <span class="category-title">
+              {isEn ? c.en : c.label} <span class="category-badge">{soon}</span>
+            </span>
+            <span class="category-desc">{c.description}</span>
+          </div>
+        )}
+      </li>
+    ))
+  }
+</ul>

@@ -1,0 +1,45 @@
+---
+/**
+ * 文章页尾「相关文章」:读 frontmatter `related`(站内 slug 列表)渲染链接。
+ * slug 在当前语言与根语言都不存在 → 构建期抛(死链不进 dist)。无 related 不渲染。
+ */
+import { localeEntries, slugToHref } from '../lib/resolve';
+
+const { entry, locale } = Astro.locals.starlightRoute;
+const related = entry.data.related ?? [];
+const isEn = locale === 'en';
+
+const current = await localeEntries(locale);
+const root = locale ? await localeEntries(undefined) : current;
+
+const items = related.map((slug) => {
+  const hit = current.find((e) => e.id === slug);
+  const fallback = hit ?? root.find((e) => e.id === slug);
+  if (!fallback) {
+    throw new Error(
+      `[Related] ${entry.id}: related slug "${slug}" 不存在于 src/content/docs(当前语言与根语言均无)。请修正 slug 或先写该文。`,
+    );
+  }
+  return {
+    href: slugToHref(hit ? locale : undefined, slug),
+    title: fallback.entry.data.title,
+    fallback: !hit && Boolean(locale),
+  };
+});
+---
+
+{
+  items.length > 0 && (
+    <section class="related" aria-labelledby="related-title">
+      <h2 id="related-title">{isEn ? 'Related articles' : '相关文章'}</h2>
+      <ul>
+        {items.map((it) => (
+          <li>
+            <a href={it.href}>{it.title}</a>
+            {it.fallback && <span class="category-badge">{isEn ? 'zh-CN' : '中文'}</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

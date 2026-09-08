@@ -1,0 +1,64 @@
+---
+/**
+ * 帮助中心首页的 FAQ 分组卡:每组一个落地页(构建期解析存在性)+ 该组覆盖的问题要点。
+ * 落地页未上线时卡片保留、标「即将上线」,不产死链。
+ */
+import { Icon } from '@astrojs/starlight/components';
+import { resolveExisting } from '../lib/resolve';
+
+const isEn = Astro.locals.starlightRoute.locale === 'en';
+
+const GROUPS = [
+  {
+    slug: 'support/account',
+    icon: 'setting',
+    title: isEn ? 'Account, keys, plans & billing' : '账号、密钥、套餐与计费',
+    points: isEn
+      ? ['Sign in and organizations', 'Create, rotate and revoke API keys', 'Plan limits and usage', 'Invoices and payment']
+      : ['登录与组织', '创建、轮换与吊销 API 密钥', '套餐额度与用量', '账单与付款'],
+  },
+  {
+    slug: 'support/troubleshooting',
+    icon: 'warning',
+    title: isEn ? 'Troubleshooting' : '常见问题排障',
+    points: isEn
+      ? ['Read the doctor output', 'Common error codes and what to do', 'Network and proxy issues', 'Session not resuming']
+      : ['看懂 doctor 输出', '常见错误码与处置', '网络与代理问题', '会话无法恢复'],
+  },
+  {
+    slug: 'support/contact',
+    icon: 'comment',
+    title: isEn ? 'Contact support' : '联系支持',
+    points: isEn
+      ? ['WeChat support group', 'Email support', 'What to include in a report']
+      : ['微信支持群', '邮件支持', '反馈时请附上的信息'],
+  },
+] as const;
+
+const existing = new Map((await resolveExisting(Astro.locals.starlightRoute.locale, GROUPS.map((g) => g.slug))).map((e) => [e.slug, e.href]));
+const soon = isEn ? 'Coming soon' : '即将上线';
+---
+
+<ul class="category-grid faq-groups" role="list">
+  {
+    GROUPS.map((g) => {
+      const href = existing.get(g.slug);
+      return (
+        <li class:list={['category-card', { 'is-pending': !href }]}>
+          <div class="category-link">
+            <span class="category-icon" aria-hidden="true">
+              <Icon name={g.icon} size="1.5rem" />
+            </span>
+            <span class="category-title">
+              {href ? <a href={href}>{g.title}</a> : g.title}
+              {!href && <span class="category-badge">{soon}</span>}
+            </span>
+            <ul class="faq-points">
+              {g.points.map((p) => <li>{p}</li>)}
+            </ul>
+          </div>
+        </li>
+      );
+    })
+  }
+</ul>

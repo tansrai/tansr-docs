@@ -1,0 +1,31 @@
+---
+/**
+ * 首页 hero 里的大搜索入口:点击即打开 Starlight 顶栏的 Pagefind 搜索框(同一索引,零额外脚本依赖)。
+ * Pagefind 未就绪(顶栏按钮仍 disabled)时,退而把焦点交给顶栏按钮。
+ */
+import { Icon } from '@astrojs/starlight/components';
+
+interface Props {
+  placeholder?: string;
+}
+const isEn = Astro.locals.starlightRoute.locale === 'en';
+const placeholder =
+  Astro.props.placeholder ?? (isEn ? 'Search docs and help center…' : '搜索文档与帮助中心:错误码、命令、环境变量、问题关键词…');
+---
+
+<button type="button" class="hero-search" data-hero-search aria-label={isEn ? 'Search' : '搜索'}>
+  <Icon name="magnifier" size="1.25rem" />
+  <span class="hero-search-text">{placeholder}</span>
+  <kbd class="sl-hidden md:sl-flex" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></kbd>
+</button>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-hero-search]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const open = document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]');
+      if (!open) return;
+      if (open.disabled) open.focus();
+      else open.click();
+    });
+  });
+</script>

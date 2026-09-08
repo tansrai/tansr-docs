@@ -1,0 +1,47 @@
+---
+/**
+ * 「热门文章」手工榜:候选 slug 在此登记,构建期只渲染真实存在的页面(内容未落地不产死链)。
+ * 一个都没有时显示占位句。
+ */
+import { resolveExisting } from '../lib/resolve';
+
+interface Props {
+  /** 站内 slug(不含前后斜杠),按展示顺序 */
+  slugs?: readonly string[];
+  title?: string;
+}
+
+const DEFAULT_SLUGS = [
+  'getting-started',
+  'getting-started/sdk',
+  'getting-started/cli',
+  'errors/codes',
+  'serve/env',
+  'cli/commands',
+  'support/troubleshooting',
+  'support/account',
+  'support/contact',
+] as const;
+
+const { locale } = Astro.locals.starlightRoute;
+const isEn = locale === 'en';
+const items = await resolveExisting(locale, Astro.props.slugs ?? DEFAULT_SLUGS);
+const title = Astro.props.title ?? (isEn ? 'Popular articles' : '热门文章');
+---
+
+<section class="hot-articles" aria-labelledby="hot-articles-title">
+  <h2 id="hot-articles-title">{title}</h2>
+  {
+    items.length > 0 ? (
+      <ol class="hot-list">
+        {items.map((it) => (
+          <li>
+            <a href={it.href}>{it.title}</a>
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <p class="hot-empty">{isEn ? 'Articles are on their way.' : '文章陆续上线中。'}</p>
+    )
+  }
+</section>

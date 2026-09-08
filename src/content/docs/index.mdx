@@ -1,0 +1,31 @@
+---
+title: tansr 资料站
+description: tansr 开发者文档与帮助中心:SDK、会话服务、CLI、Android / iOS、REST 参考、错误码、发布说明,以及账号计费与排障 FAQ。
+template: splash
+zone: docs
+category: getting-started
+lastVerified: 2026-09-08
+hero:
+  title: 有问题,先来这里找答案
+  tagline: 开发者文档与帮助中心一站两区:接入 tansr 的每一步,从安装到排障,都在这里。
+  actions:
+    - text: 浏览全部分类
+      link: '#categories'
+      icon: down-arrow
+    - text: 前往帮助中心
+      link: /support/
+      icon: right-arrow
+      variant: minimal
+---
+
+import HeroSearch from '../../components/HeroSearch.astro';
+import CategoryGrid from '../../components/CategoryGrid.astro';
+import HotArticles from '../../components/HotArticles.astro';
+
+<HeroSearch />
+
+<h2 id="categories" class="home-section-title">按分类浏览</h2>
+
+<CategoryGrid />
+
+<HotArticles />

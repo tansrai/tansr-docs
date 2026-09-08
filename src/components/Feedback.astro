@@ -1,0 +1,63 @@
+---
+/**
+ * 「本文是否有帮助」:两钮,零网络。本期只记 localStorage(键 `tansr-docs:feedback:<pathname>`)并显示感谢;
+ * 再次进入同页时按记录回显已选态。后续接反馈接口时只换 <script> 里的 record()。
+ */
+const isEn = Astro.locals.starlightRoute.locale === 'en';
+const t = isEn
+  ? { q: 'Was this page helpful?', yes: 'Yes', no: 'No', thanks: 'Thanks for your feedback.' }
+  : { q: '本文是否有帮助?', yes: '有帮助', no: '没帮助', thanks: '感谢反馈,我们会持续改进这篇文章。' };
+---
+
+<section class="feedback" aria-labelledby="feedback-title" data-feedback>
+  <h2 id="feedback-title">{t.q}</h2>
+  <div class="feedback-actions">
+    <button type="button" data-feedback-value="yes" aria-pressed="false">{t.yes}</button>
+    <button type="button" data-feedback-value="no" aria-pressed="false">{t.no}</button>
+  </div>
+  <p class="feedback-thanks" data-feedback-thanks hidden>{t.thanks}</p>
+</section>
+
+<script>
+  const KEY_PREFIX = 'tansr-docs:feedback:';
+  const key = KEY_PREFIX + location.pathname;
+
+  function read(): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+  function record(value: string): void {
+    try {
+      localStorage.setItem(key, JSON.stringify({ value, at: new Date().toISOString() }));
+    } catch {
+      /* 隐私模式等不可写:仍显示感谢,不报错 */
+    }
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-feedback]').forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>('button[data-feedback-value]');
+    const thanks = root.querySelector<HTMLElement>('[data-feedback-thanks]');
+    const paint = (value: string | null) => {
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.feedbackValue === value)));
+      if (thanks) thanks.hidden = value === null;
+    };
+    const stored = read();
+    if (stored) {
+      try {
+        paint(JSON.parse(stored).value ?? null);
+      } catch {
+        paint(null);
+      }
+    }
+    buttons.forEach((b) =>
+      b.addEventListener('click', () => {
+        const value = b.dataset.feedbackValue ?? '';
+        record(value);
+        paint(value);
+      }),
+    );
+  });
+</script>

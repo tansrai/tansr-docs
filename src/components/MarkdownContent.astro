@@ -1,0 +1,24 @@
+---
+/**
+ * 正文容器覆写:沿 Starlight 默认 `.sl-markdown-content`,在文章页(template: doc)尾部挂
+ * 「相关文章」与「本文是否有帮助」;splash 页(首页 / 帮助中心首页)与 404 不挂。
+ */
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+import Related from './Related.astro';
+import Feedback from './Feedback.astro';
+
+const { entry } = Astro.locals.starlightRoute;
+const isArticle = entry.data.template === 'doc' && entry.id !== '404' && !entry.id.endsWith('/404');
+---
+
+<Default>
+  <slot />
+  {
+    isArticle && (
+      <div class="article-tail" data-pagefind-ignore>
+        <Related />
+        <Feedback />
+      </div>
+    )
+  }
+</Default>

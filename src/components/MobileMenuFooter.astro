@@ -1,0 +1,46 @@
+---
+/**
+ * 移动端菜单页脚覆写:在主题 / 语言切换之上加两区入口(窄屏顶栏放不下时的承接位)。
+ */
+import LanguageSelect from '@astrojs/starlight/components/LanguageSelect.astro';
+import SocialIcons from '@astrojs/starlight/components/SocialIcons.astro';
+import ThemeSelect from '@astrojs/starlight/components/ThemeSelect.astro';
+import ZoneNav from './ZoneNav.astro';
+---
+
+<div class="mobile-zones">
+  <ZoneNav class="sl-flex" />
+</div>
+<div class="mobile-preferences sl-flex">
+  <div class="social-icons">
+    <SocialIcons />
+  </div>
+  <ThemeSelect />
+  <LanguageSelect />
+</div>
+
+<style>
+  @layer starlight.core {
+    .mobile-zones {
+      border-top: 1px solid var(--sl-color-gray-6);
+      padding: 0.75rem 0;
+    }
+    .social-icons {
+      display: flex;
+      margin-inline-end: auto;
+      gap: 1rem;
+      align-items: center;
+      padding-block: 1rem;
+    }
+    .social-icons:empty {
+      display: none;
+    }
+    .mobile-preferences {
+      justify-content: space-between;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--sl-color-gray-6);
+      column-gap: 1rem;
+      padding: 0.5rem 0;
+    }
+  }
+</style>
