@@ -1,5 +1,5 @@
 /**
- * `pnpm gate`:check → build → gen:check → lint:text → links → frontmatter,顺序执行、首红即停。
+ * `pnpm gate`:check → build → gen:check → lint:text → links → frontmatter → release-notes,顺序执行、首红即停。
  * 每步都走 package.json 的脚本名(与 CI / 本地一致)。末尾打印各步耗时与终态。
  *
  * 用法:node scripts/check/gate.mjs [--from <step>](从某步开始,便于本地重跑后半段)
@@ -7,7 +7,7 @@
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
-export const STEPS = Object.freeze(['check', 'build', 'gen:check', 'lint:text', 'links', 'frontmatter']);
+export const STEPS = Object.freeze(['check', 'build', 'gen:check', 'lint:text', 'links', 'frontmatter', 'release-notes']);
 
 function parseArgs(argv) {
   const opts = { from: STEPS[0] };

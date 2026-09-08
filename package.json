@@ -19,6 +19,7 @@
     "lint:text": "node scripts/check/lint-text.mjs",
     "links": "node scripts/check/links.mjs",
     "frontmatter": "node scripts/check/frontmatter.mjs",
+    "release-notes": "node scripts/check/release-notes.mjs",
     "gate": "node scripts/check/gate.mjs",
     "test": "node --test scripts/**/*.test.mjs"
   },
