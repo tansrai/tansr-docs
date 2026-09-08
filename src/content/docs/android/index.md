@@ -66,9 +66,9 @@ Live → Recovering(拉 /history 重建)→ Live                        // L2:�
 
 后台长连接不可靠且耗电，SDK 的策略是**回后台停泵断流、回前台按恢复窗自动选径**：
 
-- 热态（缺省 60 s 内回前台）:L1 直连续传；
+- 热态（缺省 60 s 内回前台）：L1 直连续传；
 - 超阈且后台期有轮在跑：先行 L2 `history` 重建，免一次注定 gap 的订流；
-- 会话被闲置回收（服务端缺省 5 min 离场回收 / 24 h 闲置）:404 → L3 自愈。
+- 会话被闲置回收（服务端缺省 5 min 离场回收 / 24 h 闲置）：404 → L3 自愈。
 
 Compose 一行 `TansrSessionLifecycle(session)`（`repeatOnLifecycle(STARTED)` 收放）；非 Compose 前台 `start()`、后台 `stop()`，幂等，`stop` 不丢会话。阈值经 `AgentSessionConfig.warmResumeWindowMs` 调。决策是 `:core` 纯函数 `LifecyclePolicy`,JVM 单测覆盖。Doze 强制空闲期泵已停（服务端无活跃订阅者），亮屏回前台按同一策略自愈；厂商激进杀后台等同冷启 L3。
 
