@@ -31,6 +31,9 @@ related:
 sources:
   - contract/openapi.json
   - tansr-cli:doc/11-用户手册.md
+  - tansr-api:openapi/openapi.json
+  - tansr-android:README.md
+  - tansr-ios:README.md
 lastVerified: 2026-09-08
 ---
 
@@ -89,6 +92,7 @@ related:
 sources:
   - contract/missing.json
   - random-string
+  - tansr-server:README.md
 lastVerified: 2026/09/08
 ---
 
@@ -134,10 +138,11 @@ generated: true
     assert.ok(codes.includes(`support/bad.md:${CODES.BAD_RELATED}:Bad/Slug`));
     assert.ok(codes.includes(`support/bad.md:${CODES.SOURCE_MISSING}:contract/missing.json`));
     assert.ok(codes.includes(`support/bad.md:${CODES.BAD_SOURCE}:random-string`));
+    assert.ok(codes.includes(`support/bad.md:${CODES.BAD_SOURCE}:tansr-server:README.md`), '未登记的仓前缀须红');
     assert.ok(codes.includes(`errors/codes.md:${CODES.GENERATED_FLAG}:has generated marker`));
     assert.ok(codes.some((c) => c.startsWith(`support/flagged.md:${CODES.GENERATED_MARKER}`)));
     assert.ok(codes.some((c) => c.startsWith(`support/nofm.md:${CODES.NO_FRONTMATTER}`)));
-    assert.equal(res.summary.errors, 11);
+    assert.equal(res.summary.errors, 12);
   } finally {
     rmSync(r, { recursive: true, force: true });
   }

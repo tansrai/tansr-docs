@@ -20,8 +20,11 @@ export const CATEGORY_VALUES = Object.freeze([
 
 export const ZONE_VALUES = Object.freeze(['docs', 'support']);
 
-/** `sources` 形:`contract/<path>` 或 `tansr-cli:<path>` / `tansr-api:<path>` */
-export const SOURCE_PATTERN = /^(contract\/[^\s]+|tansr-(cli|api):[^\s]+)$/;
+/** 可作 `sources` 前缀的事实源仓(`<仓>:<仓内路径>`);`contract/` 走本仓 vendored 副本 */
+export const SOURCE_REPOS = Object.freeze(['tansr-cli', 'tansr-api', 'tansr-android', 'tansr-ios']);
+
+/** `sources` 形:`contract/<path>` 或 `<仓>:<path>`(仓 ∈ SOURCE_REPOS);`contract/` 核存在,仓前缀只校形 */
+export const SOURCE_PATTERN = new RegExp(`^(contract/[^\\s]+|(${SOURCE_REPOS.join('|')}):[^\\s]+)$`);
 
 /** 站内 slug:小写字母 / 数字 / 连字符,段以 / 分隔;不含前后斜杠、协议、锚点、查询 */
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*(\/[a-z0-9][a-z0-9-]*)*$/;
