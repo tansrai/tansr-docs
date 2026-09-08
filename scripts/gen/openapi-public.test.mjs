@@ -23,6 +23,28 @@ function opsOf(doc) {
   return Object.entries(doc.paths).flatMap(([p, item]) => Object.entries(item).filter(([m]) => METHODS.has(m)).map(([m, op]) => ({ p, m, op })));
 }
 
+test('openapi-public:OPTIONS 预检不出公开面(资料站 P2 A-L1:/v1/docs/feedback · /v1/support/tickets 的 CORS 预检在源契约在册,公开副本只留 POST);只剩预检的路径整条不出', () => {
+  const src = {
+    openapi: '3.1.0',
+    info: { title: 't' },
+    paths: {
+      '/v1/docs/feedback': { post: { tags: ['control'], responses: {} }, options: { tags: ['control'], responses: {} } },
+      '/v1/only-preflight': { options: { tags: ['control'], responses: {} } },
+    },
+  };
+  const { doc, stats } = filterPublic(src);
+  assert.deepEqual(Object.keys(doc.paths['/v1/docs/feedback']), ['post']);
+  assert.equal(doc.paths['/v1/only-preflight'], undefined);
+  assert.equal(stats.droppedByMethod, 2);
+  // 真契约:两公开端点的 OPTIONS 在源里在册、公开副本里不在
+  const { doc: real } = filterPublic(source);
+  for (const p of ['/v1/docs/feedback', '/v1/support/tickets']) {
+    if (!source.paths[p]) continue;
+    assert.equal(real.paths[p]?.options, undefined, `${p} 预检不得出公开面`);
+    assert.ok(real.paths[p]?.post, `${p} POST 须在公开面`);
+  }
+});
+
 test('openapi-public:锁卷 —— /admin 0 · /webhooks 0 · /metrics 0;全部路径落在白名单前缀', () => {
   const { doc } = filterPublic(source);
   const paths = Object.keys(doc.paths);

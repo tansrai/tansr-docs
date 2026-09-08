@@ -1,6 +1,6 @@
 ---
 title: 'CLI 命令参考'
-description: '`tansr` 命令行(v0.4.0)的全局帮助与 13 个子命令,内容取自命令的真实 `--help` 输出。'
+description: '`tansr` 命令行(v0.4.0)的全局帮助与 16 个子命令,内容取自命令的真实 `--help` 输出。'
 zone: 'docs'
 category: 'cli'
 sources: ['contract/cli-help.json']
@@ -23,9 +23,12 @@ generated: true
 | [`tansr update`](#update) | check for updates; add --install to apply (npm / enterprise manifest); unsigned artifacts are refused unless --allow-unsigned is confirmed |
 | [`tansr bg`](#bg) | background task registry (list / log tail; --json) |
 | [`tansr sessions`](#sessions) | session transcript export / storage prune (dry-run by default) |
-| [`tansr login`](#login) | sign in on the website (browser) or with an ApiKeyId &amp; ApiKey (also: logout, whoami) |
-| [`tansr logout`](#logout) | 见「login」 |
-| [`tansr whoami`](#whoami) | 见「login」 |
+| [`tansr login`](#login) | sign in on the website (browser) or with an ApiKeyId &amp; ApiKey |
+| [`tansr logout`](#logout) | sign out on this machine (clear local credentials; best-effort remote device-key revoke) |
+| [`tansr whoami`](#whoami) | show the signed-in identity (public fields only) |
+| [`tansr init`](#init) | platform account setup wizard (PAT -&gt; app credentials; --pat or TANSR_PAT when no TTY) |
+| [`tansr profile`](#profile) | switch between saved identities (list / use &lt;keyId&gt;) |
+| [`tansr org`](#org) | join an organization with an activation code (activate &lt;code&gt;) |
 
 ## 全局帮助
 
@@ -34,7 +37,7 @@ generated: true
 ```text
 Tansr - agent CLI platform for organizations (v0.4.0)
 
-Usage: tansr [flags] | tansr -p "<prompt>" [flags] | tansr serve|acp|mcp serve [flags]
+Usage: tansr [flags] | tansr -p "<prompt>" [flags] | tansr <command> [flags] | tansr <command> --help
 
 Modes:
   (default)          interactive terminal session (TUI)
@@ -49,7 +52,13 @@ Modes:
   update             check for updates; add --install to apply (npm / enterprise manifest); unsigned artifacts are refused unless --allow-unsigned is confirmed
   bg [show <id>]     background task registry (list / log tail; --json)
  sessions <export|prune> session transcript export / storage prune (dry-run by default)
-  login              sign in on the website (browser) or with an ApiKeyId & ApiKey (also: logout, whoami)
+  login              sign in on the website (browser) or with an ApiKeyId & ApiKey
+  logout             sign out on this machine (clear local credentials; best-effort remote device-key revoke)
+  whoami             show the signed-in identity (public fields only)
+  init               platform account setup wizard (PAT -> app credentials; --pat or TANSR_PAT when no TTY)
+  profile            switch between saved identities (list / use <keyId>)
+  org                join an organization with an activation code (activate <code>)
+  <command> --help   usage, flags and an example for that command
 
 Flags:
   -p, --prompt <text>     run one headless query and exit
@@ -93,76 +102,397 @@ Environment & config:
 
 作用(取自全局帮助「Modes」一节):REST + SSE server (--port --host --token)
 
-`tansr serve --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr serve --help`(退出码 0):
+
+```text
+Usage: tansr serve [flags]
+
+  REST + SSE server for sessions (long-running; Bearer token required, loopback by default)
+
+Flags:
+  Flag               Value     Default             Description
+  --port             <n>       7433                TCP port to listen on
+  --host             <addr>    127.0.0.1           bind address (use 0.0.0.0 to accept external clients)
+  --token            <token>   $TANSR_SERVE_TOKEN  Bearer token clients must present (falls back to the env var; missing = refuse to start)
+  --model            <alias>   main                default model alias for new sessions
+  --lang             <locale>  -                   UI language (zh-CN, en, ja, ko); default from settings / TANSR_LANG
+  --context-scheme   <id>      -                   context governance scheme id (flag > settings > baseline)
+  --sessions-dir     <dir>     ~/.tansr            session storage root (flag > TANSR_STORAGE_ROOT > settings storage.sessionsDir)
+  --checkpoints-dir  <dir>     -                   context checkpoint root (default <session>/checkpoints)
+  --cwd              <dir>     .                   working directory for all sessions (must exist; default = current directory)
+  --v2               -         $TANSR_SERVE_V2     also mount the /v2 agent session API (off by default; TANSR_SERVE_V2=1 equivalent)
+
+Example:
+  tansr serve --port 7433 --token "$TANSR_SERVE_TOKEN"
+
+Global flags and modes: tansr --help
+```
 
 ## orchestrate
 
 作用(取自全局帮助「Modes」一节):Embedded tansrd control plane (--port --host --config)
 
-`tansr orchestrate --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr orchestrate --help`(退出码 0):
+
+```text
+Usage: tansr orchestrate [flags]
+
+  run the embedded tansrd control plane in-process (single-machine orchestration)
+
+Flags:
+  Flag      Value   Default    Description
+  --port    <n>     7420       listening port override (absent = tansrd config; builtin 7420)
+  --host    <addr>  127.0.0.1  bind address override (absent = tansrd config; builtin 127.0.0.1)
+  --config  <path>  -          extra JSON config file applied on top of the five config layers
+
+Example:
+  tansr orchestrate --port 7420 --config ./tansrd.json
+
+Global flags and modes: tansr --help
+```
 
 ## approvals
 
 作用(取自全局帮助「Modes」一节):approval inbox over tansrd API (list / decide &lt;id&gt; --approve\|--reject)
 
-`tansr approvals --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr approvals --help`(退出码 0):
+
+```text
+Usage: tansr approvals list [flags]
+       tansr approvals decide <id> --approve|--reject [flags]
+
+  approval inbox over the tansrd API: list pending approvals or decide one
+
+Actions:
+  list    list approvals (filter with --status)
+  decide  approve or reject one approval by id
+
+Flags:
+  Flag       Value                Default         Description
+  --status   pending|history|all  pending         which approvals to list
+  --approve  -                    -               approve the approval (decide)
+  --reject   -                    -               reject the approval (decide)
+  --comment  <text>               -               comment attached to the decision
+  --actor    <name>               $TANSRD_ACTOR   who is deciding (falls back to the env var)
+  --server   <url>                $TANSRD_SERVER  tansrd base URL (falls back to the env var)
+  --token    <token>              $TANSRD_TOKEN   tansrd bearer token (falls back to the env var)
+
+Example:
+  tansr approvals decide apr_01H --approve --comment "reviewed"
+
+Global flags and modes: tansr --help
+```
 
 ## policy pull
 
 作用(取自全局帮助「Modes」一节):pull policy bundles from tansrd, verify and install locally (--server/--token/--workspace/--label/--dir)
 
-`tansr policy pull --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr policy pull --help`(退出码 0):
+
+```text
+Usage: tansr policy pull [flags]
+
+  pull policy bundles from tansrd, verify their signatures and install them locally
+
+Actions:
+  pull  fetch, verify and install the bundles selected for this workspace / labels
+
+Flags:
+  Flag         Value    Default            Description
+  --server     <url>    $TANSRD_SERVER     tansrd base URL (falls back to the env var)
+  --token      <token>  $TANSRD_TOKEN      tansrd bearer token (falls back to the env var)
+  --workspace  <name>   default            workspace to pull for (server default when omitted)
+  --label      <k=v>    -                  label selector, repeatable (k=v)
+  --dir        <dir>    ~/.tansr/policies  install directory for the verified bundles
+
+Example:
+  tansr policy pull --server http://127.0.0.1:7420 --label team=core
+
+Global flags and modes: tansr --help
+```
 
 ## acp
 
 作用(取自全局帮助「Modes」一节):Agent Client Protocol over stdio (editor integration)
 
-`tansr acp --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr acp --help`(退出码 0):
+
+```text
+Usage: tansr acp [flags]
+
+  Agent Client Protocol agent over stdio (editor integration)
+
+Flags:
+  Flag              Value        Default  Description
+  --model           <alias>      main     default model alias for new sessions
+  --lang            <locale>     -        UI language (zh-CN, en, ja, ko); default from settings / TANSR_LANG
+  --context-scheme  <id>         -        context governance scheme id (flag > settings > baseline)
+  --allowed-roots   <dir[;dir]>  -        restrict session cwd to these roots (repeatable or path-delimiter separated; absent = no restriction)
+
+Example:
+  tansr acp --allowed-roots /work/repo
+
+Global flags and modes: tansr --help
+```
 
 ## mcp serve
 
 作用(取自全局帮助「Modes」一节):expose built-in tools as an MCP stdio server
 
-`tansr mcp serve --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr mcp serve --help`(退出码 0):
+
+```text
+Usage: tansr mcp serve
+
+  expose the built-in tools as an MCP server over stdio (for MCP clients / editors)
+
+Flags:
+  (no flags)
+
+Example:
+  tansr mcp serve
+
+Global flags and modes: tansr --help
+```
 
 ## doctor
 
 作用(取自全局帮助「Modes」一节):environment diagnosis (config/model/credentials/session storage; --json; --connectors connector self-check, with --tansrd-config/--tansrd-url)
 
-`tansr doctor --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr doctor --help`(退出码 0):
+
+```text
+Usage: tansr doctor [flags]
+
+  diagnose the local setup without calling a model (config layers, provider, credentials, session storage, version); exit 1 on blocking issues
+
+Flags:
+  Flag             Value   Default  Description
+  --json           -       -        machine-readable JSON report
+  --dump-config    -       -        append a per-key config attribution section (which layer set what)
+  --connectors     -       -        run the tansrd connector self-check
+  --tansrd-config  <path>  -        tansrd config file to check (implies --connectors)
+  --tansrd-url     <url>   -        tansrd URL to probe (implies --connectors)
+
+Example:
+  tansr doctor --json
+
+Global flags and modes: tansr --help
+```
 
 ## update
 
 作用(取自全局帮助「Modes」一节):check for updates; add --install to apply (npm / enterprise manifest); unsigned artifacts are refused unless --allow-unsigned is confirmed
 
-`tansr update --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr update --help`(退出码 0):
+
+```text
+Usage: tansr update [flags]
+
+  check for a newer release (npm registry or enterprise manifest); install only with --install
+
+Flags:
+  Flag              Value  Default  Description
+  --install         -      -        download and install the update (default: check and print only)
+  --allow-unsigned  -      -        allow an unsigned artifact after an interactive confirmation (requires --install)
+
+Example:
+  tansr update --install
+
+Global flags and modes: tansr --help
+```
 
 ## bg
 
 作用(取自全局帮助「Modes」一节):background task registry (list / log tail; --json)
 
-`tansr bg --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr bg --help`(退出码 0):
+
+```text
+Usage: tansr bg [list] [flags]
+       tansr bg show <id> [flags]
+       tansr bg kill <id> [flags]
+       tansr bg clean [flags]
+
+  background task registry for headless runs started with --bg (list / show / kill / clean)
+
+Actions:
+  list   list registered tasks (default action)
+  show   show one task with its log tail
+  kill   stop a running task (whole process tree)
+  clean  remove finished and stale records (--all also deletes logs)
+
+Flags:
+  Flag    Value  Default  Description
+  --json  -      -        JSON output
+  --all   -      -        clean: also delete log files
+
+Example:
+  tansr bg show bg-m0abc12-0f1e
+
+Global flags and modes: tansr --help
+```
 
 ## sessions
 
 作用(取自全局帮助「Modes」一节):session transcript export / storage prune (dry-run by default)
 
-`tansr sessions --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr sessions --help`(退出码 0):
+
+```text
+Usage: tansr sessions export <id> [flags]
+       tansr sessions prune [flags]
+
+  session transcripts: export one (markdown / json, credentials redacted) or prune storage (dry-run by default)
+
+Actions:
+  export  export one session transcript by id
+  prune   delete old sessions (lists only unless --apply; today and in-use sessions are kept)
+
+Flags:
+  Flag              Value    Default  Description
+  --format          md|json  md       export format
+  --out             <path>   -        export output file (default: stdout)
+  --apply           -        -        prune: actually delete (default is dry-run)
+  --keep-days       <n>      90       prune: keep sessions newer than n days
+  --keep-last       <n>      500      prune: keep the n most recent sessions
+  --include-broken  -        -        prune: also remove unreadable session directories
+
+Example:
+  tansr sessions prune --keep-days 30 --apply
+
+Global flags and modes: tansr --help
+```
 
 ## login
 
-作用(取自全局帮助「Modes」一节):sign in on the website (browser) or with an ApiKeyId &amp; ApiKey (also: logout, whoami)
+作用(取自全局帮助「Modes」一节):sign in on the website (browser) or with an ApiKeyId &amp; ApiKey
 
-`tansr login --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr login --help`(退出码 0):
+
+```text
+Usage: tansr login [flags]
+
+  sign in: browser flow on the website by default, or non-interactively with an ApiKeyId & ApiKey
+
+Flags:
+  Flag      Value  Default  Description
+  --key-id  <id>   -        ApiKeyId for non-interactive login
+  --key     <key>  -        ApiKey secret for non-interactive login (never logged)
+
+Example:
+  tansr login --key-id ak_01H --key "$TANSR_API_KEY"
+
+Global flags and modes: tansr --help
+```
 
 ## logout
 
-作用(取自全局帮助「Modes」一节):见「login」
+作用(取自全局帮助「Modes」一节):sign out on this machine (clear local credentials; best-effort remote device-key revoke)
 
-`tansr logout --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr logout --help`(退出码 0):
+
+```text
+Usage: tansr logout [flags]
+
+  sign out on this machine: clear local credentials and (best effort) revoke the remote device key
+
+Flags:
+  Flag           Value  Default  Description
+  --keep-remote  -      -        skip the remote revoke; only clear local credentials
+
+Example:
+  tansr logout
+
+Global flags and modes: tansr --help
+```
 
 ## whoami
 
-作用(取自全局帮助「Modes」一节):见「login」
+作用(取自全局帮助「Modes」一节):show the signed-in identity (public fields only)
 
-`tansr whoami --help`(退出码 0)打印的是与 [全局帮助](#全局帮助) 逐字相同的文本——`tansr` 目前不提供分命令帮助,子命令的旗标以全局帮助「Modes」一节的该行为准。
+`tansr whoami --help`(退出码 0):
+
+```text
+Usage: tansr whoami
+
+  show the signed-in identity (public fields only; no secrets)
+
+Flags:
+  (no flags)
+
+Example:
+  tansr whoami
+
+Global flags and modes: tansr --help
+```
+
+## init
+
+作用(取自全局帮助「Modes」一节):platform account setup wizard (PAT -&gt; app credentials; --pat or TANSR_PAT when no TTY)
+
+`tansr init --help`(退出码 0):
+
+```text
+Usage: tansr init [flags]
+
+  platform account setup wizard: verify a PAT, derive app credentials and store them locally
+
+Flags:
+  Flag     Value    Default     Description
+  --pat    <token>  $TANSR_PAT  personal access token (required when there is no TTY; env var fallback)
+  --fresh  -        -           skip reuse of existing credentials and enter a new PAT (switch account)
+
+Example:
+  tansr init --pat "$TANSR_PAT"
+
+Global flags and modes: tansr --help
+```
+
+## profile
+
+作用(取自全局帮助「Modes」一节):switch between saved identities (list / use &lt;keyId&gt;)
+
+`tansr profile --help`(退出码 0):
+
+```text
+Usage: tansr profile list
+       tansr profile use <keyId>
+
+  switch between saved identities (a personal key and any number of organization keys)
+
+Actions:
+  list  list saved profiles and mark the active one
+  use   activate the profile with this keyId
+
+Flags:
+  (no flags)
+
+Example:
+  tansr profile use ak_01H
+
+Global flags and modes: tansr --help
+```
+
+## org
+
+作用(取自全局帮助「Modes」一节):join an organization with an activation code (activate &lt;code&gt;)
+
+`tansr org --help`(退出码 0):
+
+```text
+Usage: tansr org activate <code>
+
+  join an organization with a member activation code (browser approval; no user credential is stored)
+
+Actions:
+  activate  redeem the activation code and bind the organization key
+
+Flags:
+  (no flags)
+
+Example:
+  tansr org activate ABCD-EFGH
+
+Global flags and modes: tansr --help
+```

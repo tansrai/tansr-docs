@@ -21,6 +21,7 @@ generated: true
 - `doctor` 输出新增「被忽略的配置段」逐条提示、沙箱 `env` 归因行,并显示 `http.allowedAuthEnvVars` 的生效来源(用户层 / 托管层 / 组织远程下发)。
 - npm 包与单文件可执行版随附 `NOTICE`(内联第三方依赖的名称、版本与许可全文)。
 - acp 的 `session/new` / `session/load` 工作目录改经统一策略闸,被拒时返回 JSON-RPC `-32602`,`data.code` 为 `cwd_unavailable` 并附原因。
+- 每个子命令都有自己的帮助:`tansr <命令> --help` 打印该命令的用途、旗标表与示例(如 `tansr serve --help`);`tansr --help` 的命令列表补齐全部 16 个子命令。旧用法不变。
 
 ### 变更
 
@@ -111,6 +112,18 @@ generated: true
 > 未发;下一 minor(版本号候发版令,当前仓根 `package.json` 仍 0.4.0)。十王修案 W1–W4 已收编于 main `9f09c1b7`,随 cli monorepo 一版 / 二版 /
 > 三版子集候「发」(protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。npm 分发同批携 `@tansr/sdk` 0.12.0 / `@tansr/serve` 0.7.0 内联束。
 
+##### 核心机制整改（CM；未发）
+
+- ACP/CLI serve 的新建与恢复会话按当前组织记忆开关和规范化项目目录绑定记忆；恢复到另一项目明确报 `memory_project_mismatch`。同一项目的 worktree 仍共享记忆，历史 junction 别名分片保留，不自动迁移合并；既有会话 `/cd` 语义保持（CM-01）。
+- 常驻子代理的 Write/Edit 也执行真实目标记忆围栏，junction 不再绕过；父会话换根不会改写旧代理的围栏材料（CM-05）。
+- 召回正文被附件总帽拒载时，不再永久当作已经送达；新触达或新 prefetch 可重试。旧候选日志口径保留，新增准入统计区分正文、短引用与拒载；“准入”不代表远端已接收（CM-07）。
+- 摘要质量拒绝和取消之前已经报告的摘要用量计入费用，拒绝的摘要仍不替换历史。工具超时明确提示残余操作可能仍在运行，需确认停止后再重试有副作用操作（CM-02/15）。
+- 原子写的临时写入、权限设置或替换失败时保留原文件；大文件分页与整读保持编码语义，选中窗口和超长行驻留有上限，精确指纹仍扫描全文件（CM-04/08）。
+- 四媒体工具在执行入口按各自 schema 拒绝坏参数，合法默认值与既有权限/裁决流程保持（CM-09）。
+- CLI serve 的 TTS 落盘失败不再把宿主路径放进远端结果；已生成的 base64 音频仍返回，本地记录安全诊断。嵌入工厂可用 `onArtifactSinkError` 消费原始错误，回调异常不会吞掉音频（CM-10）。
+- 平台语音识别除原始 24 MiB 音频帽外，发送前还检查实际序列化 JSON 的 32 MiB 体帽；base64 与所有字段均计入。越限时可改用公开 URL 或压缩音频，BYO multipart 原始字节语义保持（CM-11）。
+- 新 SEA 默认更新入口改为 `latest.signed.json` 单对象签名封套，缺席或坏签不降级。自托管分发方须随首次升级发布该文件；显式旧 `latest.json` 与企业 manifest 地址仍兼容，旧双对象错配窗口仍可能暂时拒绝更新。版本目录同名不同字节拒绝覆盖，保留材料可用于幂等重试（CM-12；迁移详见 `doc/report/核心机制整改-CM-12-终报.md`）。
+
 ##### 安全与权限(收紧;默认行为变化)
 
 - **出网单点 + SSRF 三层门**(FX-B-12 / FX-B-13 · W1):WebFetch / Http / hooks 出网 / ASR 音频下载全部改经 kernel `createEgressDispatcher`
@@ -151,6 +164,10 @@ generated: true
   持锁需人工。会话 store 单核 `createSessionStoreCore`(FX-B-21 · W1):`pendingRewrite` 持久闩 + 前缀校验 + 段感知在场性(H-3 止血并入)。
 - 快照是附属能力(FX-B-23 · W2):`listCheckpointsDetailed` 单档隔离、GC 不误删、杂散 `notes.json` 不再整体 `CHECKPOINT_INVALID`;`retention.maxAgeDays`。
 - 套餐配额拒绝可判(M-03 · W3;contract-v0.26):平台套餐四码 `turn.error.detail{ scope:'plan' }`;TUI 与端侧同键。
+
+##### 帮助
+
+- **分命令 `--help`**(DS-25 · 资料站 P2):`tansr <cmd> --help|-h`(旗标在子命令后任意位置)打该子命令的 usage 段(一句话 / 旗标表 / 例子);无子命令、未知子命令或首参为旗标(`tansr -p serve --help`)仍打全局帮助。全局帮助 Modes 块列全部 16 个子命令(补 `logout / whoami / init / profile / org` 行)。旧调用形行为不变(仍得帮助文本、退出码 0),只是更精准。
 
 ##### 配置与 `doctor`
 

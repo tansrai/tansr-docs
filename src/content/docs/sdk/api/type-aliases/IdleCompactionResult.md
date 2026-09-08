@@ -18,6 +18,7 @@ type IdleCompactionResult =
   status: "compacted";
 }
   | {
+  events: EventBody[];
   outcome: CompactOutcomeFailure;
   status: "failed";
 };
@@ -70,6 +71,7 @@ status: "compacted";
 
 ```ts
 {
+  events: EventBody[];
   outcome: CompactOutcomeFailure;
   status: "failed";
 }

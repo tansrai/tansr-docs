@@ -10177,6 +10177,8 @@ interface ContextAssessment {
 /** manager 层压缩请求(round 粒度计划与执行参数由本类代算) */
 interface CompactRequest {
     view: ContextView;
+    /** CM-02：已报摘要用量入辅助账后同步通知；取消等待方可保留已知费用。 */
+    onUsage?: (usage: IRUsage) => void;
     /** 压缩 fork 同模型(doc/07 §3.2);调用方可显式降档 */
     model: ResolvedModel;
     trigger: CompactionTrigger;
@@ -10440,6 +10442,12 @@ declare class ContextManager {
      * 口径供观测入账。门关零触碰(#lastBucket 不更新,分桶 Map 恒空)。
      */
     measure(view: ContextView): ContextMeasurement;
+    /**
+     * CM-18：请求装配后新增尾材料的只读计额。只比较受影响尾消息，
+     * 使用当前测量已选定的校准因子；不刷新桶/配对基线/锚点，也不全量 measure。
+     * before 缺席表示新增一条消息，按账本同口径包含消息定额。
+     */
+    estimateRequestTailDelta(before: IRMessage | undefined, after: IRMessage): number;
     /**
      * 水位评估:测量 → 阈值代数 → 区带/触发建议;熔断中压制自动压缩建议。
      * T-CTX03 半开:压制期间每隔 AUTO_COMPACT_HALF_OPEN_BARRIERS 个屏障点
@@ -10904,6 +10912,8 @@ interface GovernanceToolResultView {
 interface GovernanceExecuteContext {
     view: ContextView;
     signal?: AbortSignal;
+    /** CM-02：终帧已报的摘要费用；查询取消可先于 execute 返回，不得丢弃已知用量。 */
+    onUsage?: (usage: IRUsage) => void;
 }
 /**
  * 治理会话(策略的会话级实例;与 manager 生命周期对齐)。@experimental
@@ -13095,7 +13105,8 @@ interface DispatchingToolExecutorOptions {
      * FX-B-20 / T-08:硬超时后独占槽(inFlight)的释放宽限(毫秒)。超时即刻回喂
      * 模型 / 签发 tool.failed(模型面不等),但**槽位**待工具 promise settle 或宽限
      * 到期二者先至才释放——此前超时即释放,不接 signal 的工具仍在写盘时下一独占
-     * 写工具已启动(交叠写)。缺省 TIMEOUT_RELEASE_GRACE_MS;0 = 不等(旧行为)。
+     * 写工具已启动(交叠写)。宽限到期仍未结束的操作可能与后续读写交叠；本机制不持有
+     * 跨 executor/会话的世界锁，也不终止任意 JS Promise。缺省 TIMEOUT_RELEASE_GRACE_MS;0 = 不等。
      */
     timeoutReleaseGraceMs?: number;
     /**
@@ -23291,6 +23302,7 @@ type IdleCompactionResult = {
 } | {
     status: 'failed';
     outcome: CompactOutcomeFailure;
+    events: EventBody[];
 };
 /**
  * 空闲直压主体(与 TUI #runIdleCompact 同律):
@@ -23300,7 +23312,7 @@ type IdleCompactionResult = {
  * 2. 成功 → 统一应用器(围栏 1「出口不可绕过」)自 outcome 反推 replaceWithSummary
  *    变换,产出新历史与 session.compacted / cost.usage.updated 事件体(与查询环屏障点
  *    逐字段同形;派生态失效已由 manager.compact 内建执行,invalidations='strategy');
- * 3. 失败 → 原样返回失败结局(reason/message/checkpointId 供调用方映射)。
+ * 3. 失败 → 原样返回失败结局与已报成本事件；不改历史、不签发成功压缩事件。
  */
 declare function runIdleCompaction(input: IdleCompactionInput): Promise<IdleCompactionResult>;
 

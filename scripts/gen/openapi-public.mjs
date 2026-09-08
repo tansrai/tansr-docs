@@ -32,6 +32,8 @@ export const PUBLIC_DESCRIPTION =
   'tansr 平台面向开发者的公开 REST 接口:数据面(OpenAI / Anthropic 兼容)、twp 协议面、控制面(认证 / 组织 / 应用 / 配置 / 用量)与健康探针。错误响应统一为 { error: { code, message, requestId, detail? } },错误码见「错误码参考」。';
 
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
+/** 公开面不列的方法:CORS 预检(OPTIONS)是浏览器自动发的握手,不是开发者可调用的接口(api 侧为覆盖律必须入册 openapi,资料站 P2 A-L1)。 */
+export const METHOD_BLOCKLIST = new Set(['options']);
 
 function pathAllowed(path) {
   return PATH_PREFIX_ALLOWLIST.some((p) => path === p || path.startsWith(p + '/'));
@@ -77,7 +79,7 @@ function opText(op) {
 /** 纯函数:源文档 → 公开子集文档 + 统计。 */
 export function filterPublic(source) {
   const paths = {};
-  const dropped = { prefix: [], tag: [] };
+  const dropped = { prefix: [], tag: [], method: [] };
   for (const [path, item] of Object.entries(source.paths ?? {})) {
     if (!pathAllowed(path)) {
       dropped.prefix.push(path);
@@ -88,7 +90,14 @@ export function filterPublic(source) {
       continue;
     }
     const out = {};
-    for (const [k, v] of Object.entries(item)) out[k] = METHODS.has(k) ? stripOpExtensions(v) : v;
+    for (const [k, v] of Object.entries(item)) {
+      if (METHOD_BLOCKLIST.has(k)) {
+        dropped.method.push(`${k.toUpperCase()} ${path}`);
+        continue;
+      }
+      out[k] = METHODS.has(k) ? stripOpExtensions(v) : v;
+    }
+    if (opsOf(out).length === 0) continue; // 只剩预检的路径整条不出公开面
     paths[path] = out;
   }
 
@@ -158,6 +167,7 @@ export function filterPublic(source) {
       tags: out.tags?.length ?? 0,
       droppedByPrefix: dropped.prefix.length,
       droppedByTag: dropped.tag.length,
+      droppedByMethod: dropped.method.length,
     },
   };
 }

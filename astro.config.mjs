@@ -5,7 +5,6 @@ import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
 import { existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { CATEGORIES, EXTRA_LOCALES, OPENAPI_PUBLIC, ROOT_LOCALE, hasOpenApi } from './src/lib/categories.mjs';
-import { KINDS as SDK_API_KINDS } from './scripts/gen/sdk-api.mjs';
 import { META_WEIGHTS } from './src/lib/search-weights.mjs';
 
 /**
@@ -15,9 +14,11 @@ import { META_WEIGHTS } from './src/lib/search-weights.mjs';
 const openApiPresent = hasOpenApi(import.meta.url);
 
 /**
- * 「TS / Node SDK」组:手写指南(与 autogenerate 同序——无 sidebar.order 时按文件名字母序)+「API 参考」子组。
- * API 参考页(`sdk/api/**`,DS-16 由 typedoc 生成,每导出一页)若用 autogenerate 整个 `sdk` 目录,子目录会以目录名
- * `api` / `classes` … 作组名且不可译,故手写页按 slug 明列、生成页按分类目录各自 autogenerate;生成页缺席(未跑 `pnpm gen`)时不加子组,构建照常。
+ * 「TS / Node SDK」组:手写指南(与 autogenerate 同序——无 sidebar.order 时按文件名字母序)+「API 参考」一条(总览)。
+ * API 参考成员页(`sdk/api/<kind>/**`,DS-16 由 typedoc 生成,每导出一页,482 页)**不进侧栏**:Starlight 把整个侧栏
+ * 渲染进每一页 HTML,482 条 × 1197 页曾把每页撑到 ~200 KB、全站 39 MB → 248 MB(P2 收编实测);成员页由总览页的分类索引、
+ * 站内搜索(DS-27 `keys` 元权重)与页内「上一页 / 下一页」到达。生成页缺席(未跑 `pnpm gen`)时不加该条,构建照常。
+ * 分类口径(KINDS)只在总览页与生成器里用(scripts/gen/sdk-api.mjs),侧栏不再引用。
  */
 function sdkSidebarItems() {
   const sdkDir = fileURLToPath(new URL('./src/content/docs/sdk/', import.meta.url));
@@ -27,21 +28,7 @@ function sdkSidebarItems() {
     .sort();
   const apiDir = `${sdkDir}api/`;
   if (!existsSync(`${apiDir}index.md`)) return guides;
-  const kinds = SDK_API_KINDS.filter((k) => existsSync(`${apiDir}${k.dir}`)).map((k) => ({
-    label: k.label,
-    translations: { en: k.en },
-    collapsed: true,
-    items: [{ autogenerate: { directory: `sdk/api/${k.dir}` } }],
-  }));
-  return [
-    ...guides,
-    {
-      label: 'API 参考',
-      translations: { en: 'API reference' },
-      collapsed: true,
-      items: ['sdk/api', ...kinds],
-    },
-  ];
+  return [...guides, { slug: 'sdk/api', label: 'API 参考(总览)', translations: { en: 'API reference (overview)' } }];
 }
 
 /** 11 类侧栏组(zh-CN 根;en 标签走 translations),顺序即侧栏顺序 */

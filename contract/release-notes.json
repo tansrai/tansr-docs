@@ -5,7 +5,8 @@
         "`tansr serve --v2`(或环境变量 `TANSR_SERVE_V2=1`)可显式开启 /v2 接口面;默认关闭,行为不变。`/healthz` 与 `/readyz` 探针始终可用。",
         "`doctor` 输出新增「被忽略的配置段」逐条提示、沙箱 `env` 归因行,并显示 `http.allowedAuthEnvVars` 的生效来源(用户层 / 托管层 / 组织远程下发)。",
         "npm 包与单文件可执行版随附 `NOTICE`(内联第三方依赖的名称、版本与许可全文)。",
-        "acp 的 `session/new` / `session/load` 工作目录改经统一策略闸,被拒时返回 JSON-RPC `-32602`,`data.code` 为 `cwd_unavailable` 并附原因。"
+        "acp 的 `session/new` / `session/load` 工作目录改经统一策略闸,被拒时返回 JSON-RPC `-32602`,`data.code` 为 `cwd_unavailable` 并附原因。",
+        "每个子命令都有自己的帮助:`tansr <命令> --help` 打印该命令的用途、旗标表与示例(如 `tansr serve --help`);`tansr --help` 的命令列表补齐全部 16 个子命令。旧用法不变。"
       ],
       "changed": [
         "出网请求(WebFetch / Http / hooks / 音频下载)统一经一处出口,并在 DNS 解析后拦截私网、环回与链路本地地址:指向内网或云元数据地址的抓取会被拒绝并给出原因。",

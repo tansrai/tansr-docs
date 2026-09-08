@@ -91,6 +91,14 @@ generated: true
 > (导出数不变,`AssembledSessionModel` / `AgentSessionRetentionSweepInput` 两签名变;W4 回执 §一)。以下逐条按波次的收编回执与 C-α / C-β 终报为事实源;
 > 每条括注卡号(FX-C-nn)与所属波次。
 
+##### 核心机制整改（CM；未发）
+
+- 平台下发的上下文方案与宿主配置合流后，由查询和压缩共同消费，恢复会话沿用同一有效配置；嵌套阈值只覆盖明确提供的值。owner/app_user 均按各自身份投影生效（CM-03）。
+- 空闲或自动摘要即使被质量校验拒绝，已报告用量仍计入公共成本；小窗输出回退遵守测得正剩余，零/负估算余量保留原有恢复规则并明确提示（CM-02/06）。
+- CLI `serve` 工厂按新会话的组织开关和规范化 cwd 绑定项目记忆，恢复到不匹配项目明确拒绝；独立平台工厂保持原有能力面，未隐式增加 CLI 自动记忆或 Read 工具（CM-01）。
+- CLI serve 的 TTS 产物在成功和落盘失败两种情形均保持隐路径；失败仍返回已有音频，原始错误由工厂宿主的可选诊断回调消费。远端 SSE 不携该诊断，CLI 默认只记录安全事件与 errno（CM-10）。
+- `/v2` 平台 ASR 代打在向上游发送前检查原始音频和实际 JSON 体积，越限不会发请求或触发无用刷新；入站 HTTP 体帽与出站平台预检分别生效（CM-11）。
+
 ##### 发版门接管(FX-C-25 · W2)
 
 - `prepublishOnly` 恒过 `scripts/release/gate.mjs --package server` 六步;`exports.snapshot.json` 基线入仓,自本版起导出集变化由门判 semver;

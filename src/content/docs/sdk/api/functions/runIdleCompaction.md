@@ -20,7 +20,7 @@ function runIdleCompaction(input): Promise<IdleCompactionResult>;
 2. 成功 → 统一应用器(围栏 1「出口不可绕过」)自 outcome 反推 replaceWithSummary
    变换,产出新历史与 session.compacted / cost.usage.updated 事件体(与查询环屏障点
    逐字段同形;派生态失效已由 manager.compact 内建执行,invalidations='strategy');
-3. 失败 → 原样返回失败结局(reason/message/checkpointId 供调用方映射)。
+3. 失败 → 原样返回失败结局与已报成本事件；不改历史、不签发成功压缩事件。
 
 ## 参数
 

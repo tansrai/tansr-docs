@@ -2421,6 +2421,160 @@
         "x-tansr-org-scope": true
       }
     },
+    "/v1/docs/feedback": {
+      "options": {
+        "summary": "CORS 预检(资料站 P2 契约 3;不引 @fastify/cors):Origin ∈ {https://docs.tansr.com, http://localhost:4321(非生产档)} → 204 + Access-Control-Allow-Origin(回显)/ Allow-Methods POST, OPTIONS / Allow-Headers content-type / Max-Age 600;非白名单 origin 204 零 access-control 头;恒 Vary: Origin;对应 POST /v1/docs/feedback 同 hook",
+        "tags": [
+          "control"
+        ],
+        "parameters": [
+          {
+            "name": "origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "浏览器 Origin;白名单命中才发 access-control-* 头"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "预检通过(无体;头按 Origin 白名单)"
+          }
+        }
+      },
+      "post": {
+        "summary": "资料站页面反馈(P2 DS-17;无鉴权公开面;CORS 白名单 origin docs.tansr.com / localhost:4321):体 {path ^/[a-z0-9\\-/]*$ ≤200, helpful boolean(严格), locale? zh-CN|en} → 落 docs_feedback 一行(day = 服务器 UTC 日键;ip_hash = sha256(ip + 日键) 前 16 hex,原 IP 恒不落库)→ 202 {ok:true};路由级限流每 IP 60 / h(429 rate_limited + Retry-After)",
+        "tags": [
+          "control"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocsFeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "已受理",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocsFeedbackAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad_request(path 形制 / helpful 非 boolean / locale 词表外 / 未知键)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited(路由级每 IP 60 / h;Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/support/tickets": {
+      "options": {
+        "summary": "CORS 预检(资料站 P2 契约 3;不引 @fastify/cors):Origin ∈ {https://docs.tansr.com, http://localhost:4321(非生产档)} → 204 + Access-Control-Allow-Origin(回显)/ Allow-Methods POST, OPTIONS / Allow-Headers content-type / Max-Age 600;非白名单 origin 204 零 access-control 头;恒 Vary: Origin;对应 POST /v1/support/tickets 同 hook",
+        "tags": [
+          "control"
+        ],
+        "parameters": [
+          {
+            "name": "origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "浏览器 Origin;白名单命中才发 access-control-* 头"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "预检通过(无体;头按 Origin 白名单)"
+          }
+        }
+      },
+      "post": {
+        "summary": "资料站支持工单(P2 DS-18;无鉴权公开面;CORS 白名单 origin):体 {subject 1–120, body 1–4000, email?(形校验), page? ≤200, locale? zh-CN|en, website?(蜜罐:非空 → 202 假成功零动作)} → 经 SMTP 投递到 TANSR_API_SUPPORT_MAILBOX(主题 [tansr 支持] <subject> (<ticketId>);正文 ticketId / locale / page / email(若填)/ 正文,恒不含 IP)+ 审计 support.ticket_received → 202 {ok:true, ticketId: tk_<ulid>};路由级限流每 IP 5 / h(429);SMTP 未配置 503 auth_channel_undelivered(不落库不假成功)",
+        "tags": [
+          "control"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportTicketRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "已受理(蜜罐命中亦同形)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportTicketAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad_request(subject / body 长度、email 形、page 长度、locale 词表外、未知键)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate_limited(路由级每 IP 5 / h;Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "auth_channel_undelivered(SMTP 未配置:TANSR_API_SMTP_* 未设;既有码,外投渠道未交割语义)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/client-config": {
       "get": {
         "summary": "client-config bundle(ETag/If-None-Match;304 走缓存;owner PAT 径恒全量——十王修案 FX-A-05:doc/123 D-B1 分档只施于 app_user 令牌径,本径 platformModels 恒四键、x-tansr-client-features 为 no-op、单一 ETag)",
@@ -2854,7 +3008,7 @@
         "x-tansr-org-scope": true
       },
       "delete": {
-        "summary": "应用硬删(级联 app_configs;usage_events 留 api_key_id 数值归档,报表如实显示已删应用)",
+        "summary": "应用硬删；普通组织应用仅所有者 JWT 明确确认直删，其他成员走 app_delete 审批；历史用量与账单归属不迁移",
         "tags": [
           "apps"
         ],
@@ -2874,12 +3028,42 @@
             "description": "org 作用域声明(org 公开 id);服务端校验成员资格与角色,非成员恒 404、角色不够 403"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppDeleteRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "204": {
             "description": "已删"
           },
+          "403": {
+            "description": "组织删除须审批",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "组织所有者尚未明确确认",
             "content": {
               "application/json": {
                 "schema": {
@@ -10012,6 +10196,105 @@
         "x-tansr-org-scope": true
       }
     },
+    "/v1/plan/catalog": {
+      "get": {
+        "summary": "公开 SDK 资费目录；与报价、购买快照同源，无登录要求",
+        "tags": [
+          "control"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "可配置资费目录与应用创建策略",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanCatalogResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "目录配置不可用，停止报价",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/plan-catalog": {
+      "get": {
+        "summary": "读取 SDK 资费目录（ADMIN_READ）",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "目录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanCatalogResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "财务角色原子修订 SDK 资费；expectedRevision 防覆盖，订单和已购套餐保留快照（ADMIN_FINANCE）",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "修订后目录",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanCatalogResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "非法配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "财务角色权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "修订冲突，刷新后再提交",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/plan/quote": {
       "get": {
         "summary": "套餐报价预览(doc/125 §六;query sku=plan:<tier>:<1y|1m>):与 POST /v1/orders 同一判定函数回显动作/应付/起算/到期/差价算式;带 x-tansr-org 头 = org 语境(owner/billing);形外 sku 400;存在 scheduled 降档行 409",
@@ -13461,7 +13744,7 @@
     },
     "/admin/v1/card-keys/batches": {
       "post": {
-        "summary": "卡密批次签发(明文码仅本响应回显一次,库存 sha256;cardkey:write):体 {count: 1–1000, batch?, amount?: DECIMAL 串, sku?: plan:<tier>:1y}——十王修案 FX-A-20 登记 sku(doc/125 §1.2 card_keys.sku,migration 079;复审 07 B2-02):sku 在场 = 套餐卡(卡面值 = 档位年价 PLAN_TIERS[tier].priceYear 服务端定,amount 在场须一致否则 400;兑换即授档,test 卡同时入账 walletCredit;恒年付 1y),缺席 = 充值卡(amount 必填自由面值,兑换即入账);行携 sku(null = 充值卡)",
+        "summary": "卡密批次签发(明文码仅本响应回显一次,库存 sha256;cardkey:write):体 {count: 1–1000, batch?, amount?: DECIMAL 串, sku?: plan:<tier>:1y, catalogRevision?: integer}——十王修案 FX-A-20 登记 sku(doc/125 §1.2 card_keys.sku,migration 079;复审 07 B2-02):sku 在场 = 套餐卡(卡面值 = 当前 SDK 目录年价服务端定，catalogRevision 在场须与目录一致否则 409 plan_catalog_changed，签发时封存权益,amount 在场须一致否则 400;兑换即授档,test 卡同时入账 walletCredit;恒年付 1y),缺席 = 充值卡(amount 必填自由面值,兑换即入账);行携 sku(null = 充值卡)",
         "tags": [
           "admin"
         ],
@@ -14945,7 +15228,7 @@
     },
     "/admin/v1/economy/overview": {
       "get": {
-        "summary": "平台经济总览(CW16-N7 N1 计量聚合,doc/62 §四 E4-N7;revenue 读权限 = super/ops/finance,读审计入册):?from/?to(ISO 窗口 [from,to),缺省全量)+ ?groupBy=owner|model|day(缺省 owner)+ ?limit(1..500 缺省 100);数据源恒 usage_events 明细径 billable gateway 口径(驾驶舱同源);响应 {window, groupBy, totals[](分币合计), rows[], truncated}——行携原始量(requests/token 四象限/cost/estimatedCount/upstream 快照三列/saved 三分量)+ 缓存效率派生位(cacheReadShare = cache_r/总输入 token、fullPriceShare = 全价行/请求数、cacheReadRequests/cacheWriteRequests 行级计数);owner 维行解析公开身份(org 携名,user 只公开 id 恒不携邮箱),行序成本降序截断",
+        "summary": "平台经济总览(CW16-N7 N1 计量聚合,doc/62 §四 E4-N7;revenue 读权限 = super/ops/finance,读审计入册):?from/?to(ISO 窗口 [from,to),缺省全量)+ ?groupBy=owner|model|day(缺省 owner)+ ?limit(1..500 缺省 100);数据源恒 usage_events 明细径 billable gateway 口径(驾驶舱同源);响应 {window, groupBy, totals[]（分币合计）, rows[], truncated}——行携原始量(requests/token 四象限/cost/estimatedCount/upstream 快照三列/saved 三分量)+ 缓存效率派生位(cacheReadShare = cache_r/总输入 token、fullPriceShare = 全价行/请求数、cacheReadRequests/cacheWriteRequests 行级计数);owner 维行解析公开身份(org 携名,user 只公开 id 恒不携邮箱),行序成本降序截断",
         "tags": [
           "admin"
         ],
@@ -14986,7 +15269,7 @@
     },
     "/admin/v1/economy/orgs/{orgId}": {
       "get": {
-        "summary": "组织经济报表(CW16-N7 N1;revenue 读权限,读审计入册):?from/?to + ?sessionsLimit(1..100 缺省 20);响应 {org, window, totals[], byModel[], byDay[], topSessions[](成本降序头部会话,session 公开 id), sessionsTruncated, budget}——budget = {policy(阈值配置,恒可配缺省不启用), month, monthSpent(自然月 UTC billable gateway 同币消耗), status(disabled|ok|warn|exceeded,与日扫 budgetStatusOf 同判据单点), ratio};行形态与 overview 同(缓存效率派生位随行)",
+        "summary": "组织经济报表(CW16-N7 N1;revenue 读权限,读审计入册):?from/?to + ?sessionsLimit(1..100 缺省 20);响应 {org, window, totals[], byModel[], byDay[], topSessions[]（成本降序头部会话,session 公开 id）, sessionsTruncated, budget}——budget = {policy(阈值配置,恒可配缺省不启用), month, monthSpent(自然月 UTC billable gateway 同币消耗), status(disabled|ok|warn|exceeded,与日扫 budgetStatusOf 同判据单点), ratio};行形态与 overview 同(缓存效率派生位随行)",
         "tags": [
           "admin"
         ],
@@ -15027,7 +15310,7 @@
     },
     "/admin/v1/economy/sessions/{sessionId}": {
       "get": {
-        "summary": "会话效率视图(CW16-N7 N1;revenue 读权限,读审计入册;缘起 doc/49 缓存事故的会话级成本形态盲区):?limit(1..1000 缺省 200);响应 {session(公开 id/client/起止), owner(公开身份), totals[](分币合计含 saved/缓存形态位), cacheShape, rounds[](逐轮:requestId/时刻/模型/四象限/cost/savedNet), roundsTruncated}——cacheShape = N3a 三绊线账面重演(basis:\"ledger_replay\":gateway 实报轮按 t1/cache-tripwire 同判据常量复演 cache_read_zero_streak(连续零读 ≥3)与 full_price_echo(|in−cc|/in<5%);机制纳管门不落库故重演不含机制过滤,如实标注)",
+        "summary": "会话效率视图(CW16-N7 N1;revenue 读权限,读审计入册;缘起 doc/49 缓存事故的会话级成本形态盲区):?limit(1..1000 缺省 200);响应 {session(公开 id/client/起止), owner(公开身份), totals[]（分币合计含 saved/缓存形态位）, cacheShape, rounds[]（逐轮:requestId/时刻/模型/四象限/cost/savedNet）, roundsTruncated}——cacheShape = N3a 三绊线账面重演(basis:\"ledger_replay\":gateway 实报轮按 t1/cache-tripwire 同判据常量复演 cache_read_zero_streak(连续零读 ≥3)与 full_price_echo(|in−cc|/in<5%);机制纳管门不落库故重演不含机制过滤,如实标注)",
         "tags": [
           "admin"
         ],
@@ -15068,7 +15351,7 @@
     },
     "/admin/v1/economy/reconciliation": {
       "get": {
-        "summary": "在线计价对账(CW16-N7 N2,doc/56 §3.6 价恒等式窗口批扫;revenue 读权限,读审计入册;CI 门禁恒不依赖):?from/?to 必带 + ?maxScan(1..50000 缺省 5000)+ ?mismatchLimit(1..1000 缺省 200)+ ?afterId(续扫游标);对窗口内 gateway 计量行逐笔重算:销售侧 = 034 快照四列 × 量(explainSaleCost ≡ 落库 cost),采购侧 = fp 反查 billing_spec_snapshots 重算(explainUpstreamCost ≡ 落库 upstream_cost)——与 cost-explain 单笔投影同函数恒不漂移,penny 级微元整数比对;响应 {scanned, exhausted, nextAfterId(未扫尽续扫), ok, sale{checked/matched/mismatched/noSnapshot/unbillable}, upstream{checked/matched/mismatched/noSpec/snapshotMissing/unpriced}, mismatches[](requestId/side/stored/recomputed/delta), mismatchesTruncated};响应恒不携供应商身份(匿名化红线)",
+        "summary": "在线计价对账(CW16-N7 N2,doc/56 §3.6 价恒等式窗口批扫;revenue 读权限,读审计入册;CI 门禁恒不依赖):?from/?to 必带 + ?maxScan(1..50000 缺省 5000)+ ?mismatchLimit(1..1000 缺省 200)+ ?afterId(续扫游标);对窗口内 gateway 计量行逐笔重算:销售侧 = 034 快照四列 × 量(explainSaleCost ≡ 落库 cost),采购侧 = fp 反查 billing_spec_snapshots 重算(explainUpstreamCost ≡ 落库 upstream_cost)——与 cost-explain 单笔投影同函数恒不漂移,penny 级微元整数比对;响应 {scanned, exhausted, nextAfterId(未扫尽续扫), ok, sale{checked/matched/mismatched/noSnapshot/unbillable}, upstream{checked/matched/mismatched/noSpec/snapshotMissing/unpriced}, mismatches[]（requestId/side/stored/recomputed/delta）, mismatchesTruncated};响应恒不携供应商身份(匿名化红线)",
         "tags": [
           "admin"
         ],
@@ -15166,7 +15449,7 @@
     },
     "/admin/v1/economy/budget-policies": {
       "get": {
-        "summary": "组织预算策略全列(CW16-N7;revenue 读权限):{data[](orgId/orgName/currency/monthlyBudget/warnAtPct/enabled/updatedBy/updatedAt), total};悬引用行(org 已删)读面跳过与日扫同纪律",
+        "summary": "组织预算策略全列(CW16-N7;revenue 读权限):{data[]（orgId/orgName/currency/monthlyBudget/warnAtPct/enabled/updatedBy/updatedAt）, total};悬引用行(org 已删)读面跳过与日扫同纪律",
         "tags": [
           "admin"
         ],
@@ -16418,7 +16701,7 @@
     },
     "/admin/v1/users/{id}": {
       "get": {
-        "summary": "用户单取(T-A11;user.read 四角色,support 邮箱打码 + 敏感读审计):{id, email, name, status, createdAt, balance(CNY 锚 DECIMAL 串), balances[](分币 T-A26), recentOrders[](近 10)}",
+        "summary": "用户单取(T-A11;user.read 四角色,support 邮箱打码 + 敏感读审计):{id, email, name, status, createdAt, balance(CNY 锚 DECIMAL 串), balances[]（分币 T-A26）, recentOrders[]（近 10）}",
         "tags": [
           "admin"
         ],
@@ -16573,7 +16856,7 @@
     },
     "/admin/v1/users/{id}/overview": {
       "get": {
-        "summary": "客服 360(T-A16 doc/29 §2.4;user.read;T-A33 support 脱敏:邮箱打码 / 凭据前缀收敛 / 近审计 detail 置 null):{user, balance, balances, usage30d{gateway, client}, keys[](PAT 档), apps[](app 档;携 expiresAt / signRequired), recentOrders[], recentAudit[], sessions30d} 一次聚合;读审计 view=overview",
+        "summary": "客服 360(T-A16 doc/29 §2.4;user.read;T-A33 support 脱敏:邮箱打码 / 凭据前缀收敛 / 近审计 detail 置 null):{user, balance, balances, usage30d{gateway, client}, keys[]（PAT 档）, apps[]（app 档;携 expiresAt / signRequired）, recentOrders[], recentAudit[], sessions30d} 一次聚合;读审计 view=overview",
         "tags": [
           "admin"
         ],
@@ -16888,7 +17171,7 @@
     },
     "/admin/v1/orgs/{id}": {
       "get": {
-        "summary": "组织单取(四角色只读):{org{id, name, plan, status, createdAt}, members[](邮箱打码), balance, balances[], apiKeys{total, active}, licenses{total, active}, pendingApprovals};deleted 态余额 = 冻结呈现",
+        "summary": "组织单取(四角色只读):{org{id, name, plan, status, createdAt}, members[]（邮箱打码）, balance, balances[], apiKeys{total, active}, licenses{total, active}, pendingApprovals};deleted 态余额 = 冻结呈现",
         "tags": [
           "admin"
         ],
@@ -20069,7 +20352,7 @@
         },
         "responses": {
           "200": {
-            "description": "{ supplier:{id}, reachable, latencyMs, auth: ok|rejected|unknown, status?, models?: string[](≤ 200), error?: {code: base_url_missing|credential_missing|egress_blocked|timeout|network|auth_rejected|upstream_status|bad_response, message(固定文案)} }",
+            "description": "{ supplier:{id}, reachable, latencyMs, auth: ok|rejected|unknown, status?, models?: string[]（≤ 200）, error?: {code: base_url_missing|credential_missing|egress_blocked|timeout|network|auth_rejected|upstream_status|bad_response, message(固定文案)} }",
             "content": {
               "application/json": {
                 "schema": {
@@ -20180,6 +20463,71 @@
           },
           "404": {
             "description": "not_found(供应商)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "x-tansr-console": "generic"
+      }
+    },
+    "/admin/v1/docs/feedback/summary": {
+      "get": {
+        "summary": "资料站页面反馈聚合(P2 DS-17;四角色只读;泛型运维操作台 op):?days=N(1..365,缺省 30;窗 = 今日 UTC 向前 N 日含今日)→ {data[]: {path, helpful, unhelpful}},序 = 总票数降序、path 升序;零审计(非敏感读)",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "default": 30
+            },
+            "description": "回看天数(含今日)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{data[]}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocsFeedbackSummaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad_request(days 非 1..365 整数)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23033,6 +23381,11 @@
                 "type": "string"
               }
             ]
+          },
+          "catalogRevision": {
+            "minimum": 0,
+            "description": "套餐报价的目录修订号；不一致须重新报价",
+            "type": "integer"
           }
         }
       },
@@ -23095,6 +23448,112 @@
           },
           "createdAt": {
             "type": "string"
+          },
+          "planOffer": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "catalogRevision",
+              "caps",
+              "walletCredit",
+              "giftTokens"
+            ],
+            "properties": {
+              "catalogRevision": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "caps": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "concurrency",
+                  "apps",
+                  "orgMembers",
+                  "monthlyEndUsers",
+                  "gatewayLane"
+                ],
+                "properties": {
+                  "concurrency": {
+                    "minimum": 0,
+                    "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                    "type": "integer"
+                  },
+                  "apps": {
+                    "minimum": 0,
+                    "description": "应用数上限(active app-scope 键)",
+                    "type": "integer"
+                  },
+                  "orgMembers": {
+                    "minimum": 0,
+                    "description": "组织成员上限(仅 org owner 生效)",
+                    "type": "integer"
+                  },
+                  "monthlyEndUsers": {
+                    "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                    "anyOf": [
+                      {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gatewayLane": {
+                    "description": "可登记出口 IP 进网关档(SC-34)",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "walletCredit": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "giftTokens": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "enabled",
+                  "amount",
+                  "grantOn",
+                  "expiresAfterDays"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "amount": {
+                    "minimum": 0,
+                    "maximum": 1000000000000,
+                    "type": "integer"
+                  },
+                  "grantOn": {
+                    "const": "purchase",
+                    "type": "string"
+                  },
+                  "expiresAfterDays": {
+                    "anyOf": [
+                      {
+                        "minimum": 1,
+                        "maximum": 3660,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           },
           "paidAt": {
             "anyOf": [
@@ -23175,6 +23634,112 @@
               },
               "createdAt": {
                 "type": "string"
+              },
+              "planOffer": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "catalogRevision",
+                  "caps",
+                  "walletCredit",
+                  "giftTokens"
+                ],
+                "properties": {
+                  "catalogRevision": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "caps": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "concurrency",
+                      "apps",
+                      "orgMembers",
+                      "monthlyEndUsers",
+                      "gatewayLane"
+                    ],
+                    "properties": {
+                      "concurrency": {
+                        "minimum": 0,
+                        "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                        "type": "integer"
+                      },
+                      "apps": {
+                        "minimum": 0,
+                        "description": "应用数上限(active app-scope 键)",
+                        "type": "integer"
+                      },
+                      "orgMembers": {
+                        "minimum": 0,
+                        "description": "组织成员上限(仅 org owner 生效)",
+                        "type": "integer"
+                      },
+                      "monthlyEndUsers": {
+                        "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                        "anyOf": [
+                          {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "gatewayLane": {
+                        "description": "可登记出口 IP 进网关档(SC-34)",
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "walletCredit": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "giftTokens": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "enabled",
+                      "amount",
+                      "grantOn",
+                      "expiresAfterDays"
+                    ],
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "amount": {
+                        "minimum": 0,
+                        "maximum": 1000000000000,
+                        "type": "integer"
+                      },
+                      "grantOn": {
+                        "const": "purchase",
+                        "type": "string"
+                      },
+                      "expiresAfterDays": {
+                        "anyOf": [
+                          {
+                            "minimum": 1,
+                            "maximum": 3660,
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
               },
               "paidAt": {
                 "anyOf": [
@@ -23287,6 +23852,112 @@
               },
               "createdAt": {
                 "type": "string"
+              },
+              "planOffer": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "catalogRevision",
+                  "caps",
+                  "walletCredit",
+                  "giftTokens"
+                ],
+                "properties": {
+                  "catalogRevision": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "caps": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "concurrency",
+                      "apps",
+                      "orgMembers",
+                      "monthlyEndUsers",
+                      "gatewayLane"
+                    ],
+                    "properties": {
+                      "concurrency": {
+                        "minimum": 0,
+                        "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                        "type": "integer"
+                      },
+                      "apps": {
+                        "minimum": 0,
+                        "description": "应用数上限(active app-scope 键)",
+                        "type": "integer"
+                      },
+                      "orgMembers": {
+                        "minimum": 0,
+                        "description": "组织成员上限(仅 org owner 生效)",
+                        "type": "integer"
+                      },
+                      "monthlyEndUsers": {
+                        "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                        "anyOf": [
+                          {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "gatewayLane": {
+                        "description": "可登记出口 IP 进网关档(SC-34)",
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "walletCredit": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "giftTokens": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "enabled",
+                      "amount",
+                      "grantOn",
+                      "expiresAfterDays"
+                    ],
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "amount": {
+                        "minimum": 0,
+                        "maximum": 1000000000000,
+                        "type": "integer"
+                      },
+                      "grantOn": {
+                        "const": "purchase",
+                        "type": "string"
+                      },
+                      "expiresAfterDays": {
+                        "anyOf": [
+                          {
+                            "minimum": 1,
+                            "maximum": 3660,
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
               },
               "paidAt": {
                 "anyOf": [
@@ -23407,6 +24078,112 @@
         "properties": {
           "sku": {
             "type": "string"
+          },
+          "offer": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "catalogRevision",
+              "caps",
+              "walletCredit",
+              "giftTokens"
+            ],
+            "properties": {
+              "catalogRevision": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "caps": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "concurrency",
+                  "apps",
+                  "orgMembers",
+                  "monthlyEndUsers",
+                  "gatewayLane"
+                ],
+                "properties": {
+                  "concurrency": {
+                    "minimum": 0,
+                    "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                    "type": "integer"
+                  },
+                  "apps": {
+                    "minimum": 0,
+                    "description": "应用数上限(active app-scope 键)",
+                    "type": "integer"
+                  },
+                  "orgMembers": {
+                    "minimum": 0,
+                    "description": "组织成员上限(仅 org owner 生效)",
+                    "type": "integer"
+                  },
+                  "monthlyEndUsers": {
+                    "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                    "anyOf": [
+                      {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gatewayLane": {
+                    "description": "可登记出口 IP 进网关档(SC-34)",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "walletCredit": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "giftTokens": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "enabled",
+                  "amount",
+                  "grantOn",
+                  "expiresAfterDays"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "amount": {
+                    "minimum": 0,
+                    "maximum": 1000000000000,
+                    "type": "integer"
+                  },
+                  "grantOn": {
+                    "const": "purchase",
+                    "type": "string"
+                  },
+                  "expiresAfterDays": {
+                    "anyOf": [
+                      {
+                        "minimum": 1,
+                        "maximum": 3660,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
           },
           "tier": {
             "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
@@ -23583,6 +24360,547 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "PlanCatalogResponse": {
+        "$id": "PlanCatalogResponse",
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "currency",
+          "tiers",
+          "appCreatePolicy",
+          "revision"
+        ],
+        "properties": {
+          "currency": {
+            "const": "CNY",
+            "type": "string"
+          },
+          "tiers": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "tier",
+                "caps",
+                "priceYear",
+                "priceMonth",
+                "walletCredit",
+                "displayName",
+                "description",
+                "highlights",
+                "benefits"
+              ],
+              "properties": {
+                "tier": {
+                  "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
+                  "anyOf": [
+                    {
+                      "const": "test",
+                      "type": "string"
+                    },
+                    {
+                      "const": "small",
+                      "type": "string"
+                    },
+                    {
+                      "const": "medium",
+                      "type": "string"
+                    },
+                    {
+                      "const": "large",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "caps": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "concurrency",
+                    "apps",
+                    "orgMembers",
+                    "monthlyEndUsers",
+                    "gatewayLane"
+                  ],
+                  "properties": {
+                    "concurrency": {
+                      "minimum": 0,
+                      "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                      "type": "integer"
+                    },
+                    "apps": {
+                      "minimum": 0,
+                      "description": "应用数上限(active app-scope 键)",
+                      "type": "integer"
+                    },
+                    "orgMembers": {
+                      "minimum": 0,
+                      "description": "组织成员上限(仅 org owner 生效)",
+                      "type": "integer"
+                    },
+                    "monthlyEndUsers": {
+                      "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                      "anyOf": [
+                        {
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "gatewayLane": {
+                      "description": "可登记出口 IP 进网关档(SC-34)",
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "priceYear": {
+                  "type": "string"
+                },
+                "priceMonth": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "walletCredit": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "displayName": {
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                "description": {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                "highlights": {
+                  "maxItems": 12,
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                },
+                "benefits": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "giftTokens"
+                  ],
+                  "properties": {
+                    "giftTokens": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "enabled",
+                        "amount",
+                        "grantOn",
+                        "expiresAfterDays"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "amount": {
+                          "minimum": 0,
+                          "maximum": 1000000000000,
+                          "type": "integer"
+                        },
+                        "grantOn": {
+                          "const": "purchase",
+                          "type": "string"
+                        },
+                        "expiresAfterDays": {
+                          "anyOf": [
+                            {
+                              "minimum": 1,
+                              "maximum": 3660,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "appCreatePolicy": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "freeApps",
+              "developerRequiredAbove",
+              "minimumTier",
+              "freeCaps"
+            ],
+            "properties": {
+              "freeApps": {
+                "minimum": 0,
+                "maximum": 5,
+                "type": "integer"
+              },
+              "developerRequiredAbove": {
+                "const": 5,
+                "type": "number"
+              },
+              "minimumTier": {
+                "const": "small",
+                "type": "string"
+              },
+              "freeCaps": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "concurrency",
+                  "apps",
+                  "orgMembers",
+                  "monthlyEndUsers",
+                  "gatewayLane"
+                ],
+                "properties": {
+                  "concurrency": {
+                    "minimum": 0,
+                    "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                    "type": "integer"
+                  },
+                  "apps": {
+                    "minimum": 0,
+                    "description": "应用数上限(active app-scope 键)",
+                    "type": "integer"
+                  },
+                  "orgMembers": {
+                    "minimum": 0,
+                    "description": "组织成员上限(仅 org owner 生效)",
+                    "type": "integer"
+                  },
+                  "monthlyEndUsers": {
+                    "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                    "anyOf": [
+                      {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gatewayLane": {
+                    "description": "可登记出口 IP 进网关档(SC-34)",
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "revision": {
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      },
+      "PlanCatalogPutRequest": {
+        "$id": "PlanCatalogPutRequest",
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expectedRevision",
+          "catalog",
+          "reason"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "catalog": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "currency",
+              "tiers",
+              "appCreatePolicy"
+            ],
+            "properties": {
+              "currency": {
+                "const": "CNY",
+                "type": "string"
+              },
+              "tiers": {
+                "minItems": 4,
+                "maxItems": 4,
+                "type": "array",
+                "items": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "tier",
+                    "caps",
+                    "priceYear",
+                    "priceMonth",
+                    "walletCredit",
+                    "displayName",
+                    "description",
+                    "highlights",
+                    "benefits"
+                  ],
+                  "properties": {
+                    "tier": {
+                      "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
+                      "anyOf": [
+                        {
+                          "const": "test",
+                          "type": "string"
+                        },
+                        {
+                          "const": "small",
+                          "type": "string"
+                        },
+                        {
+                          "const": "medium",
+                          "type": "string"
+                        },
+                        {
+                          "const": "large",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "caps": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "concurrency",
+                        "apps",
+                        "orgMembers",
+                        "monthlyEndUsers",
+                        "gatewayLane"
+                      ],
+                      "properties": {
+                        "concurrency": {
+                          "minimum": 0,
+                          "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                          "type": "integer"
+                        },
+                        "apps": {
+                          "minimum": 0,
+                          "description": "应用数上限(active app-scope 键)",
+                          "type": "integer"
+                        },
+                        "orgMembers": {
+                          "minimum": 0,
+                          "description": "组织成员上限(仅 org owner 生效)",
+                          "type": "integer"
+                        },
+                        "monthlyEndUsers": {
+                          "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                          "anyOf": [
+                            {
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "gatewayLane": {
+                          "description": "可登记出口 IP 进网关档(SC-34)",
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "priceYear": {
+                      "type": "string"
+                    },
+                    "priceMonth": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "walletCredit": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "displayName": {
+                      "minLength": 1,
+                      "maxLength": 60,
+                      "type": "string"
+                    },
+                    "description": {
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    "highlights": {
+                      "maxItems": 12,
+                      "type": "array",
+                      "items": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      }
+                    },
+                    "benefits": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "giftTokens"
+                      ],
+                      "properties": {
+                        "giftTokens": {
+                          "additionalProperties": false,
+                          "type": "object",
+                          "required": [
+                            "enabled",
+                            "amount",
+                            "grantOn",
+                            "expiresAfterDays"
+                          ],
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean"
+                            },
+                            "amount": {
+                              "minimum": 0,
+                              "maximum": 1000000000000,
+                              "type": "integer"
+                            },
+                            "grantOn": {
+                              "const": "purchase",
+                              "type": "string"
+                            },
+                            "expiresAfterDays": {
+                              "anyOf": [
+                                {
+                                  "minimum": 1,
+                                  "maximum": 3660,
+                                  "type": "integer"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "appCreatePolicy": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "freeApps",
+                  "developerRequiredAbove",
+                  "minimumTier",
+                  "freeCaps"
+                ],
+                "properties": {
+                  "freeApps": {
+                    "minimum": 0,
+                    "maximum": 5,
+                    "type": "integer"
+                  },
+                  "developerRequiredAbove": {
+                    "const": 5,
+                    "type": "number"
+                  },
+                  "minimumTier": {
+                    "const": "small",
+                    "type": "string"
+                  },
+                  "freeCaps": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "concurrency",
+                      "apps",
+                      "orgMembers",
+                      "monthlyEndUsers",
+                      "gatewayLane"
+                    ],
+                    "properties": {
+                      "concurrency": {
+                        "minimum": 0,
+                        "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                        "type": "integer"
+                      },
+                      "apps": {
+                        "minimum": 0,
+                        "description": "应用数上限(active app-scope 键)",
+                        "type": "integer"
+                      },
+                      "orgMembers": {
+                        "minimum": 0,
+                        "description": "组织成员上限(仅 org owner 生效)",
+                        "type": "integer"
+                      },
+                      "monthlyEndUsers": {
+                        "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                        "anyOf": [
+                          {
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "gatewayLane": {
+                        "description": "可登记出口 IP 进网关档(SC-34)",
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "reason": {
+            "minLength": 1,
+            "maxLength": 500,
+            "type": "string"
           }
         }
       },
@@ -23998,7 +25316,7 @@
             ]
           },
           "catalog": {
-            "description": "PLAN_TIERS 展示字段(档序 test→large)",
+            "description": "平台当前可购目录；已购 caps 仍读套餐快照",
             "type": "array",
             "items": {
               "additionalProperties": false,
@@ -24008,7 +25326,11 @@
                 "caps",
                 "priceYear",
                 "priceMonth",
-                "walletCredit"
+                "walletCredit",
+                "displayName",
+                "description",
+                "highlights",
+                "benefits"
               ],
               "properties": {
                 "tier": {
@@ -24098,7 +25420,181 @@
                       "type": "null"
                     }
                   ]
+                },
+                "displayName": {
+                  "minLength": 1,
+                  "maxLength": 60,
+                  "type": "string"
+                },
+                "description": {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                "highlights": {
+                  "maxItems": 12,
+                  "type": "array",
+                  "items": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                },
+                "benefits": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "giftTokens"
+                  ],
+                  "properties": {
+                    "giftTokens": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "enabled",
+                        "amount",
+                        "grantOn",
+                        "expiresAfterDays"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "amount": {
+                          "minimum": 0,
+                          "maximum": 1000000000000,
+                          "type": "integer"
+                        },
+                        "grantOn": {
+                          "const": "purchase",
+                          "type": "string"
+                        },
+                        "expiresAfterDays": {
+                          "anyOf": [
+                            {
+                              "minimum": 1,
+                              "maximum": 3660,
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
                 }
+              }
+            }
+          },
+          "catalogRevision": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "appCreatePolicy": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "freeApps",
+              "developerRequiredAbove",
+              "minimumTier",
+              "freeCaps"
+            ],
+            "properties": {
+              "freeApps": {
+                "minimum": 0,
+                "maximum": 5,
+                "type": "integer"
+              },
+              "developerRequiredAbove": {
+                "const": 5,
+                "type": "number"
+              },
+              "minimumTier": {
+                "const": "small",
+                "type": "string"
+              },
+              "freeCaps": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "concurrency",
+                  "apps",
+                  "orgMembers",
+                  "monthlyEndUsers",
+                  "gatewayLane"
+                ],
+                "properties": {
+                  "concurrency": {
+                    "minimum": 0,
+                    "description": "并发会话上限(软帽;硬帽 = floor(×1.1))",
+                    "type": "integer"
+                  },
+                  "apps": {
+                    "minimum": 0,
+                    "description": "应用数上限(active app-scope 键)",
+                    "type": "integer"
+                  },
+                  "orgMembers": {
+                    "minimum": 0,
+                    "description": "组织成员上限(仅 org owner 生效)",
+                    "type": "integer"
+                  },
+                  "monthlyEndUsers": {
+                    "description": "月度不同终端用户帽(仅 test = 100;null = 不限)",
+                    "anyOf": [
+                      {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gatewayLane": {
+                    "description": "可登记出口 IP 进网关档(SC-34)",
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "tokenAllowance": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "available",
+              "reserved",
+              "consumed",
+              "nextExpiry"
+            ],
+            "properties": {
+              "available": {
+                "pattern": "^[0-9]+$",
+                "description": "当前有效赠额减在途持有，Token 整数字符串",
+                "type": "string"
+              },
+              "reserved": {
+                "pattern": "^[0-9]+$",
+                "description": "当前有效赠额的在途持有 Token",
+                "type": "string"
+              },
+              "consumed": {
+                "pattern": "^[0-9]+$",
+                "description": "此 owner 全部历史赠额累计已核销 Token",
+                "type": "string"
+              },
+              "nextExpiry": {
+                "description": "下一笔可用剩余额度的到期时间",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             }
           }
@@ -27324,7 +28820,7 @@
         ],
         "properties": {
           "selected": {
-            "description": "恒数组,无档回 [](未配置=空集);原样回读不清洗(停用/围栏收回由消费点谓词 fail-closed 挡下)",
+            "description": "恒数组,无档回 `[]`(未配置 = 空集);原样回读不清洗(停用/围栏收回由消费点谓词 fail-closed 挡下)",
             "type": "array",
             "items": {
               "type": "string"
@@ -27430,6 +28926,64 @@
           "createdAt"
         ],
         "properties": {
+          "credentialRotationRequired": {
+            "description": "离组收回旧凭据；应用仍归组织，须当前组织管理员轮换。旧令牌和双头立即失效。",
+            "type": "boolean"
+          },
+          "ownership": {
+            "type": "object",
+            "required": [
+              "type",
+              "orgId"
+            ],
+            "properties": {
+              "type": {
+                "anyOf": [
+                  {
+                    "const": "user",
+                    "type": "string"
+                  },
+                  {
+                    "const": "org",
+                    "type": "string"
+                  }
+                ]
+              },
+              "orgId": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "required": [
+              "canManage",
+              "canDelete",
+              "canRequestDeletion"
+            ],
+            "properties": {
+              "canManage": {
+                "type": "boolean"
+              },
+              "canDelete": {
+                "type": "boolean"
+              },
+              "canRequestDeletion": {
+                "type": "boolean"
+              },
+              "deletionRequestUnavailableReason": {
+                "const": "org_governance_disabled",
+                "type": "string"
+              }
+            }
+          },
           "id": {
             "description": "ApiKeyId(api_keys.public_id;门户/审计/报表同键,可公开引用)",
             "type": "string"
@@ -27542,6 +29096,17 @@
           }
         }
       },
+      "AppDeleteRequest": {
+        "$id": "AppDeleteRequest",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "confirmOrganizationDeletion": {
+            "description": "组织所有者本人 JWT 删除普通组织应用须显式 true；其他成员申请 app_delete 审批。个人与 CLI 装置键删除不要求此字段。",
+            "type": "boolean"
+          }
+        }
+      },
       "AppCreateRequest": {
         "$id": "AppCreateRequest",
         "additionalProperties": false,
@@ -27621,6 +29186,64 @@
               "createdAt"
             ],
             "properties": {
+              "credentialRotationRequired": {
+                "description": "离组收回旧凭据；应用仍归组织，须当前组织管理员轮换。旧令牌和双头立即失效。",
+                "type": "boolean"
+              },
+              "ownership": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "orgId"
+                ],
+                "properties": {
+                  "type": {
+                    "anyOf": [
+                      {
+                        "const": "user",
+                        "type": "string"
+                      },
+                      {
+                        "const": "org",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "orgId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "permissions": {
+                "type": "object",
+                "required": [
+                  "canManage",
+                  "canDelete",
+                  "canRequestDeletion"
+                ],
+                "properties": {
+                  "canManage": {
+                    "type": "boolean"
+                  },
+                  "canDelete": {
+                    "type": "boolean"
+                  },
+                  "canRequestDeletion": {
+                    "type": "boolean"
+                  },
+                  "deletionRequestUnavailableReason": {
+                    "const": "org_governance_disabled",
+                    "type": "string"
+                  }
+                }
+              },
               "id": {
                 "description": "ApiKeyId(api_keys.public_id;门户/审计/报表同键,可公开引用)",
                 "type": "string"
@@ -28511,6 +30134,64 @@
               "createdAt"
             ],
             "properties": {
+              "credentialRotationRequired": {
+                "description": "离组收回旧凭据；应用仍归组织，须当前组织管理员轮换。旧令牌和双头立即失效。",
+                "type": "boolean"
+              },
+              "ownership": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "orgId"
+                ],
+                "properties": {
+                  "type": {
+                    "anyOf": [
+                      {
+                        "const": "user",
+                        "type": "string"
+                      },
+                      {
+                        "const": "org",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "orgId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "permissions": {
+                "type": "object",
+                "required": [
+                  "canManage",
+                  "canDelete",
+                  "canRequestDeletion"
+                ],
+                "properties": {
+                  "canManage": {
+                    "type": "boolean"
+                  },
+                  "canDelete": {
+                    "type": "boolean"
+                  },
+                  "canRequestDeletion": {
+                    "type": "boolean"
+                  },
+                  "deletionRequestUnavailableReason": {
+                    "const": "org_governance_disabled",
+                    "type": "string"
+                  }
+                }
+              },
               "id": {
                 "description": "ApiKeyId(api_keys.public_id;门户/审计/报表同键,可公开引用)",
                 "type": "string"
@@ -30377,7 +32058,7 @@
         ],
         "properties": {
           "kind": {
-            "description": "审批六类判别(doc/32 §4);unlock_experimental 恒 level=platform,余 org",
+            "description": "审批判别；app_delete 为组织应用删除；unlock_experimental 恒 level=platform,余 org",
             "anyOf": [
               {
                 "const": "expand_model",
@@ -30397,6 +32078,10 @@
               },
               {
                 "const": "harness_license",
+                "type": "string"
+              },
+              {
+                "const": "app_delete",
                 "type": "string"
               },
               {
@@ -30578,7 +32263,7 @@
             "type": "string"
           },
           "kind": {
-            "description": "审批六类判别(doc/32 §4);unlock_experimental 恒 level=platform,余 org",
+            "description": "审批判别；app_delete 为组织应用删除；unlock_experimental 恒 level=platform,余 org",
             "anyOf": [
               {
                 "const": "expand_model",
@@ -30598,6 +32283,10 @@
               },
               {
                 "const": "harness_license",
+                "type": "string"
+              },
+              {
+                "const": "app_delete",
                 "type": "string"
               },
               {
@@ -35543,6 +37232,158 @@
             "type": "string"
           }
         }
+      },
+      "DocsFeedbackRequest": {
+        "additionalProperties": false,
+        "description": "资料站「这页有帮助吗」反馈体(P2 共同派单 §0 契约 1)",
+        "type": "object",
+        "required": [
+          "path",
+          "helpful"
+        ],
+        "properties": {
+          "path": {
+            "pattern": "^\\/[a-z0-9\\-/]*$",
+            "maxLength": 200,
+            "description": "资料站页面路径(站内相对路径,小写字母 / 数字 / - / /;≤ 200)",
+            "type": "string"
+          },
+          "helpful": {
+            "description": "这页有帮助吗(严格 boolean;字串 / 数字不受理)",
+            "type": "boolean"
+          },
+          "locale": {
+            "description": "页面语言(可选)",
+            "anyOf": [
+              {
+                "const": "zh-CN",
+                "type": "string"
+              },
+              {
+                "const": "en",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      },
+      "DocsFeedbackAccepted": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          }
+        }
+      },
+      "DocsFeedbackSummaryResponse": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "properties": {
+          "data": {
+            "description": "按 path 聚合;序 = (helpful + unhelpful) 降序、path 升序",
+            "type": "array",
+            "items": {
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "path",
+                "helpful",
+                "unhelpful"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "helpful": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "unhelpful": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SupportTicketRequest": {
+        "additionalProperties": false,
+        "description": "资料站支持工单体(P2 共同派单 §0 契约 2)",
+        "type": "object",
+        "required": [
+          "subject",
+          "body"
+        ],
+        "properties": {
+          "subject": {
+            "minLength": 1,
+            "maxLength": 120,
+            "description": "主题(修剪后 1–120)",
+            "type": "string"
+          },
+          "body": {
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "正文(修剪后 1–4000)",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "description": "联系邮箱(可选;填则形校验)",
+            "type": "string"
+          },
+          "page": {
+            "maxLength": 200,
+            "description": "来源页面路径(可选;≤ 200)",
+            "type": "string"
+          },
+          "locale": {
+            "description": "页面语言(可选)",
+            "anyOf": [
+              {
+                "const": "zh-CN",
+                "type": "string"
+              },
+              {
+                "const": "en",
+                "type": "string"
+              }
+            ]
+          },
+          "website": {
+            "description": "蜜罐位:人类表单恒空;非空 → 202 假成功零动作",
+            "type": "string"
+          }
+        }
+      },
+      "SupportTicketAccepted": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ok",
+          "ticketId"
+        ],
+        "properties": {
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          },
+          "ticketId": {
+            "pattern": "^tk_[0-9A-HJKMNP-TV-Z]{26}$",
+            "description": "tk_ + ulid(邮件主题同携;蜜罐命中亦回形同 id)",
+            "type": "string"
+          }
+        }
       }
     }
   },
@@ -35555,9 +37396,9 @@
     },
     {
       "key": "plan_enforce",
-      "consumer": "control/plan-gate.ts planMode(套餐并发帽 + plan-limits 三上限同一开关;进程内 5s 缓存)",
+      "consumer": "control/plan-gate.ts planMode(已购套餐并发与月度终端用户);control/plan-limits.ts(组织成员与网关档);进程内 5s 缓存",
       "absentMeaning": "shadow",
-      "impact": "enabled → enforce:并发帽超硬帽拒新会话 429 plan_concurrency_exceeded、应用数 / 组织成员数 / 网关档三上限拒新建;守门 Redis 故障 fail-closed 503 plan_gate_unavailable。缺席 / disabled → shadow:只计 would_reject(指标 + 按 owner/日/gate 去重审计 plan.shadow_would_reject),恒不拒绝。开闸前置 = doc/125 §八 三前置(≥ 7 日观察 / would_reject 复核 / plan_peak_over_cap_silent 工单为零),经专属 BFF 二次确认。"
+      "impact": "enabled → enforce:已购套餐并发与月度不同终端用户超帽拒新占位，组织成员上限与网关档按套餐判限；守门 Redis 故障 503 plan_gate_unavailable，在册窗内会话例外保留。缺席 / disabled → shadow:上述可切换门只计 would_reject(指标 + 按 owner/日/gate 去重审计 plan.shadow_would_reject)。个人与组织普通应用创建/恢复的免费名额、第六个须 small 及以上、已购应用数上限始终为硬门，不受本开关影响；无套餐普通 App 的免费并发与月度不同终端用户帽始终 enforce，不受本开关影响。开闸前置 = doc/125 §八 三前置(≥ 7 日观察 / would_reject 复核 / plan_peak_over_cap_silent 工单为零),经专属 BFF 二次确认。"
     }
   ],
   "x-tansr-error-codes": [
@@ -36049,6 +37890,7 @@
       "risk_event.ack",
       "risk_event.resolve",
       "ops.partition_extend",
+      "support.ticket_received",
       "admin_read.revenue",
       "admin_read.user",
       "admin_read.order",

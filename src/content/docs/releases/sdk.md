@@ -88,6 +88,14 @@ generated: true
 
 > 未发(十王修案第二波收编后随 cli monorepo 一版候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
 
+##### 核心机制整改（CM；未发）
+
+- 自动/空闲摘要被质量校验拒绝时，已报告用量仍进入公共成本事件；拒绝摘要不替换历史。取消前已到达的用量会保全，不臆造尚未报告的费用（CM-02）。
+- 直接调用 `runIdleCompaction` 的宿主须消费失败结果的 `events`；`IdleCompactionResult` 失败支路不再保证空数组，可能包含已报告的成本事件。导出名称数量不变，签名快照随本 minor 更新（CM-02/17）。
+- 小上下文窗口的输出回退预算尊重自适应下限、调用方上限和测得的正剩余；零/负估算余量明确告知，并保留实际溢出的既有恢复通道（CM-06）。
+- 四媒体工具在 provider 调用前校验参数；文件原子写失败保旧，大文件分页窗口驻留有界，工具超时增加残余操作提示。宿主无需新增一层媒体审批，重试有副作用工具前应确认旧操作已停止（CM-04/08/09/15）。
+- 平台 ASR 工具、任务提交与 `session.platform.transcribe` 共用实际 JSON 体积预检；原始音频 24 MiB 与 JSON 32 MiB 分开守卫，越限在 fetch 前报错。URL 仍可用，BYO 不套用平台 JSON 帽（CM-11）。
+
 ##### 发版门接管(FX-C-25)
 
 - `prepublishOnly` 恒过 `gate.mjs` 六步;`exports.snapshot.json` 基线入仓(第二波收编后再生),自本版起导出集变化由门判 semver;
