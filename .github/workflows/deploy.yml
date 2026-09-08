@@ -38,31 +38,36 @@ jobs:
       # 门先过(含 build);下面不再单独 build,dist/ 即门里构建的产物
       - run: pnpm gate
 
-      # 部署密钥未交割(doc/134 §六 2)时:门照跑、发布步跳过并在日志明说,不把每次 push 标红;交割后自动生效
+      # 部署密钥未交割时:门照跑、发布步跳过并在日志明说,不把每次 push 标红;交割后自动生效。
+      # 双受限键(DS-26):DOCS_DEPLOY_KEY = 上传键(远端强制命令 docs-rsync-only,只能 rsync 进 releases/<sha>/);
+      # DOCS_SWITCH_KEY = 切换键(远端强制命令 docs-switch,只能 `switch <sha>`);DOCS_HOST = docsdeploy@<host>。
       - name: Deploy secrets present?
         id: cfg
         env:
           DOCS_DEPLOY_KEY: ${{ secrets.DOCS_DEPLOY_KEY }}
+          DOCS_SWITCH_KEY: ${{ secrets.DOCS_SWITCH_KEY }}
           DOCS_HOST: ${{ secrets.DOCS_HOST }}
         run: |
-          if [ -n "$DOCS_DEPLOY_KEY" ] && [ -n "$DOCS_HOST" ]; then
+          if [ -n "$DOCS_DEPLOY_KEY" ] && [ -n "$DOCS_SWITCH_KEY" ] && [ -n "$DOCS_HOST" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::DOCS_DEPLOY_KEY / DOCS_HOST 未配置——本次只跑门与构建,不发布(交割 secrets 后 main 推送即自动发布;首发由主线手动 rsync)"
+            echo "::notice::DOCS_DEPLOY_KEY / DOCS_SWITCH_KEY / DOCS_HOST 未配置——本次只跑门与构建,不发布(交割 secrets 后 main 推送即自动发布)"
           fi
 
       - name: Configure SSH
         if: steps.cfg.outputs.configured == 'true'
         env:
           DOCS_DEPLOY_KEY: ${{ secrets.DOCS_DEPLOY_KEY }}
+          DOCS_SWITCH_KEY: ${{ secrets.DOCS_SWITCH_KEY }}
           DOCS_HOST: ${{ secrets.DOCS_HOST }}
           DOCS_HOST_KEY: ${{ secrets.DOCS_HOST_KEY }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$DOCS_DEPLOY_KEY" > ~/.ssh/docs_deploy_key
-          chmod 600 ~/.ssh/docs_deploy_key
+          printf '%s\n' "$DOCS_DEPLOY_KEY" > ~/.ssh/docs_upload_key
+          printf '%s\n' "$DOCS_SWITCH_KEY" > ~/.ssh/docs_switch_key
+          chmod 600 ~/.ssh/docs_upload_key ~/.ssh/docs_switch_key
           # 主机指纹:优先用 secret DOCS_HOST_KEY(known_hosts 行,可选);缺席时 ssh-keyscan 取一次
           if [ -n "$DOCS_HOST_KEY" ]; then
             printf '%s\n' "$DOCS_HOST_KEY" >> ~/.ssh/known_hosts
@@ -70,21 +75,29 @@ jobs:
             ssh-keyscan -H "${DOCS_HOST#*@}" >> ~/.ssh/known_hosts 2>/dev/null
           fi
           chmod 644 ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<'EOF'
-          Host docs-ecs
-            IdentitiesOnly yes
-            IdentityFile ~/.ssh/docs_deploy_key
-            StrictHostKeyChecking yes
-          EOF
-          # DOCS_HOST 形:host 或 user@host(缺 user 时用 root)
-          host="${DOCS_HOST#*@}"; user="root"
+          # DOCS_HOST 形:host 或 user@host(缺 user 时用 docsdeploy)
+          host="${DOCS_HOST#*@}"; user="docsdeploy"
           case "$DOCS_HOST" in *@*) user="${DOCS_HOST%@*}";; esac
-          printf '  HostName %s\n  User %s\n' "$host" "$user" >> ~/.ssh/config
+          {
+            printf 'Host docs-upload\n  HostName %s\n  User %s\n  IdentitiesOnly yes\n  IdentityFile ~/.ssh/docs_upload_key\n  StrictHostKeyChecking yes\n' "$host" "$user"
+            printf 'Host docs-switch\n  HostName %s\n  User %s\n  IdentitiesOnly yes\n  IdentityFile ~/.ssh/docs_switch_key\n  StrictHostKeyChecking yes\n' "$host" "$user"
+          } > ~/.ssh/config
 
       - name: Publish
         if: steps.cfg.outputs.configured == 'true'
-        run: bash scripts/deploy/publish.sh dist docs-ecs "${GITHUB_SHA}"
+        run: bash scripts/deploy/publish.sh dist docs-upload docs-switch "${GITHUB_SHA}"
 
-      - name: Cleanup key
+      - name: Verify live
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          for i in 1 2 3; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' https://docs.tansr.com/)"
+            [ "$code" = "200" ] && break; sleep 3
+          done
+          echo "docs.tansr.com/ → $code"; [ "$code" = "200" ]
+          ssh docs-switch list | tail -1
+
+      - name: Cleanup keys
         if: always()
-        run: rm -f ~/.ssh/docs_deploy_key
+        run: rm -f ~/.ssh/docs_upload_key ~/.ssh/docs_switch_key
