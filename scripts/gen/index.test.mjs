@@ -129,7 +129,7 @@ test('gen index --check:改一字节 / 删一文件 → 红(exit 1 并列出文�
     assert.equal(red.status, 1);
     assert.match(red.stdout + red.stderr, /DIFF\s+src[\\/]content[\\/]docs[\\/]errors[\\/]codes\.md/);
     assert.match(red.stdout + red.stderr, /MISSING\s+src[\\/]content[\\/]docs[\\/]releases[\\/]sdk\.md/);
-    assert.equal(generateAll(root).length, 7);
+    assert.equal(generateAll(root).length, 8);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

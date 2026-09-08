@@ -1,0 +1,118 @@
+---
+title: Help center
+description: 'Frequently asked questions grouped by topic — getting started and installation, account and keys, plans and billing, sessions and data, errors and troubleshooting, developer integration; plus three entry points: account and billing, troubleshooting, contact support.'
+template: splash
+zone: support
+category: support
+lastVerified: '2026-09-09'
+related:
+  - support/account
+  - support/troubleshooting
+  - support/contact
+  - getting-started
+  - errors/codes
+sources:
+  - tansr-cli:doc/11-用户手册.md
+  - tansr-cli:doc/90-SDK技术手册.md
+  - tansr-cli:packages/server/README.md
+  - tansr-api:openapi/openapi.json
+hero:
+  title: Help center
+  tagline: Account and billing, troubleshooting, contact support. Can't find the answer? Search first, then get in touch.
+  actions:
+    - text: Back to developer docs
+      link: /en/
+      icon: left-arrow
+      variant: minimal
+---
+
+import HeroSearch from '../../../../components/HeroSearch.astro';
+import FaqGroups from '../../../../components/FaqGroups.astro';
+
+<HeroSearch placeholder="Search the help center: keys, plans, bills, error codes…" />
+
+<h2 id="faq" class="home-section-title">Questions by topic</h2>
+
+<FaqGroups />
+
+This is the tansr help center. The developer docs explain "how to use it"; this area answers "what happened to me and who do I ask". Look for your question in the groups below first; if it is not there, use one of the three entry points at the bottom.
+
+## Three entry points
+
+| You need to solve | Where to go |
+|---|---|
+| Can't sign in, lost a key, balance and plan, invoices | [Account and billing](/en/support/account/) |
+| An error, `tansr doctor` output you can't read, what an error code means | [Troubleshooting](/en/support/troubleshooting/) |
+| None of the above solved it, or you want to report something | [Contact support](/en/support/contact/) |
+
+## Getting started and installation
+
+**Which article should I start with?** It depends on where you want the agent to run: in a terminal for yourself, pick the CLI; embedded in a Node / Electron program, pick the SDK; offering an agent to your own users, pick the session service; on mobile, the Android / iOS SDKs through the session service. The decision table is in [Getting started](/en/getting-started/).
+
+**What runtime do I need?** The CLI npm package and both npm libraries need Node.js ≥ 22.19; the single-file executable bundles its own runtime. Android minSdk 26; iOS 16+.
+
+**After `npm i -g @tansr/cli`, what is the command called?** The package is `@tansr/cli`, the command is `tansr`. `tansr --version` confirms the install.
+
+**How do I update?** `tansr update` checks; add `--install` to actually install; `/update` inside the TUI. It never checks automatically at startup; organizations can pin a version with `TANSR_UPDATE_PINNED_VERSION`.
+
+**I don't want the platform, can I bring my own model key?** Yes: set `TANSR_ESCAPE_LOCAL=1` to enter fully local mode and declare a provider in `.tansr/settings.json` (write only the environment variable name for the API key). Platform features (remote models, usage, balance) are disabled as a whole.
+
+## Account and keys
+
+**What is the difference between a PAT, an app key and an end-user token?** A PAT represents you personally and is only for `tansr init` to sign in on your machine; an app key (appid / appkey) represents your app and lives only on your backend; an end-user token is a short-lived credential your backend mints for one user with the appkey. Details in [Account and billing](/en/support/account/) and [Security and privacy](/en/security/).
+
+**`tansr init` says the PAT is invalid or expired.** Create a new PAT in the console and sign in again with `tansr init --fresh`.
+
+**Do I need to sign in again on a new computer?** Yes. Each device holds its own derived key; just run `tansr init` again. The old device's key is unaffected and can be deactivated in the console.
+
+**Does `tansr logout` revoke my PAT?** No. It only clears the local credential and deactivates this machine's derived key; the PAT is managed by you in the console.
+
+## Plans and billing
+
+**Do I pay a plan fee to use the CLI personally?** No. The Personal tier has no plan fee; models are charged at list price from your balance. `tansr doctor` showing "Plan: Personal (CLI only, no plan fee)" is not a fault.
+
+**Where do I see my balance?** The `tansr init` summary card, the TUI status bar (it turns into a persistent warning below 1 yuan), the console. Once the balance is exhausted, platform model calls are rejected by the billing gate; local features are unaffected.
+
+**Why does a new session return 429 while old sessions still work?** Hitting the plan concurrency cap (`plan_concurrency_exceeded`) only rejects **new** sessions; running ones are not cut off. Try again after 30 seconds or upgrade the plan. See [Account and billing](/en/support/account/).
+
+**How much did one call cost?** `/cost` in the TUI summarizes per model; `/usage` shows token details; `/context` shows which part of the context the money went to.
+
+## Sessions and data
+
+**Where are sessions stored? Are they uploaded?** CLI sessions live on your machine under `~/.tansr` (isolated per account once signed in); the platform does not store terminal session content, it only meters. See [Security and privacy](/en/security/).
+
+**How do I resume the last session?** In the TUI, `tansr --resume` opens a picker, or use `/resume`; in scripts, `--resume <id>` / `--continue`.
+
+**The session directory keeps growing, how do I clean it?** `tansr sessions prune` (lists only by default; `--apply` deletes; today's sessions and sessions in use are never deleted).
+
+**What happens when the context is full?** Between turns it is compacted automatically by watermark; you can also run `/compact`. The compaction summary ends with the path of the full pre-compaction transcript, so details can be looked up.
+
+**I want to export a conversation.** `tansr sessions export <id> [--format md|json] [--out path]`; keys are redacted automatically.
+
+## Errors and troubleshooting
+
+**What is the first step?** `tansr doctor`. With zero network access it prints configuration, model resolution, credential location, platform-mode attribution, plan and media-tool source; only exit code 1 is blocking. How to read it: [Troubleshooting](/en/support/troubleshooting/).
+
+**Where do I look up error codes?** The [error codes table](/errors/codes) lists every machine code, HTTP status and whether it is retryable.
+
+**"No model provider configured" but I am signed in.** Look at the `localProviders` section of `tansr doctor`: in platform mode local providers are pruned by default, which is expected; or you are in the escape hatch.
+
+**The model says it has no image / voice tools.** Look at the media-tools line of `tansr doctor`: `none` usually means the administrator has not yet enabled the corresponding media pool for the account, or this machine has not pulled the new configuration yet (restart the session once).
+
+**Permissions are always denied.** Headless / service forms have no prompt channel, so "ask" always degrades to deny; grant with `--allowedTools` or `--permission-mode`, and isolate the environment. On the SDK side, wire `permission.askUser`.
+
+## Developer integration
+
+**Which of the SDK's three model sources should I pick?** Client distribution: the token source `{ token, baseUrl }`; your own server scripts: the managed source `model: '<alias>'`; tests: the injected source. The three are mutually exclusive.
+
+**What happens if the session service has no store?** One process restart wipes the context of every active session, and `resume` always returns `409 resume_unavailable`. Always wire it in production.
+
+**Will the session be lost if the phone goes offline?** No. The SDK reconnects with `Last-Event-ID`, rebuilds from `/history` on a gap, and resumes from the store after a server restart — the three-level recovery chain is fully automatic.
+
+**What do I wire for push wake-up?** The session service only leaves a webhook seam; the push channel (FCM / APNs / vendor) is yours. See [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
+
+**My appkey leaked, what now?** Rotate it in the console immediately, update the server's environment variable and restart; the old appkey is invalidated at once.
+
+## Still stuck?
+
+Bring the output of `tansr doctor` (it contains no key values) and the error code you hit, and [contact support](/en/support/contact/).
