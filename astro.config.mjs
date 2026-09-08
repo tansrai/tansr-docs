@@ -40,6 +40,7 @@ export default defineConfig({
         Header: './src/components/Header.astro',
         MobileMenuFooter: './src/components/MobileMenuFooter.astro',
         Footer: './src/components/Footer.astro',
+        MarkdownContent: './src/components/MarkdownContent.astro',
       },
       plugins: openApiPresent
         ? [
