@@ -11,7 +11,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { isMainModule } from '../lib/text.mjs';
-import { DOCS_DIR, cell, frontmatter, generatedHeader, runGenerator } from './lib.mjs';
+import { DOCS_DIR, cell, frontmatter, generatedHeader, runGenerator, slug } from './lib.mjs';
 import { GLOSSARY } from '../../src/lib/glossary.mjs';
 import { EXTRA_LOCALES, ROOT_LOCALE } from '../../src/lib/categories.mjs';
 
@@ -36,9 +36,9 @@ export function listDocs(root) {
   return out.sort();
 }
 
-/** 文件相对路径 → slug(去扩展名;index → 目录;根 index → '') */
+/** 文件相对路径 → Starlight slug(各路径段小写;index → 目录;根 index → '') */
 export function fileToSlug(file) {
-  let s = file.replace(/\.mdx?$/i, '');
+  let s = file.replace(/\.mdx?$/i, '').split('/').map(slug).join('/');
   if (s === 'index') return '';
   if (s.endsWith('/index')) s = s.slice(0, -'/index'.length);
   return s;

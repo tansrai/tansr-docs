@@ -31,6 +31,25 @@ test('fileToSlug:去扩展名;index → 目录;根 index → 空', () => {
   assert.equal(fileToSlug('a.md'), 'a');
   assert.equal(fileToSlug('b/index.mdx'), 'b');
   assert.equal(fileToSlug('en/support/contact.mdx'), 'en/support/contact');
+  assert.equal(fileToSlug('sdk/api/classes/AgentSession.md'), 'sdk/api/classes/agentsession');
+  assert.equal(fileToSlug('en/sdk/api/functions/createSession.md'), 'en/sdk/api/functions/createsession');
+});
+
+test('覆盖率 URL 与 Starlight 小写符号路由一致,不同文件名大小写的翻译仍配对', () => {
+  const { tmp, page } = fixture();
+  try {
+    page('sdk/api/classes/AgentSession.md', 'AgentSession', '2026-09-09');
+    page('en/sdk/api/classes/agentsession.md', 'AgentSession EN', '2026-09-09');
+    const cov = buildCoverage(tmp);
+    const row = cov.rows.find((r) => r.slug === 'sdk/api/classes/agentsession');
+    assert.equal(row.translated.en, 'AgentSession EN');
+    const text = render(cov);
+    assert.match(text, /\[AgentSession\]\(\/sdk\/api\/classes\/agentsession\/\)/);
+    assert.match(text, /\[AgentSession EN\]\(\/en\/sdk\/api\/classes\/agentsession\/\)/);
+    assert.ok(!text.includes('/AgentSession/'));
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test('readMeta:只取 title / lastVerified / generated,单引号转义还原', () => {

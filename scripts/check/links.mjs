@@ -26,19 +26,24 @@ function parseArgs(argv) {
   return opts;
 }
 
-/** 递归列出 dist 下所有 .html(相对 dist,`/` 分隔) */
-export function listHtml(dist) {
+/** 按目录实际名称列出文件,不依赖宿主文件系统的大小写匹配行为。 */
+function listFiles(dist) {
   const out = [];
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name);
       const st = statSync(full);
       if (st.isDirectory()) walk(full);
-      else if (name.toLowerCase().endsWith('.html')) out.push(relative(dist, full).split('\\').join('/'));
+      else if (st.isFile()) out.push(relative(dist, full).split('\\').join('/'));
     }
   };
   walk(dist);
   return out.sort();
+}
+
+/** 递归列出 dist 下所有 .html(相对 dist,`/` 分隔) */
+export function listHtml(dist) {
+  return listFiles(dist).filter((file) => file.toLowerCase().endsWith('.html'));
 }
 
 /** 抽取 href 值(单双引号皆可;HTML 实体 &amp; 还原) */
@@ -115,7 +120,8 @@ export function checkDist(dist) {
   if (!existsSync(dist) || !statSync(dist).isDirectory()) {
     return { ok: false, notBuilt: true, dead: [], external: [], checked: 0, pages: 0 };
   }
-  const pages = listHtml(dist);
+  const files = new Set(listFiles(dist));
+  const pages = [...files].filter((file) => file.toLowerCase().endsWith('.html'));
   const idCache = new Map();
   const idsOf = (file) => {
     if (!idCache.has(file)) idCache.set(file, extractIds(readFileSync(join(dist, file), 'utf8')));
@@ -141,7 +147,8 @@ export function checkDist(dist) {
         continue;
       }
       const { path, hash } = resolveInternal(from, href);
-      const target = candidateFiles(path).find((c) => existsSync(join(dist, c)) && statSync(join(dist, c)).isFile());
+      // 即使本机是 Windows,也按 Linux 部署目录的精确大小写验链。
+      const target = candidateFiles(path).find((c) => files.has(c));
       if (!target) {
         dead.push({ from, href, reason: `no file for ${path} (tried ${candidateFiles(path).join(', ')})` });
         continue;

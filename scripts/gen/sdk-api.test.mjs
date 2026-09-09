@@ -9,8 +9,8 @@ const root = repoRootFrom(import.meta.url);
 const vendored = JSON.parse(readFileSync(join(root, 'contract', 'vendored.json'), 'utf8'));
 const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
 
-/** 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(P1 登记 482;vendored 更新时随之改)。 */
-export const EXPECTED_EXPORTS = 482;
+/** 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(AP-SP 登记 489;vendored 更新时随之改)。 */
+export const EXPECTED_EXPORTS = 489;
 
 function fm(content) {
   const lines = content.split('\n');
@@ -19,9 +19,9 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 482(值 189 · 类型 293)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 489(值 192 · 类型 297)', () => {
   const c = countExports(dts);
-  assert.deepEqual(c, { values: 189, types: 293, total: EXPECTED_EXPORTS });
+  assert.deepEqual(c, { values: 192, types: 297, total: EXPECTED_EXPORTS });
   assert.deepEqual(countExports('export { A, B };\nexport type { C };\n'), { values: 2, types: 1, total: 3 });
   assert.deepEqual(countExports('declare const x: 1;\n'), { values: 0, types: 0, total: 0 });
 });
