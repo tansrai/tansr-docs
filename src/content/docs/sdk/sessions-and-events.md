@@ -51,6 +51,8 @@ const result = step.value; // QueryResult:reason / finalText / messages / usage 
 
 ## AgentSession 的多轮语义
 
+退出应用或关闭共享 MCP host 前，使用新增的 [closeAsync / drain 真实收尾回执](/sdk/lifecycle/)。下面的 close 示例仅说明原有事件终态，不构成异步存储或底层资源完成证明。
+
 ```ts
 const session = await createSession({ token, baseUrl });
 
@@ -119,7 +121,7 @@ await pump;
 
 1. **resume / attach 恒优先于新建。** 持有上次 `sessionId` → 先试恢复 → 恢复不了才新建；每次进页面开新会话等于把上游已暖的缓存整体作废。
 2. **申报字节恒稳定。** 工具名 / 描述 / 参数 schema / `builtin` 选择集 / system 段都进模型请求前缀，顺序换位或描述改一个字，下一轮整前缀 miss。工具与宿主业务段应保持稳定；平台提示词变更会在后续轮次更新前缀，应同时评估缓存命中与调用成本。
-3. **闲置即 close，恒不弃养。** `close()` 释放内核查询环与平台会话租约，store 内容保留、随时 `resume`。
+3. **闲置即关闭，恒不弃养。** `close()` 发起逻辑关闭与中止；退出宿主前用 `closeAsync()` 核对真实资源及所需存储 flush 回执，详见[生命周期与资源收尾](/sdk/lifecycle/)。平台会话归档是另一条边界，store 内容保留、随时 `resume`。
 
 ## 相关
 

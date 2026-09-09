@@ -11,6 +11,10 @@ generated: true
 
 托管/令牌档单轮选项(工具/权限缝与 CreateSessionOptions 同名同义)
 
+## 继承
+
+- [`QueryLifecycleOptions`](/sdk/api/interfaces/querylifecycleoptions/)
+
 ## 属性
 
 <a id="api-adjudication"></a>
@@ -46,6 +50,22 @@ optional capabilities?: AppCapabilities;
 ```
 
 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1)
+
+***
+
+<a id="api-cleanuptimeoutms"></a>
+
+### cleanupTimeoutMs?
+
+```ts
+optional cleanupTimeoutMs?: number;
+```
+
+Default 30 seconds. Bounds cleanup observation, not model execution.
+
+#### 继承自
+
+[`QueryLifecycleOptions`](/sdk/api/interfaces/querylifecycleoptions/).[`cleanupTimeoutMs`](/sdk/api/interfaces/querylifecycleoptions/#api-cleanuptimeoutms)
 
 ***
 
@@ -182,6 +202,18 @@ modelTurns 护栏;缺省 200(托管便捷面失控保护,与 serve 对齐)
 
 ***
 
+<a id="api-mcp"></a>
+
+### mcp?
+
+```ts
+optional mcp?: McpSessionOption;
+```
+
+显式MCP材料；配置对象为本次自有，McpHost实例为借用。
+
+***
+
 <a id="api-model"></a>
 
 ### model?
@@ -191,6 +223,32 @@ optional model?: string;
 ```
 
 模型别名(main/fast/reasoning/自定义)或 ref(provider/model);缺省 'main'
+
+***
+
+<a id="api-onlifecycleerror"></a>
+
+### onLifecycleError?
+
+```ts
+optional onLifecycleError?: (error) => void;
+```
+
+Required error channel when AsyncIteratorClose preserves a consumer's own throw.
+
+#### 参数
+
+##### error
+
+[`SdkLifecycleError`](/sdk/api/classes/sdklifecycleerror/)
+
+#### 返回
+
+`void`
+
+#### 继承自
+
+[`QueryLifecycleOptions`](/sdk/api/interfaces/querylifecycleoptions/).[`onLifecycleError`](/sdk/api/interfaces/querylifecycleoptions/#api-onlifecycleerror)
 
 ***
 
@@ -210,6 +268,28 @@ optional onPlatformWarning?: (warning) => void;
 ##### warning
 
 [`PlatformWarning`](/sdk/api/interfaces/platformwarning/)
+
+#### 返回
+
+`void`
+
+***
+
+<a id="api-onwarning"></a>
+
+### onWarning?
+
+```ts
+optional onWarning?: (warning) => void;
+```
+
+SDK装配警告；平台子集仍沿onPlatformWarning旧出口。
+
+#### 参数
+
+##### warning
+
+[`SdkWarning`](/sdk/api/interfaces/sdkwarning/)
 
 #### 返回
 
@@ -272,6 +352,18 @@ optional signal?: any;
 ```
 
 外部中断信号(全链透传:模型流 / 工具执行 / 压缩均立即响应)
+
+***
+
+<a id="api-skills"></a>
+
+### skills?
+
+```ts
+optional skills?: SdkSkillsOptions;
+```
+
+显式技能材料；缺席时不扫描CLI技能目录。与createSession同义。
 
 ***
 

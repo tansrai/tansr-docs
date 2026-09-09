@@ -23,7 +23,8 @@ type SdkErrorCode =
   | "checkpoint_not_found"
   | "checkpoint_import_invalid"
   | "session_store_not_wired"
-  | "platform_request_failed";
+  | "platform_request_failed"
+  | "lifecycle_failed";
 ```
 
 错误码(SDK 对外 API 的稳定分支面)

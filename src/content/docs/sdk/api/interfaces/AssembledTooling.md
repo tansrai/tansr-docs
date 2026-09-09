@@ -74,6 +74,18 @@ optional onEnded?: () => Promise<void>;
 
 ***
 
+<a id="api-ownedresources"></a>
+
+### ownedResources?
+
+```ts
+optional ownedResources?: OwnedResources;
+```
+
+内部所有权载体，会话与单轮 query 装配共享同一真实在飞清理。
+
+***
+
 <a id="api-permissiongate"></a>
 
 ### permissionGate

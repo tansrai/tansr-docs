@@ -16,6 +16,7 @@ generated: true
 ## 继承于
 
 - [`PlatformRequestError`](/sdk/api/classes/platformrequesterror/)
+- [`SdkLifecycleError`](/sdk/api/classes/sdklifecycleerror/)
 
 ## 构造函数
 

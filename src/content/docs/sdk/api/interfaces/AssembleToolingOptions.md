@@ -161,6 +161,32 @@ mode)。此前 sdk 构造执行器不传此缝 = 记录丢弃。缺省实现:`so
 
 ***
 
+<a id="api-onrollback"></a>
+
+### onRollback?
+
+```ts
+optional onRollback?: (resources, cause) => never;
+```
+
+私有所有权移交：query在回滚开始接管资源及统一观察预算；session保留缺省回滚。
+
+#### 参数
+
+##### resources
+
+`OwnedResources`
+
+##### cause
+
+`unknown`
+
+#### 返回
+
+`never`
+
+***
+
 <a id="api-permission"></a>
 
 ### permission?

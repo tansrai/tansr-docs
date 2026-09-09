@@ -34,6 +34,30 @@ new McpHost(options): McpHost;
 
 `McpHost`
 
+## 访问器
+
+<a id="api-cleanupevidence"></a>
+
+### cleanupEvidence
+
+#### Getter 签名
+
+```ts
+get cleanupEvidence(): readonly {
+  level: McpCloseEvidenceLevel;
+  resource: "mcp";
+}[];
+```
+
+pending时仅描述能力层;dispose完成后才表示已等待此层。
+
+##### 返回
+
+readonly \{
+  `level`: `McpCloseEvidenceLevel`;
+  `resource`: `"mcp"`;
+\}[]
+
 ## 方法
 
 <a id="api-dispose"></a>

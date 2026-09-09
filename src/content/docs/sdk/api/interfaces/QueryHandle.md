@@ -139,6 +139,30 @@ user/assistant/tool_result 消息)。多轮会话装配(TUI/serve)在终态后
 
 ***
 
+<a id="api-settle"></a>
+
+### settle()?
+
+```ts
+optional settle(options?): Promise<QuerySettlement>;
+```
+
+CM-13：等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
+终态事件仅代表逻辑结束；timeout/cancelled保留实际在飞工作，可再次等待。
+runQuery恒提供；第三方旧句柄可缺席，此时调用方只能证明其既有迭代器合同。
+
+#### 参数
+
+##### options?
+
+[`QuerySettleOptions`](/sdk/api/interfaces/querysettleoptions/)
+
+#### 返回
+
+`Promise`\<[`QuerySettlement`](/sdk/api/interfaces/querysettlement/)\>
+
+***
+
 <a id="api-state"></a>
 
 ### state()

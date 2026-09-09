@@ -1,0 +1,70 @@
+---
+title: 关闭会话与等待资源收尾
+description: 用 closeAsync、drain 与 MCP 完成回执处理退出、超时、失败和重试，说明 Electron 与 Android、iOS 的责任边界。
+zone: docs
+category: sdk
+related:
+  - sdk/sessions-and-events
+  - sdk/system-prompts
+  - getting-started/sdk
+sources:
+  - tansr-cli:packages/sdk/README.md
+  - tansr-cli:doc/90-SDK技术手册.md
+lastVerified: '2026-09-10'
+---
+
+本页描述当前开发源码的新增接口，需配套 SDK／serve 发布后使用。业务事件结束与资源真正关闭是两个时点。
+
+| 操作 | 用途 |
+| --- | --- |
+| `idle()`、`close()`、`session.ended` | 保留原业务终态；不证明存储和底层资源完成 |
+| `session.drain(options?)` | 等待当前查询、空闲操作、提交与已发起清理；不关闭会话 |
+| `session.closeAsync(options?)` | 先逻辑关闭，再按同一预算等待真实收尾 |
+| `host.dispose()` | 应用在全部借用会话完成后，关闭共享 MCP host |
+
+```ts
+const session = await createSession({ token, baseUrl, store });
+const pump = (async () => {
+  for await (const event of session.events) render(event);
+})();
+session.send('整理这次工作记录');
+await session.idle();
+const result = await session.closeAsync({ timeoutMs: 30_000, flushStore: true });
+await pump;
+if (result.status !== 'completed') {
+  showCleanupState(result.status, result.pending, result.failureCount);
+  // 保留 session，稍后继续：await session.drain({ timeoutMs: 30_000 });
+}
+```
+
+`status` 是 `completed`、`failed`、`timeout` 或 `cancelled`。`pending` 是各阶段数量，`failures` 是有界诊断窗口，累计数在 `failureCount` / `omittedFailures`。原始 `cause` 可能含敏感信息，不直接发给网页、renderer 或日志。
+
+观察默认 30 秒，`0` 只读当前状态，`Infinity` 只在宿主明确管理真实依赖链时使用。超时或 `signal` 只终止本次等待，底层工作仍继续，其他等待者不受影响。`flushStore` 默认 false；SDK 不关闭借用的 store。`retryPersistence: true` 显式重试待修复的最新完整历史提交，不重放业务回调；成功后旧错误保留并标记 `recovered`。不要在 `onHistoryCommit` 内等待同一会话的 `drain()`。
+
+## 单轮 query 与错误通道
+
+`query()` 提前 break 会中止查询，并在 `cleanupTimeoutMs` 内观察收尾。消费代码自身抛错时，JavaScript 可能优先保留该异常；用 `onLifecycleError` 保存另一条收尾错误及继续观察入口。
+
+```ts
+let cleanup;
+for await (const event of query({ token, baseUrl, prompt: '总结目录',
+  cleanupTimeoutMs: 30_000,
+  onLifecycleError(error) { cleanup = error.cleanup; showFailure(error.code); },
+})) {
+  render(event);
+  if (userStopped()) break;
+}
+if (cleanup) showCleanupReceipt(await cleanup.drain({ timeoutMs: 30_000 }));
+```
+
+托管／令牌档 query 可显式提供 `skills` 和 `mcp`，与 createSession 共用能力位检查及所有权规则。省略扩展不主动读取技能目录；注入 client 档不隐式装配扩展。
+
+## MCP 所有权与跨端
+
+`mcp: { servers }` 由当前会话／查询所有；显式传入的 `McpHost` 是借用。共享 host 必须等全部使用者真实完成后才 dispose。并发及成功后的重复 dispose 合流；确定失败后再次显式调用只重试未确认资源。
+
+`cleanupEvidence` 的 `transport-completion` 表示已等待本地传输完成层，`connector-close-promise` 只表示第三方连接的 close Promise。自带 stdio 等本地 child 与流结束，HTTP 等本地在飞流并尽力 DELETE；这些都不承诺任意未登记进程或 HTTP 远端服务已经退出。
+
+Electron 示例在主进程使用 closeAsync，保留未完成会话和 host；外层有限观察超时后显示再次等待，只有用户选择直接退出才跳过剩余清理。Android／iOS 使用现有 serve 协议：断线、重连不等于删除会话，DELETE 响应及 session.ended 不证明底层进程退出。Node 宿主先按原 drain 预算停机，再等 `server.settleResources()`，最后关闭共享资源。
+
+CLI、ACP、headless 的 MCP 新观察上限为 10 秒，旧协议与工具终止策略保持。内置 Task／可继续代理将嵌套查询回执交给父资源域；TUI 另外等待后台 Task、记忆提取／固化／提升和选择器的实际完成口，serve／ACP 在记忆 owner 退出活动列表后仍由会话关闭链持有它。自行增加的后台任务需显式接入。忽略 abort 的第三方工具可能继续 pending，任何回执都不能证明任意未登记子进程已经退出。

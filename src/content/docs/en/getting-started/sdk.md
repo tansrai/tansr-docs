@@ -26,6 +26,8 @@ Windows Electron runs the SDK in its main process; renderer input remains a user
 
 ## Prerequisites
 
+For application shutdown, see [session and resource cleanup](/en/sdk/lifecycle/). The additive closeAsync / drain APIs distinguish terminal events from actual cleanup; compatible releases are required.
+
 | Requirement | Value |
 |---|---|
 | Node.js | ≥ 22.19 |

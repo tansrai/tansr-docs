@@ -99,6 +99,28 @@ TMEM/1 记忆写上下文(TM-2/TM-3;doc/38 §4.2 写回):门开时调度器自
 
 ***
 
+<a id="api-registerresource"></a>
+
+### registerResource?
+
+```ts
+optional registerResource?: (work) => void;
+```
+
+Retain a nested query's actual cleanup; this does not delay its business result or cancel it.
+
+#### 参数
+
+##### work
+
+`Promise`\<[`QuerySettlement`](/sdk/api/interfaces/querysettlement/)\>
+
+#### 返回
+
+`void`
+
+***
+
 <a id="api-searchaggregator"></a>
 
 ### searchAggregator?

@@ -310,7 +310,7 @@ optional onHistoryCommit?: (history, meta) => void | Promise<void>;
 
 可注入持久化缝(S-B5,doc/84 §5.4 / doc/83 §3.1 缺口 3;形态对齐 cli
 session-driver onHistoryCommit 先例):每轮终态收口(历史快照已就位)
-时携带全量历史深拷贝同步回调,存到哪由开发者决定。缺省缺席 = 纯内存
+时捕获全量历史深拷贝，按会话提交顺序回调，存到哪由开发者决定。缺省缺席 = 纯内存
 零变化(SDK 恒不引入任何隐式落盘)。
 meta.rewritten:本轮历史前缀被就地改写(session.compacted 压缩折叠,
 或 session.microcompacted 旧 tool_result 原位存根化——SDK 无 CLI 的
@@ -319,8 +319,10 @@ journal 存根重演机制,对落盘方两者同为「已存内容不再与内�
 回调抛错(含异步 reject)恒不破会话主流程:吞错并合成
 turn.error(scope='sdk.persistence')入事件流;事件流已终结时退化
 console.warn(错误不静默消失)。FX-B-21:rewritten 提交失败后,下一次提交
-恒再以 rewritten:true 交付(会话层内存位),落盘方不会只凭「本轮无改写」
+恒再以 rewritten:true 交付(存储与回调独立内存位),落盘方不会只凭「本轮无改写」
 走增量径而留下「旧前缀 + 新尾巴」拼接体。
+idle()/session.ended 仍不等异步提交；需要真实完成使用 drain()/closeAsync()。
+回调中不得等待本会话 drain()，否则会等待回调自身；retryPersistence 不重放回调。
 
 #### 参数
 

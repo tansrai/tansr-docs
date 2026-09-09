@@ -147,6 +147,28 @@ abort,收口推迟到泵终态——中止轮的尾部事件(turn.aborted 等)�
 
 ***
 
+<a id="api-closeasync"></a>
+
+### closeAsync()
+
+```ts
+closeAsync(options?): Promise<SessionDrainResult>;
+```
+
+信号/超时仅约束观察，逻辑 close 仍即时生效；非法选项在 close 前拒绝。
+
+#### 参数
+
+##### options?
+
+[`SessionDrainOptions`](/sdk/api/interfaces/sessiondrainoptions/)
+
+#### 返回
+
+`Promise`\<[`SessionDrainResult`](/sdk/api/interfaces/sessiondrainresult/)\>
+
+***
+
 <a id="api-compact"></a>
 
 ### compact()
@@ -227,6 +249,28 @@ deleteCheckpoint(checkpointId): Promise<void>;
 #### 返回
 
 `Promise`\<`void`\>
+
+***
+
+<a id="api-drain"></a>
+
+### drain()
+
+```ts
+drain(options?): Promise<SessionDrainResult>;
+```
+
+等查询生成器实际收尾与提交；不得从本会话 history callback 内调用并等待。
+
+#### 参数
+
+##### options?
+
+[`SessionDrainOptions`](/sdk/api/interfaces/sessiondrainoptions/)
+
+#### 返回
+
+`Promise`\<[`SessionDrainResult`](/sdk/api/interfaces/sessiondrainresult/)\>
 
 ***
 

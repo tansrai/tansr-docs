@@ -11,6 +11,9 @@ generated: true
 
 ```ts
 type QueryOptions = 
-  | RunAgentOptions & Pick<ManagedQueryOptions, "systemAppend">
+  | RunAgentOptions & Pick<ManagedQueryOptions, "systemAppend"> & QueryLifecycleOptions & {
+  mcp?: never;
+  skills?: never;
+}
   | ManagedQueryOptions;
 ```
