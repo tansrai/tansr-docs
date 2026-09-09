@@ -41,6 +41,12 @@ if (result.status !== 'completed') {
 
 观察默认 30 秒，`0` 只读当前状态，`Infinity` 只在宿主明确管理真实依赖链时使用。超时或 `signal` 只终止本次等待，底层工作仍继续，其他等待者不受影响。`flushStore` 默认 false；SDK 不关闭借用的 store。`retryPersistence: true` 显式重试待修复的最新完整历史提交，不重放业务回调；成功后旧错误保留并标记 `recovered`。不要在 `onHistoryCommit` 内等待同一会话的 `drain()`。
 
+## 删除或迁移会话存储前
+
+单次 `store.get(sessionId)` 只排在已经进入 store 的操作之后。上一轮 `onHistoryCommit` 回调尚未结束时，下一轮提交可能仍停在会话队列中；即使 `idle()` 和事件流都已结束，回读也可能得到旧历史。
+
+删除、迁移本会话专用目录或以最终历史重建会话前，调用 `closeAsync({ timeoutMs: 30_000, flushStore: true })` 并确认 `status === 'completed'`。超时、取消或失败时保留会话与目录，稍后继续等待或处理失败。多个会话共用存储时，逐一确认所有使用者完成，再由宿主管理共享 store；不要把某一个会话的回执当作整个目录已无写入。
+
 ## 单轮 query 与错误通道
 
 `query()` 提前 break 会中止查询，并在 `cleanupTimeoutMs` 内观察收尾。消费代码自身抛错时，JavaScript 可能优先保留该异常；用 `onLifecycleError` 保存另一条收尾错误及继续观察入口。

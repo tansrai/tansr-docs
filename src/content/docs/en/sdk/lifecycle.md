@@ -40,6 +40,12 @@ The status is `completed`, `failed`, `timeout` or `cancelled`. Pending counts id
 
 The default observation budget is 30 seconds. Zero reads the current state; explicit Infinity is for a host-managed completion chain. A timeout or signal ends only that observation, leaving the underlying work and other waiters intact. Store flushing is opt-in; the SDK never closes a borrowed store. Explicit `retryPersistence: true` retries the latest complete history commit without replaying application callbacks. Recovered failures remain visible with `recovered: true`. Never await the same session's drain inside its history callback.
 
+## Before deleting or moving session storage
+
+A single `store.get(sessionId)` waits only for operations already submitted to that store. While an earlier `onHistoryCommit` callback is still running, a later turn may remain in the session commit queue. A read can therefore return older history even after `idle()` and the event stream have ended.
+
+Before deleting or moving a session-owned directory, or rebuilding from its final stored history, call `closeAsync({ timeoutMs: 30_000, flushStore: true })` and check for `status === 'completed'`. Keep the session and directory after a timeout, cancellation or failure so that cleanup can continue or the failure can be handled. For shared storage, check every user before the host manages the shared store; one session receipt does not establish that the entire directory has no remaining writers.
+
 ## Query cleanup and error ownership
 
 Breaking from query still aborts the query and observes cleanup within `cleanupTimeoutMs`. If the consumer itself throws, JavaScript may preserve that original exception. Keep `onLifecycleError` as the separate cleanup error channel.
