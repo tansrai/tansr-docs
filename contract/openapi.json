@@ -10227,6 +10227,95 @@
         }
       }
     },
+    "/v1/demo-downloads": {
+      "get": {
+        "summary": "公开 Demo 下载链接；空值表示未发布",
+        "tags": [
+          "control"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "按平台发布的下载地址",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoDownloadsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/demo-downloads": {
+      "get": {
+        "summary": "读取下载配置（ADMIN_READ）",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "下载配置及修订号",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoDownloadsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "运营修订公开下载地址（ADMIN_OPS），审计并校验版本冲突",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "修订后配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoDownloadsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "非法配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/v1/plan-catalog": {
       "get": {
         "summary": "读取 SDK 资费目录（ADMIN_READ）",
@@ -21629,6 +21718,24 @@
               }
             }
           },
+          "systemPrompt": {
+            "maxLength": 16000,
+            "description": "应用系统提示词；按 systemPromptPolicy 与 SDK 显式 system 选用或拼接。旧客户端忽略。",
+            "type": "string"
+          },
+          "systemPromptPolicy": {
+            "description": "应用系统提示词拼接策略：fallback=仅 SDK 未显式传 system 时使用平台提示词；prepend=平台段在前、SDK 段在后，SDK [] 仍保留平台段。PUT 缺席保留；无配置或旧 bundle 缺席按 fallback；不表示权限或文本优先级。",
+            "anyOf": [
+              {
+                "const": "fallback",
+                "type": "string"
+              },
+              {
+                "const": "prepend",
+                "type": "string"
+              }
+            ]
+          },
           "capabilities": {
             "additionalProperties": false,
             "type": "object",
@@ -23361,7 +23468,7 @@
         ],
         "properties": {
           "sku": {
-            "pattern": "^(recharge|plan:(test|small|medium|large):1y|plan:(medium|large):1m)$",
+            "pattern": "^(recharge|plan:(test|small|medium|large):(1y|1m))$",
             "description": "缺省 'recharge'(amount 必填直充);'plan:<tier>:<1y|1m>' 套餐单(金额服务端按档价/差价算;客户端 amount 可省或须与报价一致,否则 400)",
             "type": "string"
           },
@@ -24397,6 +24504,39 @@
                 "benefits"
               ],
               "properties": {
+                "pricing": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "originalPriceYear",
+                    "originalPriceMonth",
+                    "discountBps",
+                    "monthlyEnabled"
+                  ],
+                  "properties": {
+                    "originalPriceYear": {
+                      "type": "string"
+                    },
+                    "originalPriceMonth": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "discountBps": {
+                      "minimum": 1,
+                      "maximum": 10000,
+                      "type": "integer"
+                    },
+                    "monthlyEnabled": {
+                      "type": "boolean"
+                    }
+                  }
+                },
                 "tier": {
                   "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
                   "anyOf": [
@@ -24672,6 +24812,39 @@
                     "benefits"
                   ],
                   "properties": {
+                    "pricing": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "originalPriceYear",
+                        "originalPriceMonth",
+                        "discountBps",
+                        "monthlyEnabled"
+                      ],
+                      "properties": {
+                        "originalPriceYear": {
+                          "type": "string"
+                        },
+                        "originalPriceMonth": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "discountBps": {
+                          "minimum": 1,
+                          "maximum": 10000,
+                          "type": "integer"
+                        },
+                        "monthlyEnabled": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
                     "tier": {
                       "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
                       "anyOf": [
@@ -24901,6 +25074,222 @@
             "minLength": 1,
             "maxLength": 500,
             "type": "string"
+          }
+        }
+      },
+      "DemoDownloadsPutRequest": {
+        "$id": "DemoDownloadsPutRequest",
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expectedRevision",
+          "catalog",
+          "reason"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "catalog": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "windows",
+              "android",
+              "ios"
+            ],
+            "properties": {
+              "windows": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "clientDemo"
+                ],
+                "properties": {
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "android": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "serverDemo",
+                  "clientDemo"
+                ],
+                "properties": {
+                  "serverDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "ios": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "serverDemo",
+                  "clientDemo"
+                ],
+                "properties": {
+                  "serverDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "reason": {
+            "minLength": 1,
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      },
+      "DemoDownloadsResponse": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "windows",
+          "android",
+          "ios",
+          "revision"
+        ],
+        "properties": {
+          "windows": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "android": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "serverDemo",
+              "clientDemo"
+            ],
+            "properties": {
+              "serverDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "ios": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "serverDemo",
+              "clientDemo"
+            ],
+            "properties": {
+              "serverDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -25333,6 +25722,39 @@
                 "benefits"
               ],
               "properties": {
+                "pricing": {
+                  "additionalProperties": false,
+                  "type": "object",
+                  "required": [
+                    "originalPriceYear",
+                    "originalPriceMonth",
+                    "discountBps",
+                    "monthlyEnabled"
+                  ],
+                  "properties": {
+                    "originalPriceYear": {
+                      "type": "string"
+                    },
+                    "originalPriceMonth": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "discountBps": {
+                      "minimum": 1,
+                      "maximum": 10000,
+                      "type": "integer"
+                    },
+                    "monthlyEnabled": {
+                      "type": "boolean"
+                    }
+                  }
+                },
                 "tier": {
                   "description": "套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行",
                   "anyOf": [
@@ -29655,6 +30077,8 @@
         "$id": "AppConfig",
         "type": "object",
         "required": [
+          "systemPrompt",
+          "systemPromptPolicy",
           "modelCatalogIds",
           "adjudicatorIds",
           "contextPolicy",
@@ -29663,6 +30087,31 @@
           "updatedAt"
         ],
         "properties": {
+          "systemPrompt": {
+            "description": "应用默认系统提示词；null=未配置，SDK 使用内建默认或调用方显式 system。",
+            "anyOf": [
+              {
+                "maxLength": 16000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "systemPromptPolicy": {
+            "description": "应用系统提示词拼接策略：fallback=仅 SDK 未显式传 system 时使用平台提示词；prepend=平台段在前、SDK 段在后，SDK [] 仍保留平台段。PUT 缺席保留；无配置或旧 bundle 缺席按 fallback；不表示权限或文本优先级。",
+            "anyOf": [
+              {
+                "const": "fallback",
+                "type": "string"
+              },
+              {
+                "const": "prepend",
+                "type": "string"
+              }
+            ]
+          },
           "modelCatalogIds": {
             "description": "null=继承用户级选择集;[]=显式空集(fail-closed)",
             "anyOf": [
@@ -30308,6 +30757,8 @@
             "$id": "AppConfig",
             "type": "object",
             "required": [
+              "systemPrompt",
+              "systemPromptPolicy",
               "modelCatalogIds",
               "adjudicatorIds",
               "contextPolicy",
@@ -30316,6 +30767,31 @@
               "updatedAt"
             ],
             "properties": {
+              "systemPrompt": {
+                "description": "应用默认系统提示词；null=未配置，SDK 使用内建默认或调用方显式 system。",
+                "anyOf": [
+                  {
+                    "maxLength": 16000,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "systemPromptPolicy": {
+                "description": "应用系统提示词拼接策略：fallback=仅 SDK 未显式传 system 时使用平台提示词；prepend=平台段在前、SDK 段在后，SDK [] 仍保留平台段。PUT 缺席保留；无配置或旧 bundle 缺席按 fallback；不表示权限或文本优先级。",
+                "anyOf": [
+                  {
+                    "const": "fallback",
+                    "type": "string"
+                  },
+                  {
+                    "const": "prepend",
+                    "type": "string"
+                  }
+                ]
+              },
               "modelCatalogIds": {
                 "description": "null=继承用户级选择集;[]=显式空集(fail-closed)",
                 "anyOf": [
@@ -30768,6 +31244,31 @@
         "additionalProperties": false,
         "type": "object",
         "properties": {
+          "systemPrompt": {
+            "description": "应用系统提示词，最多 16000 个 Unicode 码点；缺席保留，null/空白清空。按 systemPromptPolicy 选用或拼接；非权限策略。",
+            "anyOf": [
+              {
+                "maxLength": 16000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "systemPromptPolicy": {
+            "description": "应用系统提示词拼接策略：fallback=仅 SDK 未显式传 system 时使用平台提示词；prepend=平台段在前、SDK 段在后，SDK [] 仍保留平台段。PUT 缺席保留；无配置或旧 bundle 缺席按 fallback；不表示权限或文本优先级。",
+            "anyOf": [
+              {
+                "const": "fallback",
+                "type": "string"
+              },
+              {
+                "const": "prepend",
+                "type": "string"
+              }
+            ]
+          },
           "modelCatalogIds": {
             "description": "缺席=不动该段;null=回继承;逐个校验 ∈ 本户有效集(用户级选择集∩可服务谓词)",
             "anyOf": [
@@ -37398,7 +37899,7 @@
       "key": "plan_enforce",
       "consumer": "control/plan-gate.ts planMode(已购套餐并发与月度终端用户);control/plan-limits.ts(组织成员与网关档);进程内 5s 缓存",
       "absentMeaning": "shadow",
-      "impact": "enabled → enforce:已购套餐并发与月度不同终端用户超帽拒新占位，组织成员上限与网关档按套餐判限；守门 Redis 故障 503 plan_gate_unavailable，在册窗内会话例外保留。缺席 / disabled → shadow:上述可切换门只计 would_reject(指标 + 按 owner/日/gate 去重审计 plan.shadow_would_reject)。个人与组织普通应用创建/恢复的免费名额、第六个须 small 及以上、已购应用数上限始终为硬门，不受本开关影响；无套餐普通 App 的免费并发与月度不同终端用户帽始终 enforce，不受本开关影响。开闸前置 = doc/125 §八 三前置(≥ 7 日观察 / would_reject 复核 / plan_peak_over_cap_silent 工单为零),经专属 BFF 二次确认。"
+      "impact": "enabled → enforce:已购套餐并发与月度不同终端用户超帽拒新占位，开发者席位上限与网关档按套餐判限；守门 Redis 故障 503 plan_gate_unavailable，在册窗内会话例外保留。缺席 / disabled → shadow:上述可切换门只计 would_reject(指标 + 按 owner/日/gate 去重审计 plan.shadow_would_reject)。个人与组织普通应用创建/恢复的免费名额、第六个须 small 及以上、已购应用数上限始终为硬门，不受本开关影响；无套餐普通 App 的免费并发与月度不同终端用户帽始终 enforce，不受本开关影响。开闸前置 = doc/125 §八 三前置(≥ 7 日观察 / would_reject 复核 / plan_peak_over_cap_silent 工单为零),经专属 BFF 二次确认。"
     }
   ],
   "x-tansr-error-codes": [

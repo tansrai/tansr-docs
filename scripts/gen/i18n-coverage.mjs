@@ -64,9 +64,16 @@ export function readMeta(text) {
  * 覆盖模型:{ locales: ['en'], rows: [{ slug, title, root: true, en: true|false }], summary: { total, en: n } , lastVerified }
  * 只以根语言(zh-CN)的 slug 集为分母;en 独有的 slug(无对应根页)另列 orphan。
  */
-export function buildCoverage(root) {
+export function buildCoverage(root, generated = []) {
   const locales = Object.keys(EXTRA_LOCALES);
-  const files = listDocs(root);
+  // 总生成入口尚未写盘:叠加本轮页面及元信息,避免新增 SDK 页后必须二次生成。
+  const prefix = DOCS_DIR.split('\\').join('/') + '/';
+  const pending = new Map();
+  for (const output of generated) {
+    const rel = output.rel.split('\\').join('/');
+    if (rel.startsWith(prefix) && /\.mdx?$/i.test(rel)) pending.set(rel.slice(prefix.length), output.content);
+  }
+  const files = [...new Set([...listDocs(root), ...pending.keys()])].sort();
   const bySlug = new Map();
   const orphans = [];
   let lastVerified = '';
@@ -74,7 +81,7 @@ export function buildCoverage(root) {
     const slug = fileToSlug(file);
     // 本页自身不进表(否则首次生成前后 slug 集不同,--check 永不收敛)
     if (slug === OUT_SLUG || locales.some((l) => slug === `${l}/${OUT_SLUG}`)) continue;
-    const meta = readMeta(readFileSync(join(root, DOCS_DIR, file), 'utf8'));
+    const meta = readMeta(pending.get(file) ?? readFileSync(join(root, DOCS_DIR, file), 'utf8'));
     if (meta.lastVerified > lastVerified) lastVerified = meta.lastVerified;
     const locale = locales.find((l) => slug === l || slug.startsWith(`${l}/`));
     if (!locale) {
@@ -159,8 +166,8 @@ export function render(cov) {
   return out.join('\n') + '\n';
 }
 
-export function generate(root) {
-  const cov = buildCoverage(root);
+export function generate(root, generated = []) {
+  const cov = buildCoverage(root, generated);
   return [{ rel: OUT_REL, content: render(cov), stats: { total: cov.summary.total, ...Object.fromEntries(cov.locales.map((l) => [l, cov.summary[l]])), glossary: GLOSSARY.length } }];
 }
 

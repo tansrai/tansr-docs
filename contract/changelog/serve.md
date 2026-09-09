@@ -12,6 +12,8 @@
 
 ## 0.7.0
 
+- AP-SP：平台工厂按 `systemPromptPolicy=fallback|prepend` 选择或拼接应用 systemPrompt 与 platform.system；prepend 下 [] 仍保留平台。platform.systemAppend 追加指南而不覆盖业务段。存活会话及移动端 attach 后的下一新轮自动条件核验平台正文和策略，轮中不变；失败不带旧配置请求模型，保留历史并可重试，取消/超时与令牌续期沿统一预检。移动端只发用户消息，不新增 system wire 字段。
+
 > 未发(十王修案 W1–W4 已收编于 cli main `9f09c1b7`,随 cli monorepo 一版 / 二版 / 三版子集候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
 > 导出集:`exports.snapshot.json` 由发版门首版基线 364(0.6.1 dist,W2 FX-C-25)→ W2 收编 375 → W3 收编 395(W3 回执 §一)→ W4 收编 395
 > (导出数不变,`AssembledSessionModel` / `AgentSessionRetentionSweepInput` 两签名变;W4 回执 §一)。以下逐条按波次的收编回执与 C-α / C-β 终报为事实源;

@@ -11,6 +11,8 @@
 
 ## 0.12.0
 
+- AP-SP：应用 `systemPromptPolicy` 默认 fallback（SDK 显式 system 含 [] 替代平台），prepend 保留平台段在前、SDK 段在后（[] 也保留平台）。新增 systemAppend 宿主指南缝、resolveApplicationSystem 与只读 applicationPrompt 来源；query 含注入档同步追加指南。已有令牌档会话每个新轮前条件核验平台正文与策略，绕过装配缓存；轮内工具多步固定快照，刷新失败中止并保留历史，取消及30秒超时有界收口。宿主段固定；SDK/serve/Windows/Android/iOS 示例和手册同步。
+
 > 未发(十王修案第二波收编后随 cli monorepo 一版候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
 
 ### 核心机制整改（CM；未发）

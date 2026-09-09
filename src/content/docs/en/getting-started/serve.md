@@ -4,6 +4,7 @@ description: 'Run a multi-user agent session service inside your own Node servic
 zone: docs
 category: getting-started
 related:
+  - sdk/system-prompts
   - serve/deploy-and-auth
   - serve/v2-and-webhooks
   - serve/retention-and-governance
@@ -21,6 +22,12 @@ lastVerified: '2026-09-09'
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes the `/v2` multi-session REST + SSE protocol surface; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance.
 
 The Android / iOS SDKs connect to this service.
+
+## Configure the application role on the platform or host
+
+Configure mobile system prompts in the platform application or serve host, not in a `/v2` `prompt`. Omit `platform.system` to use the platform default. Use `platform.system` for code-managed business instructions and `platform.systemAppend` for host notes. Default `fallback` lets explicit business segments (including `[]`) replace the platform segment; `prepend` keeps the platform segment first, including when the SDK supplies `[]`.
+
+These additions await compatible API and serve releases. They control text composition, not permissions. Platform prompts and policies refresh before a subsequent turn; the executing turn keeps its configuration. Existing sessions, live attach, and conversation history remain usable without reopening to change the role. See the complete serve example in [Application system prompts](/en/sdk/system-prompts/).
 
 ## Prerequisites
 

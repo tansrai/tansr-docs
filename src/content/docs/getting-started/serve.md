@@ -4,6 +4,7 @@ description: 用 @tansr/serve 在自己的 Node 服务里跑起一个多用户�
 zone: docs
 category: getting-started
 related:
+  - sdk/system-prompts
   - serve/deploy-and-auth
   - serve/v2-and-webhooks
   - serve/retention-and-governance
@@ -15,12 +16,18 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露 `/v2` 多会话 REST + SSE 协议面，对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。
 
 Android / iOS SDK 连的就是这个服务。
+
+## 在平台或宿主配置应用角色
+
+移动端的系统提示词在平台应用配置或 serve 宿主中设置，不放入 `/v2` 的 `prompt`。省略 `platform.system` 使用平台默认；代码管理的业务段放 `platform.system`，宿主补充说明放 `platform.systemAppend`。默认 `fallback` 允许显式业务段（包括 `[]`）替代平台段；`prepend` 保留平台段在前，即使 SDK 段是 `[]`。
+
+这些新增选项尚待 API 与 serve 配套发布。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
 
 ## 前提
 

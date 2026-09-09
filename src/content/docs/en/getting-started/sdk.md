@@ -4,6 +4,7 @@ description: 'Embed a tansr agent in your own Node.js or Electron program: insta
 zone: docs
 category: getting-started
 related:
+  - sdk/system-prompts
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
@@ -16,6 +17,12 @@ lastVerified: '2026-09-09'
 ---
 
 `@tansr/sdk` is the headless language binding of the tansr kernel: prompts in, events out, zero UI dependencies. The query loop, tool scheduling, permission engine and context compaction all come from the kernel and are compiled inline; what you get is the same runtime as the `tansr` CLI, embedded in your application as a library.
+
+## Where to configure application prompts
+
+Platform `systemPrompt` holds the shared role; SDK `system` holds code-managed business instructions. With the default `fallback` policy, explicit `system` (including `[]`) replaces the platform segment. With `prepend`, the platform segment comes first and stays present even for `[]`. Put environment notes in `systemAppend` to avoid overriding the platform default.
+
+Windows Electron runs the SDK in its main process; renderer input remains a user message. These prompt features await compatible releases. Supporting builds expose read-only `session.applicationPrompt` with source / policy, without prompt text. Platform prompts and policies refresh before a subsequent turn; an executing turn keeps its configuration, and the same session and history are preserved. See [Application system prompts](/en/sdk/system-prompts/) for the truth table, platform PUT / GET, and complete examples.
 
 ## Prerequisites
 

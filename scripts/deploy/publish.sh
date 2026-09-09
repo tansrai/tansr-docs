@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 资料站发布(双受限键形,DS-26):rsync 到 releases/<sha>/ → 远端 `switch <sha>` 原子切换 current(并只留最近 5 份)。
+# 资料站发布(双受限键形,DS-26):rsync 到 releases/<sha>/ → 远端 `switch <sha>` 原子切换 current(并只留最近 3 份)。
 #
 # 用法:scripts/deploy/publish.sh <dist 目录> <upload-host> <switch-host> <sha>
 #   upload-host = 只带「上传键」的 ssh 目标(user@host 或 ssh config 别名);远端强制命令 docs-rsync-only 只放行
@@ -46,7 +46,7 @@ RELEASE_DIR="$DOCS_ROOT/releases/$SHA"
 log "① rsync $DIST/ → $UPLOAD_HOST:$RELEASE_DIR/(远端强制命令建目录并校验路径)"
 rsync -az --delete --chmod=D755,F644 "${DIST%/}/" "$UPLOAD_HOST:$RELEASE_DIR/" || die "rsync 失败,未切换 current"
 
-log "② 原子切换 current → releases/$SHA(远端 docs-switch,随后只留最近 5 份)"
+log "② 原子切换 current → releases/$SHA(远端 docs-switch,随后只留最近 3 份)"
 ssh "${SSH_ARGS[@]}" "$SWITCH_HOST" "switch $SHA" || die "切换 current 失败(releases/$SHA 已上传,可手动重试:ssh $SWITCH_HOST switch $SHA)"
 
 log "✔ 已发布 $SHA → $DOCS_ROOT/current"

@@ -4,6 +4,7 @@ description: Kotlin SDK 的模块切层、事件归约与 SessionView、连接�
 zone: docs
 category: android
 related:
+  - sdk/system-prompts
   - getting-started/android
   - ios
   - serve/v2-and-webhooks
@@ -14,10 +15,16 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 Android SDK（Maven 坐标 `com.tansr.sdk:core` / `:client` / `:compose`，包名前缀 `com.tansr.sdk`）是会话服务 `/v2` 协议的薄客户端。这一篇讲快速开始之后你会遇到的全部设计点：事件怎么变成 UI 状态、断线怎么恢复、前后台怎么处理、错误怎么呈现、工具与对话框怎么接、语音与推送怎么接。
+
+## 手机端发送用户消息，服务端配置系统提示词
+
+`CreateSessionRequest(prompt=...)` 与 `session.send(...)` 都发送普通用户消息；Android / iOS 不经 `/v2` 传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
+
+提示词与策略的新功能尚待 API / serve 配套发布；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史，无需重开来取得更新。请由应用管理员消除业务段冲突，权限仍走独立机制。详见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 模块切层
 

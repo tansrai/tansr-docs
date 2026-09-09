@@ -4,6 +4,7 @@ description: /v2 会话面的 21 个端点与错误信封、SSE 帧形与 Last-E
 zone: docs
 category: serve
 related:
+  - sdk/system-prompts
   - getting-started/serve
   - serve/deploy-and-auth
   - serve/retention-and-governance
@@ -17,10 +18,16 @@ sources:
   - tansr-cli:packages/server/.env.example
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-android:README.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 `/v2` 是 `@tansr/serve` 对外的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS SDK 已把这套协议全部封装；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。
+
+## 在平台或宿主配置应用角色
+
+移动端的系统提示词在平台应用配置或 serve 宿主中设置，不放入 `/v2` 的 `prompt`。省略 `platform.system` 使用平台默认；代码管理的业务段放 `platform.system`，宿主补充说明放 `platform.systemAppend`。默认 `fallback` 允许显式业务段（包括 `[]`）替代平台段；`prepend` 保留平台段在前，即使 SDK 段是 `[]`。
+
+这些新增选项尚待 API 与 serve 配套发布。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
 
 ## 总纪律
 

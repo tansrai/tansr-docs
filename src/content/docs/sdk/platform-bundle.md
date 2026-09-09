@@ -4,6 +4,7 @@ description: 令牌档下发了什么——应用配置束（bundle）里的模�
 zone: docs
 category: sdk
 related:
+  - sdk/system-prompts
   - getting-started/sdk
   - sdk/sessions-and-events
   - sdk/errors-and-retries
@@ -13,10 +14,16 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
-令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，随令牌下发，SDK 在装配期读它完成裁剪。你在控制台改配置，终端下一次拉取即生效（分钟级）。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。
+令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。
+
+## 应用系统提示词也是装配配置
+
+新增 `systemPrompt` / `systemPromptPolicy` 由应用配置进入 bundle，需要配套 API 与 SDK / serve 版本，尚不代表已发布。默认 `fallback` 在 SDK 未传 `system` 时使用平台段；`prepend` 即使 SDK 显式传 `[]` 也保留平台段，再接 SDK 非空业务段。宿主 `systemAppend` 排在所选业务段后，不触发覆盖；其后才是该入口实际装配的工具、Skills 或 MCP 指南。
+
+这两项在后续新一轮前刷新，当前执行轮保持已选配置；不会清空历史，也不要求重开会话。通过 `session.applicationPrompt` 查看只读来源 / 策略摘要，不含正文。完整表格、管理 API 与冲突处理边界见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 先在控制台建对应用类型
 

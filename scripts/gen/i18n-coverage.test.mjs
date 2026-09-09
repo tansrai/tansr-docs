@@ -79,6 +79,27 @@ test('render(fixture):frontmatter 契约 + 标记行;表行 ✓ / 回落;标题�
   }
 });
 
+test('本轮内存产物:新增页与翻译计数,覆盖旧标题日期,不把非页面文件计入', () => {
+  const { tmp } = fixture();
+  try {
+    const content = (title) => `---\ntitle: '${title}'\nlastVerified: '2026-09-09'\ngenerated: true\n---\n`;
+    const pending = [
+      { rel: 'src/content/docs/sdk/api/new.md', content: content('New export') },
+      { rel: 'src\\content\\docs\\en\\sdk\\api\\new.md', content: content('New export EN') },
+      { rel: 'src/content/docs/a.md', content: content('Updated title') },
+      { rel: 'contract/openapi.public.json', content: '{}' },
+    ];
+    const cov = buildCoverage(tmp, pending);
+    assert.deepEqual(cov.summary, { total: 4, en: 2 });
+    assert.equal(cov.rows.find((r) => r.slug === 'a').title, 'Updated title');
+    assert.equal(cov.rows.find((r) => r.slug === 'sdk/api/new').translated.en, 'New export EN');
+    assert.equal(cov.lastVerified, '2026-09-09');
+    assert.equal(buildCoverage(tmp).summary.total, 3, '内存覆盖不得改磁盘');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('自指收敛:生成页写回后再算,行集与正文零 diff(修前红:自身被计成一篇「回落」)', () => {
   const { tmp } = fixture();
   try {

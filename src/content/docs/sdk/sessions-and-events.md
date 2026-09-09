@@ -4,6 +4,7 @@ description: 理解 @tansr/sdk 的三档 API、AgentSession 的多轮语义、�
 zone: docs
 category: sdk
 related:
+  - sdk/system-prompts
   - getting-started/sdk
   - sdk/checkpoints
   - sdk/platform-bundle
@@ -13,10 +14,16 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 SDK 的一句话分工：**智能体循环归 SDK，交互体验归你**。你提供 UI（或没有 UI）、业务函数、权限确认交互；SDK 提供模型接入、工具执行、事件流与状态投影。这一篇讲事件流这条主干。
+
+## system 与普通输入的边界
+
+`query.prompt` 与 `session.send()` 是用户消息，不修改系统角色。支持新提示词功能的构建在装配时按平台 `fallback` / `prepend` 策略选择平台段和 SDK `system`，再追加 `systemAppend` 与适用指南；该功能尚待配套发布。
+
+`session.applicationPrompt` 是只读的 `{ source, policy }` 摘要，没有正文，也不把 `systemAppend` 算作业务来源。平台提示词与策略在后续新一轮前刷新，当前执行轮保持配置，原实例和历史保留；宿主 system / systemAppend 仍由代码与会话配置管理。注入档 query 与低阶 runAgent 不自动拉平台配置，应手动使用 `resolveApplicationSystem`。完整代码见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 三档 API
 
@@ -111,7 +118,7 @@ await pump;
 长会话的钱主要花在**前缀重灌**上。三条纪律能省下大部分：
 
 1. **resume / attach 恒优先于新建。** 持有上次 `sessionId` → 先试恢复 → 恢复不了才新建；每次进页面开新会话等于把上游已暖的缓存整体作废。
-2. **申报字节恒稳定。** 工具名 / 描述 / 参数 schema / `builtin` 选择集 / system 段都进模型请求前缀，顺序换位或描述改一个字，下一轮整前缀 miss。同一会话内 `tools` / `system` 恒同序同集同文。
+2. **申报字节恒稳定。** 工具名 / 描述 / 参数 schema / `builtin` 选择集 / system 段都进模型请求前缀，顺序换位或描述改一个字，下一轮整前缀 miss。工具与宿主业务段应保持稳定；平台提示词变更会在后续轮次更新前缀，应同时评估缓存命中与调用成本。
 3. **闲置即 close，恒不弃养。** `close()` 释放内核查询环与平台会话租约，store 内容保留、随时 `resume`。
 
 ## 相关

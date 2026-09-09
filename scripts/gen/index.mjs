@@ -6,7 +6,7 @@
  *   node scripts/gen/index.mjs --check    全部生成到临时目录,与在库文件逐字节对比;任一差 / 缺即 exit 1 并列出文件
  *   可选 --root <docsRepo>(卷用)
  *
- * 生成器顺序 = 依赖顺序(openapi.public 先于其余无关;全部只读 contract/)。
+ * 生成器顺序 = 依赖顺序;coverage 同时读取本轮内存产物,首次新增页面也可一次收敛。
  * 生成器的 `generate(root)` 同步或返回 Promise 皆可(sdk-api 经 typedoc,异步);本入口统一 await。
  */
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
@@ -28,7 +28,8 @@ export const GENERATORS = [openapiPublic, errorCodes, serveEnv, cliCommands, rel
 export async function generateAll(root) {
   const out = [];
   for (const g of GENERATORS) {
-    for (const o of await g.generate(root)) out.push({ script: g.SCRIPT, rel: o.rel, content: toLf(o.content), stats: o.stats });
+    const pending = g === i18nCoverage ? out : undefined;
+    for (const o of await g.generate(root, pending)) out.push({ script: g.SCRIPT, rel: o.rel, content: toLf(o.content), stats: o.stats });
   }
   return out;
 }

@@ -4,6 +4,7 @@ description: 在 Android App 里接入 tansr Kotlin SDK——加 Maven 依赖、
 zone: docs
 category: getting-started
 related:
+  - sdk/system-prompts
   - android
   - ios
   - getting-started/serve
@@ -14,10 +15,16 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 Android 与 iOS SDK 都是 tansr 会话服务（`/v2` 协议）的**薄协议客户端**：发送输入、渲染事件流、执行你显式注册的本地工具、应答权限与提问对话框。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve` 服务端；手机上没有任何平台凭据。两端同一套契约、同一份视图归约金样，本文以 Android 为主，末节给 iOS 的对应写法。
+
+## 手机端发送用户消息，服务端配置系统提示词
+
+`CreateSessionRequest(prompt=...)` 与 `session.send(...)` 都发送普通用户消息；Android / iOS 不经 `/v2` 传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
+
+提示词与策略的新功能尚待 API / serve 配套发布；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史，无需重开来取得更新。请由应用管理员消除业务段冲突，权限仍走独立机制。详见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 前提
 

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,6 +11,7 @@ import * as serveEnv from './serve-env.mjs';
 import * as cliCommands from './cli-commands.mjs';
 import * as releases from './releases.mjs';
 import * as sdkApi from './sdk-api.mjs';
+import * as i18nCoverage from './i18n-coverage.mjs';
 import { checkAll, generateAll, GENERATORS } from './index.mjs';
 
 const root = repoRootFrom(import.meta.url);
@@ -159,6 +160,24 @@ test('releases:parseVersionSections / demoteHeadings / renderUserSection 纯函�
 });
 
 // ———— index(汇总门) ————
+test('gen index:首次生成的覆盖率包含本轮新页面,写盘前后零 diff', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'tansr-docs-gen-first-'));
+  try {
+    cpSync(join(root, 'contract'), join(tmp, 'contract'), { recursive: true });
+    cpSync(join(root, 'scripts'), join(tmp, 'scripts'), { recursive: true });
+    const outputs = await generateAll(tmp);
+    const first = outputs.find((o) => o.rel === i18nCoverage.OUT_REL);
+    assert.ok(first.stats.total > 400, '首次生成必须包含 SDK 导出页');
+    for (const output of outputs) {
+      mkdirSync(join(tmp, output.rel, '..'), { recursive: true });
+      writeFileSync(join(tmp, output.rel), output.content, 'utf8');
+    }
+    assert.equal(i18nCoverage.generate(tmp)[0].content, first.content);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('gen index:全部生成器在库零 diff(checkAll ok;--check exit 0)', async () => {
   for (const g of GENERATORS) for (const o of await g.generate(root)) assert.ok(existsSync(join(root, o.rel)), `${o.rel} 须已生成并提交`);
   const r = await checkAll(root, () => {});

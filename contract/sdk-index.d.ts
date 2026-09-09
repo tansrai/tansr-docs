@@ -10429,6 +10429,14 @@ declare class ContextManager {
      */
     recordUsage(entry: RoundUsageInput): void;
     /**
+     * AP-SP:请求固定输入（如 system 段）变化后，旧权威 usage 不再代表当前前缀。
+     * 只失效测量锚点和待配对校准基线，使下一次 measure 全量计入新 system；
+     * 已学习密度因子、累计用量、附件/TTL、历史 pin、压缩熔断均保留。
+     * 不等同历史压缩，不能运行 postCompact 失效清单；调用方须先判断实际输入已变化，
+     * 在下一轮 measure/runQuery 前调用，执行中的一轮不可改写其请求基准。
+     */
+    invalidateRequestBasis(): void;
+    /**
      * K21 — 当前缓存命中率 EWMA 只读出口(null = 尚无观测)。消费方:
      * baseline 策略缓存感知门 + microcompact 观测材料。
      */
@@ -19622,6 +19630,25 @@ interface FallbackSelection {
     dataClassification?: DataClassification;
 }
 
+/** 平台业务段的组合策略；不表示模型指令或权限的强制优先级。 */
+type SystemPromptPolicy = 'fallback' | 'prepend';
+interface ApplicationPromptInfo {
+    readonly policy: SystemPromptPolicy;
+    readonly source: 'none' | 'platform' | 'sdk' | 'platform+sdk';
+}
+/**
+ * SDK／serve 共用的业务提示词选择器。旧 bundle 缺策略时使用 fallback。
+ * prepend 下显式 [] 也保留平台段；无平台正文时照用 SDK 段。
+ * 只复制段，不自动裁决文本矛盾或按相似内容去重。
+ */
+declare function resolveApplicationSystem(platform: {
+    systemPrompt?: string;
+    systemPromptPolicy?: SystemPromptPolicy;
+}, system?: readonly IRSystemSegment[]): {
+    system: IRSystemSegment[];
+    info: ApplicationPromptInfo;
+};
+
 /**
  * SDK 跨仓契约 v1(S-0 冻结,doc/89;api 仓同构持份 src/contract/app-sdk.ts)。
  * 改动纪律:双仓 schema 同笔改 + doc/89 增笔;单边改动即违约。
@@ -20129,6 +20156,9 @@ interface AppBundleIdentity {
 }
 /** bundle-for-app 的 SDK 消费子集 */
 interface AppBundle {
+    /** 应用业务提示词；与 SDK system 的选择／拼接由 systemPromptPolicy 决定。 */
+    systemPrompt?: string;
+    systemPromptPolicy?: SystemPromptPolicy;
     models: AppBundleModel[];
     aliases: Record<string, string>;
     /**
@@ -20329,23 +20359,6 @@ declare function normalizeEtagValue(value: string): string;
 declare function createBundleCache(options?: CreateBundleCacheOptions): BundleCache;
 
 /**
- * S-B1 — 平台令牌档装配:app_user 令牌 → bundle 拉取 → registry 轻装配。
- *
- * 三档并立(createSession/query 同判):
- * - 令牌档:`{ token, baseUrl }`(本模块)——终端分发形态,令牌短时效
- *   受限(doc/89 契约 1),能力位由 bundle 供给,**恒零本地配置 IO**;
- * - 托管档:`model: string`(五层配置 BYOK,assembly.ts);
- * - 注入档:`client + model 对象`(自带 ModelClient)。
- *
- * 令牌传输(对接方式定谳):TwpAdapter 是 AK/SK 双头 + 签名三头的自持
- * 形态,不支持「替换鉴权头」的构造选项(defaultHeaders 只能追加,双头仍
- * 出线)——故用 fetchImpl 注入缝包装(**不改 providers 包**):每次请求
- * 剥双头与签名三头、注入契约头 x-tansr-app-token。registry env 只喂占位
- * 哑值(APP_TOKEN_PLACEHOLDER_VALUE)满足装配期非空校验;令牌本体只活在
- * fetch 包装闭包,恒不进 registry/adapter 构造参数(INV-10 密钥纪律同源)。
- */
-
-/**
  * 平台提示帧(TWP t.warn 同形;S-ARCH doc/109 代拍②):平台对非致命降级
  * 的结构化告知(思考不可用/余额预警等),恒不代表请求失败。
  */
@@ -20439,6 +20452,8 @@ interface AssembledPlatformModel {
     adjudicator: AppBundleAdjudicator | null;
     /** 应用身份(应用协议 `<app>` 段:name / purpose;缺席字段 null) */
     app: AppBundleIdentity;
+    systemPrompt?: string;
+    systemPromptPolicy?: SystemPromptPolicy;
     /**
      * owner 生效套餐投影(doc/125 契约 6;bundle 顶层 `plan`)。null = T0 无套餐行 / 旧 api /
      * 坏形。开发者面语境位(宿主日志 / 排障);硬执行恒在服务端,SDK 恒不本地判限。
@@ -21457,8 +21472,10 @@ interface ManagedQueryOptions {
     prompt?: string;
     /** 历史前缀(续跑/恢复);与 prompt 至少给一个非空 */
     initialMessages?: readonly IRMessage[];
-    /** 系统提示;缺省空(SDK 不注入任何隐藏 prompt) */
+    /** 业务提示词：平台 fallback 策略下显式值（含 []）覆盖；prepend 策略保留平台段在前。创建时固定。 */
     system?: IRSystemSegment[];
+    /** 业务段选定后追加的宿主指南，不触发平台默认覆盖；权限与工具指南仍独立装配。 */
+    systemAppend?: IRSystemSegment[];
     /** app_user 短期令牌(开发者服务端换发;模型与能力位由 bundle 供给) */
     token?: string;
     /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
@@ -21515,7 +21532,7 @@ interface ManagedQueryOptions {
     };
     stopSequences?: string[];
 }
-type QueryOptions = RunAgentOptions | ManagedQueryOptions;
+type QueryOptions = (RunAgentOptions & Pick<ManagedQueryOptions, 'systemAppend'>) | ManagedQueryOptions;
 /** query 的终值(末尾 turn.completed/turn.aborted 事件之外的结构化结算) */
 interface QueryResult {
     /** 终态原因(与末尾 turn.* 事件的 reason 一致) */
@@ -22304,8 +22321,10 @@ interface CreateSessionOptions {
      * 托管/注入档无任命来源,传本位 fail-fast。
      */
     adjudication?: AdjudicationOptions;
-    /** 系统提示;缺省空(SDK 不注入任何隐藏 prompt) */
+    /** 业务提示词：平台 fallback 策略下显式值（含 []）覆盖；prepend 策略保留平台段在前。SDK 段创建时固定；平台正文和策略在每个新轮前自动刷新。 */
     system?: IRSystemSegment[];
+    /** 业务段选定后追加的宿主指南，不触发平台默认覆盖；权限与工具指南仍独立装配。 */
+    systemAppend?: IRSystemSegment[];
     /** 缺省 8192 */
     maxTokens?: number;
     /**
@@ -22547,6 +22566,11 @@ interface AgentSessionInit {
     binding: ModelBinding;
     executor: ToolExecutor;
     system: IRSystemSegment[];
+    applicationPrompt?: ApplicationPromptInfo;
+    prepareApplicationPrompt?: (signal: AbortSignal) => Promise<{
+        system: IRSystemSegment[];
+        info: ApplicationPromptInfo;
+    }>;
     tools: IRToolDef[];
     cwd: string;
     sessionId: string;
@@ -22589,6 +22613,7 @@ interface AgentSessionInit {
 }
 declare class AgentSession {
     #private;
+    get applicationPrompt(): ApplicationPromptInfo;
     constructor(init: AgentSessionInit);
     get sessionId(): string;
     /**
@@ -23368,5 +23393,36 @@ declare function appSingleStageProtocolFingerprintFor(maxTokens?: number): strin
 /** 应用单阶段协议指纹(资格证据 / 缓存标签 / 报告 summary 的键;值以运行时计算为准) */
 declare const APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT: string;
 
-export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryOptions, QueryResult, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
+interface ApplicationPromptTurnOptions {
+    sessionId: string;
+    /** 预检失败时原样保留的既有历史；本轮尚未送往模型的输入不记入。 */
+    history: readonly IRMessage[];
+    prepare: (signal: AbortSignal) => Promise<IRSystemSegment[]>;
+    /** 每轮最多调用一次；此后工具循环始终消费该轮选定的 system。 */
+    start: (system: IRSystemSegment[]) => QueryHandle;
+    errorMessage: (error: unknown) => string;
+    errorScope?: string;
+    /** 预检绝对上限，缺省30秒；即使自定义fetch忽略取消，也能收束本轮。 */
+    prepareTimeoutMs?: number;
+}
+declare function prepareApplicationPromptTurn(options: ApplicationPromptTurnOptions): QueryHandle;
+
+/** 仅刷新应用提示词字段；模型、工具和权限仍由原会话装配管理。 */
+interface ApplicationPromptSnapshot {
+    systemPrompt?: string;
+    systemPromptPolicy?: SystemPromptPolicy;
+}
+/**
+ * 每会话独立条件核验，绕过装配缓存：平台保存后下一轮即采用新值，不等缓存 TTL。
+ * 失败／取消不覆盖上一验证标记，并拒绝本轮；不能静默使用旧提示词发模型请求。
+ */
+declare function createApplicationPromptRefresher(options: {
+    baseUrl: string;
+    token: string;
+    fetchImpl?: typeof fetch;
+    initial: ApplicationPromptSnapshot;
+    etag?: string;
+}): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
+
+export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryOptions, QueryResult, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };

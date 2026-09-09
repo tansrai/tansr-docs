@@ -1,9 +1,9 @@
 {
   "openapi.json": {
-    "source": "tansr-api@a13003d6314b:openapi/openapi.json",
-    "revision": 1,
-    "sha256": "247dac2c34a022c8724d13495c813bca8b6ec6b856dd229b5e8fe781f26920d3",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-api@311e9449a68a:openapi/openapi.json",
+    "revision": 3,
+    "sha256": "35e625f2b2cff388a26f8545c74d012c05adfe9ebdd38f0085898bd85955e2da",
+    "vendoredAt": "2026-09-09"
   },
   "serve.env.example": {
     "source": "tansr-cli@1f74efd58f9e:packages/server/.env.example",
@@ -18,16 +18,16 @@
     "vendoredAt": "2026-09-08"
   },
   "changelog/sdk.md": {
-    "source": "tansr-cli@f32cfc08dde3:packages/sdk/CHANGELOG.md",
-    "revision": 1,
-    "sha256": "4789869ab2438b2d7b5b4093221634fd176dfbdca68af599fe6c21459bc8e5d8",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-cli@0ecdc516ea30:packages/sdk/CHANGELOG.md",
+    "revision": 4,
+    "sha256": "e0281702a5bdb0f1b34fa9b9a59d367edf3a10d5dcd2c0fb2d09402a2937bc22",
+    "vendoredAt": "2026-09-09"
   },
   "changelog/serve.md": {
-    "source": "tansr-cli@f32cfc08dde3:packages/server/CHANGELOG.md",
-    "revision": 1,
-    "sha256": "2fb6690c49c3b416c8b35bd1f94af29ed1c1a3a9f566d4779acda6c6669d1eb0",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-cli@0ecdc516ea30:packages/server/CHANGELOG.md",
+    "revision": 4,
+    "sha256": "515d87b6f23705c575305d27e08a7f5019a69ac483ba68ab05df0e54f239b673",
+    "vendoredAt": "2026-09-09"
   },
   "cli-help.json": {
     "source": "tansr-cli@f32cfc08dde3:dist/tansr.mjs",
@@ -36,9 +36,9 @@
     "vendoredAt": "2026-09-08"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@f32cfc08dde3:packages/sdk/dist/index.d.ts",
-    "revision": 1,
-    "sha256": "315b9c09a8405c70791f19936d96a8fe6971b4a603762d29cb3b44c2c90f0dc9",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-cli@0ecdc516ea30:packages/sdk/dist/index.d.ts",
+    "revision": 3,
+    "sha256": "4d8d7839822aa5eb33adbd6482af43f0b86e622930dd3985f9e99a789e4ae814",
+    "vendoredAt": "2026-09-09"
   }
 }

@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:509 篇中文文章中 English 10 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:517 篇中文文章中 English 11 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-09-09'
@@ -14,7 +14,7 @@ generated: true
 
 | 语言 | 已翻译 / 总数 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 10 / 509 | 2% |
+| English(`en`) | 11 / 517 | 2.1% |
 
 ## 逐页
 
@@ -64,6 +64,7 @@ generated: true
 | [bundleKey(生成页)](/sdk/api/functions/bundleKey/) `sdk/api/functions/bundleKey` | ✓ | 回落 |
 | [classifierProtocolFingerprintFor(生成页)](/sdk/api/functions/classifierProtocolFingerprintFor/) `sdk/api/functions/classifierProtocolFingerprintFor` | ✓ | 回落 |
 | [createAppTokenFetch(生成页)](/sdk/api/functions/createAppTokenFetch/) `sdk/api/functions/createAppTokenFetch` | ✓ | 回落 |
+| [createApplicationPromptRefresher(生成页)](/sdk/api/functions/createApplicationPromptRefresher/) `sdk/api/functions/createApplicationPromptRefresher` | ✓ | 回落 |
 | [createBlockListClassifier(生成页)](/sdk/api/functions/createBlockListClassifier/) `sdk/api/functions/createBlockListClassifier` | ✓ | 回落 |
 | [createBundleCache(生成页)](/sdk/api/functions/createBundleCache/) `sdk/api/functions/createBundleCache` | ✓ | 回落 |
 | [createChaosBlobStore(生成页)](/sdk/api/functions/createChaosBlobStore/) `sdk/api/functions/createChaosBlobStore` | ✓ | 回落 |
@@ -120,6 +121,7 @@ generated: true
 | [planUpgradeUrlOf(生成页)](/sdk/api/functions/planUpgradeUrlOf/) `sdk/api/functions/planUpgradeUrlOf` | ✓ | 回落 |
 | [platformErrorOf(生成页)](/sdk/api/functions/platformErrorOf/) `sdk/api/functions/platformErrorOf` | ✓ | 回落 |
 | [prepareAdjudication(生成页)](/sdk/api/functions/prepareAdjudication/) `sdk/api/functions/prepareAdjudication` | ✓ | 回落 |
+| [prepareApplicationPromptTurn(生成页)](/sdk/api/functions/prepareApplicationPromptTurn/) `sdk/api/functions/prepareApplicationPromptTurn` | ✓ | 回落 |
 | [providerSwitchedBody(生成页)](/sdk/api/functions/providerSwitchedBody/) `sdk/api/functions/providerSwitchedBody` | ✓ | 回落 |
 | [query(生成页)](/sdk/api/functions/query/) `sdk/api/functions/query` | ✓ | 回落 |
 | [readHistoryPage(生成页)](/sdk/api/functions/readHistoryPage/) `sdk/api/functions/readHistoryPage` | ✓ | 回落 |
@@ -131,6 +133,7 @@ generated: true
 | [requestPlatformAudio(生成页)](/sdk/api/functions/requestPlatformAudio/) `sdk/api/functions/requestPlatformAudio` | ✓ | 回落 |
 | [resolveAdjudicationPosture(生成页)](/sdk/api/functions/resolveAdjudicationPosture/) `sdk/api/functions/resolveAdjudicationPosture` | ✓ | 回落 |
 | [resolveAdjudicatorGovernance(生成页)](/sdk/api/functions/resolveAdjudicatorGovernance/) `sdk/api/functions/resolveAdjudicatorGovernance` | ✓ | 回落 |
+| [resolveApplicationSystem(生成页)](/sdk/api/functions/resolveApplicationSystem/) `sdk/api/functions/resolveApplicationSystem` | ✓ | 回落 |
 | [resolveBuiltinSelection(生成页)](/sdk/api/functions/resolveBuiltinSelection/) `sdk/api/functions/resolveBuiltinSelection` | ✓ | 回落 |
 | [resolveInitialMessages(生成页)](/sdk/api/functions/resolveInitialMessages/) `sdk/api/functions/resolveInitialMessages` | ✓ | 回落 |
 | [resolvePlatformSelection(生成页)](/sdk/api/functions/resolvePlatformSelection/) `sdk/api/functions/resolvePlatformSelection` | ✓ | 回落 |
@@ -165,6 +168,9 @@ generated: true
 | [AppBundleModel(生成页)](/sdk/api/interfaces/AppBundleModel/) `sdk/api/interfaces/AppBundleModel` | ✓ | 回落 |
 | [AppBundleModelPricing(生成页)](/sdk/api/interfaces/AppBundleModelPricing/) `sdk/api/interfaces/AppBundleModelPricing` | ✓ | 回落 |
 | [AppBundlePlatformModels(生成页)](/sdk/api/interfaces/AppBundlePlatformModels/) `sdk/api/interfaces/AppBundlePlatformModels` | ✓ | 回落 |
+| [ApplicationPromptInfo(生成页)](/sdk/api/interfaces/ApplicationPromptInfo/) `sdk/api/interfaces/ApplicationPromptInfo` | ✓ | 回落 |
+| [ApplicationPromptSnapshot(生成页)](/sdk/api/interfaces/ApplicationPromptSnapshot/) `sdk/api/interfaces/ApplicationPromptSnapshot` | ✓ | 回落 |
+| [ApplicationPromptTurnOptions(生成页)](/sdk/api/interfaces/ApplicationPromptTurnOptions/) `sdk/api/interfaces/ApplicationPromptTurnOptions` | ✓ | 回落 |
 | [AssembleBundleAdjudicatorOptions(生成页)](/sdk/api/interfaces/AssembleBundleAdjudicatorOptions/) `sdk/api/interfaces/AssembleBundleAdjudicatorOptions` | ✓ | 回落 |
 | [AssembleManagedModelOptions(生成页)](/sdk/api/interfaces/AssembleManagedModelOptions/) `sdk/api/interfaces/AssembleManagedModelOptions` | ✓ | 回落 |
 | [AssemblePlatformModelOptions(生成页)](/sdk/api/interfaces/AssemblePlatformModelOptions/) `sdk/api/interfaces/AssemblePlatformModelOptions` | ✓ | 回落 |
@@ -428,6 +434,7 @@ generated: true
 | [SpeechToTextArgs(生成页)](/sdk/api/type-aliases/SpeechToTextArgs/) `sdk/api/type-aliases/SpeechToTextArgs` | ✓ | 回落 |
 | [SpeechToTextModelDescriptor(生成页)](/sdk/api/type-aliases/SpeechToTextModelDescriptor/) `sdk/api/type-aliases/SpeechToTextModelDescriptor` | ✓ | 回落 |
 | [StoreErrorKind(生成页)](/sdk/api/type-aliases/StoreErrorKind/) `sdk/api/type-aliases/StoreErrorKind` | ✓ | 回落 |
+| [SystemPromptPolicy(生成页)](/sdk/api/type-aliases/SystemPromptPolicy/) `sdk/api/type-aliases/SystemPromptPolicy` | ✓ | 回落 |
 | [TansrConfig(生成页)](/sdk/api/type-aliases/TansrConfig/) `sdk/api/type-aliases/TansrConfig` | ✓ | 回落 |
 | [TerminalReason(生成页)](/sdk/api/type-aliases/TerminalReason/) `sdk/api/type-aliases/TerminalReason` | ✓ | 回落 |
 | [TextDeliveryMode(生成页)](/sdk/api/type-aliases/TextDeliveryMode/) `sdk/api/type-aliases/TextDeliveryMode` | ✓ | 回落 |
@@ -520,6 +527,7 @@ generated: true
 | [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 |
 | [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 |
 | [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 |
+| [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) |
 | [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) |
 | [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 |
 | [serve 环境变量(生成页)](/serve/env/) `serve/env` | ✓ | 回落 |

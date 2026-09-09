@@ -75,6 +75,8 @@
   "sdk": {
     "0.12.0": {
       "added": [
+        "应用系统提示词支持平台配置：默认 fallback 在 SDK 未传 system 时使用平台段；可选 prepend 保留平台段在前，即使 SDK 显式传入空数组。需要配套 API 与 SDK 版本。",
+        "systemAppend 可追加宿主指南而不覆盖平台默认；AgentSession.applicationPrompt 提供只读来源与策略摘要，不含正文。低阶 runAgent 可手动使用 resolveApplicationSystem 组合已验证的配置。平台提示词与策略在后续新一轮前刷新，当前执行轮固定，会话与历史保留。",
         "`zeroAppCapabilities(platform)`、`AppBundle.capabilitiesIssues`、`PlatformWarning.detail`:capabilities 段解析失败时可拿到具体问题。",
         "快照:`listCheckpointsDetailed` / `planCheckpointRetention`、类型 `CheckpointRetention`、`WriteCheckpointResult.retentionWarning`。",
         "裁决人通报码集 `ADJUDICATOR_UNAVAILABLE_WARNING` 与 `DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES`。",
@@ -130,6 +132,7 @@
   "serve": {
     "0.7.0": {
       "added": [
+        "应用系统提示词按平台 fallback / prepend 策略与 platform.system 组合；platform.systemAppend 追加宿主说明。Android / iOS 仍通过 /v2 发送普通用户消息，不新增客户端 system 入口；后续新一轮前刷新平台提示词与策略，当前执行轮固定，历史保留。需要配套 API 与 serve 版本。",
         "就绪帧 `TANSR_READY {json}` 与 `/readyz` 探针(`/healthz` / `/readyz` 在 CLI 入口始终开启);建会返回 429 / 503 时携 `Retry-After`。部署件探针建议由 `/healthz` 改为 `/readyz`。",
         "会话保留期:`sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }` 与 `store.sweepRetention`;环境变量 `TANSR_SERVE_SESSION_MAX_AGE_DAYS` / `TANSR_SERVE_SESSION_MAX_PER_END_USER`;保留天数可按组织在平台配置的值生效,缺省 30 天。",
         "轮末 webhook 出站:环境变量 `TANSR_SERVE_NOTIFY_URL` / `TANSR_SERVE_NOTIFY_SECRET`,`tansr serve --v2` 进程可直接发送;签名双版本 `x-tansr-signature: v2=…, v1=…`,可配 `webhook.signatureVersions`;导出 `signWebhookDelivery`。",

@@ -4,6 +4,7 @@ description: 在自己的 Node.js 或 Electron 程序里嵌入 tansr 智能体�
 zone: docs
 category: getting-started
 related:
+  - sdk/system-prompts
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
@@ -12,10 +13,16 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-09'
 ---
 
 `@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。
+
+## 应用提示词从哪里设置
+
+平台应用的 `systemPrompt` 用于共享角色，SDK 的 `system` 用于代码管理的业务段；默认 `fallback` 下显式 `system`（包括 `[]`）替代平台段。平台选择 `prepend` 后先保留平台段，再追加 SDK 段，`[]` 也保留平台段。宿主环境说明放 `systemAppend`，不触发默认覆盖。
+
+Windows Electron 仍由主进程运行 SDK，renderer 发送的是用户输入。应用提示词及策略功能尚待配套版本发布；支持版本可通过只读 `session.applicationPrompt` 核对来源与策略，不会返回正文。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；原会话与历史保留，无需重开。完整真值表、平台 PUT / GET 与可运行示例见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 前提
 
