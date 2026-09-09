@@ -22,7 +22,7 @@
     "release-notes": "node scripts/check/release-notes.mjs",
     "search-rank": "node scripts/check/search-rank.mjs",
     "gate": "node scripts/check/gate.mjs",
-    "test": "node --test scripts/**/*.test.mjs"
+    "test": "node --test \"scripts/**/*.test.mjs\""
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.0",
