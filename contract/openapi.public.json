@@ -44,7 +44,7 @@
   "paths": {
     "/healthz": {
       "get": {
-        "summary": "存活探针(liveness;十王修案 R-06):进程活着即 200 常量,体 {ok:true, version(package.json), db:ok|down|not-configured}(db 只如实报,不改状态码);compose healthcheck 看本端点,水位判据归 /readyz",
+        "summary": "存活探针(liveness):进程活着即 200 常量,体 {ok:true, version(package.json), db:ok|down|not-configured}(db 只如实报,不改状态码);compose healthcheck 看本端点,水位判据归 /readyz",
         "tags": [
           "ops"
         ],
@@ -65,7 +65,7 @@
     },
     "/readyz": {
       "get": {
-        "summary": "就绪探针(readiness;十王修案 FX-A-25 前置片段 / R-06;deploy.sh ⑥ 看本端点):{ version(package.json), gitSha(env TANSR_API_GIT_SHA ← Dockerfile ARG GIT_SHA;缺席 null), schemaRevision(末已应用迁移文件名去后缀,如 081_catalog_anchor_realign;零应用 null), schemaCurrent(迁移目录全部 done 且无半迁移;mysql 不可达 null = 未知), deps:{ mysql:ok|degraded, redis:ok|degraded } };**仅 schemaCurrent === false ⇒ 503**(schema 落后于代码 = 半态不接流量),deps 降级只如实报不改状态码",
+        "summary": "就绪探针(readiness;部署脚本以本端点判就绪):{ version(package.json), gitSha(env TANSR_API_GIT_SHA ← Dockerfile ARG GIT_SHA;缺席 null), schemaRevision(末已应用迁移文件名去后缀,如 081_catalog_anchor_realign;零应用 null), schemaCurrent(迁移目录全部 done 且无半迁移;mysql 不可达 null = 未知), deps:{ mysql:ok|degraded, redis:ok|degraded } };**仅 schemaCurrent === false ⇒ 503**(schema 落后于代码 = 半态不接流量),deps 降级只如实报不改状态码",
         "tags": [
           "ops"
         ],
@@ -95,7 +95,7 @@
     },
     "/v1/chat/completions": {
       "post": {
-        "summary": "OpenAI Chat Completions 兼容(SSE 可选);体 = 上游协议 passthrough;idempotency-key 头可选启用请求层幂等(T-A23)",
+        "summary": "OpenAI Chat Completions 兼容(SSE 可选);体 = 上游协议 passthrough;idempotency-key 头可选启用请求层幂等",
         "tags": [
           "gateway"
         ],
@@ -204,7 +204,7 @@
     },
     "/v1/messages": {
       "post": {
-        "summary": "Anthropic Messages 兼容(SSE 可选);体 = 上游协议 passthrough;idempotency-key 头可选启用请求层幂等(T-A23)",
+        "summary": "Anthropic Messages 兼容(SSE 可选);体 = 上游协议 passthrough;idempotency-key 头可选启用请求层幂等",
         "tags": [
           "gateway"
         ],
@@ -313,7 +313,7 @@
     },
     "/v1/responses": {
       "post": {
-        "summary": "OpenAI Responses 兼容(SSE 可选);体 = 上游协议 passthrough;仅路由 protocol=openai_responses 端点,不做协议转换;idempotency-key 头可选启用请求层幂等(T-A23)",
+        "summary": "OpenAI Responses 兼容(SSE 可选);体 = 上游协议 passthrough;仅路由 protocol=openai_responses 端点,不做协议转换;idempotency-key 头可选启用请求层幂等",
         "tags": [
           "gateway"
         ],
@@ -448,7 +448,7 @@
     },
     "/v1/auth/otp/request": {
       "post": {
-        "summary": "邮箱 OTP 下发(per-email 频控 + 每 IP 认证严档,T-A28)",
+        "summary": "邮箱 OTP 下发(per-email 频控 + 每 IP 认证严档)",
         "tags": [
           "auth"
         ],
@@ -481,7 +481,7 @@
     },
     "/v1/auth/otp/verify": {
       "post": {
-        "summary": "OTP 校验换 token(首次即注册;每 IP 认证严档,T-A28)",
+        "summary": "OTP 校验换 token(首次即注册;每 IP 认证严档)",
         "tags": [
           "auth"
         ],
@@ -531,7 +531,7 @@
     },
     "/v1/auth/methods": {
       "get": {
-        "summary": "三登录方式可用性(T-A46;邮箱恒 true;sms = env 凭据已交割 × 平台配置 sms_settings 在场合法双闸,ED-S9 交割 2026-08-30;wechat 依 ED-S8 交割态)",
+        "summary": "三登录方式可用性(邮箱恒 true;sms = env 凭据已交割 × 平台配置 sms_settings 在场合法双闸;wechat 依凭据交割态)",
         "tags": [
           "auth"
         ],
@@ -551,7 +551,7 @@
     },
     "/v1/auth/sms/request": {
       "post": {
-        "summary": "手机短信 OTP 下发(T-A46/ED-S9 阿里云 dysms:大陆号归一校验 → 四级限频[重发冷却→每号小时→每号日→每 IP 分钟,阈值恒平台配置 sms_settings 驱动,超限 429 otp_rate_limited 携 retryAfterSec] → 6 位码哈希入 Redis[TTL 配置驱动] → 按注册态选模板真发[新号=注册模板/已绑号=登录模板,响应恒同形不泄露注册态];通道未交割或平台配置缺席 503 auth_channel_undelivered;上游拒绝恒不透传细节,上游频控如实 429、余 502 upstream_error)",
+        "summary": "手机短信 OTP 下发(阿里云 dysms:大陆号归一校验 → 四级限频[重发冷却→每号小时→每号日→每 IP 分钟,阈值恒平台配置 sms_settings 驱动,超限 429 otp_rate_limited 携 retryAfterSec] → 6 位码哈希入 Redis[TTL 配置驱动] → 按注册态选模板真发[新号=注册模板/已绑号=登录模板,响应恒同形不泄露注册态];通道未交割或平台配置缺席 503 auth_channel_undelivered;上游拒绝恒不透传细节,上游频控如实 429、余 502 upstream_error)",
         "tags": [
           "auth"
         ],
@@ -594,7 +594,7 @@
     },
     "/v1/auth/sms/verify": {
       "post": {
-        "summary": "短信 OTP 校验换 token(T-A46;验码通过 → 已绑号登录签 JWT / 新号建户[phone_otp 身份,手机号唯一,与邮箱账户同人双标识恒不裂户]+签 JWT;失败计数窗随码 TTL,超限废码 429,循邮箱 OTP 爆破防护先例)",
+        "summary": "短信 OTP 校验换 token(验码通过 → 已绑号登录签 JWT / 新号建户[phone_otp 身份,手机号唯一,与邮箱账户同人双标识恒不裂户]+签 JWT;失败计数窗随码 TTL,超限废码 429,循邮箱 OTP 爆破防护先例)",
         "tags": [
           "auth"
         ],
@@ -634,7 +634,7 @@
     },
     "/v1/auth/wechat/exchange": {
       "post": {
-        "summary": "微信扫码授权码换 token(T-A46;subject=unionid||openid,首次即注册)",
+        "summary": "微信扫码授权码换 token(subject=unionid||openid,首次即注册)",
         "tags": [
           "auth"
         ],
@@ -667,7 +667,7 @@
     },
     "/v1/auth/device/code": {
       "post": {
-        "summary": "设备码签发(RFC 8628;CLI 网页登录发起面;每 IP 认证严档限频防滥发,T-A28)",
+        "summary": "设备码签发(RFC 8628;CLI 网页登录发起面;每 IP 认证严档限频防滥发)",
         "tags": [
           "auth"
         ],
@@ -707,7 +707,7 @@
     },
     "/v1/auth/device/token": {
       "post": {
-        "summary": "设备码轮询兑换 CLI 凭据(2026-08-30 起改发 PAT,与 POST /v1/api-keys 同形一次性回显,不再签会话票;pending 期间 400 device_code_pending;轮询过速 429 device_code_slow_down[RFC 8628,客户端间隔 +5s];approved 终态 CAS 一次性消费——凭据恒至多交付一次;PAT 存量上限同界 400 limit_exceeded;每 IP 认证严档,T-A28)",
+        "summary": "设备码轮询兑换 CLI 凭据(签发 PAT,与 POST /v1/api-keys 同形一次性回显,不再签会话票;pending 期间 400 device_code_pending;轮询过速 429 device_code_slow_down[RFC 8628,客户端间隔 +5s];approved 终态 CAS 一次性消费——凭据恒至多交付一次;PAT 存量上限同界 400 limit_exceeded;每 IP 认证严档)",
         "tags": [
           "auth"
         ],
@@ -876,7 +876,7 @@
     },
     "/v1/auth/refresh": {
       "post": {
-        "summary": "refresh 轮换(每 IP 认证严档,T-A28)",
+        "summary": "refresh 轮换(每 IP 认证严档)",
         "tags": [
           "auth"
         ],
@@ -967,7 +967,7 @@
     },
     "/v1/account/anonymize/challenge": {
       "post": {
-        "summary": "自助注销挑战(T-A40;JWT 登录态,PAT 恒 403):向账户邮箱发 OTP 确认码,返回一次性挑战 id(TTL 同 OTP);频控 = 每 IP 认证严档(T-A28)+ per-email 送信预算(与登录 OTP 共享 otpRate 桶,档位对齐)",
+        "summary": "自助注销挑战(JWT 登录态,PAT 恒 403):向账户邮箱发 OTP 确认码,返回一次性挑战 id(TTL 同 OTP);频控 = 每 IP 认证严档 + per-email 送信预算(与登录 OTP 共享 otpRate 桶,档位对齐)",
         "tags": [
           "auth"
         ],
@@ -1022,7 +1022,7 @@
     },
     "/v1/account/anonymize": {
       "post": {
-        "summary": "自助注销确认执行(T-A40;JWT 登录态):校验挑战 OTP 通过即调 T-A37 匿名化内核(email→不可逆占位/name 清空/status=deleted/登录身份与发票档删除;台账/计量/账单行恒不动)+ 全量凭据切断(refresh 与 api keys 全吊销 + 在外 access 用户级切断恒拒)+ 审计在册(actor=本人,原邮箱打码);同邮箱可重注册得全新账户;管理侧 /admin/v1/users/:id/anonymize 保持不动",
+        "summary": "自助注销确认执行(JWT 登录态):校验挑战 OTP 通过即调匿名化内核(email→不可逆占位/name 清空/status=deleted/登录身份与发票档删除;台账/计量/账单行恒不动)+ 全量凭据切断(refresh 与 api keys 全吊销 + 在外 access 用户级切断恒拒)+ 审计在册(actor=本人,原邮箱打码);同邮箱可重注册得全新账户;管理侧 /admin/v1/users/:id/anonymize 保持不动",
         "tags": [
           "auth"
         ],
@@ -1177,7 +1177,7 @@
     },
     "/v1/orgs/{id}": {
       "patch": {
-        "summary": "org 改名(GP0-1a ②环;登录态 JWT 人类主体,owner/admin;name trim 入库,trim 后 <2 字 400;审计 org.rename 记 from/to;非成员恒 404)",
+        "summary": "org 改名(登录态 JWT 人类主体,owner/admin;name trim 入库,trim 后 <2 字 400;审计 org.rename 记 from/to;非成员恒 404)",
         "tags": [
           "orgs"
         ],
@@ -1250,7 +1250,7 @@
     },
     "/v1/orgs/{id}/transfer-owner": {
       "post": {
-        "summary": "owner 移交(GP0-1a;owner 独有;toUserId 须 org 在册成员;store 层 CAS 防并发,并发改主 409 conflict;双向审计 from/to;移交后本人角色 admin)",
+        "summary": "owner 移交(owner 独有;toUserId 须 org 在册成员;store 层 CAS 防并发,并发改主 409 conflict;双向审计 from/to;移交后本人角色 admin)",
         "tags": [
           "orgs"
         ],
@@ -1326,7 +1326,7 @@
     },
     "/v1/orgs/{id}/dissolve": {
       "post": {
-        "summary": "org 解散(GP0-1a ③环;owner 独有;confirmName 须逐字等于 org 现名;级联 = store.dissolveOrg 单事务;余额冻结案:台账行保留、org 非 active 全面 404、不清零不退款)",
+        "summary": "org 解散(owner 独有;confirmName 须逐字等于 org 现名;级联 = store.dissolveOrg 单事务;余额冻结案:台账行保留、org 非 active 全面 404、不清零不退款)",
         "tags": [
           "orgs"
         ],
@@ -1751,7 +1751,7 @@
     },
     "/v1/orgs/{id}/trusted-idps": {
       "get": {
-        "summary": "受信 IdP 注册表列表(T-A25;owner/admin/member 读):默认空=拒所有外部 issuer",
+        "summary": "受信 IdP 注册表列表(owner/admin/member 读):默认空=拒所有外部 issuer",
         "tags": [
           "orgs"
         ],
@@ -1784,7 +1784,7 @@
         }
       },
       "post": {
-        "summary": "受信 IdP upsert(T-A25;owner/admin):org+issuer 唯一;jwksUri 缺省用发现文档(禁任意 JWKS 覆盖:显式配置须与发现文档或此受信覆盖一致);domain 非空则登录 email 域须匹配;enabled=false 停用即拒",
+        "summary": "受信 IdP upsert(owner/admin):org+issuer 唯一;jwksUri 缺省用发现文档(禁任意 JWKS 覆盖:显式配置须与发现文档或此受信覆盖一致);domain 非空则登录 email 域须匹配;enabled=false 停用即拒",
         "tags": [
           "orgs"
         ],
@@ -1847,7 +1847,7 @@
     },
     "/v1/orgs/{id}/trusted-idps/{tid}": {
       "delete": {
-        "summary": "删除受信 IdP(T-A25;owner/admin;按公开 id + org 双限防跨 org 删)",
+        "summary": "删除受信 IdP(owner/admin;按公开 id + org 双限防跨 org 删)",
         "tags": [
           "orgs"
         ],
@@ -1885,7 +1885,7 @@
     },
     "/v1/auth/sso/{orgId}/start": {
       "get": {
-        "summary": "SSO 登录入口(T-A25):校验 issuer 受信(默认空=拒)+ 强制 HTTPS(生产)+ 发现文档 issuer 严格一致 + 禁任意 JWKS 覆盖 → 302 到 IdP 授权 URL(state/nonce/PKCE code_verifier 入 Redis TTL 10min 一次性;URL 携 code_challenge+code_challenge_method=S256);Cache-Control: no-store",
+        "summary": "SSO 登录入口:校验 issuer 受信(默认空=拒)+ 强制 HTTPS(生产)+ 发现文档 issuer 严格一致 + 禁任意 JWKS 覆盖 → 302 到 IdP 授权 URL(state/nonce/PKCE code_verifier 入 Redis TTL 10min 一次性;URL 携 code_challenge + code_challenge_method=S256);Cache-Control: no-store",
         "tags": [
           "orgs"
         ],
@@ -1918,7 +1918,7 @@
     },
     "/v1/auth/sso/{orgId}/callback": {
       "get": {
-        "summary": "SSO 回调 BFF 化(T-A25,doc/30 V5):PKCE code_verifier 换 token → 验 id_token(签名/iss/aud/exp/nonce)+ email_verified=true → 身份主键 (org,issuer,sub):命中直登;首次须既有账号 + 本 org 已邀请成员,经 OTP 二次确认。回调**不再 JSON 返 token**——成功恒 302 携一次性 code(BFF /v1/auth/sso/exchange 换 token),首次关联 302 到 confirm 页携一次性 link;全程 Cache-Control: no-store",
+        "summary": "SSO 回调 BFF 化:PKCE code_verifier 换 token → 验 id_token(签名/iss/aud/exp/nonce)+ email_verified=true → 身份主键 (org,issuer,sub):命中直登;首次须既有账号 + 本 org 已邀请成员,经 OTP 二次确认。回调**不再 JSON 返 token**——成功恒 302 携一次性 code(BFF /v1/auth/sso/exchange 换 token),首次关联 302 到 confirm 页携一次性 link;全程 Cache-Control: no-store",
         "tags": [
           "orgs"
         ],
@@ -1969,7 +1969,7 @@
     },
     "/v1/auth/sso/link/confirm": {
       "post": {
-        "summary": "SSO 首次关联 OTP 二次确认(T-A25):校验邮箱 OTP(复用既有机制,尝试计数防爆破)→ 写 federated_identity 绑定 (org,issuer,sub)→userId → 返一次性登录 code(BFF 再经 exchange 换 token);link/OTP 一次性",
+        "summary": "SSO 首次关联 OTP 二次确认:校验邮箱 OTP(复用既有机制,尝试计数防爆破)→ 写 federated_identity 绑定 (org,issuer,sub)→userId → 返一次性登录 code(BFF 再经 exchange 换 token);link/OTP 一次性",
         "tags": [
           "orgs"
         ],
@@ -2029,7 +2029,7 @@
     },
     "/v1/auth/sso/exchange": {
       "post": {
-        "summary": "SSO 一次性登录 code 换 token(T-A25;BFF 承接回调 302 的 code):签发 TokenResponse + org 成员关系;code 一次性 TTL 2min",
+        "summary": "SSO 一次性登录 code 换 token(BFF 承接回调 302 的 code):签发 TokenResponse + org 成员关系;code 一次性 TTL 2min",
         "tags": [
           "orgs"
         ],
@@ -2126,7 +2126,7 @@
     },
     "/v1/api-keys": {
       "post": {
-        "summary": "PAT 签发(登录态;完整明文只回显一次;带 x-tansr-org 头 = org 的 key,owner/admin;每 IP 认证严档,T-A28)",
+        "summary": "PAT 签发(登录态;完整明文只回显一次;带 x-tansr-org 头 = org 的 key,owner/admin;每 IP 认证严档)",
         "tags": [
           "auth"
         ],
@@ -2244,7 +2244,7 @@
     },
     "/v1/api-keys/{publicId}": {
       "delete": {
-        "summary": "PAT 吊销(即时失效,可经 restore 再启用;级联吊销其签发的派生应用键——CW5-2 归因判据,restore 恒不复活派生键;带 x-tansr-org 头 = 吊销 org 的 key;deleted 键恒 404)",
+        "summary": "PAT 吊销(即时失效,可经 restore 再启用;级联吊销其签发的派生应用键(restore 恒不复活派生键);带 x-tansr-org 头 = 吊销 org 的 key;deleted 键恒 404)",
         "tags": [
           "auth"
         ],
@@ -2283,7 +2283,7 @@
     },
     "/v1/api-keys/{publicId}/restore": {
       "post": {
-        "summary": "PAT 再启用(仅 revoked→active;active 名额复查 T-A28 同界——吊销释放名额、再启用重新占用,满员 400 limit_exceeded;active/deleted/不存在/app 键恒 404,deleted 不可自助恢复)",
+        "summary": "PAT 再启用(仅 revoked→active;active 名额复查与签发同界——吊销释放名额、再启用重新占用,满员 400 limit_exceeded;active/deleted/不存在/app 键恒 404,deleted 不可自助恢复)",
         "tags": [
           "auth"
         ],
@@ -2386,7 +2386,7 @@
     },
     "/v1/docs/feedback": {
       "post": {
-        "summary": "资料站页面反馈(P2 DS-17;无鉴权公开面;CORS 白名单 origin docs.tansr.com / localhost:4321):体 {path ^/[a-z0-9\\-/]*$ ≤200, helpful boolean(严格), locale? zh-CN|en} → 落 docs_feedback 一行(day = 服务器 UTC 日键;ip_hash = sha256(ip + 日键) 前 16 hex,原 IP 恒不落库)→ 202 {ok:true};路由级限流每 IP 60 / h(429 rate_limited + Retry-After)",
+        "summary": "资料站页面反馈(无鉴权公开面;CORS 白名单 origin docs.tansr.com / localhost:4321):体 {path ^/[a-z0-9\\-/]*$ ≤200, helpful boolean(严格), locale? zh-CN|en|ja|ko} → 落 docs_feedback 一行(day = 服务器 UTC 日键;ip_hash = sha256(ip + 日键) 前 16 hex,原 IP 恒不落库)→ 202 {ok:true};路由级限流每 IP 60 / h(429 rate_limited + Retry-After)",
         "tags": [
           "control"
         ],
@@ -2436,7 +2436,7 @@
     },
     "/v1/support/tickets": {
       "post": {
-        "summary": "资料站支持工单(P2 DS-18;无鉴权公开面;CORS 白名单 origin):体 {subject 1–120, body 1–4000, email?(形校验), page? ≤200, locale? zh-CN|en, website?(蜜罐:非空 → 202 假成功零动作)} → 经 SMTP 投递到 TANSR_API_SUPPORT_MAILBOX(主题 [tansr 支持] <subject> (<ticketId>);正文 ticketId / locale / page / email(若填)/ 正文,恒不含 IP)+ 审计 support.ticket_received → 202 {ok:true, ticketId: tk_<ulid>};路由级限流每 IP 5 / h(429);SMTP 未配置 503 auth_channel_undelivered(不落库不假成功)",
+        "summary": "资料站支持工单(无鉴权公开面;CORS 白名单 origin):体 {subject 1–120, body 1–4000, email?(形校验), page? ≤200, locale? zh-CN|en|ja|ko, website?(蜜罐:非空 → 202 假成功零动作)} → 经 SMTP 投递到 TANSR_API_SUPPORT_MAILBOX(主题 [tansr 支持] <subject> (<ticketId>);正文 ticketId / locale / page / email(若填)/ 正文,恒不含 IP)+ 审计 support.ticket_received → 202 {ok:true, ticketId: tk_<ulid>};路由级限流每 IP 5 / h(429);SMTP 未配置 503 auth_channel_undelivered(不落库不假成功)",
         "tags": [
           "control"
         ],
@@ -2496,7 +2496,7 @@
     },
     "/v1/client-config": {
       "get": {
-        "summary": "client-config bundle(ETag/If-None-Match;304 走缓存;owner PAT 径恒全量——十王修案 FX-A-05:doc/123 D-B1 分档只施于 app_user 令牌径,本径 platformModels 恒四键、x-tansr-client-features 为 no-op、单一 ETag)",
+        "summary": "client-config bundle(ETag/If-None-Match;304 走缓存;owner PAT 径恒全量——按客户端声明分档只施于 app_user 令牌径,本径 platformModels 恒四键、x-tansr-client-features 为 no-op、单一 ETag)",
         "tags": [
           "control"
         ],
@@ -2536,7 +2536,7 @@
     },
     "/v1/model-selection": {
       "get": {
-        "summary": "用户级模型列表读取(T-A13 语义转向为采集制,doc/28 §5.3 破坏面;067 默认池继承):selected 恒数组(有档原样回读不清洗;user 键无档 = 未自定义 → 动态继承平台默认池现值[池序],inherited:true,空池 = [] 即既有空集语义;org 键无档恒 [] + inherited:false)+ available(可添加全集 = 本 owner 视角可服务的 platform 目录,与 bundle 可服务性谓词同源,条目含 kind/family/tags 三级过滤维度;自定义端点/BYOK 不在册不受约束;带 x-tansr-org 头 = org 选择集,成员可读)",
+        "summary": "用户级模型列表读取(采集制;平台默认池继承):selected 恒数组(有档原样回读不清洗;user 键无档 = 未自定义 → 动态继承平台默认池现值[池序],inherited:true,空池 = [] 即既有空集语义;org 键无档恒 [] + inherited:false)+ available(可添加全集 = 本 owner 视角可服务的 platform 目录,与 bundle 可服务性谓词同源,条目含 kind/family/tags 三级过滤维度;自定义端点/BYOK 不在册不受约束;带 x-tansr-org 头 = org 选择集,成员可读)",
         "tags": [
           "control"
         ],
@@ -2634,7 +2634,7 @@
         }
       },
       "delete": {
-        "summary": "恢复平台推荐(067 默认池,用户拍板 2026-08-31):删除本 owner 自定义选购档 = 重新挂回平台默认池动态继承(幂等,无档删 = 已在继承态同回终态;返回恢复后的有效选购与 inherited:true;二次确认在呈现层)。仅 user 键——org 键恒不继承(400 validation_failed;显式清空走 PUT [])",
+        "summary": "恢复平台推荐(平台默认池):删除本 owner 自定义选购档 = 重新挂回平台默认池动态继承(幂等,无档删 = 已在继承态同回终态;返回恢复后的有效选购与 inherited:true;二次确认在呈现层)。仅 user 键——org 键恒不继承(400 validation_failed;显式清空走 PUT [])",
         "tags": [
           "control"
         ],
@@ -2690,7 +2690,7 @@
     },
     "/v1/apps": {
       "get": {
-        "summary": "本 owner 应用列表(T-A13;永不回密文与 hash;带 x-tansr-org 头 = org 应用,成员可读)",
+        "summary": "本 owner 应用列表(永不回密文与 hash;带 x-tansr-org 头 = org 应用,成员可读)",
         "tags": [
           "apps"
         ],
@@ -2735,7 +2735,7 @@
         }
       },
       "post": {
-        "summary": "创建应用(name 必填)→ {app, apiKey}:ApiKey 密文(tsk_+40 位 base62)唯一一次回显,库存 sha256(org 语境 owner/admin);T-A34 加法:expiresAt 缺省 now+365d(显式 null = 有意长期,写审计;存量行不动)、signRequired 请求签名强制位(缺省 false)",
+        "summary": "创建应用(name 必填)→ {app, apiKey}:ApiKey 密文(tsk_+40 位 base62)唯一一次回显,库存 sha256(org 语境 owner/admin);expiresAt 缺省 now+365d(显式 null = 有意长期,写审计;存量行不动)、signRequired 请求签名强制位(缺省 false)",
         "tags": [
           "apps"
         ],
@@ -2855,7 +2855,7 @@
         }
       },
       "patch": {
-        "summary": "应用更新:name / status(disabled = 末端全拒 fail-closed)/ ipAllowlist(CIDR 数组,逐条可解析,null = 清除)/ signRequired(T-A34 加法,即时生效于 /t1 认证链)",
+        "summary": "应用更新:name / status(disabled = 末端全拒 fail-closed)/ ipAllowlist(CIDR 数组,逐条可解析,null = 清除)/ signRequired(即时生效于 /t1 认证链)",
         "tags": [
           "apps"
         ],
@@ -2989,7 +2989,7 @@
     },
     "/v1/apps/{id}/rotate": {
       "post": {
-        "summary": "轮换密钥:新密文替换 hash(旧密文即刻失效),新密文一次性回显;P0-3a 续期径:带期键同步顺延 expiresAt = 轮换时点 + 缺省寿命 365d(重算不继承旧值,审计记新旧值),长期键(null)保持长期",
+        "summary": "轮换密钥:新密文替换 hash(旧密文即刻失效),新密文一次性回显;续期径:带期键同步顺延 expiresAt = 轮换时点 + 缺省寿命 365d(重算不继承旧值,审计记新旧值),长期键(null)保持长期",
         "tags": [
           "apps"
         ],
@@ -3035,7 +3035,7 @@
     },
     "/v1/apps/{id}/app-user-revocations": {
       "post": {
-        "summary": "终端用户令牌吊销(S-R1,用户拍板 2026-08-29):按 endUserId 切断该 (App, endUser) 下全部存量 app_user 令牌(iat <= 切断时刻恒拒,即时生效;TTL = 令牌最大寿命 24h 自清)——终端此后须经开发者服务端重新换发;幂等(重复切断 = 刷新切断时刻,恒 200);写恒审计(app.revoke_app_user,detail 携 endUserId/atEpochSec);jti 单令牌吊销不设 HTTP 面(控制台拿不到 jti,endUser 级切断已覆盖)",
+        "summary": "终端用户令牌吊销:按 endUserId 切断该 (App, endUser) 下全部存量 app_user 令牌(iat <= 切断时刻恒拒,即时生效;TTL = 令牌最大寿命 24h 自清)——终端此后须经开发者服务端重新换发;幂等(重复切断 = 刷新切断时刻,恒 200);写恒审计(app.revoke_app_user,detail 携 endUserId/atEpochSec);jti 单令牌吊销不设 HTTP 面(控制台拿不到 jti,endUser 级切断已覆盖)",
         "tags": [
           "apps"
         ],
@@ -3112,7 +3112,7 @@
     },
     "/v1/apps/{id}/gateway-egress": {
       "get": {
-        "summary": "网关出口登记读面(SC-34 网关限流档,doc/118 §11.1):该 App 登记的出口 CIDR 全量(稳定序 createdAt 升序→cidr 字典序);语义:app_user 令牌径请求客户端 IP ∈ 登记出口 → 账套级限流键由 k<apiKeyId> 切为每终端用户 g<apiKeyId>:<endUserIdHash>(独立 60s 滑窗,上限恒 = 平台缺省 120/min,即每个终端用户拿到与一把直连 key 相同的额度;quota.rpm 只作 App 总闸 appq;该档 429 携 detail.scope:\"endUser\",SC-34c)且该 IP 豁免全局 IP 档 600/min;未登记 IP / 双头径 / compat 径限流行为与信封字节不变;他人/非 app 键恒 404",
+        "summary": "网关出口登记读面(网关限流档):该 App 登记的出口 CIDR 全量(稳定序 createdAt 升序→cidr 字典序);语义:app_user 令牌径请求客户端 IP ∈ 登记出口 → 账套级限流键由 k<apiKeyId> 切为每终端用户 g<apiKeyId>:<endUserIdHash>(独立 60s 滑窗,上限恒 = 平台缺省 120/min,即每个终端用户拿到与一把直连 key 相同的额度;quota.rpm 只作 App 总闸 appq;该档 429 携 detail.scope:\"endUser\")且该 IP 豁免全局 IP 档 600/min;未登记 IP / 双头径 / compat 径限流行为与信封字节不变;他人/非 app 键恒 404",
         "tags": [
           "apps"
         ],
@@ -3156,7 +3156,7 @@
         }
       },
       "put": {
-        "summary": "网关出口登记全量替换(SC-34):entries ≤16 条,cidr 逐条 IPv4/IPv6 CIDR(裸 IP = 单主机;node:net isIP + 掩码位校验)且同批不重复,label 可空;[] = 清空登记(该 App 回既有 k<apiKeyId> 键与 IP 档缺省);写恒审计 app.gateway_egress.updated(detail 携 entries/count)+ 出口缓存定向失效(下一请求即按新集合);装置绑定 CLI 键恒 400(不在应用控制面,doc/112);运维顺序:部署 api → 此处登记 serve 出口 CIDR → 观察 429 率",
+        "summary": "网关出口登记全量替换:entries ≤16 条,cidr 逐条 IPv4/IPv6 CIDR(裸 IP = 单主机;node:net isIP + 掩码位校验)且同批不重复,label 可空;[] = 清空登记(该 App 回既有 k<apiKeyId> 键与 IP 档缺省);写恒审计 app.gateway_egress.updated(detail 携 entries/count)+ 出口缓存定向失效(下一请求即按新集合);装置绑定 CLI 键恒 400(不在应用控制面);运维顺序:部署 api → 此处登记 serve 出口 CIDR → 观察 429 率",
         "tags": [
           "apps"
         ],
@@ -3232,7 +3232,7 @@
     },
     "/v1/apps/{id}/config": {
       "put": {
-        "summary": "应用策略写入(doc/28 §7.1 逐段校验):modelCatalogIds ∈ 本户有效集(用户级选择集∩可服务谓词)、adjudicatorIds ∈ 用户清单∪本户自定义档、contextPolicy.schemeId 存在且可用、searchProviderId 存在且 active(账套级默认搜索商,/t1/websearch 恒首选,null 回继承平台默认);缺席键不动该段、null 回继承、[] 显式空集(fail-closed);写恒 bundle 失效(附 apiKeyId 维度)+ 审计",
+        "summary": "应用策略写入(逐段校验):modelCatalogIds ∈ 本户有效集(用户级选择集∩可服务谓词)、adjudicatorIds ∈ 用户清单∪本户自定义档、contextPolicy.schemeId 存在且可用、searchProviderId 存在且 active(账套级默认搜索商,/t1/websearch 恒首选,null 回继承平台默认);缺席键不动该段、null 回继承、[] 显式空集(fail-closed);写恒 bundle 失效(附 apiKeyId 维度)+ 审计",
         "tags": [
           "apps"
         ],
@@ -3308,7 +3308,7 @@
     },
     "/v1/app-tokens": {
       "post": {
-        "summary": "app_user 短期令牌签发(doc/89 契约 1.1;S-A1):开发者服务端以 App 键双头换发终端令牌(x-tansr-app-token 载体);鉴权复用 authenticateApp 全链(scope / status / 过期 / IP 白名单 / T-A34 签名 / license);endUserId 可打印 ASCII 1–128,ttlSeconds 60–86400 缺省 3600;令牌仅一次性回体、恒不入日志;doc/125 §2.3 令牌铸造径只读判限(并发 ≥ 硬帽 429 plan_concurrency_exceeded 不占位;test 档月度不同终端用户 SET > 100 → 429 plan_end_users_exceeded,shadow 下只计量)",
+        "summary": "app_user 短期令牌签发:开发者服务端以 App 键双头换发终端令牌(x-tansr-app-token 载体);鉴权复用 authenticateApp 全链(scope / status / 过期 / IP 白名单 / 签名 / license);endUserId 可打印 ASCII 1–128,ttlSeconds 60–86400 缺省 3600;令牌仅一次性回体、恒不入日志;令牌铸造径只读判限(并发 ≥ 硬帽 429 plan_concurrency_exceeded 不占位;test 档月度不同终端用户 SET > 100 → 429 plan_end_users_exceeded,shadow 下只计量)",
         "tags": [
           "apps"
         ],
@@ -3417,7 +3417,7 @@
     },
     "/v1/my-usage": {
       "get": {
-        "summary": "终端自查面(doc/89 契约 3;S-A5):app_user 令牌鉴权,恒只返回令牌 eu 的用量(endUserId 恒不可由查询参数改向);?window=Nd(1..90,缺省 7d);响应经 MyUsageResponse schema 序列化(additionalProperties:false)= 金额字段结构级不可达(对抗验收 D1/D2 铁律)",
+        "summary": "终端自查面:app_user 令牌鉴权,恒只返回令牌 eu 的用量(endUserId 恒不可由查询参数改向);?window=Nd(1..90,缺省 7d);响应经 MyUsageResponse schema 序列化(additionalProperties:false)= 金额字段结构级不可达(终端面恒不暴露金额)",
         "tags": [
           "apps"
         ],
@@ -3462,7 +3462,7 @@
     },
     "/v1/app-usage/by-end-user": {
       "get": {
-        "summary": "开发者对账面(doc/89 契约 3;S-A5):App 键双头鉴权,本 App 用量按 endUserId 分桶(null 桶 = 未归因:App 服务端直调等);?window=Nd(1..90,缺省 7d)/ ?endUserId= 单查(形制外 400 validation_failed)/ ?limit(缺省 50,上限 50 钳制)/ ?offset;行携 cost(CNY 锚 DECIMAL 串)+ byCurrency 分币桶(T-A39 恒不跨币折算)",
+        "summary": "开发者对账面:App 键双头鉴权,本 App 用量按 endUserId 分桶(null 桶 = 未归因:App 服务端直调等);?window=Nd(1..90,缺省 7d)/ ?endUserId= 单查(形制外 400 validation_failed)/ ?limit(缺省 50,上限 50 钳制)/ ?offset;行携 cost(CNY 锚 DECIMAL 串)+ byCurrency 分币桶(恒不跨币折算)",
         "tags": [
           "apps"
         ],
@@ -3551,7 +3551,7 @@
     },
     "/v1/org/policy": {
       "get": {
-        "summary": "org 策略包应用档(T-A17 加法):{policy: null | {pack, enforced, appliedAt}};org 语境必填(x-tansr-org 头或 org PAT),全员可读;enforced=true 时包内档锁定成员属主的全部应用账套(bundle 段携 locked:true)",
+        "summary": "org 策略包应用档:{policy: null | {pack, enforced, appliedAt}};org 语境必填(x-tansr-org 头或 org PAT),全员可读;enforced=true 时包内档锁定成员属主的全部应用账套(bundle 段携 locked:true)",
         "tags": [
           "orgs"
         ],
@@ -3681,7 +3681,7 @@
     },
     "/v1/org-governance": {
       "get": {
-        "summary": "org 治理设置读取(owner/admin;成员可读):缺行回 configured:false + 各档缺省(legacy/disabled)= 全旧语义零破坏锚;poolTierCeiling = org→user 细分天花板(RFC-U3b §3;null = 未设 = 不细分)",
+        "summary": "org 治理设置读取(owner/admin;成员可读):缺行回 configured:false + 各档缺省(legacy/disabled)= 全旧语义零破坏锚;poolTierCeiling = org→user 细分天花板(null = 未设 = 不细分)",
         "tags": [
           "org-governance"
         ],
@@ -3733,7 +3733,7 @@
         }
       },
       "put": {
-        "summary": "org 治理设置写入(owner/admin,JWT 人类主体;org PAT 恒 403 principal_required):升 enforce/required 须带当前 preflight reportHash,缺席/过期 409 preflight_required;降档自助恒许恒审计;写恒 bundle 失效;poolTierCeiling = org→user 细分天花板(RFC-U3b §3.4:三态 undefined 不动/null 清除/值即设;user 位写面生效 min(平台,细分),org 位与签发工件恒不受影响;不涉 preflight)",
+        "summary": "org 治理设置写入(owner/admin,JWT 人类主体;org PAT 恒 403 principal_required):升 enforce/required 须带当前 preflight reportHash,缺席/过期 409 preflight_required;降档自助恒许恒审计;写恒 bundle 失效;poolTierCeiling = org→user 细分天花板(三态 undefined 不动/null 清除/值即设;user 位写面生效 min(平台,细分),org 位与签发工件恒不受影响;不涉 preflight)",
         "tags": [
           "org-governance"
         ],
@@ -3843,7 +3843,7 @@
     },
     "/v1/org-governance/shadow-report": {
       "get": {
-        "summary": "shadow 双算差异报告(owner/admin):would-deny 按成员/按资源/按 app 三维 + 越界扩张计数(晋级门:恒应 0)+ 意外空集计数;30 天保留窗(RETAIN-TTL)",
+        "summary": "shadow 双算差异报告(owner/admin):would-deny 按成员/按资源/按 app 三维 + 越界扩张计数(晋级门:恒应 0)+ 意外空集计数;30 天保留窗",
         "tags": [
           "org-governance"
         ],
@@ -5045,7 +5045,7 @@
     },
     "/v1/config/{scope}": {
       "get": {
-        "summary": "层级配置项列取(X2-3):scope ∈ org|team|user(platform 归 /admin/v1/config,此面 403);org/team 成员可读(team 经 ?team=<id> 定位,须属当前 org);user = 主体本人",
+        "summary": "层级配置项列取:scope ∈ org|team|user(platform 归 /admin/v1/config,此面 403);org/team 成员可读(team 经 ?team=<id> 定位,须属当前 org);user = 主体本人",
         "tags": [
           "control"
         ],
@@ -5120,7 +5120,7 @@
     },
     "/v1/config/{scope}/{keyPath}": {
       "put": {
-        "summary": "层级配置项写入(X2-3;org/team = owner/admin,user = 本人):整值替换,locked/enforcement 缺席保持现值(新建缺省 false/shadow 灰度纪律);写被上级 enforce 锁键恒 409 policy_locked(X2-2 §1.3;shadow 锁放行 + 审计 wouldDeny);locked=true 令该层锁定集超 64 恒 400 limit_exceeded(裁决③);写恒 config.revision 审计 + bundle 失效(纪元自增,心跳 configVersion 翻转)",
+        "summary": "层级配置项写入(org/team = owner/admin,user = 本人):整值替换,locked/enforcement 缺席保持现值(新建缺省 false/shadow 灰度纪律);写被上级 enforce 锁键恒 409 policy_locked(shadow 锁放行 + 审计 wouldDeny);locked=true 令该层锁定集超 64 恒 400 limit_exceeded;写恒 config.revision 审计 + bundle 失效(纪元自增,心跳 configVersion 翻转)",
         "tags": [
           "control"
         ],
@@ -5250,7 +5250,7 @@
     },
     "/v1/config/effective": {
       "get": {
-        "summary": "生效预览(X5 契约①;X2-2 §6 草案落地):computeSettings 全链服务端合成(bundle settings 段同内核),响应携逐键 origins 来源层、locks + lockOrigins 锁源层归因、shadow 灰度态;settings 恒在(全空链 = 空形,不做段缺席语义)。?as= 视角:缺省 = 本人(无 org 语境 = platform+user;携 x-tansr-org 头(成员即可)= platform+org+本人 team+user,与 org app 键 member 径同链;org PAT 主体 = org 视角);as=org / as=team:{teamId} / as=member:{userId} = 下级视角预览,恒 owner/admin(成员带 as 恒 403 fail-closed);目标须属本 org(未知/越 org/停用 team 恒同形 404)",
+        "summary": "生效预览:computeSettings 全链服务端合成(bundle settings 段同内核),响应携逐键 origins 来源层、locks + lockOrigins 锁源层归因、shadow 灰度态;settings 恒在(全空链 = 空形,不做段缺席语义)。?as= 视角:缺省 = 本人(无 org 语境 = platform+user;携 x-tansr-org 头(成员即可)= platform+org+本人 team+user,与 org app 键 member 径同链;org PAT 主体 = org 视角);as=org / as=team:{teamId} / as=member:{userId} = 下级视角预览,恒 owner/admin(成员带 as 恒 403 fail-closed);目标须属本 org(未知/越 org/停用 team 恒同形 404)",
         "tags": [
           "control"
         ],
@@ -5326,7 +5326,7 @@
     },
     "/v1/config-revisions": {
       "get": {
-        "summary": "配置修订史(X2-3;事实源 = audit_log action=config.revision,appendAudit 通道):?scope=&keyPath=(scope=team 另带 ?team=)精确一键;org/team 收口 owner/admin(shadow-report 同律),user 本人;近序 ≤100 行;detail 携 from/to/locked/enforcement/revision/reason 与 shadow 锁 wouldDeny 观测标注",
+        "summary": "配置修订史(事实源 = audit_log action=config.revision,appendAudit 通道):?scope=&keyPath=(scope=team 另带 ?team=)精确一键;org/team 收口 owner/admin(shadow-report 同律),user 本人;近序 ≤100 行;detail 携 from/to/locked/enforcement/revision/reason 与 shadow 锁 wouldDeny 观测标注",
         "tags": [
           "control"
         ],
@@ -5401,7 +5401,7 @@
     },
     "/v1/org-teams": {
       "post": {
-        "summary": "建 team(X2-3 裁决②;owner/admin;每 org 上限 64 超限 400 limit_exceeded;恒审计)",
+        "summary": "建 team(owner/admin;每 org 上限 64 超限 400 limit_exceeded;恒审计)",
         "tags": [
           "orgs"
         ],
@@ -5575,7 +5575,7 @@
         }
       },
       "get": {
-        "summary": "team 现成员名单读取(X5 契约②;owner/admin,PUT 面对偶——UI 成员弹层预勾现名单):行 = 在册 team 成员 ∩ 现 org 成员(离组者不在列),email 脱敏中段,userId 升序",
+        "summary": "team 现成员名单读取(owner/admin,PUT 面对偶——UI 成员弹层预勾现名单):行 = 在册 team 成员 ∩ 现 org 成员(离组者不在列),email 脱敏中段,userId 升序",
         "tags": [
           "orgs"
         ],
@@ -5670,7 +5670,7 @@
     },
     "/v1/adjudicators/registry": {
       "get": {
-        "summary": "平台裁决人注册表(platform 档 actives,含绑定模型 handle/名称/预算摘要;拍板 6 四级链第一级,用户从此选择添加;条目携 tier/evaluation 池投影,AP-7 起 evaluation.byProtocol 每协议最近报告加法键——非签名 JSON 读面,签名工件另在 /v1/adjudicator-pool/artifact)",
+        "summary": "平台裁决人注册表(platform 档 actives,含绑定模型 handle/名称/预算摘要;四级链第一级,用户从此选择添加;条目携 tier/evaluation 池投影,evaluation.byProtocol 每协议最近报告键——非签名 JSON 读面,签名工件另在 /v1/adjudicator-pool/artifact)",
         "tags": [
           "control"
         ],
@@ -5806,7 +5806,7 @@
     },
     "/t1/handshake": {
       "post": {
-        "summary": "twp/1 认证探活 + 协议协商(CLI 登录验证即此):回 protocol/app{id,name,ownerType}/configEtag/serverTime/features;协议版本不符 400 protocol_unsupported;认证失败 401 app_key_invalid / 403 app_disabled / 403 app_ip_denied(CIDR fail-closed);T-A34 请求签名三头可选(在场恒校验);doc/123 D-B1:configEtag 与 /t1/config 同径同档同锚——令牌径按 x-tansr-client-features 声明档计,owner 双头径恒全量单一 etag(十王修案 FX-A-05);features 含 platform-audio 即服务端具备音频两面并受理该头",
+        "summary": "twp/1 认证探活 + 协议协商(CLI 登录验证即此):回 protocol/app{id,name,ownerType}/configEtag/serverTime/features;协议版本不符 400 protocol_unsupported;认证失败 401 app_key_invalid / 403 app_disabled / 403 app_ip_denied(CIDR fail-closed);请求签名三头可选(在场恒校验);configEtag 与 /t1/config 同径同档同锚——令牌径按 x-tansr-client-features 声明档计,owner 双头径恒全量单一 etag;features 含 platform-audio 即服务端具备音频两面并受理该头",
         "tags": [
           "twp"
         ],
@@ -5915,7 +5915,7 @@
     },
     "/t1/config": {
       "get": {
-        "summary": "账套配置包 bundle-for-app(doc/28 §6;末端启动自动审查授权列表的事实源):有效模型集 = app.model_catalog_ids ?? 用户级选择集(恒 ∩ 可服务谓词,采集制无档=空集)、adjudicators 清单(首个为生效档)、contextScheme(schemeId+overrides 合并);ETag/If-None-Match 304;形态 = ClientConfigBundle 加法扩展(app{id,name} + configVersion 内容指纹,T-A29 心跳失效订阅锚);doc/123 D-B1(十王修案 FX-A-05 分档只施于令牌径):app_user 令牌径仅对 x-tansr-client-features 含 platform-audio 的客户端下发 capabilities.platform 五键 / platformModels 四键 / media 音频两面,缺头恒三键/两键,ETag 按档(Vary 本头);AK/SK 双头径(账套键 / cli 装置键)恒全量、单一 ETag、本头 no-op",
+        "summary": "账套配置包 bundle-for-app(末端启动自动审查授权列表的事实源):有效模型集 = app.model_catalog_ids ?? 用户级选择集(恒 ∩ 可服务谓词,采集制无档=空集)、adjudicators 清单(首个为生效档)、contextScheme(schemeId+overrides 合并);ETag/If-None-Match 304;形态 = ClientConfigBundle 扩展(app{id,name} + configVersion 内容指纹,心跳失效订阅锚);分档只施于令牌径:app_user 令牌径仅对 x-tansr-client-features 含 platform-audio 的客户端下发 capabilities.platform 五键 / platformModels 四键 / media 音频两面,缺头恒三键/两键,ETag 按档(Vary 本头);AK/SK 双头径(账套键 / cli 装置键)恒全量、单一 ETag、本头 no-op",
         "tags": [
           "twp"
         ],
@@ -6007,7 +6007,7 @@
     },
     "/t1/exchange": {
       "post": {
-        "summary": "twp/1 对话(本文档仅收录非流形态;stream:true → SSE 事件语法 t.open/t.delta/t.usage/t.warn/t.close/t.err,单源 = src/contract/twp.ts + doc/28 §4.4):参数消毒服务端化(Profile params 剥除/钳制)、meta.requestId 请求层幂等(T-A23:认证后出网前占位,同 id 成功交换上游调用恒 1 次、计费恒 1 次;完成后重放返缓存结果(非流,携 x-tansr-idempotent-replay: 1)或 409(流式结果不可重放);计量与结算幂等为计费层兜底)、usage_events 恒填 api_key_id、越权模型恒 403 model_not_authorized(未知/授权面外/direct 同拒);上游方言不透传(4xx/5xx 收敛 502 upstream_error);T-A34 请求签名三头可选(在场恒校验,签名覆盖 rawBody 原始字节)",
+        "summary": "twp/1 对话(本文档仅收录非流形态;stream:true → SSE 事件语法 t.open/t.delta/t.usage/t.warn/t.close/t.err,单源 = src/contract/twp.ts):参数消毒服务端化(Profile params 剥除/钳制)、meta.requestId 请求层幂等(认证后出网前占位,同 id 成功交换上游调用恒 1 次、计费恒 1 次;完成后重放返缓存结果(非流,携 x-tansr-idempotent-replay: 1)或 409(流式结果不可重放);计量与结算幂等为计费层兜底)、usage_events 恒填 api_key_id、越权模型恒 403 model_not_authorized(未知/授权面外/direct 同拒);上游方言不透传(4xx/5xx 收敛 502 upstream_error);请求签名三头可选(在场恒校验,签名覆盖 rawBody 原始字节)",
         "tags": [
           "twp"
         ],
@@ -6176,7 +6176,7 @@
     },
     "/t1/usage": {
       "post": {
-        "summary": "direct 端点(D3/D4)客户端计量上报:恒 source=client / billable=0 / cost=0;client_event_id 幂等;归账 api_key_id;零正文白名单(越权字段 400);T-A34 请求签名三头可选(在场恒校验)",
+        "summary": "direct 端点客户端计量上报:恒 source=client / billable=0 / cost=0;client_event_id 幂等;归账 api_key_id;零正文白名单(越权字段 400);请求签名三头可选(在场恒校验)",
         "tags": [
           "twp"
         ],
@@ -6266,7 +6266,7 @@
     },
     "/t1/heartbeat": {
       "post": {
-        "summary": "会话心跳:缺 sessionId 开新会话(sessions.api_key_id 归账)并回 sessionId;在册触碰 last_seen_at;meta 白名单(零留存);T-A29 配置失效订阅(加法):请求可携客户端 configVersion,响应恒回带服务端 configVersion 与 configStale(不一致=true → 重拉 /t1/config;未携恒 false);T-A34 请求签名三头可选(在场恒校验);doc/123 D-B1:configVersion/bundleEtag 与 /t1/config 同径同档同锚——令牌径按 x-tansr-client-features 声明档计(客户端须三径同携同值,否则 configStale 恒真),owner 双头径恒全量单一 etag、漏头不 stale(十王修案 FX-A-05);十王修案 FX-A-06(候拍 ⑤ 方案 A):在册会话心跳 = 续租恒走并发守门 acquire——窗内零变化,出窗会话重入与新会话同律判限(enforce 429 plan_concurrency_exceeded / shadow 计 would_reject),判限先于 last_seen_at 刷新;已归档会话(DELETE /t1/sessions/{id} 后)恒 410 session_archived(detail.sessionId;不复活、不入位;SDK 停该会话心跳、下轮 exchange 开新会话)",
+        "summary": "会话心跳:缺 sessionId 开新会话(sessions.api_key_id 归账)并回 sessionId;在册触碰 last_seen_at;meta 白名单(零留存);配置失效订阅:请求可携客户端 configVersion,响应恒回带服务端 configVersion 与 configStale(不一致=true → 重拉 /t1/config;未携恒 false);请求签名三头可选(在场恒校验);configVersion/bundleEtag 与 /t1/config 同径同档同锚——令牌径按 x-tansr-client-features 声明档计(客户端须三径同携同值,否则 configStale 恒真),owner 双头径恒全量单一 etag、漏头不 stale;在册会话心跳 = 续租恒走并发守门 acquire——窗内零变化,出窗会话重入与新会话同律判限(enforce 429 plan_concurrency_exceeded / shadow 计 would_reject),判限先于 last_seen_at 刷新;已归档会话(DELETE /t1/sessions/{id} 后)恒 410 session_archived(detail.sessionId;不复活、不入位;SDK 停该会话心跳、下轮 exchange 开新会话)",
         "tags": [
           "twp"
         ],
@@ -6395,7 +6395,7 @@
     },
     "/t1/websearch": {
       "post": {
-        "summary": "消费级搜索(P-WS1,doc/36 §3.2):账套级默认搜索商 ?? 平台默认供应商池编排;owner 日次数配额(UTC+8 日界);计量 usage_events purpose=websearch;令牌径受能力位 platform.webSearch 闸;T-A34 请求签名三头可选",
+        "summary": "消费级搜索:账套级默认搜索商 ?? 平台默认供应商池编排;owner 日次数配额(UTC+8 日界);计量 usage_events purpose=websearch;令牌径受能力位 platform.webSearch 闸;请求签名三头可选",
         "tags": [
           "twp"
         ],
@@ -6527,7 +6527,7 @@
     },
     "/t1/imagegen": {
       "post": {
-        "summary": "消费级图像生成(S-E1;环 3 平台能力):model 缺席 = 授权集顺位第一(bundle platformModels.imageGen 首行同源)/ 点名池外 403;受理面事实 = face.media 在场恒胜词表(size/seed/negativePrompt/imageUrls 域/n 帽/动词行);owner 与终端用户日张数配额;预扣 → 适配器 → 按实产张数结算(purpose=imagegen,x-tansr-cost/x-tansr-balance 头);产物 URL 透传 + outputHosting 定性;体帽 32MB(imageUrls data URI);T-A34 签名三头可选",
+        "summary": "消费级图像生成(平台能力面):model 缺席 = 授权集顺位第一(bundle platformModels.imageGen 首行同源)/ 点名池外 403;受理面事实 = face.media 在场恒胜词表(size/seed/negativePrompt/imageUrls 域/n 帽/动词行);owner 与终端用户日张数配额;预扣 → 适配器 → 按实产张数结算(purpose=imagegen,x-tansr-cost/x-tansr-balance 头);产物 URL 透传 + outputHosting 定性;体帽 32MB(imageUrls data URI);请求签名三头可选",
         "tags": [
           "twp"
         ],
@@ -6659,7 +6659,7 @@
     },
     "/t1/imagegen/tasks": {
       "post": {
-        "summary": "/t1/imagegen 异步提交(异步化拍板 2026-09-01):预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连语义 A,有找回径不亏);params 快照恒不含用户内容",
+        "summary": "/t1/imagegen 异步提交:预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连照常产出照常扣费,有找回径不亏);params 快照恒不含用户内容",
         "tags": [
           "twp"
         ],
@@ -6892,7 +6892,7 @@
     },
     "/t1/videogen": {
       "post": {
-        "summary": "消费级视频生成(S-F;imagegen 同构镜像):durationSec 域(set/range)、ratio、首帧 imageUrls、audioUrl 受理面 = face.media 在场恒胜词表;owner 与终端用户日秒数配额(秒 = 计费口径);按实产秒数结算(purpose=videogen);同步径长等分钟级——推荐异步任务径;体帽 32MB;T-A34 签名三头可选",
+        "summary": "消费级视频生成(imagegen 同构镜像):durationSec 域(set/range)、ratio、首帧 imageUrls、audioUrl 受理面 = face.media 在场恒胜词表;owner 与终端用户日秒数配额(秒 = 计费口径);按实产秒数结算(purpose=videogen);同步径长等分钟级——推荐异步任务径;体帽 32MB;请求签名三头可选",
         "tags": [
           "twp"
         ],
@@ -7024,7 +7024,7 @@
     },
     "/t1/videogen/tasks": {
       "post": {
-        "summary": "/t1/videogen 异步提交(异步化拍板 2026-09-01):预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连语义 A,有找回径不亏);params 快照恒不含用户内容",
+        "summary": "/t1/videogen 异步提交:预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连照常产出照常扣费,有找回径不亏);params 快照恒不含用户内容",
         "tags": [
           "twp"
         ],
@@ -7257,7 +7257,7 @@
     },
     "/t1/asr": {
       "post": {
-        "summary": "语音转文字(doc/123 D-A3/D-A4/D-A6;A 泳道 A-2):audio = data:audio/*;base64 或 http(s) URL(原始音频 ≤ 24 MiB——JSON 体帽 32 MiB 是 base64 膨胀后口径,超帽 413 payload_too_large detail{rawBytes,maxRawBytes,note},FX-A-12 M-11;mime ∈ 面档 formats;时长帽 maxSeconds 缺省 600);model 缺席 = 授权集顺位第一(bundle platformModels.speechToText 首行同源);diarize 仅 diarization 行受理(其余 400 可解释);multipart 由服务端组装;秒计家族按 ceil(duration) 秒 × per_second、token 家族按 audio/text token 结算(purpose=asr,usage 携 seconds 或 audioTokens/textTokens);owner 与终端用户日秒数配额;令牌径受能力位 platform.speechToText 闸;转写文本/音频恒不落日志",
+        "summary": "语音转文字:audio = data:audio/*;base64 或 http(s) URL(原始音频 ≤ 24 MiB——JSON 体帽 32 MiB 是 base64 膨胀后口径,超帽 413 payload_too_large detail{rawBytes,maxRawBytes,note};mime ∈ 面档 formats;时长帽 maxSeconds 缺省 600);model 缺席 = 授权集顺位第一(bundle platformModels.speechToText 首行同源);diarize 仅 diarization 行受理(其余 400 可解释);multipart 由服务端组装;秒计家族按 ceil(duration) 秒 × per_second、token 家族按 audio/text token 结算(purpose=asr,usage 携 seconds 或 audioTokens/textTokens);owner 与终端用户日秒数配额;令牌径受能力位 platform.speechToText 闸;转写文本/音频恒不落日志",
         "tags": [
           "twp"
         ],
@@ -7399,7 +7399,7 @@
     },
     "/t1/asr/tasks": {
       "post": {
-        "summary": "/t1/asr 异步提交(异步化拍板 2026-09-01):预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连语义 A,有找回径不亏);params 快照恒不含用户内容",
+        "summary": "/t1/asr 异步提交:预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连照常产出照常扣费,有找回径不亏);params 快照恒不含用户内容",
         "tags": [
           "twp"
         ],
@@ -7632,7 +7632,7 @@
     },
     "/t1/tts": {
       "post": {
-        "summary": "文字转语音(doc/123 D-A3/D-A5/D-A6/D-A12;A 泳道 A-3):input ≤ 面档 maxChars(计费字符口径:1 汉字计 2,其余计 1;缺省帽 2000);voice 缺席 = 面档 defaultVoice,非面档音色 400 携可选音色表;format 家族不受理按面档回落(dashscope 恒 wav 24k;minimax mp3 32k);speed 仅有位家族受理;model 缺席 = 授权集顺位第一(bundle platformModels.textToSpeech 首行同源);产物 URL 托管形(恒 https,~24h 及时转存)或 b64 内联形二选一(平台不落盘不转存),outputHosting 定性;按上游报量字符结算 per_10k_chars(purpose=tts,billedChars);owner 与终端用户日字符配额;令牌径受能力位 platform.textToSpeech 闸;合成文本恒不落日志",
+        "summary": "文字转语音:input ≤ 面档 maxChars(计费字符口径:1 汉字计 2,其余计 1;缺省帽 2000);voice 缺席 = 面档 defaultVoice,非面档音色 400 携可选音色表;format 家族不受理按面档回落(dashscope 恒 wav 24k;minimax mp3 32k);speed 仅有位家族受理;model 缺席 = 授权集顺位第一(bundle platformModels.textToSpeech 首行同源);产物 URL 托管形(恒 https,~24h 及时转存)或 b64 内联形二选一(平台不落盘不转存),outputHosting 定性;按上游报量字符结算 per_10k_chars(purpose=tts,billedChars);owner 与终端用户日字符配额;令牌径受能力位 platform.textToSpeech 闸;合成文本恒不落日志",
         "tags": [
           "twp"
         ],
@@ -7764,7 +7764,7 @@
     },
     "/t1/tts/tasks": {
       "post": {
-        "summary": "/t1/tts 异步提交(异步化拍板 2026-09-01):预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连语义 A,有找回径不亏);params 快照恒不含用户内容",
+        "summary": "/t1/tts 异步提交:预备链(认证/能力位/解出/受理/配额/预扣)与同步端点同一函数——校验失败在本响应即时可见恒不产失败任务行;通过即落 media_tasks 行并后台执行,202 携 taskId/status=queued/pollIntervalMs;计费语义同同步径(成功即扣,断连照常产出照常扣费,有找回径不亏);params 快照恒不含用户内容",
         "tags": [
           "twp"
         ],
@@ -7997,7 +7997,7 @@
     },
     "/t1/sessions": {
       "get": {
-        "summary": "本 endUser 会话列表(doc/91 实施批,拍板②;app_user 令牌径专属,双头径 401):窗口恒 = 租约窗口 30d(SESSION_LEASE_WINDOW_DAYS,last_seen_at 推导活跃语义,零租约列)——窗口外不活跃/显式归档行恒不出列表(行留账,归因明细仍可查);usage 卷账按会话维聚合(同窗同 App 同 endUser,过滤锚 = 令牌认证上下文恒不可改向);金额铁律同 /v1/my-usage:schema 级恒无 cost/byCurrency;恒无会话内容(doc/84 §5.4 平台不存内容承诺不破);limit 缺省 50 上限 100(T1_SESSIONS_LIMIT_*,越界 400)",
+        "summary": "本 endUser 会话列表(app_user 令牌径专属,双头径 401):窗口恒 = 租约窗口 30d(SESSION_LEASE_WINDOW_DAYS,last_seen_at 推导活跃语义,零租约列)——窗口外不活跃/显式归档行恒不出列表(行留账,归因明细仍可查);usage 卷账按会话维聚合(同窗同 App 同 endUser,过滤锚 = 令牌认证上下文恒不可改向);金额铁律同 /v1/my-usage:schema 级恒无 cost/byCurrency;恒无会话内容(平台不存内容承诺不破);limit 缺省 50 上限 100(T1_SESSIONS_LIMIT_*,越界 400)",
         "tags": [
           "twp"
         ],
@@ -8042,7 +8042,7 @@
     },
     "/t1/sessions/{id}/renew": {
       "post": {
-        "summary": "显式续租(doc/91 拍板②三径之三,「打开会话列表但还没说话」的 UI 场景;exchange 活动/heartbeat 即隐式续租照旧):last_seen_at 推进;十王修案 FX-A-06:归档标记恒不清空——已 DELETE 行同 id 续租恒 410 session_archived(终态,开新会话);窗口外未归档行同 id 续租仍按在册续租;续租恒走并发守门 acquire(窗内零变化,出窗重入按新会话判限 enforce 429 / shadow would_reject),判限先于 last_seen_at 刷新;归属三键(owner+App 键+endUser)不满足恒同形 404(不泄露存在性);续租步长 = 固定 30d 窗口,恒不随令牌 TTL(租约锚 = endUserId 解耦令牌,同 endUser 新令牌续用旧会话)",
+        "summary": "显式续租(「打开会话列表但还没说话」的 UI 场景;exchange 活动/heartbeat 即隐式续租照旧):last_seen_at 推进;归档标记恒不清空——已 DELETE 行同 id 续租恒 410 session_archived(终态,开新会话);窗口外未归档行同 id 续租仍按在册续租;续租恒走并发守门 acquire(窗内零变化,出窗重入按新会话判限 enforce 429 / shadow would_reject),判限先于 last_seen_at 刷新;归属三键(owner+App 键+endUser)不满足恒同形 404(不泄露存在性);续租步长 = 固定 30d 窗口,恒不随令牌 TTL(租约锚 = endUserId 解耦令牌,同 endUser 新令牌续用旧会话)",
         "tags": [
           "twp"
         ],
@@ -8097,7 +8097,7 @@
     },
     "/t1/sessions/{id}": {
       "delete": {
-        "summary": "终端显式删除(doc/91 拍板②:归档语义恒不硬删)——注册表行留账(归因/审计明细恒可查),活跃列表面即刻失效;吊销(endUserCut/appCut)恒不联动本径(令牌是认证材料、会话是业务对象,封号连会话一起清须显式 DELETE);幂等:已归档重复 DELETE 恒 204;归属三键不满足恒同形 404",
+        "summary": "终端显式删除(归档语义恒不硬删)——注册表行留账(归因/审计明细恒可查),活跃列表面即刻失效;吊销(endUserCut/appCut)恒不联动本径(令牌是认证材料、会话是业务对象,封号连会话一起清须显式 DELETE);幂等:已归档重复 DELETE 恒 204;归属三键不满足恒同形 404",
         "tags": [
           "twp"
         ],
@@ -8125,7 +8125,7 @@
     },
     "/v1/credits": {
       "get": {
-        "summary": "余额与近账(balance/currency 恒 CNY 锚;balances 分币种余额 + recent 行级 currency,T-A26 加法;warnLowBalance/lowBalanceThreshold 低余额警示,K8a 加法:阈值 TANSR_API_LOW_BALANCE_WARN 可配、与 /t1 t.warn balance_low 同源;recent 固定 20 行(T-X4 上限常量单点);带 x-tansr-org 头 = org 台账,账务面 owner/billing)",
+        "summary": "余额与近账(balance/currency 恒 CNY 锚;balances 分币种余额 + recent 行级 currency;warnLowBalance/lowBalanceThreshold 低余额警示:阈值 TANSR_API_LOW_BALANCE_WARN 可配、与 /t1 t.warn balance_low 同源;recent 固定 20 行(上限常量单点);带 x-tansr-org 头 = org 台账,账务面 owner/billing)",
         "tags": [
           "control"
         ],
@@ -8161,7 +8161,7 @@
     },
     "/v1/usage": {
       "get": {
-        "summary": "用量聚合(groupBy 逗号组合 ≤3 维:day/model/source/key/session/currency/purpose;key/session 行键名 keyId/sessionId,无挂靠/未归因行归 \"(none)\";currency 维 = 分币种成本桶(T-A26,cost 恒单币禁跨币加总);purpose 维 = 计费归属桶(G-A10:main/compaction/title/classifier,TM-9 增 memory;服务端归因 websearch);?purpose= 过滤单查一类归属(词表 = USAGE_PURPOSES,词表外 400,未归因行不设过滤哨兵、查分布走 groupBy);带 x-tansr-org 头 = org 聚合,owner/admin/billing;CW8 B6 加法:?dims=1 聚合行随行返回长尾维度量汇总 dims(键 = 注册词表长尾键 cache_w_5m/cache_w_1h/reasoning_out/web_search 等,零量键不出、全零行不出 dims 键;本端点恒明细径 JSON_EXTRACT 聚合,响应携 dimsBasis:\"detail\" 如实标注口径——rollup 径报表未物化 dims 恒不含);CW8 B9 加法(B8 敞口承接):?saved=1 聚合行随行返回缓存省费三分量汇总 saved={readSaved,writePremium,netSaved}(saved_read/saved_write_premium/saved_net 逐行 SUM,NULL 行不计,售价口径)+ savedKnownRequests 覆盖度分母(= saved 已知行数,requests − 此数 = 快照缺席行;040 列 B4 起回填,存量窗口覆盖不全故走参数开关不恒随行),响应携 savedBasis:\"detail\",缺省响应零漂移;可见性红线(doc/56 §5.0,主线代裁 2026-08-20):聚合行恒不含采购三列 upstreamCost/upstreamKnownRequests/upstreamKnownCost(采购口径仅平台管理员面 /admin/v1/usage-reports 等);协议价三列(doc/125 §四,泳道 B PL-18 加法恒随行):行携 listCost = Σ COALESCE(list_cost, cost)(牌价)与 discount = listCost − cost(优惠;cost = 实收),牌价客户 listCost ≡ cost、discount 0",
+        "summary": "用量聚合(groupBy 逗号组合 ≤3 维:day/model/source/key/session/currency/purpose;key/session 行键名 keyId/sessionId,无挂靠/未归因行归 \"(none)\";currency 维 = 分币种成本桶(cost 恒单币禁跨币加总);purpose 维 = 计费归属桶(main/compaction/title/classifier/memory;服务端归因 websearch);?purpose= 过滤单查一类归属(词表 = USAGE_PURPOSES,词表外 400,未归因行不设过滤哨兵、查分布走 groupBy);带 x-tansr-org 头 = org 聚合,owner/admin/billing;?dims=1 聚合行随行返回长尾维度量汇总 dims(键 = 注册词表长尾键 cache_w_5m/cache_w_1h/reasoning_out/web_search 等,零量键不出、全零行不出 dims 键;本端点恒明细径 JSON_EXTRACT 聚合,响应携 dimsBasis:\"detail\" 如实标注口径——rollup 径报表未物化 dims 恒不含);?saved=1 聚合行随行返回缓存省费三分量汇总 saved={readSaved,writePremium,netSaved}(saved_read/saved_write_premium/saved_net 逐行 SUM,NULL 行不计,售价口径)+ savedKnownRequests 覆盖度分母(= saved 已知行数,requests − 此数 = 快照缺席行;存量窗口覆盖不全故走参数开关不恒随行),响应携 savedBasis:\"detail\",缺省响应零漂移;可见性红线:聚合行恒不含采购三列 upstreamCost/upstreamKnownRequests/upstreamKnownCost(采购口径仅平台管理员面 /admin/v1/usage-reports 等);协议价三列(恒随行):行携 listCost = Σ COALESCE(list_cost, cost)(牌价)与 discount = listCost − cost(优惠;cost = 实收),牌价客户 listCost ≡ cost、discount 0",
         "tags": [
           "control"
         ],
@@ -8208,7 +8208,7 @@
     },
     "/v1/usage/by-app": {
       "get": {
-        "summary": "应用维用量(console 用量页应用统计):data = 本 owner 全部未删应用(api_keys scopes 含 app;零用量在列全零,status active|disabled,按请求数降序);other =「非应用」桶(api_key_id NULL 的 JWT/CLI 登录态直连 + PAT 键归因 + 已删应用遗留数值归档,三类合并单列);归因 = usage_events.api_key_id(/t1 数据面 app 键恒填);?window=Nd 沿 /v1/usage(缺省 7d,1..90 钳制);usage 形 = {requests,inTokens,outTokens,cacheRTokens,cacheWTokens,cost,listCost,discount,byCurrency[]},cost/listCost/discount 恒 CNY 锚、byCurrency 分币分桶(每桶同携三列)恒不跨币加总(T-A39 同则);协议价三列(doc/125 §四,PL-18 加法):listCost 牌价 / cost 实收 / discount = listCost − cost,牌价客户 listCost ≡ cost、discount 0;带 x-tansr-org 头 = org 应用视图,观察面 owner/admin/billing",
+        "summary": "应用维用量(console 用量页应用统计):data = 本 owner 全部未删应用(api_keys scopes 含 app;零用量在列全零,status active|disabled,按请求数降序);other =「非应用」桶(api_key_id NULL 的 JWT/CLI 登录态直连 + PAT 键归因 + 已删应用遗留数值归档,三类合并单列);归因 = usage_events.api_key_id(/t1 数据面 app 键恒填);?window=Nd 沿 /v1/usage(缺省 7d,1..90 钳制);usage 形 = {requests,inTokens,outTokens,cacheRTokens,cacheWTokens,cost,listCost,discount,byCurrency[]},cost/listCost/discount 恒 CNY 锚、byCurrency 分币分桶(每桶同携三列)恒不跨币加总;协议价三列:listCost 牌价 / cost 实收 / discount = listCost − cost,牌价客户 listCost ≡ cost、discount 0;带 x-tansr-org 头 = org 应用视图,观察面 owner/admin/billing",
         "tags": [
           "control"
         ],
@@ -8255,7 +8255,7 @@
     },
     "/v1/statements": {
       "get": {
-        "summary": "本户月账单列表(T-A14 加法):期初/期末余额 + 充值/消耗/退款/调整四桶 + 当月计量汇总;月份降序 ≤24 行;?month=YYYY-MM 精确取一月;账单由平台按月按币生成(T-A26:一户一月一币一档,多币月份分行、恒不跨币加总),未出账月份/币种不在列(带 x-tansr-org 头 = org 账单,账务面 owner/billing);T-A36 V27 不可变账单加法:行携 revision(1 起),缺省每期仅最新版,?revisions=all 取全部历史修订版(同期重生成有差异 = 新版,旧版只读保留;无差异重生成不新增);协议价三列(doc/125 §四,泳道 B PL-18 加法):usage 块携 listCost(牌价合计)/ cost(实收)/ discount(优惠 = listCost − cost,恒等式 doc/127 D-5),牌价客户与 080 前生成的账单读面 listCost ≡ cost、discount 0(缺席按 cost 归一;勾稽判据 discount 缺席 = 0,存量账单重生成不推修订版)",
+        "summary": "本户月账单列表:期初/期末余额 + 充值/消耗/退款/调整四桶 + 当月计量汇总;月份降序 ≤24 行;?month=YYYY-MM 精确取一月;账单由平台按月按币生成(一户一月一币一档,多币月份分行、恒不跨币加总),未出账月份/币种不在列(带 x-tansr-org 头 = org 账单,账务面 owner/billing);不可变账单:行携 revision(1 起),缺省每期仅最新版,?revisions=all 取全部历史修订版(同期重生成有差异 = 新版,旧版只读保留;无差异重生成不新增);协议价三列:usage 块携 listCost(牌价合计)/ cost(实收)/ discount(优惠 = listCost − cost,恒等式),牌价客户与存量账单读面 listCost ≡ cost、discount 0(缺席按 cost 归一;勾稽判据 discount 缺席 = 0,存量账单重生成不推修订版)",
         "tags": [
           "control"
         ],
@@ -8402,7 +8402,7 @@
     },
     "/v1/usage/events": {
       "post": {
-        "summary": "客户端计量上报(D4:direct 端点 token 计数;恒 billable=false、cost=0、零正文白名单)",
+        "summary": "客户端计量上报(direct 端点 token 计数;恒 billable=false、cost=0、零正文白名单)",
         "tags": [
           "control"
         ],
@@ -8446,7 +8446,7 @@
         }
       },
       "get": {
-        "summary": "计量明细列表(CW8 B6,doc/56 §5.11/§5.4 L3 明细表数据源):本户/本 org(x-tansr-org 观察面)窗口内逐笔计量行,时间近序;?window=Nd(缺省 7d,1..90)、?limit(缺省 50 上限 200);行 = 四象限量 + dims 长尾维(非零才出)+ cost/listCost/discount/currency(协议价三列 doc/125 §四 PL-18 加法:listCost = list_cost ?? cost 牌价、discount = listCost − cost 优惠;牌价行/存量行 listCost ≡ cost、discount 0)+ 034 快照四列 price + saved 三分量(readSaved/writePremium/netSaved;NULL 不出键,存量行/byok/client 径如实缺席);可见性红线(doc/56 §5.0):恒不含采购字段(upstream_cost/spec/fp/unpriced);逐笔演算下钻走 GET /v1/usage-events/{id}/cost-explain(requestId 即下钻键)",
+        "summary": "计量明细列表(明细表数据源):本户/本 org(x-tansr-org 观察面)窗口内逐笔计量行,时间近序;?window=Nd(缺省 7d,1..90)、?limit(缺省 50 上限 200);行 = 四象限量 + dims 长尾维(非零才出)+ cost/listCost/discount/currency(协议价三列:listCost = list_cost ?? cost 牌价、discount = listCost − cost 优惠;牌价行/存量行 listCost ≡ cost、discount 0)+ 价格快照四列 price + saved 三分量(readSaved/writePremium/netSaved;NULL 不出键,存量行/byok/client 径如实缺席);可见性红线:恒不含采购字段(upstream_cost/spec/fp/unpriced);逐笔演算下钻走 GET /v1/usage-events/{id}/cost-explain(requestId 即下钻键)",
         "tags": [
           "control"
         ],
@@ -8493,7 +8493,7 @@
     },
     "/v1/usage-events/{id}/cost-explain": {
       "get": {
-        "summary": "逐笔成本演算——组织/用户版(CW8 B6,doc/56 §5.11/§5.4 L4 演算页):**仅销售口径投影**,id = requestId,归属校验非本 owner 恒 404(不泄露存在性);响应 = 四象限量 + dims 长尾维 + cost{stored,recomputed,match,listCost?,discount?}(034 快照四列 × 量重算 = 牌价 ≡ list_cost ?? cost 即销售价恒等式,用户可自证账单;协议价行(doc/125 §四,PL-16)recomputed 对牌价快照 list_cost 比对并携 listCost/discount 两键 =「牌价 − 优惠 = 实收」,牌价行无两键零漂移)+ price 四列(缓存象限含回落语义 fallback 标注)+ breakdown 四象限分解行 + saved 三分量(readSaved/writePremium/netSaved);快照缺席存量行/byok/client 径如实 degraded:\"no_price_snapshot\" 不猜不造;estimated 行如实冠估算;可见性红线(§5.0):采购成本/采购结构 spec/指纹/缺价记名/毛利恒不出面",
+        "summary": "逐笔成本演算——组织/用户版(演算页):**仅销售口径投影**,id = requestId,归属校验非本 owner 恒 404(不泄露存在性);响应 = 四象限量 + dims 长尾维 + cost{stored,recomputed,match,listCost?,discount?}(价格快照四列 × 量重算 = 牌价 ≡ list_cost ?? cost 即销售价恒等式,用户可自证账单;协议价行 recomputed 对牌价快照 list_cost 比对并携 listCost/discount 两键 =「牌价 − 优惠 = 实收」,牌价行无两键零漂移)+ price 四列(缓存象限含回落语义 fallback 标注)+ breakdown 四象限分解行 + saved 三分量(readSaved/writePremium/netSaved);快照缺席存量行/byok/client 径如实 degraded:\"no_price_snapshot\" 不猜不造;estimated 行如实冠估算;可见性红线:采购成本/采购结构 spec/指纹/缺价记名/毛利恒不出面",
         "tags": [
           "control"
         ],
@@ -8540,7 +8540,7 @@
     },
     "/v1/sessions": {
       "get": {
-        "summary": "会话列表(T-W1 会话查看器):本户/本 org(x-tansr-org,owner/admin/billing)+ usage 聚合;window=Nd(≤90d,按最近心跳圈定)、limit 缺省 50 上限 100(T-X4 上限常量单点 src/contract/limits.ts,越界 400);正文零留存,meta 恒白名单键;T-A39 分币收口:usage.cost 恒 CNY 桶(单币数据逐数不变,口径注记)+ usage.byCurrency 分币桶(加法,恒不跨币加总);CW8 B6 加法(G8 缺口):usage 与 byCurrency 行补 cacheRTokens/cacheWTokens(四象限语义,上游未报 = 0;既有字段零漂移)",
+        "summary": "会话列表(会话查看器):本户/本 org(x-tansr-org,owner/admin/billing)+ usage 聚合;window=Nd(≤90d,按最近心跳圈定)、limit 缺省 50 上限 100(上限常量单点 src/contract/limits.ts,越界 400);正文零留存,meta 恒白名单键;分币收口:usage.cost 恒 CNY 桶(单币数据逐数不变,口径注记)+ usage.byCurrency 分币桶(恒不跨币加总);usage 与 byCurrency 行补 cacheRTokens/cacheWTokens(四象限语义,上游未报 = 0;既有字段零漂移)",
         "tags": [
           "control"
         ],
@@ -8708,7 +8708,7 @@
         }
       },
       "post": {
-        "summary": "注册自定义端点(D3 direct = 凭据只存 env 变量名;T-A9 org BYOK:org 作用域(x-tansr-org,owner/admin)允许 connectMode=gateway + credential 信封加密入库,流量过网关计量 token 但 cost=0;user 作用域 gateway 仍 403;每户/每 org 上限 16)",
+        "summary": "注册自定义端点(direct = 凭据只存 env 变量名;org BYOK:org 作用域(x-tansr-org,owner/admin)允许 connectMode=gateway + credential 信封加密入库,流量过网关计量 token 但 cost=0;user 作用域 gateway 仍 403;每户/每 org 上限 16)",
         "tags": [
           "control"
         ],
@@ -8944,7 +8944,7 @@
     },
     "/v1/endpoints/{id}/probe": {
       "post": {
-        "summary": "端点可达性探测(限流复用 60s 窗;失败不抛错如实 reachable=false;org 端点带 x-tansr-org 头)。T-A24 出网零信任:direct 端点(用户可控任意 baseUrl)API 服务端恒不代探(reachable=false + client-side note,防 SSRF 预言机);平台/org 端点经出网 guard(私网/元数据封锁 + 逐跳重验)",
+        "summary": "端点可达性探测(限流复用 60s 窗;失败不抛错如实 reachable=false;org 端点带 x-tansr-org 头)。出网零信任:direct 端点(用户可控任意 baseUrl)API 服务端恒不代探(reachable=false + client-side note,防 SSRF 预言机);平台/org 端点经出网 guard(私网/元数据封锁 + 逐跳重验)",
         "tags": [
           "control"
         ],
@@ -9000,7 +9000,7 @@
     },
     "/v1/adjudicators": {
       "get": {
-        "summary": "裁决人档 resolved 视图(platform 缺省 + 作用域覆盖;editable = 自建;bundle 下发最近更新档;CW19-U2b:带 x-tansr-org 头 = org 语境成员可读——组织扩容档查看面,条目携 tier/evaluation/forceTrustAskedAt 池投影;AP-7:evaluation.byProtocol 加法键 = 每协议(coding/app)最近一次报告 {fingerprint, reportRef, evaluatedAt},无报告行整体缺席)",
+        "summary": "裁决人档 resolved 视图(platform 缺省 + 作用域覆盖;editable = 自建;bundle 下发最近更新档;带 x-tansr-org 头 = org 语境成员可读——组织扩容档查看面,条目携 tier/evaluation/forceTrustAskedAt 池投影;evaluation.byProtocol 键 = 每协议(coding/app)最近一次报告 {fingerprint, reportRef, evaluatedAt},无报告行整体缺席)",
         "tags": [
           "control"
         ],
@@ -9045,7 +9045,7 @@
         }
       },
       "post": {
-        "summary": "自建裁决人档(modelHandle 须作用域可解析;每户上限 8;写后 bundle 失效;CW19-U2b:带 x-tansr-org 头 = org 扩容录入,owner/admin——RFC-U2 §6.2/6.3 组织扩容面;tier 越平台天花板 400 validation_failed 携 ceiling)",
+        "summary": "自建裁决人档(modelHandle 须作用域可解析;每户上限 8;写后 bundle 失效;带 x-tansr-org 头 = org 扩容录入,owner/admin——组织扩容面;tier 越平台天花板 400 validation_failed 携 ceiling)",
         "tags": [
           "control"
         ],
@@ -9210,7 +9210,7 @@
     },
     "/v1/adjudicators/{id}/force-trust": {
       "post": {
-        "summary": "强制信任问询答复(CW19-U2a,doc/64 D3;RFC-U2 §6.2):「贵组织对该扩容条目是否强制信任?」——恒落 forceTrustAskedAt(问一次状态位,控制台以此判已问过);forceTrust=true → evaluation.status=force-trusted(仅压提醒恒不改裁决语义位,池工件/报表恒如实透出),false → 状态不动(继续候提醒,呈现 P3);重复问询幂等(时间戳刷新);治理决策恒 JWT 人类主体(PAT 403 principal_required),org 语境经 x-tansr-org(owner/admin);本户档限定,platform/他人档 404 不泄露;写恒审计 adjudicator_pool.force_trust + bundle 失效",
+        "summary": "强制信任问询答复:「贵组织对该扩容条目是否强制信任?」——恒落 forceTrustAskedAt(问一次状态位,控制台以此判已问过);forceTrust=true → evaluation.status=force-trusted(仅压提醒恒不改裁决语义位,池工件/报表恒如实透出),false → 状态不动(继续候提醒);重复问询幂等(时间戳刷新);治理决策恒 JWT 人类主体(PAT 403 principal_required),org 语境经 x-tansr-org(owner/admin);本户档限定,platform/他人档 404 不泄露;写恒审计 adjudicator_pool.force_trust + bundle 失效",
         "tags": [
           "control"
         ],
@@ -9284,7 +9284,7 @@
     },
     "/v1/adjudicators/{id}/evaluation-report": {
       "post": {
-        "summary": "评估报告回填(CW19-U5 卡①;RFC-U5 §2.2):CLI --push 推送落点——报告行插入 + 池条目 evaluation 投影同请求联动(恒显式置 evaluated = RFC-U2 §6.1 重评完成合法置回径;D8 机械律唯在 admin PUT evaluation 手工回填面,两写面正交);鉴权判定序 = x-tansr-admin-key 在场走 admin 链(ADMIN_OPS,任意 scope 档可回填),否则恒 Bearer+control+org 语境(x-tansr-org,owner/admin)本户/本 org 档限定(platform/他人档 404 不泄露);幂等 = 同 (profileId, reportRef) 重提 200 返回既有行恒不重写条目不重复审计(判重键不含协议);conclusion 是证据不是权力(INV-5 恒不写 tier);报告行存提交方 reportRef 原文、条目 evaluation.reportRef 指向报告 id(两级引用,平台可解引用);AP-7(migration 077):body.protocol 可选 coding|app 缺省 coding——报告行落协议,读面 evaluation.byProtocol 每协议各取最近一次,四键仍为最近一次任一协议;app 协议报告 = bundle adjudicator[s].evidenceFingerprint 数据源(自 AP-7 起恒指应用协议证据),对 app 报告恒失效 bundle(含相对条目乱序径);写恒审计 adjudicator_pool.evaluation_report(detail.protocol)+ bundle 失效",
+        "summary": "评估报告回填:CLI --push 推送落点——报告行插入 + 池条目 evaluation 投影同请求联动(恒显式置 evaluated = 重评完成合法置回径;机械律唯在 admin PUT evaluation 手工回填面,两写面正交);鉴权判定序 = x-tansr-admin-key 在场走 admin 链(ADMIN_OPS,任意 scope 档可回填),否则恒 Bearer+control+org 语境(x-tansr-org,owner/admin)本户/本 org 档限定(platform/他人档 404 不泄露);幂等 = 同 (profileId, reportRef) 重提 200 返回既有行恒不重写条目不重复审计(判重键不含协议);conclusion 是证据不是权力(恒不写 tier);报告行存提交方 reportRef 原文、条目 evaluation.reportRef 指向报告 id(两级引用,平台可解引用);body.protocol 可选 coding|app 缺省 coding——报告行落协议,读面 evaluation.byProtocol 每协议各取最近一次,四键仍为最近一次任一协议;app 协议报告 = bundle adjudicator[s].evidenceFingerprint 数据源(恒指应用协议证据),对 app 报告恒失效 bundle(含相对条目乱序径);写恒审计 adjudicator_pool.evaluation_report(detail.protocol)+ bundle 失效",
         "tags": [
           "control"
         ],
@@ -9376,7 +9376,7 @@
     },
     "/v1/adjudicators/{id}/evaluation-reports": {
       "get": {
-        "summary": "评估报告详情读(CW19-U5 卡①;RFC-U5 §2.3):可见域 = GET /v1/adjudicators 列表同构(platform 档 + 作用域自有 active 档;他人/软删档 404 不泄露);org 语境经 x-tansr-org(任意成员角色);行序 evaluatedAt DESC(重评历史最近在前)",
+        "summary": "评估报告详情读:可见域 = GET /v1/adjudicators 列表同构(platform 档 + 作用域自有 active 档;他人/软删档 404 不泄露);org 语境经 x-tansr-org(任意成员角色);行序 evaluatedAt DESC(重评历史最近在前)",
         "tags": [
           "control"
         ],
@@ -9433,7 +9433,7 @@
     },
     "/v1/adjudicator-pool/artifact": {
       "get": {
-        "summary": "裁决人池签名工件签发(CW19-U2a,doc/64 §4.2 T-K23h 机器转职;RFC-U2 §五;鉴权增量 CW19-U3b,RFC-U3b §2.2):平台工件(org 缺席)匿名可读(完整性由 ed25519 自证;CLI managed 锚 adjudicatorPool.url 消费,锚亦可指向自托管静态文件);?org=<org 公开 id> = 平台池 + 该 org active 自建档聚合,**org 定向面判敏感须鉴权**——任一即过:Bearer(JWT/PAT,PAT 须 control scope)且主体为该 org active 成员(任意角色)或该 org 自身(org PAT),或 x-tansr-admin-key(ADMIN_READ);判定序 = 签名交割位 503 → 鉴权 → org 存在性/成员资格;层级格律在写面已钳,签发只读直投,CLI 恒不做多层合并;签发面跳过 status!=active/revoked 在场/validUntil 已过;验签 payload = stableStringify({schemaVersion,kind,entries,meta})(kernel verify.ts 同源口径),sequence = 签发时刻 epoch ms(CLI 防回滚水位);密钥未交割 503 pool_signing_undelivered(fail-closed 交割位);高频读面不落审计;cache-control: no-store(工件自带 expiresAt 时窗)",
+        "summary": "裁决人池签名工件签发:平台工件(org 缺席)匿名可读(完整性由 ed25519 自证;CLI managed 锚 adjudicatorPool.url 消费,锚亦可指向自托管静态文件);?org=<org 公开 id> = 平台池 + 该 org active 自建档聚合,**org 定向面判敏感须鉴权**——任一即过:Bearer(JWT/PAT,PAT 须 control scope)且主体为该 org active 成员(任意角色)或该 org 自身(org PAT),或 x-tansr-admin-key(ADMIN_READ);判定序 = 签名交割位 503 → 鉴权 → org 存在性/成员资格;层级格律在写面已钳,签发只读直投,CLI 恒不做多层合并;签发面跳过 status!=active/revoked 在场/validUntil 已过;验签 payload = stableStringify({schemaVersion,kind,entries,meta})(kernel verify.ts 同源口径),sequence = 签发时刻 epoch ms(CLI 防回滚水位);密钥未交割 503 pool_signing_undelivered(fail-closed 交割位);高频读面不落审计;cache-control: no-store(工件自带 expiresAt 时窗)",
         "tags": [
           "control"
         ],
@@ -9510,7 +9510,7 @@
     },
     "/v1/content-pages": {
       "get": {
-        "summary": "内容页列表(T-A45 协议/法务页;匿名可读,恒只出 published;slug/title/时间,无正文)",
+        "summary": "内容页列表(协议/法务页;匿名可读,恒只出 published;slug/title/时间,无正文)",
         "tags": [
           "control"
         ],
@@ -9583,7 +9583,7 @@
     },
     "/v1/context-schemes": {
       "get": {
-        "summary": "上下文方案目录(platform 档 + 本户自建;T-A42 可用性围栏收敛:platform 段只列对本 owner 可见档——production 缺省全员可见,experimental 须显式 allow,deny 恒胜 allow;带 x-tansr-org 头 = org 语境,org-subject grant 投射,成员可读)",
+        "summary": "上下文方案目录(platform 档 + 本户自建;可用性围栏收敛:platform 段只列对本 owner 可见档——production 缺省全员可见,experimental 须显式 allow,deny 恒胜 allow;带 x-tansr-org 头 = org 语境,org-subject grant 投射,成员可读)",
         "tags": [
           "control"
         ],
@@ -9760,7 +9760,7 @@
     },
     "/v1/context-selection": {
       "get": {
-        "summary": "用户级上下文方案选购清单读取(T-A42,与 model-selection 同构采集制):selected 恒数组(无档回 [];原样回读不清洗,停用/围栏收回由消费点谓词 fail-closed 挡下)+ available(可选购全集 = 对本 owner 可见的 platform 档,可见性围栏单点收敛;自建 active 档不入册但可入清单;带 x-tansr-org 头 = org 清单,成员可读)",
+        "summary": "用户级上下文方案选购清单读取(与 model-selection 同构采集制):selected 恒数组(无档回 [];原样回读不清洗,停用/围栏收回由消费点谓词 fail-closed 挡下)+ available(可选购全集 = 对本 owner 可见的 platform 档,可见性围栏单点收敛;自建 active 档不入册但可入清单;带 x-tansr-org 头 = org 清单,成员可读)",
         "tags": [
           "control"
         ],
@@ -9860,7 +9860,7 @@
     },
     "/v1/search-providers": {
       "get": {
-        "summary": "联网搜索商用户目录(active 池用户安全投影:id/name/vendor/pricePerCall/currency/maxResultsCap/isDefault;采购细节 credentialEnv/成本/权重/超时/端点恒不出面,doc/50 §5 匿名化同源)+ defaultProviderId(平台默认指配且行 active 时如实出 id,未指配/失效恒 null = 选池加权随机);排序 = 池确定序(weight 降序→更新新者先→id 升序)即故障转移顺序;账套级自定义走 PUT /v1/apps/{id}/config.searchProviderId",
+        "summary": "联网搜索商用户目录(active 池用户安全投影:id/name/vendor/pricePerCall/currency/maxResultsCap/isDefault;采购细节 credentialEnv/成本/权重/超时/端点恒不出面,匿名化投影)+ defaultProviderId(平台默认指配且行 active 时如实出 id,未指配/失效恒 null = 选池加权随机);排序 = 池确定序(weight 降序→更新新者先→id 升序)即故障转移顺序;账套级自定义走 PUT /v1/apps/{id}/config.searchProviderId",
         "tags": [
           "control"
         ],
@@ -9886,7 +9886,7 @@
     },
     "/v1/orders": {
       "post": {
-        "summary": "创建订单(登录态;sku 缺省 recharge = amount 直充;sku plan:<tier>:<1y|1m> = 套餐单,动作 new/renew/upgrade/downgrade 与金额恒服务端算(doc/125 §3.2,客户端 amount 不一致 400;差价 0.00 不可下单 409 plan_zero_amount;存在 scheduled 降档行 409 plan_scheduled_exists);渠道参数未交割时 503;带 x-tansr-org 头 = org 单,owner/billing)",
+        "summary": "创建订单(登录态;sku 缺省 recharge = amount 直充;sku plan:<tier>:<1y|1m> = 套餐单,动作 new/renew/upgrade/downgrade 与金额恒服务端算(客户端 amount 不一致 400;差价 0.00 不可下单 409 plan_zero_amount;存在 scheduled 降档行 409 plan_scheduled_exists);渠道参数未交割时 503;带 x-tansr-org 头 = org 单,owner/billing)",
         "tags": [
           "control"
         ],
@@ -9960,7 +9960,7 @@
         }
       },
       "get": {
-        "summary": "本户订单列表(带 x-tansr-org 头 = org 订单);行数上限 50(近序截断,无 limit 参数;T-X4 上限常量单点 src/contract/limits.ts ORDERS_LIST_LIMIT,消费方勿假设 100)",
+        "summary": "本户订单列表(带 x-tansr-org 头 = org 订单);行数上限 50(近序截断,无 limit 参数;上限常量单点 src/contract/limits.ts ORDERS_LIST_LIMIT,消费方勿假设 100)",
         "tags": [
           "control"
         ],
@@ -10110,7 +10110,7 @@
     },
     "/v1/plan/quote": {
       "get": {
-        "summary": "套餐报价预览(doc/125 §六;query sku=plan:<tier>:<1y|1m>):与 POST /v1/orders 同一判定函数回显动作/应付/起算/到期/差价算式;带 x-tansr-org 头 = org 语境(owner/billing);形外 sku 400;存在 scheduled 降档行 409",
+        "summary": "套餐报价预览(query sku=plan:<tier>:<1y|1m>):与 POST /v1/orders 同一判定函数回显动作/应付/起算/到期/差价算式;带 x-tansr-org 头 = org 语境(owner/billing);形外 sku 400;存在 scheduled 降档行 409",
         "tags": [
           "control"
         ],
@@ -10175,7 +10175,7 @@
     },
     "/v1/plan": {
       "get": {
-        "summary": "套餐读面(doc/125 §六;A-β PL-15):生效档 plan(bundle plan 键同形;T0 null)+ scheduled 预约降档行(无则 null)+ usage 水位(concurrency current = 5 分钟窗清窗后并发 / cap / hardCap = floor(cap×1.1);apps used = active 非装置绑定 app 键 / cap;orgMembers 仅 org 语境(T0 org 按 test 档 3);monthlyEndUsers 仅 test 档)+ pricing(协议价,牌价客户 null)+ catalog 四档展示字段;带 x-tansr-org 头 = org 语境(全员可读,非成员 404)",
+        "summary": "套餐读面:生效档 plan(bundle plan 键同形;无套餐行 null)+ scheduled 预约降档行(无则 null)+ usage 水位(concurrency current = 5 分钟窗清窗后并发 / cap / hardCap = floor(cap×1.1);apps used = active 非装置绑定 app 键 / cap;orgMembers 仅 org 语境(无套餐 org 按 test 档 3);monthlyEndUsers 仅 test 档)+ pricing(协议价,牌价客户 null)+ catalog 四档展示字段;带 x-tansr-org 头 = org 语境(全员可读,非成员 404)",
         "tags": [
           "control"
         ],
@@ -10221,7 +10221,7 @@
     },
     "/v1/plan/usage": {
       "get": {
-        "summary": "并发水位曲线(doc/125 §六;query days 1–90 缺省 30):days = owner_plan_usage_daily 逐日峰值 + 24 格小时峰值(plan-usage-fold.daily 折叠前一日;缺席日无行);today = 今日 24 格小时峰值(Redis 直读,未到/无活动小时 null);带 x-tansr-org 头 = org 语境(全员可读,非成员 404)",
+        "summary": "并发水位曲线(query days 1–90 缺省 30):days = owner_plan_usage_daily 逐日峰值 + 24 格小时峰值(plan-usage-fold.daily 折叠前一日;缺席日无行);today = 今日 24 格小时峰值(Redis 直读,未到/无活动小时 null);带 x-tansr-org 头 = org 语境(全员可读,非成员 404)",
         "tags": [
           "control"
         ],
@@ -24042,6 +24042,14 @@
               {
                 "const": "en",
                 "type": "string"
+              },
+              {
+                "const": "ja",
+                "type": "string"
+              },
+              {
+                "const": "ko",
+                "type": "string"
               }
             ]
           }
@@ -24101,6 +24109,14 @@
               },
               {
                 "const": "en",
+                "type": "string"
+              },
+              {
+                "const": "ja",
+                "type": "string"
+              },
+              {
+                "const": "ko",
                 "type": "string"
               }
             ]

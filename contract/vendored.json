@@ -1,9 +1,9 @@
 {
   "openapi.json": {
-    "source": "tansr-api@311e9449a68a:openapi/openapi.json",
-    "revision": 3,
-    "sha256": "35e625f2b2cff388a26f8545c74d012c05adfe9ebdd38f0085898bd85955e2da",
-    "vendoredAt": "2026-09-09"
+    "source": "tansr-api@fe7706e237fd:openapi/openapi.json",
+    "revision": 4,
+    "sha256": "10733876fb6df4a435614256327296d0bdeda9cf4b473f8b81ba59739ba013b3",
+    "vendoredAt": "2026-09-10"
   },
   "serve.env.example": {
     "source": "tansr-cli@1f74efd58f9e:packages/server/.env.example",
