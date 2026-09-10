@@ -1,7 +1,9 @@
 name: lighthouse
 
-# 资料站 Lighthouse CI(DS-21):main 推送与手动触发时,对构建产物 dist 跑 Lighthouse(移动端模拟),
-# 断言 performance ≥ 0.9 · accessibility / best-practices / seo ≥ 0.95(见 lighthouserc.json;三条 url:/ · /errors/codes/ · /support/)。
+# 资料站 Lighthouse CI(DS-21;DS-37 改 3 次取中位):main 推送与手动触发时,对构建产物 dist 跑 Lighthouse(移动端模拟),
+# 每条 url 跑 3 次、按各类别分数的中位数断言(lighthouserc.json 逐条 aggregationMethod: median;LHCI 缺省 optimistic 取最好一次,不用),
+# 断言 performance ≥ 0.9 · accessibility / best-practices / seo ≥ 0.95(阈值不变;三条 url:/ · /errors/codes/ · /support/)。
+# 3 次的缘起:同一提交单次跑首页 performance 0.86 / 0.87、重跑 0.99——runner 抖动而非回归;取中位是门稳健性,不是放宽阈值。
 # 不上传到任何外部存储(upload.target = filesystem);报告以 workflow artifact 形式保留 14 天。
 
 on:
@@ -41,7 +43,7 @@ jobs:
 
       - run: pnpm build
 
-      # 固定版本;ubuntu-latest runner 自带 Chrome。断言红则本步红。
+      # 固定版本;ubuntu-latest runner 自带 Chrome。3 url × 3 次 = 9 次采集,中位断言红则本步红。
       - run: npx --yes @lhci/cli@0.15.1 autorun
 
       - if: always()
