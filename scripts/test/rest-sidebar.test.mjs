@@ -70,6 +70,16 @@ test('未知语言:组标签回落根语言标签,链接文字回落 en(插件�
   assert.equal(out[1].entries[0].href, '/api/');
 });
 
+test('ja / ko:链接文字取 Starlight 内建 tableOfContents.overview 同字;组标签 CATEGORIES 尚无该列时回落根标签、加列后自动跟随;href 恒 /api/', () => {
+  for (const [locale, word] of [['ja', '概要'], ['ko', '개요']]) {
+    assert.equal(OVERVIEW_LABEL[locale], word);
+    const out = slimRestSidebar(sidebarFixture(), locale);
+    assert.equal(out[1].entries[0].label, word);
+    assert.equal(out[1].entries[0].href, '/api/');
+    assert.equal(out[1].label, REST[locale] ?? REST.label);
+  }
+});
+
 test('/api/** 页面(总览 · 操作页 · tag 页):侧栏原样交给插件,占位组保留,引用不变', async () => {
   for (const p of ['/api/', '/api/operations/healthz/', '/api/operations/tags/orgs/']) {
     const sidebar = sidebarFixture();

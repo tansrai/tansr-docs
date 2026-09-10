@@ -24,8 +24,11 @@ if (!REST) throw new Error('categories.mjs 缺 api 类目');
 /** REST 参考区根路径(总览页);/api/** 都算区内 */
 export const REST_BASE = `/${REST.directory}/`;
 
-/** 「总览」链接文字:根语言 + en;其他语言回落 en(插件自己的 Overview 链接对所有语言都是英文) */
-export const OVERVIEW_LABEL = Object.freeze({ root: '总览', en: 'Overview' });
+/**
+ * 「总览」链接文字:根语言 + en / ja / ko(ja / ko 取 Starlight 内建 UI 串 tableOfContents.overview,与站内其他「概要」字样一致);
+ * 未列语言回落 en(插件自己的 Overview 链接对所有语言都是英文)。组标签走 CATEGORIES 各语言列,不在此处。
+ */
+export const OVERVIEW_LABEL = Object.freeze({ root: '总览', en: 'Overview', ja: '概要', ko: '개요' });
 
 /**
  * starlight-openapi 的侧栏占位组:`openAPISidebarGroups` / `createOpenAPISidebarGroup()` 都是
