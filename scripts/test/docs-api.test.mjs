@@ -1,6 +1,6 @@
 /**
- * DS-28 卷:反馈 / 联系表单接 api 的客户端纯函数(src/lib/docs-api.mjs)与两组件的静态形。
- * 纯函数:载荷形 / 蜜罐判 / 回退判 / 校验 / mailto 回退;组件:走 api-base、零第三方脚本、蜜罐字段在场。
+ * DS-28 卷(DS-37 加语言集常量):反馈 / 联系表单接 api 的客户端纯函数(src/lib/docs-api.mjs)与两组件的静态形。
+ * 纯函数:载荷形 / 蜜罐判 / 回退判 / 校验 / mailto 回退 / 语言归一;组件:走 api-base、零第三方脚本、蜜罐字段在场。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { repoRootFrom } from '../lib/text.mjs';
 import {
+  API_LOCALES,
   DEFAULT_API_BASE,
   FEEDBACK_PATH,
   LIMITS,
@@ -60,6 +61,42 @@ test('反馈载荷形:{ path, helpful, locale };path 不合契约形 / 超 200 /
   assert.equal(normalizeLocale('zh-CN'), 'zh-CN');
   assert.equal(normalizeLocale('root'), 'zh-CN');
   assert.equal(normalizeLocale('en'), 'en');
+});
+
+test('语言集常量:API_LOCALES = [zh-CN, en](与 api DOCS_LOCALES 同集;ja / ko 待 api 上产后由主线加);normalizeLocale ∈ 集合原样、否则 zh-CN;集合可注入(含 ja 时原样),常量本身不动;两载荷沿同一归一', () => {
+  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en']);
+  assert.ok(Object.isFrozen(API_LOCALES), '常量冻结');
+  for (const l of API_LOCALES) assert.equal(normalizeLocale(l), l, `${l} 原样`);
+  assert.equal(normalizeLocale('ja'), 'zh-CN', '当前 api 契约不认 ja → zh-CN');
+  assert.equal(normalizeLocale('ko'), 'zh-CN');
+  assert.equal(normalizeLocale('root'), 'zh-CN');
+  assert.equal(normalizeLocale(undefined), 'zh-CN');
+  assert.equal(normalizeLocale(null), 'zh-CN');
+  assert.equal(normalizeLocale(''), 'zh-CN');
+  assert.equal(normalizeLocale('EN'), 'zh-CN', '与 api 枚举逐字,大小写敏感');
+  assert.equal(normalizeLocale('zh'), 'zh-CN');
+  assert.equal(normalizeLocale(['en']), 'zh-CN', '非字符串不认');
+  // 注入:api 扩 ja / ko 上产后主线只需在 API_LOCALES 加两项,归一即原样 —— 这里以参数化验证,不改常量
+  const extended = Object.freeze(['zh-CN', 'en', 'ja', 'ko']);
+  assert.equal(normalizeLocale('ja', extended), 'ja');
+  assert.equal(normalizeLocale('ko', extended), 'ko');
+  assert.equal(normalizeLocale('en', extended), 'en');
+  assert.equal(normalizeLocale('fr', extended), 'zh-CN', '不在注入集合内仍归 zh-CN');
+  assert.equal(normalizeLocale('en', ['zh-CN']), 'zh-CN', '注入更窄集合同样生效');
+  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en'], '注入不改常量');
+  // 载荷成形沿同一归一(ja / ko 页现归 zh-CN 上报;路径 / page 自带语言前缀可反查)
+  assert.equal(feedbackPayload({ pathname: '/ja/support/', value: 'yes', locale: 'ja' }).locale, 'zh-CN');
+  assert.equal(feedbackPayload({ pathname: '/en/support/', value: 'yes', locale: 'en' }).locale, 'en');
+  assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'ko' }).locale, 'zh-CN');
+  assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'en' }).locale, 'en');
+});
+
+test('组件注释:Feedback / ContactForm 的归一说明指向 API_LOCALES(集合内原样、否则 zh-CN),不写死 ja / ko 的归一结果', () => {
+  for (const name of ['Feedback', 'ContactForm']) {
+    const src = readFileSync(join(root, `src/components/${name}.astro`), 'utf8');
+    assert.match(src, /normalizeLocale/, `${name} 须说明 locale 经 normalizeLocale 归一`);
+    assert.match(src, /API_LOCALES/, `${name} 归一说明须指向 API_LOCALES 常量`);
+  }
 });
 
 test('蜜罐判:website 非空(去空白)即机器人;空 / 空白 / 非字符串不算', () => {

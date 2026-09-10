@@ -18,7 +18,13 @@ export const PATH_PATTERN = /^\/[a-z0-9\-/]*$/;
 /** 邮箱形校验(宽松:一处 @、两侧非空且无空白、域名含点);服务端另校 */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const LOCALES = Object.freeze(['zh-CN', 'en']);
+/**
+ * api 两端点 `locale` 字段接受的取值(与 api `DOCS_LOCALES` 同集,逐字)。
+ * api 扩 ja / ko **上产后**由主线在此加两项即可(normalizeLocale / 两载荷随之原样透传);上产前不加——
+ * 否则 ja / ko 页会向生产端点发契约外的值而吃 400,反馈 / 工单转回退。
+ */
+export const API_LOCALES = Object.freeze(/** @type {const} */ (['zh-CN', 'en']));
+/** @typedef {typeof API_LOCALES[number]} ApiLocale */
 
 /**
  * 归一 api 基址:空 / 非字符串 → 缺省;去尾斜杠;只收 http(s)。
@@ -44,18 +50,20 @@ export function ticketsUrl(base) {
 }
 
 /**
- * 语言归一:`en` → `en`,其余(含 undefined / `zh-CN` / `root`)→ `zh-CN`。
+ * 语言归一:∈ `accepted`(缺省 API_LOCALES)原样;其余(含 undefined / `root` / 大小写不合 / 站内有页但 api 未收的 ja / ko)→ `zh-CN`。
+ * `accepted` 只作注入位(卷以此验证「集合含 ja 时原样」),组件恒走缺省。
  * @param {unknown} locale
- * @returns {'zh-CN' | 'en'}
+ * @param {readonly string[]} [accepted]
+ * @returns {ApiLocale}
  */
-export function normalizeLocale(locale) {
-  return locale === 'en' ? 'en' : 'zh-CN';
+export function normalizeLocale(locale, accepted = API_LOCALES) {
+  return typeof locale === 'string' && accepted.includes(locale) ? /** @type {ApiLocale} */ (locale) : 'zh-CN';
 }
 
 /**
  * 反馈载荷:`{ path, helpful, locale }`;path 不合形 / 超长 → null(调用方直接走回退,不发请求)。
  * @param {{ pathname: unknown, value: unknown, locale?: unknown }} input  value = 'yes' | 'no'(按钮 data 值)
- * @returns {{ path: string, helpful: boolean, locale: 'zh-CN' | 'en' } | null}
+ * @returns {{ path: string, helpful: boolean, locale: ApiLocale } | null}
  */
 export function feedbackPayload({ pathname, value, locale }) {
   if (typeof pathname !== 'string' || pathname.length > LIMITS.path || !PATH_PATTERN.test(pathname)) return null;
@@ -101,7 +109,7 @@ export function validateTicket(fields) {
 export function ticketPayload(fields) {
   const v = validateTicket(fields);
   if (!v.ok) return null;
-  /** @type {{ subject: string, body: string, email?: string, page?: string, locale: 'zh-CN' | 'en' }} */
+  /** @type {{ subject: string, body: string, email?: string, page?: string, locale: ApiLocale }} */
   const out = {
     subject: /** @type {string} */ (fields.subject).trim(),
     body: /** @type {string} */ (fields.body).trim(),
