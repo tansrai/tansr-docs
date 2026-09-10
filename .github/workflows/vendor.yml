@@ -1,0 +1,118 @@
+name: vendor
+
+# 上游(tansr-api / tansr-cli)变更后自动 vendor:拷入契约副本 → 再生生成页 → 过门 → 以 github-actions[bot] 身份提交推 main → 派发 deploy。
+# 触发:① 兄弟仓 CI 成功后 `gh api repos/cpple/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'`
+#          (client_payload.api_ref / cli_ref 可选,缺省 master / main;接线说明见 README「上游接线」,兄弟仓侧凭据候拍,本仓不改兄弟仓)
+#      ② 手动 workflow_dispatch(inputs api_ref / cli_ref)
+# 凭据:UPSTREAM_READ_TOKEN(能读两私有仓 cpple/tansr-api · cpple/tansr 的 token)未交割时只打 notice、成功退出,不把工作流标红
+#      (沿 deploy.yml「secrets 未交割即空跑」形);交割后自动生效。本工作流不新增其他 secret:推 main 与派发 deploy 都用 GITHUB_TOKEN。
+# 布局:本仓检出到 docs/,两上游检出到 upstream/api · upstream/cli,与本仓并列而不在本仓目录内——否则 astro check(tsconfig include **/*)
+#      会把上游几百个 TS 文件一并扫进门;auto.sh 以相对路径 ../upstream/… 取用。
+on:
+  repository_dispatch:
+    types: [upstream-updated]
+  workflow_dispatch:
+    inputs:
+      api_ref:
+        description: tansr-api 的分支 / tag / 提交
+        required: false
+        default: master
+        type: string
+      cli_ref:
+        description: tansr-cli 的分支 / tag / 提交
+        required: false
+        default: main
+        type: string
+
+# contents: write = 提交并推 main;actions: write = `gh workflow run deploy.yml`(workflow_dispatch API 要求;GITHUB_TOKEN 的 push 不触发 on: push)
+permissions:
+  contents: write
+  actions: write
+
+# 同组排队、不取消在途(半途取消会留下「已推未派发」的中间态);后到的等前一个完成
+concurrency:
+  group: vendor-main
+  cancel-in-progress: false
+
+jobs:
+  vendor:
+    name: vendor → gen → gate → commit → deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: docs
+          # lastUpdated 读 git log,浅克隆会全部显示为「构建日」;保留 GITHUB_TOKEN 凭据以便 auto.sh 推 main
+          fetch-depth: 0
+
+      # 凭据未交割时:打 notice、后续步全部跳过、工作流成功结束;交割后自动生效。ref 取 workflow_dispatch inputs → client_payload → 缺省。
+      - name: Upstream token present? · resolve refs
+        id: cfg
+        env:
+          UPSTREAM_READ_TOKEN: ${{ secrets.UPSTREAM_READ_TOKEN }}
+          API_REF: ${{ github.event.inputs.api_ref || github.event.client_payload.api_ref || 'master' }}
+          CLI_REF: ${{ github.event.inputs.cli_ref || github.event.client_payload.cli_ref || 'main' }}
+        run: |
+          echo "api_ref=$API_REF" >> "$GITHUB_OUTPUT"
+          echo "cli_ref=$CLI_REF" >> "$GITHUB_OUTPUT"
+          if [ -n "$UPSTREAM_READ_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "tansr-api@$API_REF · tansr-cli@$CLI_REF"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::UPSTREAM_READ_TOKEN 未配置——本次空跑,不拉上游、不 vendor、不提交(交割该 secret 后 repository_dispatch / 手动触发即自动生效)"
+          fi
+
+      - name: Checkout tansr-api (private)
+        if: steps.cfg.outputs.configured == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: cpple/tansr-api
+          ref: ${{ steps.cfg.outputs.api_ref }}
+          token: ${{ secrets.UPSTREAM_READ_TOKEN }}
+          path: upstream/api
+          persist-credentials: false
+
+      - name: Checkout tansr-cli (private)
+        if: steps.cfg.outputs.configured == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: cpple/tansr
+          ref: ${{ steps.cfg.outputs.cli_ref }}
+          token: ${{ secrets.UPSTREAM_READ_TOKEN }}
+          path: upstream/cli
+          persist-credentials: false
+
+      - if: steps.cfg.outputs.configured == 'true'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 11
+
+      - if: steps.cfg.outputs.configured == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Install docs deps
+        if: steps.cfg.outputs.configured == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # vendor 在 cli 检出里就地构建 dist/tansr.mjs(cli-help 采集源)与 packages/sdk/dist/index.d.ts(SDK 参考源),需要它的依赖
+      - name: Install tansr-cli deps
+        if: steps.cfg.outputs.configured == 'true'
+        working-directory: upstream/cli
+        run: pnpm install --frozen-lockfile
+
+      # vendor → gen → 无变化退 0 | 有变化 → gate 红退 1 不提交 | 绿 → bot 提交推 main → gh workflow run deploy.yml --ref main
+      # (GITHUB_TOKEN 做的 push 不触发 on: push,显式派发 workflow_dispatch 才会真跑;gh 读 GH_TOKEN)
+      - name: vendor → gen → gate → commit → push → dispatch deploy
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/vendor/auto.sh ../upstream/api ../upstream/cli
