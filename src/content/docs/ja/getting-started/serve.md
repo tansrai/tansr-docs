@@ -155,7 +155,7 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## CLI 形態の serve
 
-`tansr serve --token <値>` でも常駐サービスを起動できますが、これは単一運用者向けの `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` などの 6 エンドポイント、同じ 1 つの Bearer token）で、オーケストレーションシステムからの接続に向いており、マルチテナントのプロダクトバックエンドではありません。`tansr serve --v2` は `/v2` 面も CLI 形態に載せるもので、**tansr CLI 0.5.0 で近日提供予定**です。それまでは、マルチテナントの `/v2` は上記の npm 組み込み形態を使ってください。
+`tansr serve --token <値>` でも常駐サービスを起動できますが、これは単一運用者向けの `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` などの 6 エンドポイント、同じ 1 つの Bearer token）で、オーケストレーションシステムからの接続に向いており、マルチテナントのプロダクトバックエンドではありません。`tansr serve --v2` は `/v2` 面も CLI 形態に載せるもので、**tansr CLI 0.6.0 で利用できます**。上記の `@tansr/serve@0.8.0` npm 組み込み形態も引き続き利用できます。
 
 ## 次のステップ
 

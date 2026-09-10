@@ -9,14 +9,21 @@
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.11.0 之前的历史见 git(`git log -- packages/sdk`)。
 `tansr` 命令行 / `serve` 宿主面分别见仓根 `CHANGELOG.md` 与 `packages/server/CHANGELOG.md`(三包同律,`doc/release/README.md`)。
 
+## 0.13.0 — 2026-09-10
+
+- 汇总此前未发布的 0.12.0 候选能力，并增加 AgentSession 的同轮文本投递、目标、能力发现和状态查询公共接口（INJ）；相对旧候发标签按 minor 推进。
+- 文本追加继续当前会话与查询循环；accepted 是内存接纳，consumed 是进入权威历史，不代表模型完成或持久投递。当前及上一轮的有限回执不能作为永久幂等保证。
+- AP-SP 平台系统提示词与 SDK system/systemAppend 保持原分层；当前轮快照稳定，下一显式新轮自动刷新平台配置。
+- 公开 API 的 JSDoc(IDE 悬停 / `index.d.ts` / docs.tansr.com SDK 参考)改写为面向使用者的说明并补齐 94 处缺注释的导出;不再出现内部编号与流程用语。只改注释,导出集与签名不变,无需迁移(DS-33)。
+- 新包携 contract/MANIFEST.json；Demo 在正式 registry 验证后同步依赖。旧 0.12.0 标签和以下候选说明仅作历史记录，真实发布以回执为准。
+
 ## 0.12.0
 
 - AP-SP：应用 `systemPromptPolicy` 默认 fallback（SDK 显式 system 含 [] 替代平台），prepend 保留平台段在前、SDK 段在后（[] 也保留平台）。新增 systemAppend 宿主指南缝、resolveApplicationSystem 与只读 applicationPrompt 来源；query 含注入档同步追加指南。已有令牌档会话每个新轮前条件核验平台正文与策略，绕过装配缓存；轮内工具多步固定快照，刷新失败中止并保留历史，取消及30秒超时有界收口。宿主段固定；SDK/serve/Windows/Android/iOS 示例和手册同步。
-- 公开 API 的 JSDoc(IDE 悬停 / `index.d.ts` / docs.tansr.com SDK 参考)改写为面向使用者的说明并补齐 94 处缺注释的导出;不再出现内部编号与流程用语。只改注释,导出集与签名不变,无需迁移(DS-33)。
 
-> 未发(十王修案第二波收编后随 cli monorepo 一版候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
+> 历史候选归档：0.12.0 没有单独发布，以下内容并入 0.13.0；本地旧标签保留在原候选源码。实际发布以回执和 registry 为准。
 
-### 核心机制整改（CM；未发）
+### 核心机制整改（CM；历史候选内容）
 
 - 自动/空闲摘要被质量校验拒绝时，已报告用量仍进入公共成本事件；拒绝摘要不替换历史。取消前已到达的用量会保全，不臆造尚未报告的费用（CM-02）。
 - 直接调用 `runIdleCompaction` 的宿主须消费失败结果的 `events`；`IdleCompactionResult` 失败支路不再保证空数组，可能包含已报告的成本事件。导出名称数量不变，签名快照随本 minor 更新（CM-02/17）。

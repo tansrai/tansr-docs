@@ -54,8 +54,8 @@ export function countVersionSections(body) {
 }
 
 /**
- * 解析 CHANGELOG 正文的版本段:`## <version>[ (<日期>[;…])]` 起,到下一 `## ` 止。
- * 返回 [{ version, heading, date, unreleased, body }];`date` 取标题括注里的首个 YYYY-MM-DD(无则 undefined);
+ * 解析 CHANGELOG 版本段:兼容裸版本 / 圆括号日期,以及 `## <version> — YYYY-MM-DD`。
+ * 返回 [{ version, heading, date, unreleased, body }];`date` 取 em-dash 后的 ISO 日期或标题括注里的首个 YYYY-MM-DD(无则 undefined);
  * `unreleased` = 段体首个引言块(`> …`)含「未发」。
  */
 export function parseVersionSections(body) {
@@ -63,9 +63,12 @@ export function parseVersionSections(body) {
   const out = [];
   let cur = null;
   for (const line of lines) {
-    const h = /^## (\S+)(?:\s+\((.*)\))?\s*$/.exec(line);
-    if (h) {
-      cur = { version: h[1], heading: line.slice(3).trim(), date: /\d{4}-\d{2}-\d{2}/.exec(h[2] ?? '')?.[0], unreleased: false, body: [] };
+    const h = /^## (\S+)(?:\s+\((.*)\)|\s+—\s+(\d{4}-\d{2}-\d{2}))?\s*$/.exec(line);
+    const isoDate = h?.[3];
+    const timestamp = isoDate === undefined ? undefined : Date.parse(`${isoDate}T00:00:00.000Z`);
+    // Only the new ISO-date form is strict; preserve the existing parenthesized metadata contract.
+    if (h && (isoDate === undefined || (Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === isoDate))) {
+      cur = { version: h[1], heading: line.slice(3).trim(), date: isoDate ?? /\d{4}-\d{2}-\d{2}/.exec(h[2] ?? '')?.[0], unreleased: false, body: [] };
       out.push(cur);
       continue;
     }

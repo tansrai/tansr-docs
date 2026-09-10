@@ -10,16 +10,23 @@
 (sdk 面见 `packages/sdk/CHANGELOG.md`)。版本号 = `packages/server/package.json`(包目录 `server`,发布名 `@tansr/serve`);
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.6.0 之前的历史见 git(`git log -- packages/server`)。
 
+## 0.8.0 — 2026-09-10
+
+- 汇总此前未发布的 0.7.0 候选能力，并通过 v2 capabilities/inputs/status 接口提供严格同轮文本追加（INJ）；旧 v1/v2 messages 接口兼容。
+- SDK 与 serve 共用输入接纳与回执机制，绑定 session/historyEpoch/turnId；丢失响应先查询原票，不通过隐式新轮重试。
+- 手机重连原会话后，下一新轮继续自动加载平台提示词；轮中追加不刷新 system，不变更原权限、预算和会话归属。
+- 资源排水与真实 settlement 分开；新增公共出口按 minor 推进至 0.8.0。旧 0.7.0 标签保留，正式发布状态以回执为准。
+
 ## 0.7.0
 
 - AP-SP：平台工厂按 `systemPromptPolicy=fallback|prepend` 选择或拼接应用 systemPrompt 与 platform.system；prepend 下 [] 仍保留平台。platform.systemAppend 追加指南而不覆盖业务段。存活会话及移动端 attach 后的下一新轮自动条件核验平台正文和策略，轮中不变；失败不带旧配置请求模型，保留历史并可重试，取消/超时与令牌续期沿统一预检。移动端只发用户消息，不新增 system wire 字段。
 
-> 未发(十王修案 W1–W4 已收编于 cli main `9f09c1b7`,随 cli monorepo 一版 / 二版 / 三版子集候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
+> 历史候选归档：0.7.0 没有单独发布，以下内容并入 0.8.0；本地旧标签保留在原候选源码。十王修案 W1–W4 原收编于 cli main `9f09c1b7`，实际发布以回执和 registry 为准。
 > 导出集:`exports.snapshot.json` 由发版门首版基线 364(0.6.1 dist,W2 FX-C-25)→ W2 收编 375 → W3 收编 395(W3 回执 §一)→ W4 收编 395
 > (导出数不变,`AssembledSessionModel` / `AgentSessionRetentionSweepInput` 两签名变;W4 回执 §一)。以下逐条按波次的收编回执与 C-α / C-β 终报为事实源;
 > 每条括注卡号(FX-C-nn)与所属波次。
 
-### 核心机制整改（CM；未发）
+### 核心机制整改（CM；历史候选内容）
 
 - 平台下发的上下文方案与宿主配置合流后，由查询和压缩共同消费，恢复会话沿用同一有效配置；嵌套阈值只覆盖明确提供的值。owner/app_user 均按各自身份投影生效（CM-03）。
 - 空闲或自动摘要即使被质量校验拒绝，已报告用量仍计入公共成本；小窗输出回退遵守测得正剩余，零/负估算余量保留原有恢复规则并明确提示（CM-02/06）。

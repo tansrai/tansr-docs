@@ -16,7 +16,7 @@ sources:
 lastVerified: '2026-09-10'
 ---
 
-This page documents additive INJ development APIs. Compatible SDK, CLI, serve and client releases are required. Source and documentation validation do not establish npm publication or acceptance on physical mobile devices.
+This guide covers `@tansr/sdk@0.13.0`, `@tansr/cli@0.6.0`, and `@tansr/serve@0.8.0`. These versions are published on npm. Mobile apps also require clients that implement capability discovery and same-turn input. Source and documentation validation do not establish acceptance on physical mobile devices.
 
 **`submitInput` appends user input only to the specified running turn.** It does not interrupt the active model stream or tools, create a session, or automatically start another turn when the target closes. An already-started request is unchanged. Input enters history at a safe boundary before it can be used by a subsequent model request.
 

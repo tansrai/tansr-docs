@@ -1,6 +1,6 @@
 ---
 title: 保留期与治理
-description: 会话在 @tansr/serve 里活多久、什么时候被回收、存在哪、谁删——/v2 多会话治理表、/v1 终结记录保留窗、会话存储与冷层、以及即将到来的存储保留期扫描。
+description: 会话在 @tansr/serve 里活多久、什么时候被回收、存在哪、谁删——/v2 多会话治理表、/v1 终结记录保留窗、会话存储与冷层、以及可配置的存储保留期扫描。
 zone: docs
 category: serve
 related:
@@ -83,9 +83,9 @@ const store = createServeAgentSessionStore({
 
 冷层里的段是明文 JSONL（压缩）——加密、密钥管理、驻留地、访问控制归你（`policy.transform` 挂点），用生命周期规则按前缀 `<tenant>/<endUserKey>/<sessionId>/<volumeId>/` 承接保留窗。
 
-## 存储保留期扫描（即将提供）
+## 存储保留期扫描
 
-今天的 store **缺省永存**：休眠会话不会被服务端自动删除。**即将随 @tansr/serve 0.7.0 提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`](/serve/env#tansr_serve_session_max_per_end_user)。同批还会让控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
+未配置保留期时，store **缺省永存**：休眠会话不会被服务端自动删除。**@tansr/serve 0.8.0 已提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`](/serve/env#tansr_serve_session_max_per_end_user)。控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
 
 ## `/v1` 面的终结记录保留窗
 

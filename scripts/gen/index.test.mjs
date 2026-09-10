@@ -131,8 +131,10 @@ test('releases:三包各一页;顶部用户口吻层每版一节(三段 / note;�
     assert.ok(o.stats.sections >= 1);
   }
   const cli = outputs.find((x) => x.rel === releases.outRel('cli')).content;
-  assert.ok(/^## 0\.5\.0\(未发\)$/m.test(cli), '「未发」版本照 CHANGELOG 标注');
-  assert.ok(/^> 未发/m.test(cli), '折叠段内「未发」原文保留');
+  assert.ok(/^## 0\.6\.0\(2026-09-10\)$/m.test(cli), '本次已发版本带实际日期');
+  assert.ok(/^## 0\.5\.0$/m.test(cli), '旧候选保留独立历史段,不伪填发布日期');
+  assert.ok(cli.includes('历史候选，未单独发布；相关能力与兼容变化并入 0.6.0'), '旧候选未单独发布的事实必须可见');
+  assert.ok(/^> 历史候选归档：0\.5\.0 没有单独发布/m.test(cli), '折叠段内历史归档原文保留');
   assert.ok(/^## 0\.4\.0\(2026-09-06\)$/m.test(cli), '已发版本带日期');
 });
 

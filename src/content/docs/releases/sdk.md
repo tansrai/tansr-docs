@@ -1,6 +1,6 @@
 ---
 title: '@tansr/sdk Changelog'
-description: '@tansr/sdk 各版本的用户可见变更(新增 / 变更 / 修复;3 个版本),附包内 CHANGELOG 原文折叠段。'
+description: '@tansr/sdk 各版本的用户可见变更(新增 / 变更 / 修复;4 个版本),附包内 CHANGELOG 原文折叠段。'
 zone: 'docs'
 category: 'releases'
 sources: ['contract/changelog/sdk.md', 'contract/release-notes.json']
@@ -11,12 +11,13 @@ generated: true
 
 按版本列出 `@tansr/sdk` 的用户可见变更;每版分「新增 / 变更 / 修复」三段,涉及迁移的条目写明迁移方式。工程视角的完整变更记录见页末折叠段。
 
-## 0.12.0(未发)
-
-> 本版尚未发布;以下为候发内容,以实际发版为准。
+## 0.13.0(2026-09-10)
 
 ### 新增
 
+- AgentSession 新增同轮文本投递、目标与能力发现、状态查询接口；accepted 表示内存接纳，consumed 表示已进入历史，均不代表模型完成。
+- `session.drain()`、`session.closeAsync()` 与可等待的 MCP 关闭用于观察真实资源完成；超时后仍可继续等待，不把逻辑关闭当成清理完成。
+- `query()` 可显式装配 MCP 和 skills，与多轮会话共用装配能力。
 - 应用系统提示词支持平台配置：默认 fallback 在 SDK 未传 system 时使用平台段；可选 prepend 保留平台段在前，即使 SDK 显式传入空数组。需要配套 API 与 SDK 版本。
 - systemAppend 可追加宿主指南而不覆盖平台默认；AgentSession.applicationPrompt 提供只读来源与策略摘要，不含正文。低阶 runAgent 可手动使用 resolveApplicationSystem 组合已验证的配置。平台提示词与策略在后续新一轮前刷新，当前执行轮固定，会话与历史保留。
 - `zeroAppCapabilities(platform)`、`AppBundle.capabilitiesIssues`、`PlatformWarning.detail`:capabilities 段解析失败时可拿到具体问题。
@@ -32,6 +33,8 @@ generated: true
 
 ### 变更
 
+- 同轮追加仅支持文本与内存 ACK；持久投递和原生多媒体追加明确不支持。结果仅保留当前及上一轮，不能作为永久去重保证。
+- 公开 API 的 IDE 悬停说明和类型文档面向使用者改写，导出集与签名不因注释整理改变。
 - `permission.mode` 与默认注入的裁决人不再互斥抛错:显式给了 `permission.mode` 即视为「自管模式」,裁决人不装,并经 `onPlatformWarning` / `onWarning` 通报 `adjudicator_skipped_by_mode`;显式 `adjudication` 与 `permission.mode` 同现仍抛 `invalid_options`。要静默自管:`adjudication: { enabled: false }`。
 - 未接 `permission.askUser`、且裁决人未授予资格档的会话不再切换到 `auto` 模式:工作区内写 / 删从自动放行变为征求确认(无通道即拒绝,`decisionSource: 'policy'`)。要保留放行:在控制台为应用的裁决人授予资格档(≥ low),或接入 `permission.askUser`。
 - 机器放行也会发出 `tool.permission.decided` 事件(`decisionSource: 'classifier'`;模式放行对非只读调用为 `'mode'`),`onDecision` 形不变。
@@ -46,9 +49,16 @@ generated: true
 
 ### 修复
 
+- 会话初始化失败会尝试释放已装配的自有 MCP 资源；持久化与用户回调同时失败时保留两类错误。
 - 读取图片改按当前模型能力放行(`setModel` 热切换即时生效);此前 SDK 面一律拒绝且提示文案有误。
 - 分叉出的会话读历史分页时 `total` 少一。
 - 权限门重判改为按替换后参数的真实归因判定;hook 明示 `ask` 不再被裁决人代批;两处重判不再重跑 hooks 或二次咨询。
+
+本版 npm 包已发布，包含此前未单独发布的 0.12.0 候选能力。单文件可执行版与移动端安装包的发布、签名和真机验收另行确认。
+
+## 0.12.0
+
+历史候选，未单独发布；相关能力与兼容变化并入 0.13.0，请参阅该版说明。
 
 ## 0.11.1(2026-09-06)
 
@@ -86,14 +96,21 @@ generated: true
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.11.0 之前的历史见 git(`git log -- packages/sdk`)。
 `tansr` 命令行 / `serve` 宿主面分别见仓根 `CHANGELOG.md` 与 `packages/server/CHANGELOG.md`(三包同律,`doc/release/README.md`)。
 
+#### 0.13.0 — 2026-09-10
+
+- 汇总此前未发布的 0.12.0 候选能力，并增加 AgentSession 的同轮文本投递、目标、能力发现和状态查询公共接口（INJ）；相对旧候发标签按 minor 推进。
+- 文本追加继续当前会话与查询循环；accepted 是内存接纳，consumed 是进入权威历史，不代表模型完成或持久投递。当前及上一轮的有限回执不能作为永久幂等保证。
+- AP-SP 平台系统提示词与 SDK system/systemAppend 保持原分层；当前轮快照稳定，下一显式新轮自动刷新平台配置。
+- 公开 API 的 JSDoc(IDE 悬停 / `index.d.ts` / docs.tansr.com SDK 参考)改写为面向使用者的说明并补齐 94 处缺注释的导出;不再出现内部编号与流程用语。只改注释,导出集与签名不变,无需迁移(DS-33)。
+- 新包携 contract/MANIFEST.json；Demo 在正式 registry 验证后同步依赖。旧 0.12.0 标签和以下候选说明仅作历史记录，真实发布以回执为准。
+
 #### 0.12.0
 
 - AP-SP：应用 `systemPromptPolicy` 默认 fallback（SDK 显式 system 含 [] 替代平台），prepend 保留平台段在前、SDK 段在后（[] 也保留平台）。新增 systemAppend 宿主指南缝、resolveApplicationSystem 与只读 applicationPrompt 来源；query 含注入档同步追加指南。已有令牌档会话每个新轮前条件核验平台正文与策略，绕过装配缓存；轮内工具多步固定快照，刷新失败中止并保留历史，取消及30秒超时有界收口。宿主段固定；SDK/serve/Windows/Android/iOS 示例和手册同步。
-- 公开 API 的 JSDoc(IDE 悬停 / `index.d.ts` / docs.tansr.com SDK 参考)改写为面向使用者的说明并补齐 94 处缺注释的导出;不再出现内部编号与流程用语。只改注释,导出集与签名不变,无需迁移(DS-33)。
 
-> 未发(十王修案第二波收编后随 cli monorepo 一版候「发」:protocol → kernel → sdk 0.12.0 → serve 0.7.0 → cli)。
+> 历史候选归档：0.12.0 没有单独发布，以下内容并入 0.13.0；本地旧标签保留在原候选源码。实际发布以回执和 registry 为准。
 
-##### 核心机制整改（CM；未发）
+##### 核心机制整改（CM；历史候选内容）
 
 - 自动/空闲摘要被质量校验拒绝时，已报告用量仍进入公共成本事件；拒绝摘要不替换历史。取消前已到达的用量会保全，不臆造尚未报告的费用（CM-02）。
 - 直接调用 `runIdleCompaction` 的宿主须消费失败结果的 `events`；`IdleCompactionResult` 失败支路不再保证空数组，可能包含已报告的成本事件。导出名称数量不变，签名快照随本 minor 更新（CM-02/17）。

@@ -18,7 +18,7 @@ sources:
   - tansr-cli:packages/server/.env.example
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-android:README.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 `/v2` 是 `@tansr/serve` 对外的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS SDK 已把这套协议全部封装；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。
@@ -95,7 +95,7 @@ lastVerified: '2026-09-09'
 
 ## 远程工具桥与双桥
 
-`clientTools` 申报形制：`{ name(^[A-Za-z][A-Za-z0-9_]{0,63}$), description(1–2048), parameters?(参数表档), readOnly?(缺省 false), effects?, timeoutMs?(1000–600000,缺省 120000) }`,≤ 32 个 / 会话，与内置工具撞名即 400。服务端下发 `server.tool.request { callId, name, args, deadlineAt }`，客户端执行后应答 `tool-results/:callId`；六项语义：超时按 `deadlineAt` 自弃；服务端恒不主动重发（靠 SSE 重放重见）；应答第一份有效者终局、重复 409 无害；轮中断下发 `server.tool.cancel`，取消后到达的应答 410；多 in-flight 天然并发；图片应答 base64 走 20 MiB 帽。**即将随 @tansr/serve 0.7.0 提供**：三枚请求帧加相对时长 `ttlMs`，且每枚控制帧 `data` 多一键 `ts`（服务端墙钟），端侧以 `receivedAtLocal + ttlMs` 判期，不再直接比较绝对时刻。
+`clientTools` 申报形制：`{ name(^[A-Za-z][A-Za-z0-9_]{0,63}$), description(1–2048), parameters?(参数表档), readOnly?(缺省 false), effects?, timeoutMs?(1000–600000,缺省 120000) }`,≤ 32 个 / 会话，与内置工具撞名即 400。服务端下发 `server.tool.request { callId, name, args, deadlineAt }`，客户端执行后应答 `tool-results/:callId`；六项语义：超时按 `deadlineAt` 自弃；服务端恒不主动重发（靠 SSE 重放重见）；应答第一份有效者终局、重复 409 无害；轮中断下发 `server.tool.cancel`，取消后到达的应答 410；多 in-flight 天然并发；图片应答 base64 走 20 MiB 帽。**@tansr/serve 0.8.0 已提供**：三枚请求帧携相对时长 `ttlMs`，且每枚控制帧 `data` 多一键 `ts`（服务端墙钟），端侧以 `receivedAtLocal + ttlMs` 判期，不再直接比较绝对时刻。
 
 权限桥：`server.permission.request { requestId, name, summary?, attribution, digest, expiresAt }`——完整 args 恒不下发，只有目标摘要；应答须逐字复述 `digest`，不符 409；120 s 到点按 deny-and-continue 收口。提问桥：`server.question.request { requestId, questions }`；无订阅者 60 s 宽限后工具结构化降级「自行决策并继续」，恒不挂起。裁决语义恒在服务端，客户端 UI 只是取答面。
 
@@ -132,10 +132,10 @@ const v2: AgentSessionsOptions = {
 
 `status` 只有 `completed | aborted`;`reason` 是终局词原值（`client_gone` = 订阅者全部离场后被孤儿策略止损，`internal_error`、`max_turns`、`budget_exceeded`、用户中断 `aborted_*` 等），接收方按「已知值专项 + 未知值兜底」消费。`lastSeq` 供客户端比对本地水位判断是否需要重放追赶，`ts` 供弃过期 / 防重放。
 
-**签名**：`secret` 在场时携头 `x-tansr-signature: sha256=<hex>`，值为对原始请求体全文的 HMAC-SHA256；接收端先验签再消费。**即将随 @tansr/serve 0.7.0 提供**双签一版：头改为 `x-tansr-signature: v2=<hex>, v1=<hex>`,`v2` 按 canonical 串（方法 + 路径 + `x-tansr-timestamp` + `x-tansr-nonce` + 体 sha256）签名并随行两个头，`v1` 即今日的原始体 HMAC；接收方 v2 在场只校 v2、不许降级。出站请求恒不带任何鉴权凭据头，真伪凭签名。
+**签名**：`secret` 在场时，**@tansr/serve 0.8.0 默认双签**，头为 `x-tansr-signature: v2=<hex>, v1=<hex>`。`v2` 按 canonical 串（协议前缀 + 方法 + 路径 + `x-tansr-timestamp` + `x-tansr-nonce` + 体 sha256，各项以换行连接）签名并随行两个头；`v1` 是原始请求体的 HMAC-SHA256。可通过 `webhook.signatureVersions` 选择签名版本；接收端先验签再消费，v2 在场只校 v2、不许降级。出站请求恒不带任何鉴权凭据头，真伪凭签名。
 
 **投递纪律**:2xx 即成功；否则指数退避重试（单次 5 s 超时，退避 500 ms ×2，至多重试 3 次）；有界并发 32、有界队列 1024（满则丢最新到达者）、目标级熔断（连续 5 次终败开 30 s）；全程 fire-and-forget，恒不阻断会话主链；终败经 `onDeliveryFailure` 结构化通报；优雅关闭期恒不出站。有订阅者时不立即裁「不发」，延后 2 s 复判（断线事件与终局帧几乎同刻抵达的情形）。
 
-**命令行形态两键**:[`TANSR_SERVE_NOTIFY_URL`](/serve/env#tansr_serve_notify_url)（绝对 http(s) URL）与 [`TANSR_SERVE_NOTIFY_SECRET`](/serve/env#tansr_serve_notify_secret)（取值恒不入日志）把同一缝接给 `tansr serve --v2`，无 URL 即不出站——**即将随 @tansr/serve 0.7.0 与 tansr 命令行 0.5.0 提供**；npm 嵌入形今天就用上文的 `onTurnEndNotify` 选项。
+**命令行形态两键**:[`TANSR_SERVE_NOTIFY_URL`](/serve/env#tansr_serve_notify_url)（绝对 http(s) URL）与 [`TANSR_SERVE_NOTIFY_SECRET`](/serve/env#tansr_serve_notify_secret)（取值恒不入日志）把同一缝接给 `tansr serve --v2`，无 URL 即不出站——**@tansr/serve 0.8.0 与 tansr 命令行 0.6.0 已提供**；npm 嵌入形使用上文的 `onTurnEndNotify` 选项。
 
 你的半场：收 webhook → 验签 → 把 `endUserId` 映射到设备推送令牌 → 发一条只携 `sessionId` 的推送 data 消息 → App 点击后经 SDK 既有三级链恢复（进程还在 → L1；进程已死 → 冷启 resume 即 L3）。全程不涉及新 SDK API。

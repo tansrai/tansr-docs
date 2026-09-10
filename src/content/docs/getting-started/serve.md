@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露 `/v2` 多会话 REST + SSE 协议面，对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。
@@ -155,7 +155,7 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## 命令行形态的 serve
 
-`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面也挂进命令行形态，**即将随 tansr 命令行 0.5.0 提供**；在此之前多租户 `/v2` 请走上文的 npm 嵌入形。
+`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面也挂进命令行形态，**tansr 命令行 0.6.0 已提供**；也可继续使用上文的 `@tansr/serve@0.8.0` npm 嵌入形。
 
 ## 下一步
 

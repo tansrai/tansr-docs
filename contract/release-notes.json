@@ -1,7 +1,9 @@
 {
   "cli": {
-    "0.5.0": {
+    "0.6.0": {
       "added": [
+        "任务执行中可追加文本要求：TUI 补充入口、ACP 扩展与 headless 控制帧共用同一目标轮；不隐式中断或另开一轮。",
+        "退出观察覆盖查询、MCP、子任务与记忆工作的真实收尾；业务终态不再被当作资源完成。",
         "`tansr serve --v2`(或环境变量 `TANSR_SERVE_V2=1`)可显式开启 /v2 接口面;默认关闭,行为不变。`/healthz` 与 `/readyz` 探针始终可用。",
         "`doctor` 输出新增「被忽略的配置段」逐条提示、沙箱 `env` 归因行,并显示 `http.allowedAuthEnvVars` 的生效来源(用户层 / 托管层 / 组织远程下发)。",
         "npm 包与单文件可执行版随附 `NOTICE`(内联第三方依赖的名称、版本与许可全文)。",
@@ -9,6 +11,7 @@
         "每个子命令都有自己的帮助:`tansr <命令> --help` 打印该命令的用途、旗标表与示例(如 `tansr serve --help`);`tansr --help` 的命令列表补齐全部 16 个子命令。旧用法不变。"
       ],
       "changed": [
+        "平台系统提示词在下一显式新轮前刷新；轮内追加保持当前提示词快照、权限与预算。",
         "出网请求(WebFetch / Http / hooks / 音频下载)统一经一处出口,并在 DNS 解析后拦截私网、环回与链路本地地址:指向内网或云元数据地址的抓取会被拒绝并给出原因。",
         "Http 工具与 hooks 的 `auth` 只能引用 `~/.tansr/settings` 中 `http.allowedAuthEnvVars` 名单内的环境变量;名单外不再发请求(错误码 `auth_env_not_allowed`)。迁移:把原先在 `auth` 里引用的变量名加进该名单;该段只在用户层生效,项目层写入会被忽略。",
         "携带凭据的 Http 调用在所有权限模式下都会征求确认,不再被 `auto` / `acceptEdits` / `bypass` 放行;确认卡新增「安全层」理由行。",
@@ -23,13 +26,22 @@
         "会话锁在持锁进程存活期间不再被抢占;只读操作不再清理他人的锁。"
       ],
       "fixed": [
+        "异步收束边界收到的新输入不会被漏掉；注入上限不会把未进入历史的文本误记为已消费。",
         "读取图片改按当前模型的能力判定:支持图片输入的模型可正常读取,此前在 serve / acp / SDK 面一律拒绝且提示文案有误(误称「模型不支持」)。",
         "单个损坏的快照不再让整个会话的快照列表报错;快照清理不再误删其他快照。",
         "超过整读上限的大文件改为分页流式读取,不再整读进内存。",
         "四个宿主入口(serve / acp / mcp-serve / headless)对未处理的 Promise 拒绝有了统一兜底,不再静默吞掉或直接崩溃。",
         "套餐配额被拒时,错误会明确标注为套餐范围(`detail.scope = 'plan'`),便于端上区分处理。",
         "机器放行的工具调用也会记录到审计事件流(此前只记录拒绝)。"
-      ]
+      ],
+      "note": "本版 npm 包已发布，包含此前未单独发布的 0.5.0 候选能力。单文件可执行版与移动端安装包的发布、签名和真机验收另行确认。",
+      "date": "2026-09-10"
+    },
+    "0.5.0": {
+      "added": [],
+      "changed": [],
+      "fixed": [],
+      "note": "历史候选，未单独发布；相关能力与兼容变化并入 0.6.0，请参阅该版说明。"
     },
     "0.4.0": {
       "date": "2026-09-06",
@@ -73,8 +85,11 @@
     }
   },
   "sdk": {
-    "0.12.0": {
+    "0.13.0": {
       "added": [
+        "AgentSession 新增同轮文本投递、目标与能力发现、状态查询接口；accepted 表示内存接纳，consumed 表示已进入历史，均不代表模型完成。",
+        "`session.drain()`、`session.closeAsync()` 与可等待的 MCP 关闭用于观察真实资源完成；超时后仍可继续等待，不把逻辑关闭当成清理完成。",
+        "`query()` 可显式装配 MCP 和 skills，与多轮会话共用装配能力。",
         "应用系统提示词支持平台配置：默认 fallback 在 SDK 未传 system 时使用平台段；可选 prepend 保留平台段在前，即使 SDK 显式传入空数组。需要配套 API 与 SDK 版本。",
         "systemAppend 可追加宿主指南而不覆盖平台默认；AgentSession.applicationPrompt 提供只读来源与策略摘要，不含正文。低阶 runAgent 可手动使用 resolveApplicationSystem 组合已验证的配置。平台提示词与策略在后续新一轮前刷新，当前执行轮固定，会话与历史保留。",
         "`zeroAppCapabilities(platform)`、`AppBundle.capabilitiesIssues`、`PlatformWarning.detail`:capabilities 段解析失败时可拿到具体问题。",
@@ -89,6 +104,8 @@
         "类型 `AssembleToolingAdjudication`。"
       ],
       "changed": [
+        "同轮追加仅支持文本与内存 ACK；持久投递和原生多媒体追加明确不支持。结果仅保留当前及上一轮，不能作为永久去重保证。",
+        "公开 API 的 IDE 悬停说明和类型文档面向使用者改写，导出集与签名不因注释整理改变。",
         "`permission.mode` 与默认注入的裁决人不再互斥抛错:显式给了 `permission.mode` 即视为「自管模式」,裁决人不装,并经 `onPlatformWarning` / `onWarning` 通报 `adjudicator_skipped_by_mode`;显式 `adjudication` 与 `permission.mode` 同现仍抛 `invalid_options`。要静默自管:`adjudication: { enabled: false }`。",
         "未接 `permission.askUser`、且裁决人未授予资格档的会话不再切换到 `auto` 模式:工作区内写 / 删从自动放行变为征求确认(无通道即拒绝,`decisionSource: 'policy'`)。要保留放行:在控制台为应用的裁决人授予资格档(≥ low),或接入 `permission.askUser`。",
         "机器放行也会发出 `tool.permission.decided` 事件(`decisionSource: 'classifier'`;模式放行对非只读调用为 `'mode'`),`onDecision` 形不变。",
@@ -102,10 +119,19 @@
         "平台 bundle 缓存键改为四维(基址 / 应用 / 径别 / 能力位),不同径别或能力位组合不再串档。"
       ],
       "fixed": [
+        "会话初始化失败会尝试释放已装配的自有 MCP 资源；持久化与用户回调同时失败时保留两类错误。",
         "读取图片改按当前模型能力放行(`setModel` 热切换即时生效);此前 SDK 面一律拒绝且提示文案有误。",
         "分叉出的会话读历史分页时 `total` 少一。",
         "权限门重判改为按替换后参数的真实归因判定;hook 明示 `ask` 不再被裁决人代批;两处重判不再重跑 hooks 或二次咨询。"
-      ]
+      ],
+      "note": "本版 npm 包已发布，包含此前未单独发布的 0.12.0 候选能力。单文件可执行版与移动端安装包的发布、签名和真机验收另行确认。",
+      "date": "2026-09-10"
+    },
+    "0.12.0": {
+      "added": [],
+      "changed": [],
+      "fixed": [],
+      "note": "历史候选，未单独发布；相关能力与兼容变化并入 0.13.0，请参阅该版说明。"
     },
     "0.11.1": {
       "date": "2026-09-06",
@@ -130,18 +156,22 @@
     }
   },
   "serve": {
-    "0.7.0": {
+    "0.8.0": {
       "added": [
+        "`/v2` 新增输入能力发现、严格同轮文本投递与状态查询接口，绑定会话、历史代际和目标轮；旧 messages 接口保持兼容。",
+        "`ServerHandle.settleResources()` 可等待真实资源收尾，与原有关闭及业务排水分开。",
         "应用系统提示词按平台 fallback / prepend 策略与 platform.system 组合；platform.systemAppend 追加宿主说明。Android / iOS 仍通过 /v2 发送普通用户消息，不新增客户端 system 入口；后续新一轮前刷新平台提示词与策略，当前执行轮固定，历史保留。需要配套 API 与 serve 版本。",
         "就绪帧 `TANSR_READY {json}` 与 `/readyz` 探针(`/healthz` / `/readyz` 在 CLI 入口始终开启);建会返回 429 / 503 时携 `Retry-After`。部署件探针建议由 `/healthz` 改为 `/readyz`。",
         "会话保留期:`sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }` 与 `store.sweepRetention`;环境变量 `TANSR_SERVE_SESSION_MAX_AGE_DAYS` / `TANSR_SERVE_SESSION_MAX_PER_END_USER`;保留天数可按组织在平台配置的值生效,缺省 30 天。",
         "轮末 webhook 出站:环境变量 `TANSR_SERVE_NOTIFY_URL` / `TANSR_SERVE_NOTIFY_SECRET`,`tansr serve --v2` 进程可直接发送;签名双版本 `x-tansr-signature: v2=…, v1=…`,可配 `webhook.signatureVersions`;导出 `signWebhookDelivery`。",
-        "指标暴露独立开关 `TANSR_SERVE_EXPOSE_METRICS`;就绪帧输出流选择 `TANSR_SERVE_READY_STREAM`;运维环境变量表增至 30 键,`.env.example` 与 README 由表生成。",
+        "指标暴露独立开关 `TANSR_SERVE_EXPOSE_METRICS`;就绪帧输出流选择 `TANSR_SERVE_READY_STREAM`;运维环境变量以当前公开表为准,`.env.example` 与 README 由表生成。",
         "新导出:`installProcessGuards` 一族、`V2_ROUTE_TABLE` / `V2_SESSION_ACTIONS`、就绪帧解析与格式化函数、`ReplayGapNotice.reason`、`PermissionReceiptSchema.reason`、`AgentSessionFactory.sweepRetention`、`AppTokenMinter.invalidate`、`SECRET_WARNING_VALUE` 等(均为可选,缺席即现状)。",
         "新指标 `tansr_serve_pump_errors_total` / `tansr_serve_token_invalidations_total{reason}`;新日志事件 `process.unhandled_rejection` / `process.uncaught_exception` / `process.drain_failed` / `store.error` / `session.retention_swept` / `bridge.permission_receipt`。",
         "tarball 随附 `NOTICE`(内联第三方依赖的名称、版本与许可文本)。"
       ],
       "changed": [
+        "丢失输入响应后先查询原输入状态，不通过隐式开启新轮重试；当前只支持文本与内存 ACK。",
+        "手机重连原会话后，下一显式新轮自动刷新平台提示词；轮中追加不刷新 system，也不改变权限、预算和会话归属。",
         "同一 `sessionId` 并发建会,后到者返回 200 并附着到已有会话(此前触发 500 并可能留下未处理拒绝)。",
         "/v2 错误信封的 `message` 改为固定文案,原始错误(含服务器本机路径)只进结构化日志;依赖 `message` 原文判因的客户端请改读 `error.code` / `detail`。",
         "/v2 事件泵抛错即关闭驱动(`driver.status()` 为 `'ended'`),不再静默挂起。",
@@ -149,7 +179,7 @@
         "会话落盘失败不再只进日志,改以可恢复的 `turn.error{ recoverable: true, scope: 'server.persistence' }` 出线;端侧按 `recoverable` 位区分咨询与失败。",
         "客户端超前订阅(`afterSeq` 大于日志末序)也会收到 gap 帧,`reason` 为 `'ahead_of_log'`。",
         "控制帧一律携 `ts`;`server.tool.request` / `permission.request` / `question.request` 携 `ttlMs`;权限请求的应答(`PermissionReceipt`)可带 `reason`(目前仅 `expired_on_arrival`)。",
-        "指标与日志的 `route` 标签值集按新路由表变动(9 条),仪表板与告警请随动。",
+        "指标与日志的 `route` 标签值集按当前公开路由表变动,仪表板与告警请随动。",
         "缓存的应用令牌收到 401 且属失效码时自动逐出、重铸并重试一次;失效码集与 SDK 同源。",
         "bundle 缓存键改为四维(基址 / 应用 / 径别 / 能力位);自实现 bundle 缓存的宿主请按四维键对齐。",
         "裁决装配与 SDK 同源:未接确认通道且裁决人未授予资格档的会话不再切换到 `auto` 模式,工作区内写 / 删改为征求确认(无通道即拒绝);机器放行帧 `tool.permission.decided` 经既有通道出线。",
@@ -157,9 +187,18 @@
         "库内不再自行挂载进程级兜底;自托管 `@tansr/serve` 的宿主须在入口调用 `installProcessGuards`(`tansr serve` 已内置),否则未处理拒绝按 Node 缺省行为崩溃(与 0.6.x 相同,无回归)。"
       ],
       "fixed": [
+        "服务关闭时保持原有 readiness 语义并拒绝新建会话；真实资源等待保留旧句柄的兼容边界。",
         "分叉会话读历史分页时 `total` 偏 1 导致翻页漏项。",
         "运行时外部依赖声明与实际打包一致(`zod`),包内说明文字同步订正。"
-      ]
+      ],
+      "note": "本版 npm 包已发布，包含此前未单独发布的 0.7.0 候选能力。单文件可执行版与移动端安装包的发布、签名和真机验收另行确认。",
+      "date": "2026-09-10"
+    },
+    "0.7.0": {
+      "added": [],
+      "changed": [],
+      "fixed": [],
+      "note": "历史候选，未单独发布；相关能力与兼容变化并入 0.8.0，请参阅该版说明。"
     },
     "0.6.1": {
       "date": "2026-09-06",

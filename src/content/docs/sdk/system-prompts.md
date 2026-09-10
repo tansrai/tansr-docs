@@ -20,10 +20,10 @@ sources:
   - tansr-cli:packages/sdk/src/run-agent.ts
   - tansr-cli:packages/server/src/v2/agent-session-factory.ts
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
-本文对应开发中的应用提示词与拼接策略功能，**不代表 npm 包或线上平台已发布**。使用前需部署支持该字段的 API，并使用同时支持 `systemPromptPolicy`、`systemAppend` 与 `applicationPrompt` 的 SDK / serve 构建；旧版本可能忽略平台段或不支持策略。不要仅凭包名或既有版本号判断支持情况。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 与 `@tansr/serve@0.8.0`。应用提示词还需要支持 `systemPromptPolicy` 的 API；SDK / serve 须同时支持 `systemAppend` 与 `applicationPrompt`。旧版本可能忽略平台段或不支持策略，不能仅凭平台已配置判断客户端支持。
 
 应用管理员可以在控制台「应用 → 概览 → 应用系统提示词」集中维护角色、回答风格和业务指引。开发者也可以在 SDK 中传入 `system`。两种来源可以独立使用，或由平台设置选择拼接。
 

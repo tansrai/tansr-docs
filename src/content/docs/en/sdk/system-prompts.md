@@ -20,10 +20,10 @@ sources:
   - tansr-cli:packages/sdk/src/run-agent.ts
   - tansr-cli:packages/server/src/v2/agent-session-factory.ts
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
-This guide describes application prompt composition under development. **It does not claim that the npm packages or production platform have shipped this feature.** Deploy an API that supports these fields and use SDK / serve builds that support `systemPromptPolicy`, `systemAppend`, and `applicationPrompt` together. Older consumers may ignore the platform prompt or lack the policy; an existing package version alone is not proof of support.
+This guide covers `@tansr/sdk@0.13.0` and `@tansr/serve@0.8.0`. These versions are published on npm. Application prompts also require an API that supports `systemPromptPolicy`, and SDK / serve builds that support `systemAppend` and `applicationPrompt`. Older consumers may ignore the platform prompt or lack the policy. Configuring a prompt on the platform alone does not establish client support.
 
 Application managers maintain a shared role, response style, and business guidance in **Applications → Overview → Application system prompt**. Developers can also supply `system` in code. The platform policy decides how those sources combine.
 

@@ -17,7 +17,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 `@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。
@@ -82,7 +82,7 @@ process.on('SIGINT', shutdown);
 
 部署件口径：容器 `stop_grace_period` / Kubernetes `terminationGracePeriodSeconds` / systemd `TimeoutStopSec` 统一 **45 s**（≥ drain 超时 + 15 s）。容器 `CMD` 用 exec 形（JSON 数组）或 `--init`，不要 `sh -c "node …"`（sh 当 PID 1 不转发信号）。Windows 上 `SIGTERM` 可注册但系统不会发出，本机开发以 Ctrl+C 收束。
 
-进程级兜底：引擎导出 `installProcessGuards({ logger, onFatal })` 供宿主入口安装一次，任何逃逸到进程级的拒绝 / 异常恒记一条结构化事件后按策略 `log` 或 `drain-exit`。**即将随 @tansr/serve 0.7.0 提供**；在此之前请自行挂 `unhandledRejection` / `uncaughtException`。
+进程级兜底：引擎导出 `installProcessGuards({ logger, onFatal })` 供宿主入口安装一次，任何逃逸到进程级的拒绝 / 异常恒记一条结构化事件后按策略 `log` 或 `drain-exit`。**@tansr/serve 0.8.0 已提供**；嵌入式宿主按上述接口接入，旧包仍需自行处理进程级异常。
 
 ## 观测端点与暴露纪律
 
@@ -122,4 +122,4 @@ tansr serve --port 8080 --host 0.0.0.0 --token my-secret
 TANSR_SERVE_TOKEN=my-secret tansr serve          # token 走环境变量
 ```
 
-`--token` 与 `TANSR_SERVE_TOKEN` 皆缺即用法错误拒启；缺省仅回环监听，外部接入须显式 `--host 0.0.0.0`；全部端点要求 `Authorization: Bearer <token>`，未带或不匹配一律 401。它是「一容器一智能体实例」的 `/v1` 形态（参考模板 `deploy/serve/`），无询问通道，权限落到「询问」时降级拒绝。放权（`defaultMode: "auto"`）要用环境隔离兜底：容器或最小权限专用用户；文件系统写面限工作目录；网络出口白名单。`tansr doctor` 的「无人值守基线」检查会在 `auto` 且探测不到隔离迹象时给显著提示（不阻断）；确认已隔离后设 `TANSR_ISOLATED=1` 压制提示。`tansr serve --v2` 把 `/v2` 面挂进命令行形态（同一 Bearer + `x-tansr-end-user` 头自报分域），**即将随 tansr 命令行 0.5.0 提供**。
+`--token` 与 `TANSR_SERVE_TOKEN` 皆缺即用法错误拒启；缺省仅回环监听，外部接入须显式 `--host 0.0.0.0`；全部端点要求 `Authorization: Bearer <token>`，未带或不匹配一律 401。它是「一容器一智能体实例」的 `/v1` 形态（参考模板 `deploy/serve/`），无询问通道，权限落到「询问」时降级拒绝。放权（`defaultMode: "auto"`）要用环境隔离兜底：容器或最小权限专用用户；文件系统写面限工作目录；网络出口白名单。`tansr doctor` 的「无人值守基线」检查会在 `auto` 且探测不到隔离迹象时给显著提示（不阻断）；确认已隔离后设 `TANSR_ISOLATED=1` 压制提示。`tansr serve --v2` 把 `/v2` 面挂进命令行形态（同一 Bearer + `x-tansr-end-user` 头自报分域），**tansr 命令行 0.6.0 已提供**。

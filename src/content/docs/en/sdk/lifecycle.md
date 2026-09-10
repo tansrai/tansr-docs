@@ -13,7 +13,7 @@ sources:
 lastVerified: '2026-09-10'
 ---
 
-These additive APIs describe the current development source and require compatible SDK and serve releases. A terminal event and completed resource cleanup are separate milestones.
+This guide covers `@tansr/sdk@0.13.0` and `@tansr/serve@0.8.0`. These versions are published on npm. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
 
 | Operation | Contract |
 | --- | --- |

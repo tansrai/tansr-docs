@@ -62,7 +62,7 @@ try {
 | `tool.completed { isError: true }` | 工具跑完但结果是错误 | 媒体四工具的供应商失败与超时走这一形；`data.errorCode` 携平台码 |
 | `tool.permission.decided { allow: false, decisionSource }` | 权限拒绝 | `policy` = 没接 `askUser` 的 fail-closed 拒绝；接上 `permission.askUser` 或调整规则 |
 
-`turn.error.detail` 是可选结构化位。**即将随 SDK 0.12.0 提供**：平台套餐四码携 `detail: { scope: 'plan' }`，与会话服务 HTTP 面的 `error.detail.scope` 同键同值，便于端上区分「本机限流」与「套餐配额」。
+`turn.error.detail` 是可选结构化位。**SDK 0.13.0 已提供**：平台套餐四码携 `detail: { scope: 'plan' }`，与会话服务 HTTP 面的 `error.detail.scope` 同键同值，便于端上区分「本机限流」与「套餐配额」。
 
 ## 第三类：平台网关错误码
 

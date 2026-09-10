@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes the `/v2` multi-session REST + SSE protocol surface; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance.
@@ -155,7 +155,7 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## serve in CLI form
 
-`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2`, which mounts the `/v2` surface in the CLI form as well, is **coming in tansr CLI 0.5.0**; until then, use the npm embedding above for multi-tenant `/v2`.
+`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2`, which mounts the `/v2` surface in the CLI form as well, is **available in tansr CLI 0.6.0**. The `@tansr/serve@0.8.0` npm embedding above remains available.
 
 ## Next steps
 

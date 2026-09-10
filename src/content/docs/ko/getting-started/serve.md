@@ -155,7 +155,7 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## CLI 형태의 serve
 
-`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로, **tansr CLI 0.5.0에서 제공 예정**입니다. 그 전까지 다중 테넌트 `/v2`는 위의 npm 내장 형태를 사용하세요.
+`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로, **tansr CLI 0.6.0에서 사용할 수 있습니다**. 위의 `@tansr/serve@0.8.0` npm 내장 형태도 계속 사용할 수 있습니다.
 
 ## 다음 단계
 

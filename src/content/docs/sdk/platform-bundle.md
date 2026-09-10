@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。
@@ -103,9 +103,9 @@ bundle 解析与装配期的非致命事实经 `createSession({ onPlatformWarnin
 |---|---|
 | `app_platform_mismatch` | 应用平台类型与接入形态不符 |
 | `tools_platform_deprecated` | 用了 `tools.platform` 旧别名 |
-| `capabilities_unparsed` | bundle `capabilities` 段在场却解析失败（`detail.issues` 携 zod 问题）。**即将随 SDK 0.12.0 提供**：该形回落零能力档（`tools` 全 false），不再回落缺省档；当前 0.11.x 回落缺省档 |
+| `capabilities_unparsed` | bundle `capabilities` 段在场却解析失败（`detail.issues` 携 zod 问题）。**SDK 0.13.0 已提供**：该形回落零能力档（`tools` 全 false），不再回落缺省档；0.11.x 曾回落缺省档 |
 | `adjudicator_unavailable` / `adjudicator_model_unavailable` / `adjudicator_budget_exhausted` / `adjudicator_breaker_tripped` | 裁决人缺席 / 模型不可用 / 预算耗尽 / 熔断 |
-| `adjudicator_skipped_by_mode` | 显式 `permission.mode` 导致裁决人不装。**即将随 SDK 0.12.0 提供**——当前 0.11.x 下 `permission.mode` 与缺省裁决人同现会 throw `invalid_options`，迁移方式是删 `permission.mode` 或传 `adjudication: { enabled: false }` |
+| `adjudicator_skipped_by_mode` | 显式 `permission.mode` 导致裁决人不装。**SDK 0.13.0 已提供**：显式 `permission.mode` 采用自管模式并发出该通报；显式 `adjudication` 与模式同时设置仍拒绝。0.11.x 的缺省裁决人与模式冲突限制已收回 |
 
 ## 计量与对账
 
