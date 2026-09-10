@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 /**
- * 多语言覆盖率页生成器(资料站 DS-19)。
+ * 多语言覆盖率页生成器(资料站 DS-19;两口径 DS-29)。
  *   扫 src/content/docs/**(zh-CN 根 + en/**)的 slug 集 → src/content/docs/releases/i18n-coverage.md
  *   表:slug / zh-CN ✓ / en ✓|回落;附 src/lib/glossary.mjs 术语表。
+ *
+ * 两口径(DS-29):覆盖率主表只以**手写页**(frontmatter `generated !== true` 的根页)为分母——翻译进度只看人写的文章;
+ *   生成页(sdk/api 导出参考、错误码表、命令参考、环境变量表、发布说明;覆盖率页自身不进表)随契约再生、不逐篇翻译,
+ *   在主表单独一行只报数量、不计覆盖率;逐页表保留全部行,生成页归到末尾 `<details>` 折叠段。
+ *   `summary` 同时保留全部根页口径(`total` / `summary[locale]`,旧算法)供对照;`stats` 的语言计数走主口径(手写页)。
  *
  * 事实源是本仓内容集合本身(不读 contract/),lastVerified 取全部被扫文章 lastVerified 的最大值(不凭空造日期,`--check` 跨日零 diff)。
  *
@@ -60,9 +65,17 @@ export function readMeta(text) {
   return meta;
 }
 
+/** 手写页 = 根页 frontmatter 无 `generated: true`(生成页随契约再生,不逐篇翻译,不计覆盖率) */
+export function isHandwritten(row) {
+  return row.generated !== true;
+}
+
 /**
- * 覆盖模型:{ locales: ['en'], rows: [{ slug, title, root: true, en: true|false }], summary: { total, en: n } , lastVerified }
+ * 覆盖模型:{ locales: ['en'], rows: [{ slug, title, root: true, generated, translated: { en: '<title>' } }], orphans,
+ *   summary: { total, handwritten, generated, <locale>: n, byScope: { handwritten: { <locale>: n }, generated: { <locale>: n } } }, lastVerified }
  * 只以根语言(zh-CN)的 slug 集为分母;en 独有的 slug(无对应根页)另列 orphan。
+ * 两口径:`handwritten`(主表分母)= generated !== true 的根页数;`total` / `summary[locale]` = 全部根页口径(旧算法,供对照);
+ *   `byScope.handwritten[locale]` 是主表分子,`byScope.generated[locale]` 只报数量。
  */
 export function buildCoverage(root, generated = []) {
   const locales = Object.keys(EXTRA_LOCALES);
@@ -102,8 +115,15 @@ export function buildCoverage(root, generated = []) {
     if (row.root) rows.push(row);
     else orphans.push(row);
   }
-  const summary = { total: rows.length };
-  for (const l of locales) summary[l] = rows.filter((r) => r.translated[l] !== undefined).length;
+  const handwrittenRows = rows.filter(isHandwritten);
+  const generatedRows = rows.filter((r) => !isHandwritten(r));
+  const summary = { total: rows.length, handwritten: handwrittenRows.length, generated: generatedRows.length, byScope: { handwritten: {}, generated: {} } };
+  const translatedIn = (list, l) => list.filter((r) => r.translated[l] !== undefined).length;
+  for (const l of locales) {
+    summary[l] = translatedIn(rows, l);
+    summary.byScope.handwritten[l] = translatedIn(handwrittenRows, l);
+    summary.byScope.generated[l] = translatedIn(generatedRows, l);
+  }
   return { locales, rows, orphans, summary, lastVerified: lastVerified || '1970-01-01' };
 }
 
@@ -115,13 +135,26 @@ function hrefFor(slug) {
   return slug === '' ? '/' : `/${slug}/`;
 }
 
+/** 逐页表(表头 + 行);生成页标题带「(生成页)」后缀 */
+function pageTable(rows, locales) {
+  const out = [`| 页面 | ${ROOT_LOCALE.lang} | ${locales.map((l) => `\`${l}\``).join(' | ')} |`, `|---|---|${locales.map(() => '---').join('|')}|`];
+  for (const r of rows) {
+    const name = r.generated ? `${cell(r.title)}(生成页)` : cell(r.title);
+    const cells = locales.map((l) => (r.translated[l] !== undefined ? `✓ [${cell(r.translated[l])}](/${l}${hrefFor(r.slug)})` : '回落'));
+    out.push(`| [${name}](${hrefFor(r.slug)}) \`${r.slug === '' ? '/' : r.slug}\` | ✓ | ${cells.join(' | ')} |`);
+  }
+  return out;
+}
+
 export function render(cov) {
   const { locales, rows, orphans, summary } = cov;
+  const handwrittenRows = rows.filter(isHandwritten);
+  const generatedRows = rows.filter((r) => !isHandwritten(r));
   const out = [];
   out.push(
     frontmatter({
       title: '多语言覆盖率',
-      description: `资料站各语言的翻译进度:${rows.length} 篇中文文章中 ${locales.map((l) => `${EXTRA_LOCALES[l].label} ${summary[l]} 篇`).join('、')};未翻译的页面显示中文原文并提示。附中英术语表。`,
+      description: `资料站各语言的翻译进度:${summary.handwritten} 篇手写文章中 ${locales.map((l) => `${EXTRA_LOCALES[l].label} ${summary.byScope.handwritten[l]} 篇`).join('、')};另有 ${summary.generated} 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。`,
       zone: 'docs',
       category: 'releases',
       lastVerified: cov.lastVerified,
@@ -134,18 +167,25 @@ export function render(cov) {
   out.push('');
   out.push('## 覆盖率');
   out.push('');
-  out.push('| 语言 | 已翻译 / 总数 | 覆盖率 |');
+  out.push('覆盖率只统计手写文章。由脚本从契约副本生成的页面(SDK 导出参考、错误码表、命令参考、环境变量表、发布说明)随源再生、不逐篇翻译,只报数量,不计入覆盖率。');
+  out.push('');
+  out.push('| 语言 | 已翻译 / 手写页 | 覆盖率 |');
   out.push('|---|---|---|');
-  for (const l of locales) out.push(`| ${EXTRA_LOCALES[l].label}(\`${l}\`) | ${summary[l]} / ${summary.total} | ${pct(summary[l], summary.total)} |`);
+  for (const l of locales) out.push(`| ${EXTRA_LOCALES[l].label}(\`${l}\`) | ${summary.byScope.handwritten[l]} / ${summary.handwritten} | ${pct(summary.byScope.handwritten[l], summary.handwritten)} |`);
+  out.push(`| 生成页(不计覆盖率) | ${summary.generated} | — |`);
   out.push('');
   out.push('## 逐页');
   out.push('');
-  out.push(`| 页面 | ${ROOT_LOCALE.lang} | ${locales.map((l) => `\`${l}\``).join(' | ')} |`);
-  out.push(`|---|---|${locales.map(() => '---').join('|')}|`);
-  for (const r of rows) {
-    const name = r.generated ? `${cell(r.title)}(生成页)` : cell(r.title);
-    const cells = locales.map((l) => (r.translated[l] !== undefined ? `✓ [${cell(r.translated[l])}](/${l}${hrefFor(r.slug)})` : '回落'));
-    out.push(`| [${name}](${hrefFor(r.slug)}) \`${r.slug === '' ? '/' : r.slug}\` | ✓ | ${cells.join(' | ')} |`);
+  out.push(...pageTable(handwrittenRows, locales));
+  if (generatedRows.length) {
+    // 折叠段:<summary> 后空一行,CommonMark 才把其后的表当 Markdown 解析(与 releases 生成页同形)
+    out.push('');
+    out.push('<details>');
+    out.push(`<summary>生成页(${generatedRows.length},不计覆盖率)</summary>`);
+    out.push('');
+    out.push(...pageTable(generatedRows, locales));
+    out.push('');
+    out.push('</details>');
   }
   if (orphans.length) {
     out.push('');
@@ -168,7 +208,10 @@ export function render(cov) {
 
 export function generate(root, generated = []) {
   const cov = buildCoverage(root, generated);
-  return [{ rel: OUT_REL, content: render(cov), stats: { total: cov.summary.total, ...Object.fromEntries(cov.locales.map((l) => [l, cov.summary[l]])), glossary: GLOSSARY.length } }];
+  const { summary } = cov;
+  // stats 的语言计数走主口径(手写页);total / handwritten / generated 三数同报
+  const perLocale = Object.fromEntries(cov.locales.map((l) => [l, summary.byScope.handwritten[l]]));
+  return [{ rel: OUT_REL, content: render(cov), stats: { total: summary.total, handwritten: summary.handwritten, generated: summary.generated, ...perLocale, glossary: GLOSSARY.length } }];
 }
 
 if (isMainModule(import.meta.url)) runGenerator({ generate, SCRIPT });

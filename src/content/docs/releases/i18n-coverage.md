@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:536 篇中文文章中 English 13 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:24 篇手写文章中 English 13 篇;另有 512 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-09-10'
@@ -12,9 +12,12 @@ generated: true
 
 ## 覆盖率
 
-| 语言 | 已翻译 / 总数 | 覆盖率 |
+覆盖率只统计手写文章。由脚本从契约副本生成的页面(SDK 导出参考、错误码表、命令参考、环境变量表、发布说明)随源再生、不逐篇翻译,只报数量,不计入覆盖率。
+
+| 语言 | 已翻译 / 手写页 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 13 / 536 | 2.4% |
+| English(`en`) | 13 / 24 | 54.2% |
+| 生成页(不计覆盖率) | 512 | — |
 
 ## 逐页
 
@@ -22,15 +25,36 @@ generated: true
 |---|---|---|
 | [tansr 资料站](/) `/` | ✓ | 回落 |
 | [Android 接入指南](/android/) `android` | ✓ | 回落 |
-| [CLI 命令参考(生成页)](/cli/commands/) `cli/commands` | ✓ | 回落 |
 | [设置与 doctor](/cli/settings-and-doctor/) `cli/settings-and-doctor` | ✓ | 回落 |
-| [错误码参考(生成页)](/errors/codes/) `errors/codes` | ✓ | 回落 |
 | [快速开始：选一条路，5 分钟跑通](/getting-started/) `getting-started` | ✓ | ✓ [Getting started: pick a path, run in 5 minutes](/en/getting-started/) |
 | [Android 与 iOS 5 分钟跑通](/getting-started/android/) `getting-started/android` | ✓ | ✓ [Android and iOS in 5 minutes](/en/getting-started/android/) |
 | [命令行 5 分钟跑通](/getting-started/cli/) `getting-started/cli` | ✓ | ✓ [CLI in 5 minutes](/en/getting-started/cli/) |
 | [Node SDK 5 分钟跑通](/getting-started/sdk/) `getting-started/sdk` | ✓ | ✓ [Node SDK in 5 minutes](/en/getting-started/sdk/) |
 | [会话服务 5 分钟跑通](/getting-started/serve/) `getting-started/serve` | ✓ | ✓ [Session service in 5 minutes](/en/getting-started/serve/) |
 | [iOS 接入指南](/ios/) `ios` | ✓ | 回落 |
+| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 |
+| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 |
+| [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) |
+| [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) |
+| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 |
+| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 |
+| [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) |
+| [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) |
+| [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 |
+| [保留期与治理](/serve/retention-and-governance/) `serve/retention-and-governance` | ✓ | 回落 |
+| [v2 协议与 webhook](/serve/v2-and-webhooks/) `serve/v2-and-webhooks` | ✓ | 回落 |
+| [帮助中心](/support/) `support` | ✓ | ✓ [Help center](/en/support/) |
+| [账号、密钥、套餐与计费](/support/account/) `support/account` | ✓ | ✓ [Account, keys, plans and billing](/en/support/account/) |
+| [联系支持](/support/contact/) `support/contact` | ✓ | ✓ [Contact support](/en/support/contact/) |
+| [排障指南](/support/troubleshooting/) `support/troubleshooting` | ✓ | ✓ [Troubleshooting](/en/support/troubleshooting/) |
+
+<details>
+<summary>生成页(512,不计覆盖率)</summary>
+
+| 页面 | zh-CN | `en` |
+|---|---|---|
+| [CLI 命令参考(生成页)](/cli/commands/) `cli/commands` | ✓ | 回落 |
+| [错误码参考(生成页)](/errors/codes/) `errors/codes` | ✓ | 回落 |
 | [@tansr/cli Changelog(生成页)](/releases/cli/) `releases/cli` | ✓ | 回落 |
 | [@tansr/sdk Changelog(生成页)](/releases/sdk/) `releases/sdk` | ✓ | 回落 |
 | [@tansr/serve Changelog(生成页)](/releases/serve/) `releases/serve` | ✓ | 回落 |
@@ -540,22 +564,9 @@ generated: true
 | [VIDEOGEN_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/videogen_tool_timeout_ms/) `sdk/api/variables/videogen_tool_timeout_ms` | ✓ | 回落 |
 | [VideoGenArgsSchema(生成页)](/sdk/api/variables/videogenargsschema/) `sdk/api/variables/videogenargsschema` | ✓ | 回落 |
 | [VideoGenDataSchema(生成页)](/sdk/api/variables/videogendataschema/) `sdk/api/variables/videogendataschema` | ✓ | 回落 |
-| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 |
-| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 |
-| [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) |
-| [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) |
-| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 |
-| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 |
-| [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) |
-| [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) |
-| [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 |
 | [serve 环境变量(生成页)](/serve/env/) `serve/env` | ✓ | 回落 |
-| [保留期与治理](/serve/retention-and-governance/) `serve/retention-and-governance` | ✓ | 回落 |
-| [v2 协议与 webhook](/serve/v2-and-webhooks/) `serve/v2-and-webhooks` | ✓ | 回落 |
-| [帮助中心](/support/) `support` | ✓ | ✓ [Help center](/en/support/) |
-| [账号、密钥、套餐与计费](/support/account/) `support/account` | ✓ | ✓ [Account, keys, plans and billing](/en/support/account/) |
-| [联系支持](/support/contact/) `support/contact` | ✓ | ✓ [Contact support](/en/support/contact/) |
-| [排障指南](/support/troubleshooting/) `support/troubleshooting` | ✓ | ✓ [Troubleshooting](/en/support/troubleshooting/) |
+
+</details>
 
 ## 术语表
 
