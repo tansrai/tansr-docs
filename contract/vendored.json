@@ -30,15 +30,15 @@
     "vendoredAt": "2026-09-09"
   },
   "cli-help.json": {
-    "source": "tansr-cli@f32cfc08dde3:dist/tansr.mjs",
-    "revision": 1,
-    "sha256": "58eb62adc822b505c7d0cd38d48f661cfc0dbdae17208c63f07a36f2686d9e50",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-cli@b233ee387550:dist/tansr.mjs",
+    "revision": 2,
+    "sha256": "67ecce7f6fb6a0c8ca9ea91d39964a45b74d3370118a5110ccea3dbd823f09d2",
+    "vendoredAt": "2026-09-10"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@0ecdc516ea30:packages/sdk/dist/index.d.ts",
-    "revision": 3,
-    "sha256": "4d8d7839822aa5eb33adbd6482af43f0b86e622930dd3985f9e99a789e4ae814",
-    "vendoredAt": "2026-09-09"
+    "source": "tansr-cli@b233ee387550:packages/sdk/dist/index.d.ts",
+    "revision": 5,
+    "sha256": "065032b98fb49e02ced5ebc89316f11ad000271f593da8cc92f5665b0fa4af05",
+    "vendoredAt": "2026-09-10"
   }
 }

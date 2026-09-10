@@ -9,8 +9,8 @@ const root = repoRootFrom(import.meta.url);
 const vendored = JSON.parse(readFileSync(join(root, 'contract', 'vendored.json'), 'utf8'));
 const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
 
-/** 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(AP-SP 登记 489;vendored 更新时随之改)。 */
-export const EXPECTED_EXPORTS = 489;
+/** 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(INJ 在 ARC-01 的499上新增7个 SessionInput 类型)。 */
+export const EXPECTED_EXPORTS = 506;
 
 function fm(content) {
   const lines = content.split('\n');
@@ -19,9 +19,15 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 489(值 192 · 类型 297)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 506(值193 · 类型313)', () => {
   const c = countExports(dts);
-  assert.deepEqual(c, { values: 192, types: 297, total: EXPECTED_EXPORTS });
+  assert.deepEqual(c, { values: 193, types: 313, total: EXPECTED_EXPORTS });
+  const typeExports = dts.match(/^export type \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
+  assert.ok(typeExports, '须保留独立的类型导出行');
+  assert.deepEqual(typeExports.filter((name) => name.startsWith('SessionInput')).sort(), [
+    'SessionInputCapabilities', 'SessionInputContent', 'SessionInputReceipt', 'SessionInputRejectCode',
+    'SessionInputResult', 'SessionInputSubmission', 'SessionInputTarget',
+  ], 'INJ 仅新增这7个宿主输入类型;不以提高总数代替逐项登记');
   assert.deepEqual(countExports('export { A, B };\nexport type { C };\n'), { values: 2, types: 1, total: 3 });
   assert.deepEqual(countExports('declare const x: 1;\n'), { values: 0, types: 0, total: 0 });
 });

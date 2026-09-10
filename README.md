@@ -15,6 +15,8 @@ pnpm gate         # astro check · build · gen --check · lint:text · links ·
 pnpm vendor --api <tansr-api 检出> --cli <tansr-cli 检出>   # 更新 contract/ 副本(主线跑)
 ```
 
+构建依赖说明(INJ-DOC-01):Astro 7 的预渲染产物直接导入 `cookie`,因此本仓显式声明已锁定的 `cookie@2.0.1`,避免干净检出缺少依赖或解析到上级目录的旧版本。该修复不修改 vendored SDK / CLI / API 源内容,也不改变构建与验收门。
+
 ## 目录
 
 ```

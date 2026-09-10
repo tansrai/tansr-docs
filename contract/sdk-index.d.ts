@@ -8785,6 +8785,67 @@ interface AdjudicationOpinion {
     reason: string;
 }
 
+/**
+ * token 估算器接口(可替换缝)。
+ * 契约:三个方法都返回非负整数;estimateMessage ≥ Σ estimateBlock(消息定额
+ * 不为负)——账本按块分路时用两者之差归入 overhead 路。
+ * profileId(可选):估算配置指纹(系数集哈希)——测量结果与埋点携带,
+ * 系数漂移可观测(T-CTX06);自定义实现可缺省。
+ */
+interface TokenEstimator {
+    /** 估算配置指纹(可选;createDefaultEstimator 恒携带) */
+    readonly profileId?: string;
+    /** 纯文本估算(system 段、摘要文本等无块结构的文本) */
+    estimateText(text: string): number;
+    /** 单内容块估算(按块类型分派系数) */
+    estimateBlock(block: IRBlock): number;
+    /** 整条消息估算 = Σ estimateBlock + 消息定额 */
+    estimateMessage(message: IRMessage): number;
+}
+
+interface RequestBasis {
+    readonly key: string | undefined;
+    readonly system: IRSystemSegment[];
+    readonly tools: IRToolDef[];
+    readonly systemTokens: number;
+    readonly toolTokens: number;
+}
+
+interface ResourceSettleOptions {
+    /** 缺省30秒；0只观察，Infinity须显式给。超时不取消底层清理。 */
+    timeoutMs?: number;
+    /** 只取消此次等待，不abort查询、不影响其他等待者。 */
+    signal?: AbortSignal;
+}
+interface ResourceSettlementFailure {
+    /** 进程内稳定来源令牌；空对象只用于身份比较，不写协议/日志。 */
+    sourceId?: object;
+    /** 合并查询/压缩回执时标明局部operationId的来源；单scope回执可缺省。 */
+    scope?: 'query' | 'compaction';
+    operationId: number;
+    phase: 'model_stream' | 'tool_executor';
+    /** 原抛值（包括undefined）；调用方不得未经处理序列化到日志。 */
+    cause: unknown;
+}
+interface ResourceSettlementResult {
+    status: 'completed' | 'failed' | 'timeout' | 'cancelled';
+    pending: {
+        execution: number;
+        modelStreams: number;
+        toolExecutors: number;
+    };
+    /** 最近32项；累计失败事实不会因窗口滚动消失。 */
+    failures: readonly ResourceSettlementFailure[];
+    failureCount: number;
+    omittedFailures: number;
+    /** 每个真实scope的累计失败；旧第三方回执可缺席，由消费者提供稳定owner。 */
+    sources?: readonly ResourceSettlementSource[];
+}
+interface ResourceSettlementSource {
+    readonly sourceId: object;
+    readonly failureCount: number;
+}
+
 type AnchorSource = 'pin' | 'extracted';
 interface AnchorEntry {
     /** 单注册表内单调 id(`a<seq>`;/unpin 与列表的稳定句柄) */
@@ -8800,6 +8861,17 @@ interface AnchorEntry {
     estTokens: number;
 }
 
+/** MEM-08：仅对同主题同版本的记忆正文共享准入；来源开场不参与版本。 */
+interface AttachmentSemanticIdentity {
+    namespace: 'memory-topic';
+    /** 生产者已有读取路径的规范身份；不为去重另行扫描或realpath。 */
+    identity: string;
+    /** 实际加载正文（含as-of和截断状态）的sha256。不同版本不能相互引用。 */
+    version: string;
+    source: 'paths' | 'selector';
+    /** 只供引用说明；具体触达文件不参与主题版本去重键。 */
+    triggerPath?: string;
+}
 /** 附件输入(content 为拟注入的全文文本) */
 interface AttachmentInput {
     /** 附件类型(如 'file' / 'diagnostic' / 'todo' / 'task_notification') */
@@ -8807,6 +8879,7 @@ interface AttachmentInput {
     /** 来源标识(如文件绝对路径、任务 id) */
     sourceIdentity: string;
     content: string;
+    semanticIdentity?: AttachmentSemanticIdentity;
 }
 /** 三元签名(doc/07 §3.6⑦) */
 interface AttachmentSignature {
@@ -8932,24 +9005,6 @@ interface CompactionCalibrationDetail {
 }
 
 /**
- * token 估算器接口(可替换缝)。
- * 契约:三个方法都返回非负整数;estimateMessage ≥ Σ estimateBlock(消息定额
- * 不为负)——账本按块分路时用两者之差归入 overhead 路。
- * profileId(可选):估算配置指纹(系数集哈希)——测量结果与埋点携带,
- * 系数漂移可观测(T-CTX06);自定义实现可缺省。
- */
-interface TokenEstimator {
-    /** 估算配置指纹(可选;createDefaultEstimator 恒携带) */
-    readonly profileId?: string;
-    /** 纯文本估算(system 段、摘要文本等无块结构的文本) */
-    estimateText(text: string): number;
-    /** 单内容块估算(按块类型分派系数) */
-    estimateBlock(block: IRBlock): number;
-    /** 整条消息估算 = Σ estimateBlock + 消息定额 */
-    estimateMessage(message: IRMessage): number;
-}
-
-/**
  * T-C5 — token 六路账本(doc/07 §3.6①)
  *
  * 分路规格(doc/07 §3.6①):uncached / cacheRead / cacheWrite(cacheCreation)/
@@ -8957,7 +9012,8 @@ interface TokenEstimator {
  *
  * 「当前上下文占用」口径(doc/07 §3.1):取最近 assistant round 的
  * `input + cache_creation + cache_read`(provider 权威计量,**不含 output**)
- * + 锚点之后消息的本地估算尾部。无有效锚点(会话开头/锚点失效/刚压缩完)
+ * + 上次实发输入结束后消息的本地估算尾部（含上一 assistant）。无有效锚点
+ * (会话开头/锚点失效/刚压缩完)
  * 时退化为全量本地估算,整体记入 estimatedTail 路。
  *
  * cacheDeleted 路说明:contract-v0.4(T-C8 RFC)起 IRUsage 原生携带可选
@@ -8981,6 +9037,17 @@ interface RoundUsageInput {
      * measure 时按此切分「权威计量段 / 本地估算尾部」。
      */
     anchorIndex: number;
+    /** CM14：由实际发送方准备的一次性凭据；缺席仍累计，但不得补绑当前输入。 */
+    receipt?: SentRequestReceipt;
+}
+/** 仅当前 ledger 签发的对象可消费；字段只读，不进入协议或历史持久化。 */
+interface SentRequestReceipt {
+    readonly sequence: number;
+    readonly basis: RequestBasis;
+    readonly generation: number;
+    readonly inputEndExclusive: number;
+    readonly boundary: string | undefined;
+    readonly ephemeral: boolean;
 }
 /** 六路分解(doc/07 §3.6① 的固定分路,任何聚合都从这六路算起) */
 interface LedgerBreakdown {
@@ -8994,7 +9061,7 @@ interface LedgerBreakdown {
     cacheDeleted: number;
     /** 模型输出(当前上下文口径恒 0——doc/07 §3.1「不含 output」;累计口径为真实累计) */
     output: number;
-    /** 本地估算尾部(锚点之后消息;无锚点时为全量估算) */
+    /** 本地估算尾部(上次实发输入结束后消息;无锚点时为全量估算) */
     estimatedTail: number;
 }
 /** 会话累计用量(六路累计 + reasoning 细分注脚 + round 计数) */
@@ -9004,17 +9071,18 @@ interface CumulativeUsage extends LedgerBreakdown {
     /** 已入账的 API round 数 */
     rounds: number;
 }
-/** 测量输入:当前请求视图(system + messages;tools 供压缩 fork 请求复用) */
+/** 测量输入：system + messages + tools；basis 是本屏障内核自有快照。 */
 interface ContextView {
     system: readonly IRSystemSegment[];
     messages: readonly IRMessage[];
-    /** 父请求工具数组(压缩 fork round 复用以保缓存前缀;测量本身不计其 tokens) */
+    /** 父请求工具数组，首轮及无有效authority时完整计额。 */
     tools?: readonly IRToolDef[];
+    basis?: RequestBasis;
 }
 /**
  * 本地估算尾部的来源细分(任务卡「工具结果/系统注入等按文档分路」的
  * 尾部子账;/context 命令与压缩策略诊断用)。
- * 不变量:toolResults + systemInjected + other + systemSegments + overhead
+ * 不变量:toolResults + systemInjected + other + systemSegments + toolDefinitions + overhead
  * = estimatedTail(估算器满足「estimateMessage ≥ Σ estimateBlock」契约时)。
  */
 interface TailDetail {
@@ -9026,6 +9094,8 @@ interface TailDetail {
     other: number;
     /** system 段估算(仅无锚点全量估算时非零;有锚点时 system 已含在权威 input 内) */
     systemSegments: number;
+    /** CM14：固定工具定义估算（有相容authority时为0）。 */
+    toolDefinitions?: number;
     /** 消息定额合计(estimateMessage 与 Σ estimateBlock 之差,按契约非负) */
     overhead: number;
 }
@@ -9048,6 +9118,10 @@ interface ContextMeasurement {
      * 估算器未携带指纹时缺席)。埋点(T-CTX14a)与阈值漂移归因消费。
      */
     estimatorProfileId?: string;
+    /** CM14：仅消息尾部的基础估算，不含system/tools或校准因子。 */
+    rawMessageTailTokens?: number;
+    /** CM14：固定面；供同屏障复用，不是已发送证据。 */
+    basis?: RequestBasis;
 }
 
 /**
@@ -10113,8 +10187,8 @@ interface ContextManagerCompactionOptions {
      * 分桶(CJK/JSON/混排/纯文本)、校准态跨压缩持久(压缩成功仅失效配对
      * 基线)、水位评估按桶置信度加安全边际(低置信宁可早压;
      * confidenceMarginRatio 缺省 DEFAULT_CONFIDENCE_MARGIN_RATIO=0.1)。
-     * 门开时无锚点全量估算的观测**跳过**(权威合计含 tools 而本地估算不计,
-     * 观测比系统性偏大;门关沿现状照记——已知偏差原语义保留)。
+     * CM14：门开/关均仅训练固定面相容的相邻实发输入差分；首轮或固定面
+     * 变化后的全量估算不能把 system/tools 的误差训练成消息密度。
      */
     bucketedCalibration?: {
         enabled: boolean;
@@ -10360,6 +10434,8 @@ type MicrocompactOutcome = {
  */
 declare class ContextManager {
     #private;
+    /** ARC07：观察实际压缩执行/生成器收尾；仅取消等待，不取消底层清理。 */
+    settle(options?: ResourceSettleOptions): Promise<ResourceSettlementResult>;
     constructor(options: ContextManagerOptions);
     /** 解析后的阈值(只读;供状态栏/斜杠命令展示) */
     get thresholds(): ResolvedThresholds;
@@ -10422,12 +10498,27 @@ declare class ContextManager {
      */
     get compactionObserver(): CompactionObserver | undefined;
     /**
-     * 登记一轮完整 API round 的权威 usage:更新累计六路、把该轮设为测量锚点,
-     * 并推进附件 TTL 时基(一次入账 = 一轮结束)。
-     * T-CTX06:入账前先与上一次 measure 的基线配对,更新 EWMA 校准因子
-     * (顺序敏感——基线的锚点权威段必须是**旧**锚点,先校准后挂新锚)。
+     * 登记一轮完整 usage 并推进附件 TTL。有效 receipt 才更新测量锚点和
+     * 对应 EWMA；旧无 receipt 调用仍累计、仍可全量治理，不补绑新输入。
+     * 校准读取 receipt 冻结的旧 authority，后来的测量/新锚点不会串用。
      */
     recordUsage(entry: RoundUsageInput): void;
+    /** CM14：请求观测与固定面使用同一基础估算器，尤其外部注入manager时。 */
+    get requestEstimator(): TokenEstimator;
+    /** CM14：主模型/客户端绑定改变时旧tokenizer观测不能沿用。 */
+    bindRequestModel(model: ResolvedModel, client: ModelClient): void;
+    /** 在治理前捕获固定输入，后续压缩/输出预算/实际发送均使用同一副本。 */
+    prepareRequestBasis(view: ContextView): RequestBasis;
+    prepareSentRequest(input: {
+        view: ContextView;
+        measurement: ContextMeasurement;
+        tailDelta?: {
+            rawTokens: number;
+            tokens: number;
+        };
+        ephemeral?: boolean;
+    }): SentRequestReceipt;
+    discardSentRequest(receipt: SentRequestReceipt): void;
     /**
      * AP-SP:请求固定输入（如 system 段）变化后，旧权威 usage 不再代表当前前缀。
      * 只失效测量锚点和待配对校准基线，使下一次 measure 全量计入新 system；
@@ -10443,8 +10534,8 @@ declare class ContextManager {
     cacheHitRatio(): number | null;
     /**
      * 测量当前上下文占用:锚点权威计量 + 本地估算尾部,六路分解(doc/07 §3.1)。
-     * T-CTX06:尾部估算经校准因子微调(#calibratedEstimator);同时留存本次
-     * 测量作校准配对基线(下一次 recordUsage 消费)。
+     * T-CTX06:消息尾部经校准因子微调，system/tools 保持基础估算。
+     * 本次测量独立留基线，实际发送方 prepareSentRequest 后才可配对 usage。
      * P-CTX4 K16(门开):估算前按 ledger 同一锚点判定取尾部范围并归桶
      * (classifyTailBucket),应用缝随之切到该桶因子;基线记录归桶与锚点
      * 口径供观测入账。门关零触碰(#lastBucket 不更新,分桶 Map 恒空)。
@@ -10455,7 +10546,11 @@ declare class ContextManager {
      * 使用当前测量已选定的校准因子；不刷新桶/配对基线/锚点，也不全量 measure。
      * before 缺席表示新增一条消息，按账本同口径包含消息定额。
      */
-    estimateRequestTailDelta(before: IRMessage | undefined, after: IRMessage): number;
+    measureRequestTailDelta(before: IRMessage | undefined, after: IRMessage, measurement?: ContextMeasurement): {
+        rawTokens: number;
+        tokens: number;
+    };
+    estimateRequestTailDelta(before: IRMessage | undefined, after: IRMessage, measurement?: ContextMeasurement): number;
     /**
      * 水位评估:测量 → 阈值代数 → 区带/触发建议;熔断中压制自动压缩建议。
      * T-CTX03 半开:压制期间每隔 AUTO_COMPACT_HALF_OPEN_BARRIERS 个屏障点
@@ -11148,6 +11243,51 @@ interface MetricsRegistry {
 declare const KERNEL_STATES: readonly ["idle", "assembling", "streaming", "awaiting_permission", "executing_tools", "compacting", "terminated"];
 type KernelState = (typeof KERNEL_STATES)[number];
 
+/** INJ-00: 目标绑定当前句柄；session/租户/historyEpoch 由宿主校验。 */
+interface QueryInputTarget {
+    readonly turnId: string;
+}
+interface QueryInputSubmission {
+    readonly inputId: string;
+    readonly text: string;
+    readonly target?: QueryInputTarget;
+}
+type QueryInputRejectCode = 'invalid_input' | 'turn_mismatch' | 'input_conflict' | 'injection_limit' | 'turn_closed';
+type QueryInputReason = TerminalReason | 'input_cancelled' | 'iterator_closed';
+interface QueryInputReceipt {
+    readonly inputId: string;
+    readonly turnId: string;
+    readonly ordinal: number;
+    readonly revision: number;
+    readonly source: 'legacy' | 'strict';
+    /** consumed 仅证明已加入历史，不证明模型收到/回答或历史已经耐久写入。 */
+    readonly state: 'reserved' | 'accepted' | 'consumed' | 'closed' | 'cancelled';
+    readonly reason?: QueryInputReason;
+}
+interface QueryInputReservation {
+    receipt(): QueryInputReceipt;
+    /** 同步内存接纳；宿主不得据此声称 durable。重复提交返回原状态。 */
+    commit(): QueryInputReceipt;
+    /** 只取消尚未 commit 的 reservation；已接纳输入由本轮正常消费/终止裁定。 */
+    cancel(): QueryInputReceipt;
+    /** consumed/closed/cancelled 的最终回执；不是整个查询的真实资源完成屏障。 */
+    readonly completion: Promise<QueryInputReceipt>;
+}
+type QueryInputReservationResult = {
+    readonly status: 'reserved';
+    readonly reservation: QueryInputReservation;
+} | {
+    readonly status: 'duplicate';
+    readonly receipt: QueryInputReceipt;
+    readonly completion: Promise<QueryInputReceipt>;
+} | {
+    readonly status: 'closed';
+    readonly code: QueryInputRejectCode;
+} | {
+    readonly status: 'rejected';
+    readonly code: QueryInputRejectCode;
+};
+
 /**
  * T-C1 — 查询环对外类型:runQuery 选项/句柄、四计数、ToolExecutor 执行缝。
  *
@@ -11178,6 +11318,10 @@ interface ProposedToolCall {
 }
 /** 执行器上下文:查询环传给 executor 的最小集合 */
 interface ToolExecutionContext {
+    /** 子查询实际收尾回执；先登记占位，业务事件结束后再兑现。不会等待在逻辑工具结果中。 */
+    registerResource?: (work: Promise<ResourceSettlementResult>) => void;
+    /** 工具/调度真实Promise；硬超时仅结束业务观察，不能摘除尚在飞的底层操作。 */
+    registerOperation?: (work: Promise<unknown>) => void;
     sessionId: string;
     turnId: string;
     /** 全链贯穿的中断信号(《07》§1.5) */
@@ -11543,7 +11687,7 @@ interface QueryCounters {
     toolRounds: number;
     /** 连续可恢复错误数(任何一次成功流式响应清零) */
     consecutiveErrors: number;
-    /** 注入屏障已消费的排队输入条数 */
+    /** 注入屏障已消费的旧 enqueue 输入条数；strict input 按回执独立核对，避免宿主 slice 错位。 */
     queueInjections: number;
     /**
      * CW11-W3(doc/58 W3 #7)— 触帽升档重试次数(遥测:每次废弃截断响应并
@@ -11557,10 +11701,22 @@ interface QueryHandle {
     /** 事件流:protocol 完整事件(包络+负载),seq 单调 */
     events: AsyncGenerator<KernelEvent, void, undefined>;
     /**
+     * CM-13：等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
+     * 终态事件仅代表逻辑结束；timeout/cancelled保留实际在飞工作，可再次等待。
+     * runQuery恒提供；第三方旧句柄可缺席，此时调用方只能证明其既有迭代器合同。
+     */
+    settle?(options?: ResourceSettleOptions): Promise<ResourceSettlementResult>;
+    /**
      * 注入用户输入:流式期间不打断当前模型调用,统一在下一次 assembling 前
      * 的屏障点消费;终态后调用为无害空操作(运行时竞态,非编程错误)。
      */
     enqueueUserInput(text: string): void;
+    /** INJ-00 加法能力；旧句柄可缺席。目标为本轮，不隐式创建后续轮。 */
+    reserveUserInput?(input: QueryInputSubmission): QueryInputReservationResult;
+    inputReceipts?(): readonly QueryInputReceipt[];
+    inputTarget?(): QueryInputTarget & {
+        readonly open: boolean;
+    };
     /**
      * 立即中断;reason 缺省时按当下状态推导(streaming→aborted_streaming 等)。
      * 显式 reason = 「外部中止来源」注入缝(RFC-SC-1 R3,contract-v0.21):驱动层
@@ -11929,6 +12085,8 @@ interface FileReadState {
     lastRead?: ReadDedupWindow;
 }
 interface ToolContext {
+    /** Retain a nested query's actual cleanup; this does not delay its business result or cancel it. */
+    registerResource?: (work: Promise<ResourceSettlementResult>) => void;
     cwd: string;
     signal: AbortSignal;
     /** 发结构化事件(tool.progress / tool.output.delta 等),包络由调度器补 */
@@ -12108,6 +12266,48 @@ declare class TodoStore {
     merge(patches: readonly TodoPatch[]): TodoItem[];
 }
 
+interface SessionInputTarget {
+    readonly historyEpoch: string;
+    readonly turnId: string;
+}
+type SessionInputContent = {
+    readonly text: string;
+} | {
+    readonly blocks: readonly {
+        readonly t: 'text';
+        readonly text: string;
+    }[];
+};
+interface SessionInputSubmission {
+    readonly inputId: string;
+    readonly target: SessionInputTarget;
+    readonly content: SessionInputContent;
+    readonly ack?: 'memory' | 'durable';
+}
+interface SessionInputReceipt extends QueryInputReceipt {
+    readonly sessionId: string;
+    readonly historyEpoch: string;
+    readonly durability: 'memory';
+}
+type SessionInputRejectCode = QueryInputRejectCode | 'epoch_mismatch' | 'durable_unsupported' | 'content_unsupported' | 'input_unsupported';
+type SessionInputResult = {
+    readonly outcome: 'accepted';
+    readonly receipt: SessionInputReceipt;
+} | {
+    readonly outcome: 'closed' | 'rejected';
+    readonly code: SessionInputRejectCode;
+};
+interface SessionInputCapabilities {
+    readonly version: 1;
+    readonly text: boolean;
+    readonly textBlocks: boolean;
+    readonly image: false;
+    readonly memoryAck: boolean;
+    readonly durableAck: false;
+    readonly receiptRetention: 'current-and-last-turn';
+    readonly target: SessionInputTarget | null;
+}
+
 /**
  * T-C1 — 测试用顺序工具执行器(ToolExecutor 的最小实现)。
  *
@@ -12184,8 +12384,8 @@ declare const PolicyBundleSchema: z.ZodObject<{
         issuedAt: string;
         issuer: string;
         expiresAt?: string | undefined;
-        audience?: string | undefined;
         sequence?: number | undefined;
+        audience?: string | undefined;
         notBefore?: string | undefined;
         revokedSequences?: number[] | undefined;
     }, {
@@ -12194,8 +12394,8 @@ declare const PolicyBundleSchema: z.ZodObject<{
         issuedAt: string;
         issuer: string;
         expiresAt?: string | undefined;
-        audience?: string | undefined;
         sequence?: number | undefined;
+        audience?: string | undefined;
         notBefore?: string | undefined;
         revokedSequences?: number[] | undefined;
     }>;
@@ -12235,8 +12435,8 @@ declare const PolicyBundleSchema: z.ZodObject<{
         issuedAt: string;
         issuer: string;
         expiresAt?: string | undefined;
-        audience?: string | undefined;
         sequence?: number | undefined;
+        audience?: string | undefined;
         notBefore?: string | undefined;
         revokedSequences?: number[] | undefined;
     };
@@ -12257,8 +12457,8 @@ declare const PolicyBundleSchema: z.ZodObject<{
         issuedAt: string;
         issuer: string;
         expiresAt?: string | undefined;
-        audience?: string | undefined;
         sequence?: number | undefined;
+        audience?: string | undefined;
         notBefore?: string | undefined;
         revokedSequences?: number[] | undefined;
     };
@@ -14395,6 +14595,10 @@ declare class TaskBackgroundRunner {
         outputFile: string;
         run: (signal: AbortSignal) => Promise<TaskBackgroundSettlement>;
     }): TaskBackgroundLaunchResult;
+    /** Child ownership survives business settlement and removal from the task list. */
+    registerResource(work: Promise<ResourceSettlementResult>): void;
+    /** Physical completion; drain retains its existing shutdown/business contract. */
+    settleResources(options?: ResourceSettleOptions): Promise<ResourceSettlementResult>;
     /**
      * 拆除(会话退出优雅收尾):关准入 → abort 全部在飞(shutdown 保真)→
      * 等收束。拆除期不写盘不通知。幂等。
@@ -14966,6 +15170,7 @@ interface McpRequestOptions {
  * 握手(initialize/initialized)、版本协商、session 头都发生在 connect 工厂
  * 内部;返回的连接恒处 ready 态,closed 后一切请求以结构化 McpError 拒绝。
  */
+type McpCloseEvidenceLevel = 'transport-completion' | 'connector-close-promise';
 interface McpConnection {
     readonly serverName: string;
     readonly transport: McpTransportKind;
@@ -14987,6 +15192,8 @@ interface McpConnection {
     notify(method: string, params?: Record<string, unknown>): Promise<void>;
     /** 幂等关闭:失败所有 in-flight、释放底层资源(stdio 杀进程 / http 发 DELETE) */
     close(): Promise<void>;
+    /** ARC-02:加法完成层;只等待本地传输资源,不承诺远端服务终止。 */
+    settleClose?(): Promise<void>;
 }
 /**
  * 工具集双面(与 agents/types.ts SubagentToolset 同形,结构兼容 cli 装配层的
@@ -18291,6 +18498,10 @@ interface McpLazyManager extends McpExpandView {
     reconnect(name: string): Promise<McpServerLazyStatus | null>;
     /** 断开全部连接并进入 closed 终态(幂等) */
     closeAll(): Promise<void>;
+    /** 实际本地释放完成;失败保留资源,可显式再次调用。 */
+    settleClose(): Promise<void>;
+    /** 声明的完成证据层;只有settleClose成功后才表示该层已完成。 */
+    readonly cleanupEvidence: readonly McpCloseEvidenceLevel[];
     /**
      * 子代理展开视图(P1-B,doc/60 §3.3):expand 只写入参 toolset(子代理
      * 生效集副本),恒不写回主视图;连接/目录/缓存共享,def 对象跨视图同一。
@@ -18772,6 +18983,11 @@ interface McpHostOptions {
  */
 declare class McpHost {
     #private;
+    /** pending时仅描述能力层;dispose完成后才表示已等待此层。 */
+    get cleanupEvidence(): readonly {
+        resource: 'mcp';
+        level: McpCloseEvidenceLevel;
+    }[];
     constructor(options: McpHostOptions);
     /** 惰性 init 单飞(内部/进阶面;host 主视图绑哑工具面,会话恒经子视图) */
     manager(): Promise<McpLazyManager>;
@@ -19630,6 +19846,351 @@ interface FallbackSelection {
     dataClassification?: DataClassification;
 }
 
+/**
+ * S-1(doc/116 §3.2·§4.3 / doc/117 S-1)— CheckpointStore:上下文快照的可注入存储
+ * 接口 + 缺省本地文件实现。
+ *
+ * 定位与 SessionStore 同款(doc/91 拍板③/⑦):CheckpointStore 四方法是 SDK 快照
+ * 存储的**唯一承诺面**;kernel 快照原语(writeCheckpoint/readCheckpoint/
+ * listCheckpoints/deleteCheckpoint)只经 createFileCheckpointStore 内部消费,恒不经
+ * SDK 出口导出。开发者自建 DB/对象存储实现四方法即可注入 createSession 的
+ * `checkpoints.store`。
+ *
+ * 快照 = 某时刻完整 IR 历史的自包含只读拷贝(D-1 A:JSON 拷贝,非归档旧卷):
+ * - 可列举(list 只读头部 meta,恒不携 messages)、可恢复(AgentSession.restore)、
+ *   可删除;checkpointId 为 ULID(时间有序,list 升序即时间线);
+ * - `put` 写前配对治理(断尾 tool_call 合成 isError 占位),读回即可直接作
+ *   initialMessages;
+ * - 文件实现恒 durable 写(temp + fsync + rename),半写文件恒不可见;
+ * - 保留策略(D-4 A / R-3 / FX-B-23):缺省不限;`retention: { max?, maxAgeDays? }`(`max` 为
+ *   `retention.max` 别名)——先按龄再按数、到顶按 checkpointId 升序淘汰最旧,**不分 trigger**
+ *   (manual 与 pre_* 同律),**刚写入者恒保留**(`max:0` 留 1)。淘汰律单点 = kernel
+ *   `planCheckpointRetention`:文件 / 同居形态由 kernel 在写后施行;自建 store 经
+ *   `withCheckpointRetention` 包装以同一计划经 list + delete 施行(两包对同一 max 恒同一淘汰器)。
+ *
+ * 目录模型(doc/116 §3.6):根目录恒显式或由会话 store 派生,SDK 恒不隐式扫用户目录。
+ * - `createFileCheckpointStore({ dir })`:<dir>/<sessionId>/<checkpointId>.json
+ *   (+ 旁挂 .meta.json + attachments/<sha256>);独立生命周期,不随会话删除;
+ * - 缺省同居(createSession 未给 checkpoints.store/dir 且 store 为
+ *   createFileSessionStore 产物):<sessionDir>/checkpoints/<sessionId>/…——随
+ *   store.delete(sessionId) 一并消失(file-store.ts 提供,见其 `checkpoints` 成员)。
+ */
+
+/** 快照触发源:manual(checkpoint())/ pre_compaction / pre_clear / pre_restore */
+type CheckpointTrigger = ContextCheckpointTrigger;
+/**
+ * 快照头部(list/put 返回面;恒不含 messages):schemaVersion / checkpointId /
+ * sessionId / createdAt / trigger / label? / cwd / model? / tokens? / compactionId? /
+ * messageCount(doc/116 §3.2 全字段)。
+ */
+type CheckpointMeta = ContextCheckpointMeta;
+/** 快照对象(get 返回面):头部 + 完整 IR 历史(image 块已内联,可直接作 initialMessages) */
+type Checkpoint = ContextCheckpoint;
+/**
+ * put 的输入:开发者/装配层提供身份与内容字段,机械字段(schemaVersion /
+ * messageCount)由存储实现填充。AgentSession 内部铸 checkpointId(ULID)。
+ */
+type CheckpointInput = ContextCheckpointInput;
+/**
+ * 快照存储接口(S-1 冻结形)。实现纪律:
+ * - `put` 须配对治理后落盘,返回的 meta.messageCount 为治理后消息数;
+ * - `list` 恒不携 messages,按 checkpointId 升序(= 时间序)返回;不存在的会话返回 `[]`;
+ * - `get` 不存在返回 null;存储损坏恒结构化 throw(恒不静默回残缺快照);
+ * - `delete` 幂等(目标不存在不抛)。
+ */
+interface CheckpointStore {
+    /** 写入快照(durable);返回头部 meta */
+    put(cp: CheckpointInput): Promise<CheckpointMeta>;
+    /** 读取快照(不存在 → null;损坏结构化 throw) */
+    get(sessionId: string, checkpointId: string): Promise<Checkpoint | null>;
+    /** 列举某会话全部快照的头部(恒无内容;checkpointId 升序) */
+    list(sessionId: string): Promise<CheckpointMeta[]>;
+    /** 删除快照(幂等) */
+    delete(sessionId: string, checkpointId: string): Promise<void>;
+}
+interface CreateFileCheckpointStoreOptions {
+    /** 快照根目录(显式传入,恒不隐式扫用户目录);布局 <dir>/<sessionId>/<checkpointId>.json */
+    dir: string;
+    /** 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限,D-4 A)。= `retention.max` 别名(同给时 retention 优先) */
+    max?: number;
+    /** 保留策略(FX-B-23 / D-R5):`max` / `maxAgeDays` 并集,kernel 在写后施行;刚写入者恒保留 */
+    retention?: CheckpointRetention;
+}
+/**
+ * 缺省文件实现工厂(包 kernel K-1 原语):
+ *   <dir>/<sessionId>/<checkpointId>.json         快照体
+ *   <dir>/<sessionId>/<checkpointId>.meta.json    旁挂头部(list 只读此件)
+ *   <dir>/<sessionId>/attachments/<sha256hex>     image 字节(内容寻址,快照自包含)
+ * 独立目录 = 独立生命周期(不随会话删除);会话同居形态由 createFileSessionStore
+ * 的 `checkpoints` 成员提供(同一实现、根目录按会话派生)。
+ */
+declare function createFileCheckpointStore(options: CreateFileCheckpointStoreOptions): CheckpointStore;
+
+/**
+ * doc/91 会话管理实施批 — SessionStore 可注入存储接口(拍板③/⑦)。
+ *
+ * 定位:SDK 会话存储的**唯一承诺面**(拍板⑦:kernel journal 原语恒不经
+ * SDK 出口导出,FileSessionStore 只作内部消费)。「存哪」被本接口抽象掉——
+ * 本地文件(createFileSessionStore)、开发者自建 DB、平台托管(二期
+ * createPlatformSessionStore,候独立拍板)三态同形,createSession 的
+ * resume/store 双字段(拍板③)恒不随存储后端变化。
+ *
+ * 概念收敛(doc/91 §3.1):对外「会话」= AgentSession 逻辑会话,一个
+ * sessionId 一段历史;存储内部的卷/纪元轮换是实现细节,list 面恒按逻辑
+ * 会话呈现。
+ */
+
+/** 会话存储登记行(元数据半边;内容经 get 另取,list 恒不携内容) */
+interface SessionRecordMeta {
+    /** 逻辑会话 id(= AgentSession.sessionId;缺省 UUID 形制,可显式供给) */
+    sessionId: string;
+    /** ISO-8601 创建时间 */
+    createdAt: string;
+    /** ISO-8601 最近提交时间(list 排序锚) */
+    updatedAt: string;
+    /** 会话标题(缺省 = 首条用户输入截断;可显式供给) */
+    title?: string;
+    /**
+     * 平台会话 id(ULID 26 位 Crockford;doc/91 拍板⑤):令牌档 createSession
+     * per-AgentSession 铸造并经 twp meta.sessionId 出线,ULID↔内核 UUID 映射
+     * 落在此键——平台侧会话行(归因/续租/亲和)与本地记录互认的桥。
+     * doc/110 B2(2026-09-02 翻案拍板⑤实施语义):resume 径**沿用**此键——
+     * 缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
+     */
+    platformSessionId?: string;
+    /** 开发者自留元数据域(SDK 恒不消费其内容) */
+    meta?: Record<string, unknown>;
+    /**
+     * 会话**当前**工作目录(meta.json `cwd`;W-2,doc/116 §3.7):建档写入会话 cwd(此前
+     * file-store 恒写 process.cwd(),自 W-2 起写 createSession 的会话 cwd——server 份
+     * AgentStoredSessionMeta.cwd 同笔),setCwd 切换后经 recordCwdChange 改写为新值;
+     * resume 对账锚。旧记录亦有本键(值为当时进程 cwd)。
+     */
+    cwd?: string;
+    /**
+     * cwd 中途切换史(W-2;meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
+     * 按切换序追加,`cwdHistory[0].from` 即创建期 cwd。未切换过的会话无本键。
+     */
+    cwdHistory?: readonly SessionCwdChange[];
+    /**
+     * F-2(doc/117 §十,D-2 B):本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
+     * meta.json `forkedFrom`,kernel SessionMetaSchema 可选位;createFileSessionStore 读出)。
+     * 直建 / resume / 五方法回落径 fork 出的会话缺席。列举面据此呈现血缘;SDK 恒不据此改行为。
+     */
+    forkedFrom?: {
+        sessionId: string;
+        checkpointId: string;
+    };
+}
+/** 一次 cwd 切换记录(W-2;SessionStore.recordCwdChange 入参 / meta.cwdHistory 元素同形) */
+interface SessionCwdChange {
+    /** ISO-8601 切换时刻 */
+    at: string;
+    /** 切换前 cwd(绝对路径) */
+    from: string;
+    /** 切换后 cwd(绝对路径;切换后 meta.cwd 同值) */
+    to: string;
+}
+/** create 登记参数(sessionId 缺省由 store 铸造 UUID) */
+interface SessionStoreCreateInit {
+    sessionId?: string;
+    title?: string;
+    /**
+     * 平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——doc/110 B2
+     * 起 resume 恒沿用已存值,故在场值只会是同值或旧记录无键的首次补录)
+     */
+    platformSessionId?: string;
+    meta?: Record<string, unknown>;
+    /**
+     * 会话工作目录(W-2 同笔 server 份 create init.cwd):首次建档写入 meta.cwd;缺席沿
+     * process.cwd() 旧值;既有记录恒不改写(创建期事实,切换走 recordCwdChange)。
+     */
+    cwd?: string;
+}
+/** commit 附带信息(与 CreateSessionOptions.onHistoryCommit 的 meta 同形) */
+interface SessionStoreCommitMeta {
+    /**
+     * true = 历史前缀被就地改写(session.compacted 压缩折叠 /
+     * session.microcompacted 存根化),已存内容不再与之对齐——实现方不得按
+     * 长度增量追加,须整卷轮换(demo persistence 先例,doc/91 §3.3)。
+     */
+    readonly rewritten: boolean;
+    /**
+     * S-2 加法:改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
+     * 恢复);缺席 = 非改写,或改写仅来自存根化。实现方只需消费 rewritten,本位为
+     * 可解释性/审计用(如 cli 卷首 compact_boundary.trigger 同义)。
+     */
+    readonly reason?: 'compaction' | 'clear' | 'restore';
+}
+/** get 终值(meta + 完整历史;resume 径另过配对治理,见 session.ts) */
+interface SessionRecord {
+    meta: SessionRecordMeta;
+    messages: IRMessage[];
+}
+/** F-2:store.fork 输入(AgentSession.fork / createSession({ fork }) 经此落新会话记录) */
+interface SessionStoreForkInput {
+    /** 源会话 id(= checkpoint.sessionId;源会话记录恒不改) */
+    sourceSessionId: string;
+    /** 作为新会话初始历史的快照(逻辑形,image 已内联;CheckpointStore.get 产物) */
+    checkpoint: Checkpoint;
+    /** 新会话 id;缺省由 store 铸造 UUID */
+    newSessionId?: string;
+    /** 新会话工作目录(记入 meta;缺省沿源会话 = AgentSession 当前 cwd) */
+    cwd: string;
+    /** 新会话标题(缺省与 create 同律:首条用户输入截断) */
+    title?: string;
+}
+/**
+ * 会话存储接口(拍板③冻结形态)。实现纪律:
+ * - commit 的 rewritten=true 须整卷轮换(语义见 SessionStoreCommitMeta);
+ * - 存储损坏恒结构化报错(throw),恒不静默返回残缺历史(doc/88 对抗式
+ *   验收:改坏存储文件须报错不静默);
+ * - list 恒不携消息内容(枚举是元数据面);
+ * - create 幂等(同 sessionId 重复登记返回既有记录,platformSessionId
+ *   以新值对账更新——doc/110 B2:resume 后的 AgentSession **沿用**记录已存
+ *   平台 ULID,本对账写只在旧记录无键(2026-09-02 前落盘)时补录新铸值)。
+ */
+interface SessionStore {
+    /** 建会话(登记 meta;id 由 store 铸造或调用方供给;幂等) */
+    create(init: SessionStoreCreateInit): Promise<SessionRecordMeta>;
+    /** 取单会话(meta + 完整历史;不存在返回 null;损坏结构化 throw) */
+    get(sessionId: string): Promise<SessionRecord | null>;
+    /** 列会话(按 updatedAt 倒序;恒无内容) */
+    list(filter?: {
+        limit?: number;
+    }): Promise<SessionRecordMeta[]>;
+    /** 轮末提交(对接 onHistoryCommit;rewritten=true 须整卷轮换) */
+    commit(sessionId: string, history: readonly IRMessage[], meta: SessionStoreCommitMeta): Promise<void>;
+    /** 删除/归档(FileSessionStore = 目录删除;平台实现 = 归档语义) */
+    delete(sessionId: string): Promise<void>;
+    /**
+     * 可选(S-3,doc/116 §3.5,D-9 A):历史分页读——消息索引口径(offset = IRMessage[]
+     * 下标,limit = 至少返回的消息数),不暴露段/游标。实现纪律:
+     * - 返回切片恒**配对完整**:start 向前对齐到 ≤ offset 的干净边界(结果 `offset`
+     *   如实回填对齐后的起点),end 向后对齐到 ≥ offset+limit 的干净边界(limit 是
+     *   下限,为凑齐工具轮可多返回);`total` 为该会话全量消息数;
+     * - 会话不存在返回 null;存储损坏结构化 throw(与 get 同律);
+     * - `limit: 0` 合法 = 只取 total(实现应避免为此全量装载);
+     * - createFileSessionStore 以段清单跳读实现(readTail,只装尾部所需段);自建 store
+     *   不实现即由 readHistoryPage() 回落 `get` 全量切片(五方法承诺不变,本成员纯加法)。
+     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
+     */
+    getHistoryPage?(sessionId: string, page: {
+        offset: number;
+        limit: number;
+    }): Promise<{
+        messages: IRMessage[];
+        total: number;
+        offset: number;
+        nextOffset: number;
+    } | null>;
+    /**
+     * 可选(S-1,doc/116 §3.6 同居缺省):store 自带的、与会话同生命周期的快照存储。
+     * createSession 在 `checkpoints.store` / `checkpoints.dir` 皆缺席时取之作为快照
+     * 落点(createFileSessionStore 提供:<sessionDir>/checkpoints,随 delete 一并
+     * 消失);自建 store 不提供即 = 快照未接线(相关方法结构化拒绝,恒不静默)。
+     * 五方法承诺不变(本成员为纯加法)。
+     */
+    readonly checkpoints?: CheckpointStore;
+    /**
+     * 可选(W-2,doc/116 §3.7 D-7):登记一次 cwd 中途切换——实现须把 `meta.cwd` 改写为
+     * `change.to` 并把 change 追加到 `meta.cwdHistory`(切换即刻、与历史提交无关;不改
+     * updatedAt)。会话不存在结构化 throw(session_not_found)。createFileSessionStore 以
+     * meta.json 原文读-改-写实现;自建 store 不实现即 = 切换不落盘(AgentSession.setCwd
+     * 照常成功,仅无持久化记录——五方法承诺不变,本成员纯加法)。
+     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
+     */
+    recordCwdChange?(sessionId: string, change: SessionCwdChange): Promise<void>;
+    /**
+     * 可选(F-2,doc/117 §十,D-2 B):自快照 fork 出新会话记录——源会话恒不改;新会话历史 =
+     * 快照 messages(实现方须配对治理,kernel 原语内置);新会话不被打开(调用方随后 resume)。
+     * createFileSessionStore 经 kernel forkSessionFromCheckpoint 落地(新卷首记录 kind='fork' +
+     * meta.forkedFrom + 附件按 sha 复制);自建 store 不实现即由 AgentSession.fork 回落五方法
+     * (create + commit 全量历史)——功能同在,只无血缘记录(五方法承诺不变,本成员纯加法)。
+     */
+    fork?(input: SessionStoreForkInput): Promise<{
+        sessionId: string;
+    }>;
+    /**
+     * 可选(IO-22,doc/119 / doc/120;server 份 `ServeAgentSessionStore.flush` 同笔):等待在飞提交 settle 与冷层上传
+     * 队列排空(进程退出前调用可保证封存段已上传 / 冷清单已提交)。无冷层 = 等在飞 settle 后即 `true`;超时 / 中止
+     * `false`(热层已耐久,只是冷层积压未清)。createFileSessionStore 提供；自建 store 不实现仅表示无全局 flush 能力，
+     * 不表示其 commit 同步。AgentSession.drain 缺省只等本会话真实提交；flushStore:true 才调用借用 store 的全局
+     * flush，调用可能同时等待其他会话。SDK 观察预算包住整个 Promise，不把观察者的取消传给共享 flush。
+     */
+    flush?(options?: {
+        timeoutMs?: number;
+        signal?: AbortSignal;
+    }): Promise<boolean>;
+    /**
+     * 可选(IO-22,doc/119 D-4;server 份同笔):就绪探针——分层存储热盘触顶(`policy.hotRetention.maxBytes`,已提交
+     * 段逐出后仍越帽)→ `{ ready:false, reason:'store_hot_full' }`,否则 `{ ready:true }`。宿主据此拒新建 / 摘流。
+     * 缺席 = 恒就绪(本成员纯加法)。
+     */
+    readiness?(): {
+        ready: boolean;
+        reason?: string;
+    };
+}
+
+interface SessionDrainOptions {
+    timeoutMs?: number;
+    signal?: AbortSignal;
+    flushStore?: boolean;
+    retryPersistence?: boolean;
+}
+type SessionLifecyclePhase = 'query' | 'idle_operation' | 'store_commit' | 'history_callback' | 'cwd_commit' | 'store_flush' | 'mcp_close' | 'assembly_rollback';
+interface SessionLifecycleFailure {
+    operationId: number;
+    phase: SessionLifecyclePhase;
+    code: string;
+    cause: unknown;
+    recovered: boolean;
+}
+interface SessionDrainResult {
+    status: 'completed' | 'failed' | 'timeout' | 'cancelled';
+    closed: boolean;
+    pending: {
+        query: number;
+        idleOperations: number;
+        commits: number;
+        cleanup: number;
+        storeFlush: number;
+    };
+    failures: readonly SessionLifecycleFailure[];
+    failureCount: number;
+    omittedFailures: number;
+    cleanupEvidence: readonly {
+        resource: 'mcp';
+        level: 'transport-completion' | 'connector-close-promise';
+    }[];
+}
+interface SdkCleanupHandle {
+    drain(options?: Pick<SessionDrainOptions, 'timeoutMs' | 'signal'>): Promise<SessionDrainResult>;
+}
+/** 诊断可滚动淘汰；各阶段未修复失败事实独立保留，不因窗口滚动消失。 */
+declare class LifecycleLedger {
+    #private;
+    operation(): number;
+    fail(operationId: number, phase: SessionLifecyclePhase, cause: unknown, code?: string): void;
+    recover(phase: SessionLifecyclePhase, through?: number): void;
+    get failed(): boolean;
+    omitFailures(count: number): void;
+    snapshot(): Pick<SessionDrainResult, 'failures' | 'failureCount' | 'omittedFailures'>;
+}
+/** 会话与单轮装配复用所有权、真实在飞操作及显式重试边界。 */
+declare class OwnedResources implements SdkCleanupHandle {
+    #private;
+    readonly ledger: LifecycleLedger;
+    add(release: () => Promise<void>, evidence?: () => SessionDrainResult['cleanupEvidence']): void;
+    get pending(): number;
+    get inFlight(): Promise<void> | undefined;
+    get evidence(): SessionDrainResult['cleanupEvidence'];
+    dispose(): Promise<void>;
+    drain(options?: Pick<SessionDrainOptions, 'timeoutMs' | 'signal'>): Promise<SessionDrainResult>;
+    rollback(cause: unknown): Promise<never>;
+}
+
 /** 平台业务段的组合策略；不表示模型指令或权限的强制优先级。 */
 type SystemPromptPolicy = 'fallback' | 'prepend';
 interface ApplicationPromptInfo {
@@ -19987,7 +20548,7 @@ declare const AppBundlePlanSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "active" | "grace" | "lapsed";
     expiresAt: string;
-    tier: "medium" | "small" | "test" | "large";
+    tier: "medium" | "small" | "large" | "test";
     caps: {
         concurrency: number;
         apps: number;
@@ -19995,11 +20556,11 @@ declare const AppBundlePlanSchema: z.ZodObject<{
         monthlyEndUsers: number | null;
         gatewayLane: boolean;
     };
-    lapsedFrom?: "medium" | "small" | "test" | "large" | undefined;
+    lapsedFrom?: "medium" | "small" | "large" | "test" | undefined;
 }, {
     status: "active" | "grace" | "lapsed";
     expiresAt: string;
-    tier: "medium" | "small" | "test" | "large";
+    tier: "medium" | "small" | "large" | "test";
     caps: {
         concurrency: number;
         apps: number;
@@ -20007,7 +20568,7 @@ declare const AppBundlePlanSchema: z.ZodObject<{
         monthlyEndUsers: number | null;
         gatewayLane: boolean;
     };
-    lapsedFrom?: "medium" | "small" | "test" | "large" | undefined;
+    lapsedFrom?: "medium" | "small" | "large" | "test" | undefined;
 }>;
 type AppBundlePlan = z.infer<typeof AppBundlePlanSchema>;
 /**
@@ -20803,6 +21364,8 @@ interface AssembleToolingAdjudication {
     explicit: boolean;
 }
 interface AssembleToolingOptions {
+    /** 私有所有权移交：query在回滚开始接管资源及统一观察预算；session保留缺省回滚。 */
+    onRollback?: (resources: OwnedResources, cause: unknown) => never;
     /** 权限规则路径锚定与工具执行 cwd(两者必须一致) */
     cwd: string;
     /** hooks 引擎的会话归属 */
@@ -20873,6 +21436,8 @@ interface AssembledTooling {
     capabilities: AppCapabilities;
     /** 会话收口回调(会话级临时 MCP host 的 dispose;应用级 host 恒缺席) */
     onEnded?: () => Promise<void>;
+    /** 内部所有权载体，会话与单轮 query 装配共享同一真实在飞清理。 */
+    ownedResources?: OwnedResources;
     /**
      * FX-B-19(T-16)— Task 子代理 McpDiscover 换装工厂(懒目录非空时在场;与 cli
      * `assembly/mcp-lazy.ts` `discoverToolFactory` 同形)。调用方接进 attachSdkTaskTool 的
@@ -21109,6 +21674,8 @@ interface ClassifierLiveStages {
 interface ClassifierTranscriptRecorder {
     /** 轮起跑登记:覆盖式记录当前轮用户 prompt(截断 + 条数上限) */
     noteTurn(prompts: readonly string[]): void;
+    /** INJ：同轮真实用户补充；保留首条任务及最新意图，不重置轮。 */
+    noteInput(prompts: readonly string[]): void;
     /** 提供器(直接喂 PermissionClassifierConfig.transcript);空时 undefined */
     transcript(): ClassifierTranscript | undefined;
 }
@@ -21464,100 +22031,6 @@ declare function assembleTokenTierAdjudicator(prepared: PreparedAdjudication | u
     pricingUpdates?: readonly PricingUpdate[];
 }, onWarn: (warning: AdjudicationWarning) => void, requestMeasurement?: RequestMeasurementObserver): AssembledBundleAdjudicator | undefined;
 
-/** 托管/令牌档单轮选项(工具/权限缝与 CreateSessionOptions 同名同义) */
-interface ManagedQueryOptions {
-    /** 模型别名(main/fast/reasoning/自定义)或 ref(provider/model);缺省 'main' */
-    model?: string;
-    /** 单轮输入(追加在 initialMessages 之后作最后一条 user 消息) */
-    prompt?: string;
-    /** 历史前缀(续跑/恢复);与 prompt 至少给一个非空 */
-    initialMessages?: readonly IRMessage[];
-    /** 业务提示词：平台 fallback 策略下显式值（含 []）覆盖；prepend 策略保留平台段在前。创建时固定。 */
-    system?: IRSystemSegment[];
-    /** 业务段选定后追加的宿主指南，不触发平台默认覆盖；权限与工具指南仍独立装配。 */
-    systemAppend?: IRSystemSegment[];
-    /** app_user 短期令牌(开发者服务端换发;模型与能力位由 bundle 供给) */
-    token?: string;
-    /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
-    baseUrl?: string;
-    /**
-     * 平台提示帧承接(S-ARCH;语义同 CreateSessionOptions.onPlatformWarning):
-     * 缺席缺省 console.warn 每码一次,在场即全量接管。
-     */
-    onPlatformWarning?: (warning: PlatformWarning) => void;
-    /** 项目层配置发现起点与工具 cwd;缺省 process.cwd() */
-    cwd?: string;
-    /** 环境变量注入缝;缺省 process.env */
-    env?: Record<string, string | undefined>;
-    /** fetch 注入缝(透传协议适配器) */
-    fetchImpl?: typeof fetch;
-    /** 已装载配置注入缝:提供时跳过 loadConfig */
-    config?: LoadedConfig;
-    /** loadConfig 其余注入缝(fs/homedir/platform;测试 hermetic 用) */
-    loadOptions?: Omit<LoadConfigOptions, 'cwd' | 'env'>;
-    /**
-     * 三环工具入口(S-B3):builtin(环2 内置,词表逐名)/ platform(环3
-     * 平台能力,现只校验位)/ custom(环1 defineTool 产物)。缺席 = 装配
-     * 能力位放行的全部内置工具;`tools: { builtin: [] }` = 零内置。
-     */
-    tools?: SdkToolsOptions;
-    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
-    capabilities?: AppCapabilities;
-    /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
-    promptChannel?: PromptChannel;
-    permission?: PermissionOptions;
-    /** 裁决人(doc/113,仅令牌档;语义同 CreateSessionOptions.adjudication) */
-    adjudication?: AdjudicationOptions;
-    /** 缺省 8192 */
-    maxTokens?: number;
-    /** 缺省 randomUUID() */
-    sessionId?: string;
-    /** 外部中断信号(全链透传:模型流 / 工具执行 / 压缩均立即响应) */
-    signal?: AbortSignal;
-    /** modelTurns 护栏;缺省 200(托管便捷面失控保护,与 serve 对齐) */
-    maxTurns?: number;
-    /** toolRounds 上限;缺省不设 */
-    maxToolRounds?: number;
-    /** 连续可恢复错误熔断上限;缺省 3(内核缺省) */
-    maxConsecutiveErrors?: number;
-    /**
-     * 上下文压缩(kernel T-C10):缺省 {}(自动压缩,仅上下文窗口已知时
-     * 生效——阈值代数依赖窗口,与 TUI/serve 同守卫);false 显式禁用。
-     */
-    compaction?: QueryCompactionOptions | false;
-    /** 采样参数直通 */
-    temperature?: number;
-    thinking?: {
-        budget?: number;
-    };
-    stopSequences?: string[];
-}
-type QueryOptions = (RunAgentOptions & Pick<ManagedQueryOptions, 'systemAppend'>) | ManagedQueryOptions;
-/** query 的终值(末尾 turn.completed/turn.aborted 事件之外的结构化结算) */
-interface QueryResult {
-    /** 终态原因(与末尾 turn.* 事件的 reason 一致) */
-    reason: TerminalReason;
-    /** 最后一条 assistant 消息的纯文本拼接(无 assistant 消息时为空串) */
-    finalText: string;
-    /** 最后一条 assistant 消息(中断极早时可能缺失) */
-    finalMessage?: IRMessage;
-    /** 完整消息历史快照(深拷贝;可直接作下次 initialMessages 续跑) */
-    messages: IRMessage[];
-    /** 全轮累计 usage(cost.usage.updated 求和;模型未报 usage 时缺失) */
-    usage?: IRUsage;
-    /** 内核四计数快照 */
-    counters: QueryCounters;
-}
-/** 五路 usage 求和(可选字段任一侧出现即累计;与 cli headless 同口径) */
-declare function accumulateUsage(total: IRUsage | undefined, next: IRUsage): IRUsage;
-/**
- * 单轮查询:事件逐条 yield,终态后 return QueryResult。同步可判的选项错误
- * 在调用点同步抛 TansrSdkError('invalid_options')——不推迟到首次 next()
- * (异步生成器体惰性执行,校验放体内会让编程错误漂移到消费点);托管装配
- * 错误天然异步,在首次 next() 以 TansrSdkError('assembly_failed') reject。
- */
-declare function query(options: QueryOptions): AsyncGenerator<KernelEvent, QueryResult, undefined>;
-
 /**
  * T-E8 — SDK 结构化错误。
  *
@@ -21611,13 +22084,136 @@ type SdkErrorCode =
  * PlatformRequestError(TansrSdkError 子类):`status` / `platformCode` / `platformMessage`
  * 携网关事实,开发者按 platformCode(asr_not_configured / model_not_authorized …)分支
  */
- | 'platform_request_failed';
+ | 'platform_request_failed'
+/** 可等待生命周期中的提交或资源收口失败；保留原始失败及继续回收入口。 */
+ | 'lifecycle_failed';
 declare class TansrSdkError extends Error {
     readonly code: SdkErrorCode;
     constructor(code: SdkErrorCode, message: string, options?: {
         cause?: unknown;
     });
 }
+
+declare class SdkLifecycleError extends TansrSdkError {
+    readonly failures: readonly SessionLifecycleFailure[];
+    readonly errors: readonly unknown[];
+    readonly cleanup: SdkCleanupHandle | undefined;
+    constructor(code: 'lifecycle_failed' | 'assembly_failed', failures: readonly SessionLifecycleFailure[], options?: {
+        cause?: unknown;
+        cleanup?: SdkCleanupHandle;
+    });
+}
+
+/** Common to both query tiers; these options never trigger tooling assembly. */
+interface QueryLifecycleOptions {
+    /** Default 30 seconds. Bounds cleanup observation, not model execution. */
+    cleanupTimeoutMs?: number;
+    /** Required error channel when AsyncIteratorClose preserves a consumer's own throw. */
+    onLifecycleError?: (error: SdkLifecycleError) => void;
+}
+
+/** 托管/令牌档单轮选项(工具/权限缝与 CreateSessionOptions 同名同义) */
+interface ManagedQueryOptions extends QueryLifecycleOptions {
+    /** 模型别名(main/fast/reasoning/自定义)或 ref(provider/model);缺省 'main' */
+    model?: string;
+    /** 单轮输入(追加在 initialMessages 之后作最后一条 user 消息) */
+    prompt?: string;
+    /** 历史前缀(续跑/恢复);与 prompt 至少给一个非空 */
+    initialMessages?: readonly IRMessage[];
+    /** 业务提示词：平台 fallback 策略下显式值（含 []）覆盖；prepend 策略保留平台段在前。创建时固定。 */
+    system?: IRSystemSegment[];
+    /** 业务段选定后追加的宿主指南，不触发平台默认覆盖；权限与工具指南仍独立装配。 */
+    systemAppend?: IRSystemSegment[];
+    /** app_user 短期令牌(开发者服务端换发;模型与能力位由 bundle 供给) */
+    token?: string;
+    /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
+    baseUrl?: string;
+    /**
+     * 平台提示帧承接(S-ARCH;语义同 CreateSessionOptions.onPlatformWarning):
+     * 缺席缺省 console.warn 每码一次,在场即全量接管。
+     */
+    onPlatformWarning?: (warning: PlatformWarning) => void;
+    /** 项目层配置发现起点与工具 cwd;缺省 process.cwd() */
+    cwd?: string;
+    /** 环境变量注入缝;缺省 process.env */
+    env?: Record<string, string | undefined>;
+    /** fetch 注入缝(透传协议适配器) */
+    fetchImpl?: typeof fetch;
+    /** 已装载配置注入缝:提供时跳过 loadConfig */
+    config?: LoadedConfig;
+    /** loadConfig 其余注入缝(fs/homedir/platform;测试 hermetic 用) */
+    loadOptions?: Omit<LoadConfigOptions, 'cwd' | 'env'>;
+    /**
+     * 三环工具入口(S-B3):builtin(环2 内置,词表逐名)/ platform(环3
+     * 平台能力,现只校验位)/ custom(环1 defineTool 产物)。缺席 = 装配
+     * 能力位放行的全部内置工具;`tools: { builtin: [] }` = 零内置。
+     */
+    tools?: SdkToolsOptions;
+    /** 显式技能材料；缺席时不扫描CLI技能目录。与createSession同义。 */
+    skills?: SdkSkillsOptions;
+    /** 显式MCP材料；配置对象为本次自有，McpHost实例为借用。 */
+    mcp?: McpSessionOption;
+    /** SDK装配警告；平台子集仍沿onPlatformWarning旧出口。 */
+    onWarning?: (warning: SdkWarning) => void;
+    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
+    capabilities?: AppCapabilities;
+    /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
+    promptChannel?: PromptChannel;
+    permission?: PermissionOptions;
+    /** 裁决人(doc/113,仅令牌档;语义同 CreateSessionOptions.adjudication) */
+    adjudication?: AdjudicationOptions;
+    /** 缺省 8192 */
+    maxTokens?: number;
+    /** 缺省 randomUUID() */
+    sessionId?: string;
+    /** 外部中断信号(全链透传:模型流 / 工具执行 / 压缩均立即响应) */
+    signal?: AbortSignal;
+    /** modelTurns 护栏;缺省 200(托管便捷面失控保护,与 serve 对齐) */
+    maxTurns?: number;
+    /** toolRounds 上限;缺省不设 */
+    maxToolRounds?: number;
+    /** 连续可恢复错误熔断上限;缺省 3(内核缺省) */
+    maxConsecutiveErrors?: number;
+    /**
+     * 上下文压缩(kernel T-C10):缺省 {}(自动压缩,仅上下文窗口已知时
+     * 生效——阈值代数依赖窗口,与 TUI/serve 同守卫);false 显式禁用。
+     */
+    compaction?: QueryCompactionOptions | false;
+    /** 采样参数直通 */
+    temperature?: number;
+    thinking?: {
+        budget?: number;
+    };
+    stopSequences?: string[];
+}
+type QueryOptions = (RunAgentOptions & Pick<ManagedQueryOptions, 'systemAppend'> & QueryLifecycleOptions & {
+    skills?: never;
+    mcp?: never;
+}) | ManagedQueryOptions;
+/** query 的终值(末尾 turn.completed/turn.aborted 事件之外的结构化结算) */
+interface QueryResult {
+    /** 终态原因(与末尾 turn.* 事件的 reason 一致) */
+    reason: TerminalReason;
+    /** 最后一条 assistant 消息的纯文本拼接(无 assistant 消息时为空串) */
+    finalText: string;
+    /** 最后一条 assistant 消息(中断极早时可能缺失) */
+    finalMessage?: IRMessage;
+    /** 完整消息历史快照(深拷贝;可直接作下次 initialMessages 续跑) */
+    messages: IRMessage[];
+    /** 全轮累计 usage(cost.usage.updated 求和;模型未报 usage 时缺失) */
+    usage?: IRUsage;
+    /** 内核四计数快照 */
+    counters: QueryCounters;
+}
+/** 五路 usage 求和(可选字段任一侧出现即累计;与 cli headless 同口径) */
+declare function accumulateUsage(total: IRUsage | undefined, next: IRUsage): IRUsage;
+/**
+ * 单轮查询:事件逐条 yield,终态后 return QueryResult。同步可判的选项错误
+ * 在调用点同步抛 TansrSdkError('invalid_options')——不推迟到首次 next()
+ * (异步生成器体惰性执行,校验放体内会让编程错误漂移到消费点);托管装配
+ * 错误天然异步,在首次 next() 以 TansrSdkError('assembly_failed') reject。
+ */
+declare function query(options: QueryOptions): AsyncGenerator<KernelEvent, QueryResult, undefined>;
 
 /**
  * 媒体异步任务客户端(异步化拍板 2026-09-01;videogen/imagegen 双工具共用):
@@ -21906,291 +22502,6 @@ declare function createPlatformAudioClient(options: CreatePlatformAudioClientOpt
 declare function createUnavailablePlatformAudioClient(): PlatformAudioClient;
 
 /**
- * S-1(doc/116 §3.2·§4.3 / doc/117 S-1)— CheckpointStore:上下文快照的可注入存储
- * 接口 + 缺省本地文件实现。
- *
- * 定位与 SessionStore 同款(doc/91 拍板③/⑦):CheckpointStore 四方法是 SDK 快照
- * 存储的**唯一承诺面**;kernel 快照原语(writeCheckpoint/readCheckpoint/
- * listCheckpoints/deleteCheckpoint)只经 createFileCheckpointStore 内部消费,恒不经
- * SDK 出口导出。开发者自建 DB/对象存储实现四方法即可注入 createSession 的
- * `checkpoints.store`。
- *
- * 快照 = 某时刻完整 IR 历史的自包含只读拷贝(D-1 A:JSON 拷贝,非归档旧卷):
- * - 可列举(list 只读头部 meta,恒不携 messages)、可恢复(AgentSession.restore)、
- *   可删除;checkpointId 为 ULID(时间有序,list 升序即时间线);
- * - `put` 写前配对治理(断尾 tool_call 合成 isError 占位),读回即可直接作
- *   initialMessages;
- * - 文件实现恒 durable 写(temp + fsync + rename),半写文件恒不可见;
- * - 保留策略(D-4 A / R-3 / FX-B-23):缺省不限;`retention: { max?, maxAgeDays? }`(`max` 为
- *   `retention.max` 别名)——先按龄再按数、到顶按 checkpointId 升序淘汰最旧,**不分 trigger**
- *   (manual 与 pre_* 同律),**刚写入者恒保留**(`max:0` 留 1)。淘汰律单点 = kernel
- *   `planCheckpointRetention`:文件 / 同居形态由 kernel 在写后施行;自建 store 经
- *   `withCheckpointRetention` 包装以同一计划经 list + delete 施行(两包对同一 max 恒同一淘汰器)。
- *
- * 目录模型(doc/116 §3.6):根目录恒显式或由会话 store 派生,SDK 恒不隐式扫用户目录。
- * - `createFileCheckpointStore({ dir })`:<dir>/<sessionId>/<checkpointId>.json
- *   (+ 旁挂 .meta.json + attachments/<sha256>);独立生命周期,不随会话删除;
- * - 缺省同居(createSession 未给 checkpoints.store/dir 且 store 为
- *   createFileSessionStore 产物):<sessionDir>/checkpoints/<sessionId>/…——随
- *   store.delete(sessionId) 一并消失(file-store.ts 提供,见其 `checkpoints` 成员)。
- */
-
-/** 快照触发源:manual(checkpoint())/ pre_compaction / pre_clear / pre_restore */
-type CheckpointTrigger = ContextCheckpointTrigger;
-/**
- * 快照头部(list/put 返回面;恒不含 messages):schemaVersion / checkpointId /
- * sessionId / createdAt / trigger / label? / cwd / model? / tokens? / compactionId? /
- * messageCount(doc/116 §3.2 全字段)。
- */
-type CheckpointMeta = ContextCheckpointMeta;
-/** 快照对象(get 返回面):头部 + 完整 IR 历史(image 块已内联,可直接作 initialMessages) */
-type Checkpoint = ContextCheckpoint;
-/**
- * put 的输入:开发者/装配层提供身份与内容字段,机械字段(schemaVersion /
- * messageCount)由存储实现填充。AgentSession 内部铸 checkpointId(ULID)。
- */
-type CheckpointInput = ContextCheckpointInput;
-/**
- * 快照存储接口(S-1 冻结形)。实现纪律:
- * - `put` 须配对治理后落盘,返回的 meta.messageCount 为治理后消息数;
- * - `list` 恒不携 messages,按 checkpointId 升序(= 时间序)返回;不存在的会话返回 `[]`;
- * - `get` 不存在返回 null;存储损坏恒结构化 throw(恒不静默回残缺快照);
- * - `delete` 幂等(目标不存在不抛)。
- */
-interface CheckpointStore {
-    /** 写入快照(durable);返回头部 meta */
-    put(cp: CheckpointInput): Promise<CheckpointMeta>;
-    /** 读取快照(不存在 → null;损坏结构化 throw) */
-    get(sessionId: string, checkpointId: string): Promise<Checkpoint | null>;
-    /** 列举某会话全部快照的头部(恒无内容;checkpointId 升序) */
-    list(sessionId: string): Promise<CheckpointMeta[]>;
-    /** 删除快照(幂等) */
-    delete(sessionId: string, checkpointId: string): Promise<void>;
-}
-interface CreateFileCheckpointStoreOptions {
-    /** 快照根目录(显式传入,恒不隐式扫用户目录);布局 <dir>/<sessionId>/<checkpointId>.json */
-    dir: string;
-    /** 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限,D-4 A)。= `retention.max` 别名(同给时 retention 优先) */
-    max?: number;
-    /** 保留策略(FX-B-23 / D-R5):`max` / `maxAgeDays` 并集,kernel 在写后施行;刚写入者恒保留 */
-    retention?: CheckpointRetention;
-}
-/**
- * 缺省文件实现工厂(包 kernel K-1 原语):
- *   <dir>/<sessionId>/<checkpointId>.json         快照体
- *   <dir>/<sessionId>/<checkpointId>.meta.json    旁挂头部(list 只读此件)
- *   <dir>/<sessionId>/attachments/<sha256hex>     image 字节(内容寻址,快照自包含)
- * 独立目录 = 独立生命周期(不随会话删除);会话同居形态由 createFileSessionStore
- * 的 `checkpoints` 成员提供(同一实现、根目录按会话派生)。
- */
-declare function createFileCheckpointStore(options: CreateFileCheckpointStoreOptions): CheckpointStore;
-
-/**
- * doc/91 会话管理实施批 — SessionStore 可注入存储接口(拍板③/⑦)。
- *
- * 定位:SDK 会话存储的**唯一承诺面**(拍板⑦:kernel journal 原语恒不经
- * SDK 出口导出,FileSessionStore 只作内部消费)。「存哪」被本接口抽象掉——
- * 本地文件(createFileSessionStore)、开发者自建 DB、平台托管(二期
- * createPlatformSessionStore,候独立拍板)三态同形,createSession 的
- * resume/store 双字段(拍板③)恒不随存储后端变化。
- *
- * 概念收敛(doc/91 §3.1):对外「会话」= AgentSession 逻辑会话,一个
- * sessionId 一段历史;存储内部的卷/纪元轮换是实现细节,list 面恒按逻辑
- * 会话呈现。
- */
-
-/** 会话存储登记行(元数据半边;内容经 get 另取,list 恒不携内容) */
-interface SessionRecordMeta {
-    /** 逻辑会话 id(= AgentSession.sessionId;缺省 UUID 形制,可显式供给) */
-    sessionId: string;
-    /** ISO-8601 创建时间 */
-    createdAt: string;
-    /** ISO-8601 最近提交时间(list 排序锚) */
-    updatedAt: string;
-    /** 会话标题(缺省 = 首条用户输入截断;可显式供给) */
-    title?: string;
-    /**
-     * 平台会话 id(ULID 26 位 Crockford;doc/91 拍板⑤):令牌档 createSession
-     * per-AgentSession 铸造并经 twp meta.sessionId 出线,ULID↔内核 UUID 映射
-     * 落在此键——平台侧会话行(归因/续租/亲和)与本地记录互认的桥。
-     * doc/110 B2(2026-09-02 翻案拍板⑤实施语义):resume 径**沿用**此键——
-     * 缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
-     */
-    platformSessionId?: string;
-    /** 开发者自留元数据域(SDK 恒不消费其内容) */
-    meta?: Record<string, unknown>;
-    /**
-     * 会话**当前**工作目录(meta.json `cwd`;W-2,doc/116 §3.7):建档写入会话 cwd(此前
-     * file-store 恒写 process.cwd(),自 W-2 起写 createSession 的会话 cwd——server 份
-     * AgentStoredSessionMeta.cwd 同笔),setCwd 切换后经 recordCwdChange 改写为新值;
-     * resume 对账锚。旧记录亦有本键(值为当时进程 cwd)。
-     */
-    cwd?: string;
-    /**
-     * cwd 中途切换史(W-2;meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
-     * 按切换序追加,`cwdHistory[0].from` 即创建期 cwd。未切换过的会话无本键。
-     */
-    cwdHistory?: readonly SessionCwdChange[];
-    /**
-     * F-2(doc/117 §十,D-2 B):本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
-     * meta.json `forkedFrom`,kernel SessionMetaSchema 可选位;createFileSessionStore 读出)。
-     * 直建 / resume / 五方法回落径 fork 出的会话缺席。列举面据此呈现血缘;SDK 恒不据此改行为。
-     */
-    forkedFrom?: {
-        sessionId: string;
-        checkpointId: string;
-    };
-}
-/** 一次 cwd 切换记录(W-2;SessionStore.recordCwdChange 入参 / meta.cwdHistory 元素同形) */
-interface SessionCwdChange {
-    /** ISO-8601 切换时刻 */
-    at: string;
-    /** 切换前 cwd(绝对路径) */
-    from: string;
-    /** 切换后 cwd(绝对路径;切换后 meta.cwd 同值) */
-    to: string;
-}
-/** create 登记参数(sessionId 缺省由 store 铸造 UUID) */
-interface SessionStoreCreateInit {
-    sessionId?: string;
-    title?: string;
-    /**
-     * 平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——doc/110 B2
-     * 起 resume 恒沿用已存值,故在场值只会是同值或旧记录无键的首次补录)
-     */
-    platformSessionId?: string;
-    meta?: Record<string, unknown>;
-    /**
-     * 会话工作目录(W-2 同笔 server 份 create init.cwd):首次建档写入 meta.cwd;缺席沿
-     * process.cwd() 旧值;既有记录恒不改写(创建期事实,切换走 recordCwdChange)。
-     */
-    cwd?: string;
-}
-/** commit 附带信息(与 CreateSessionOptions.onHistoryCommit 的 meta 同形) */
-interface SessionStoreCommitMeta {
-    /**
-     * true = 历史前缀被就地改写(session.compacted 压缩折叠 /
-     * session.microcompacted 存根化),已存内容不再与之对齐——实现方不得按
-     * 长度增量追加,须整卷轮换(demo persistence 先例,doc/91 §3.3)。
-     */
-    readonly rewritten: boolean;
-    /**
-     * S-2 加法:改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
-     * 恢复);缺席 = 非改写,或改写仅来自存根化。实现方只需消费 rewritten,本位为
-     * 可解释性/审计用(如 cli 卷首 compact_boundary.trigger 同义)。
-     */
-    readonly reason?: 'compaction' | 'clear' | 'restore';
-}
-/** get 终值(meta + 完整历史;resume 径另过配对治理,见 session.ts) */
-interface SessionRecord {
-    meta: SessionRecordMeta;
-    messages: IRMessage[];
-}
-/** F-2:store.fork 输入(AgentSession.fork / createSession({ fork }) 经此落新会话记录) */
-interface SessionStoreForkInput {
-    /** 源会话 id(= checkpoint.sessionId;源会话记录恒不改) */
-    sourceSessionId: string;
-    /** 作为新会话初始历史的快照(逻辑形,image 已内联;CheckpointStore.get 产物) */
-    checkpoint: Checkpoint;
-    /** 新会话 id;缺省由 store 铸造 UUID */
-    newSessionId?: string;
-    /** 新会话工作目录(记入 meta;缺省沿源会话 = AgentSession 当前 cwd) */
-    cwd: string;
-    /** 新会话标题(缺省与 create 同律:首条用户输入截断) */
-    title?: string;
-}
-/**
- * 会话存储接口(拍板③冻结形态)。实现纪律:
- * - commit 的 rewritten=true 须整卷轮换(语义见 SessionStoreCommitMeta);
- * - 存储损坏恒结构化报错(throw),恒不静默返回残缺历史(doc/88 对抗式
- *   验收:改坏存储文件须报错不静默);
- * - list 恒不携消息内容(枚举是元数据面);
- * - create 幂等(同 sessionId 重复登记返回既有记录,platformSessionId
- *   以新值对账更新——doc/110 B2:resume 后的 AgentSession **沿用**记录已存
- *   平台 ULID,本对账写只在旧记录无键(2026-09-02 前落盘)时补录新铸值)。
- */
-interface SessionStore {
-    /** 建会话(登记 meta;id 由 store 铸造或调用方供给;幂等) */
-    create(init: SessionStoreCreateInit): Promise<SessionRecordMeta>;
-    /** 取单会话(meta + 完整历史;不存在返回 null;损坏结构化 throw) */
-    get(sessionId: string): Promise<SessionRecord | null>;
-    /** 列会话(按 updatedAt 倒序;恒无内容) */
-    list(filter?: {
-        limit?: number;
-    }): Promise<SessionRecordMeta[]>;
-    /** 轮末提交(对接 onHistoryCommit;rewritten=true 须整卷轮换) */
-    commit(sessionId: string, history: readonly IRMessage[], meta: SessionStoreCommitMeta): Promise<void>;
-    /** 删除/归档(FileSessionStore = 目录删除;平台实现 = 归档语义) */
-    delete(sessionId: string): Promise<void>;
-    /**
-     * 可选(S-3,doc/116 §3.5,D-9 A):历史分页读——消息索引口径(offset = IRMessage[]
-     * 下标,limit = 至少返回的消息数),不暴露段/游标。实现纪律:
-     * - 返回切片恒**配对完整**:start 向前对齐到 ≤ offset 的干净边界(结果 `offset`
-     *   如实回填对齐后的起点),end 向后对齐到 ≥ offset+limit 的干净边界(limit 是
-     *   下限,为凑齐工具轮可多返回);`total` 为该会话全量消息数;
-     * - 会话不存在返回 null;存储损坏结构化 throw(与 get 同律);
-     * - `limit: 0` 合法 = 只取 total(实现应避免为此全量装载);
-     * - createFileSessionStore 以段清单跳读实现(readTail,只装尾部所需段);自建 store
-     *   不实现即由 readHistoryPage() 回落 `get` 全量切片(五方法承诺不变,本成员纯加法)。
-     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
-     */
-    getHistoryPage?(sessionId: string, page: {
-        offset: number;
-        limit: number;
-    }): Promise<{
-        messages: IRMessage[];
-        total: number;
-        offset: number;
-        nextOffset: number;
-    } | null>;
-    /**
-     * 可选(S-1,doc/116 §3.6 同居缺省):store 自带的、与会话同生命周期的快照存储。
-     * createSession 在 `checkpoints.store` / `checkpoints.dir` 皆缺席时取之作为快照
-     * 落点(createFileSessionStore 提供:<sessionDir>/checkpoints,随 delete 一并
-     * 消失);自建 store 不提供即 = 快照未接线(相关方法结构化拒绝,恒不静默)。
-     * 五方法承诺不变(本成员为纯加法)。
-     */
-    readonly checkpoints?: CheckpointStore;
-    /**
-     * 可选(W-2,doc/116 §3.7 D-7):登记一次 cwd 中途切换——实现须把 `meta.cwd` 改写为
-     * `change.to` 并把 change 追加到 `meta.cwdHistory`(切换即刻、与历史提交无关;不改
-     * updatedAt)。会话不存在结构化 throw(session_not_found)。createFileSessionStore 以
-     * meta.json 原文读-改-写实现;自建 store 不实现即 = 切换不落盘(AgentSession.setCwd
-     * 照常成功,仅无持久化记录——五方法承诺不变,本成员纯加法)。
-     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
-     */
-    recordCwdChange?(sessionId: string, change: SessionCwdChange): Promise<void>;
-    /**
-     * 可选(F-2,doc/117 §十,D-2 B):自快照 fork 出新会话记录——源会话恒不改;新会话历史 =
-     * 快照 messages(实现方须配对治理,kernel 原语内置);新会话不被打开(调用方随后 resume)。
-     * createFileSessionStore 经 kernel forkSessionFromCheckpoint 落地(新卷首记录 kind='fork' +
-     * meta.forkedFrom + 附件按 sha 复制);自建 store 不实现即由 AgentSession.fork 回落五方法
-     * (create + commit 全量历史)——功能同在,只无血缘记录(五方法承诺不变,本成员纯加法)。
-     */
-    fork?(input: SessionStoreForkInput): Promise<{
-        sessionId: string;
-    }>;
-    /**
-     * 可选(IO-22,doc/119 / doc/120;server 份 `ServeAgentSessionStore.flush` 同笔):等待在飞提交 settle 与冷层上传
-     * 队列排空(进程退出前调用可保证封存段已上传 / 冷清单已提交)。无冷层 = 等在飞 settle 后即 `true`;超时 / 中止
-     * `false`(热层已耐久,只是冷层积压未清)。createFileSessionStore 提供;自建 store 不实现 = 无异步落盘。
-     */
-    flush?(options?: {
-        timeoutMs?: number;
-        signal?: AbortSignal;
-    }): Promise<boolean>;
-    /**
-     * 可选(IO-22,doc/119 D-4;server 份同笔):就绪探针——分层存储热盘触顶(`policy.hotRetention.maxBytes`,已提交
-     * 段逐出后仍越帽)→ `{ ready:false, reason:'store_hot_full' }`,否则 `{ ready:true }`。宿主据此拒新建 / 摘流。
-     * 缺席 = 恒就绪(本成员纯加法)。
-     */
-    readiness?(): {
-        ready: boolean;
-        reason?: string;
-    };
-}
-
-/**
  * S-3(doc/116 §3.5 / doc/117 S-3,D-9 A)— 历史分页公共件(消息索引口径:offset =
  * IRMessage[] 下标,limit = 至少返回的消息数;不暴露段/游标/manifest)。
  *
@@ -22235,6 +22546,8 @@ declare function sliceHistoryPage(messages: readonly IRMessage[], offset: number
 declare function readHistoryPage(store: SessionStore, sessionId: string, options?: HistoryPageOptions): Promise<HistoryPage | null>;
 
 interface CreateSessionOptions {
+    /** Actual user input incorporation; not acceptance or a new turn. */
+    onInputsConsumed?: (texts: readonly string[]) => void;
     /**
      * 模型档(三档判定):
      * - 字符串(别名/ref)→ 托管模式(五层配置)或令牌模式(bundle 别名,
@@ -22352,7 +22665,7 @@ interface CreateSessionOptions {
     /**
      * 可注入持久化缝(S-B5,doc/84 §5.4 / doc/83 §3.1 缺口 3;形态对齐 cli
      * session-driver onHistoryCommit 先例):每轮终态收口(历史快照已就位)
-     * 时携带全量历史深拷贝同步回调,存到哪由开发者决定。缺省缺席 = 纯内存
+     * 时捕获全量历史深拷贝，按会话提交顺序回调，存到哪由开发者决定。缺省缺席 = 纯内存
      * 零变化(SDK 恒不引入任何隐式落盘)。
      * meta.rewritten:本轮历史前缀被就地改写(session.compacted 压缩折叠,
      * 或 session.microcompacted 旧 tool_result 原位存根化——SDK 无 CLI 的
@@ -22361,8 +22674,10 @@ interface CreateSessionOptions {
      * 回调抛错(含异步 reject)恒不破会话主流程:吞错并合成
      * turn.error(scope='sdk.persistence')入事件流;事件流已终结时退化
      * console.warn(错误不静默消失)。FX-B-21:rewritten 提交失败后,下一次提交
-     * 恒再以 rewritten:true 交付(会话层内存位),落盘方不会只凭「本轮无改写」
+     * 恒再以 rewritten:true 交付(存储与回调独立内存位),落盘方不会只凭「本轮无改写」
      * 走增量径而留下「旧前缀 + 新尾巴」拼接体。
+     * idle()/session.ended 仍不等异步提交；需要真实完成使用 drain()/closeAsync()。
+     * 回调中不得等待本会话 drain()，否则会等待回调自身；retryPersistence 不重放回调。
      */
     onHistoryCommit?: (history: readonly IRMessage[], meta: HistoryCommitMeta) => void | Promise<void>;
     /**
@@ -22586,10 +22901,12 @@ interface AgentSessionInit {
     onHistoryCommit: ((history: readonly IRMessage[], meta: HistoryCommitMeta) => void | Promise<void>) | undefined;
     /** 会话收口回调(session.ended 后调用;临时 MCP host dispose 等) */
     onEnded?: () => Promise<void>;
+    ownedResources?: OwnedResources;
     /** S-1:快照接线(装配期解析;null = 未接线) */
     checkpoints: ResolvedCheckpoints | null;
     /** 轮起跑回调(裁决人 transcript 记录器回填当前轮用户 prompt,T-K2) */
     onTurnStart?: (prompts: readonly string[]) => void;
+    onInputsConsumed?: (texts: readonly string[]) => void;
     /**
      * W-2:按新 cwd 重建执行器(装配层 rebindCwd:权限门 / hooks 同步换新,registry 与
      * 会话级执行态共享);setCwd 成功即以返回值替换 #executor。
@@ -22602,6 +22919,7 @@ interface AgentSessionInit {
     onCwdChanged?: (change: SessionCwdChange) => void | Promise<void>;
     /** W-3:告警通道(createSdkWarningChannel 产物;sdk 源提示经此汇入 onWarning 或回落 sdk.notice) */
     warn: (warning: SdkWarning) => void;
+    hasWarningHandler?: boolean;
     /** F-2:会话存储(fork() 安放新会话记录;缺席 = fork() 抛 session_store_not_wired) */
     store?: SessionStore;
     /**
@@ -22634,6 +22952,10 @@ declare class AgentSession {
     /** 当前模型档快照 */
     currentModel(): ResolvedModel;
     running(): boolean;
+    inputCapabilities(): SessionInputCapabilities;
+    getInputTarget(): SessionInputTarget | null;
+    submitInput(input: SessionInputSubmission): Promise<SessionInputResult>;
+    getInputStatus(inputId: string, target: SessionInputTarget): SessionInputReceipt | null;
     /** 会话历史快照(深拷贝;可直接作恢复/续跑的 initialMessages) */
     messages(): IRMessage[];
     /**
@@ -22647,7 +22969,7 @@ declare class AgentSession {
     history(options?: HistoryPageOptions): Promise<HistoryPage>;
     /**
      * 提交输入:空闲起新轮;运行中经内核注入屏障(下一 assembling 前消费,
-     * 终态未消费的注入结转为下一轮开场输入)。close 后调用属编程错误,
+     * 自然终态未消费的旧注入结转为下一轮开场输入；中断/硬限制不结转)。close 后调用属编程错误,
      * 结构化 throw(不静默吞输入)。
      */
     send(prompt: string): void;
@@ -22740,6 +23062,10 @@ declare class AgentSession {
      * 补齐,seq 与内核事件共用同一会话计数器。内部使用;不属公开 API 面。
      */
     pushBody(body: EventBody, source: string): void;
+    /** 等查询生成器实际收尾与提交；不得从本会话 history callback 内调用并等待。 */
+    drain(options?: SessionDrainOptions): Promise<SessionDrainResult>;
+    /** 信号/超时仅约束观察，逻辑 close 仍即时生效；非法选项在 close 前拒绝。 */
+    closeAsync(options?: SessionDrainOptions): Promise<SessionDrainResult>;
     /** 会话当前工作目录(session.created.cwd 起,随 setCwd 改写) */
     cwd(): string;
     /**
@@ -23424,5 +23750,5 @@ declare function createApplicationPromptRefresher(options: {
     etag?: string;
 }): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
 
-export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryOptions, QueryResult, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
+export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
