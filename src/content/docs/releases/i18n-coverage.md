@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:24 篇手写文章中 English 13 篇;另有 512 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:536 篇中文文章中 English 13 篇、日本語 13 篇、한국어 13 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-09-10'
@@ -12,561 +12,552 @@ generated: true
 
 ## 覆盖率
 
-覆盖率只统计手写文章。由脚本从契约副本生成的页面(SDK 导出参考、错误码表、命令参考、环境变量表、发布说明)随源再生、不逐篇翻译,只报数量,不计入覆盖率。
-
-| 语言 | 已翻译 / 手写页 | 覆盖率 |
+| 语言 | 已翻译 / 总数 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 13 / 24 | 54.2% |
-| 生成页(不计覆盖率) | 512 | — |
+| English(`en`) | 13 / 536 | 2.4% |
+| 日本語(`ja`) | 13 / 536 | 2.4% |
+| 한국어(`ko`) | 13 / 536 | 2.4% |
 
 ## 逐页
 
-| 页面 | zh-CN | `en` |
-|---|---|---|
-| [tansr 资料站](/) `/` | ✓ | 回落 |
-| [Android 接入指南](/android/) `android` | ✓ | 回落 |
-| [设置与 doctor](/cli/settings-and-doctor/) `cli/settings-and-doctor` | ✓ | 回落 |
-| [快速开始：选一条路，5 分钟跑通](/getting-started/) `getting-started` | ✓ | ✓ [Getting started: pick a path, run in 5 minutes](/en/getting-started/) |
-| [Android 与 iOS 5 分钟跑通](/getting-started/android/) `getting-started/android` | ✓ | ✓ [Android and iOS in 5 minutes](/en/getting-started/android/) |
-| [命令行 5 分钟跑通](/getting-started/cli/) `getting-started/cli` | ✓ | ✓ [CLI in 5 minutes](/en/getting-started/cli/) |
-| [Node SDK 5 分钟跑通](/getting-started/sdk/) `getting-started/sdk` | ✓ | ✓ [Node SDK in 5 minutes](/en/getting-started/sdk/) |
-| [会话服务 5 分钟跑通](/getting-started/serve/) `getting-started/serve` | ✓ | ✓ [Session service in 5 minutes](/en/getting-started/serve/) |
-| [iOS 接入指南](/ios/) `ios` | ✓ | 回落 |
-| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 |
-| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 |
-| [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) |
-| [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) |
-| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 |
-| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 |
-| [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) |
-| [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) |
-| [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 |
-| [保留期与治理](/serve/retention-and-governance/) `serve/retention-and-governance` | ✓ | 回落 |
-| [v2 协议与 webhook](/serve/v2-and-webhooks/) `serve/v2-and-webhooks` | ✓ | 回落 |
-| [帮助中心](/support/) `support` | ✓ | ✓ [Help center](/en/support/) |
-| [账号、密钥、套餐与计费](/support/account/) `support/account` | ✓ | ✓ [Account, keys, plans and billing](/en/support/account/) |
-| [联系支持](/support/contact/) `support/contact` | ✓ | ✓ [Contact support](/en/support/contact/) |
-| [排障指南](/support/troubleshooting/) `support/troubleshooting` | ✓ | ✓ [Troubleshooting](/en/support/troubleshooting/) |
-
-<details>
-<summary>生成页(512,不计覆盖率)</summary>
-
-| 页面 | zh-CN | `en` |
-|---|---|---|
-| [CLI 命令参考(生成页)](/cli/commands/) `cli/commands` | ✓ | 回落 |
-| [错误码参考(生成页)](/errors/codes/) `errors/codes` | ✓ | 回落 |
-| [@tansr/cli Changelog(生成页)](/releases/cli/) `releases/cli` | ✓ | 回落 |
-| [@tansr/sdk Changelog(生成页)](/releases/sdk/) `releases/sdk` | ✓ | 回落 |
-| [@tansr/serve Changelog(生成页)](/releases/serve/) `releases/serve` | ✓ | 回落 |
-| [API 参考总览(生成页)](/sdk/api/) `sdk/api` | ✓ | 回落 |
-| [AgentSession(生成页)](/sdk/api/classes/agentsession/) `sdk/api/classes/agentsession` | ✓ | 回落 |
-| [McpHost(生成页)](/sdk/api/classes/mcphost/) `sdk/api/classes/mcphost` | ✓ | 回落 |
-| [PlatformRequestError(生成页)](/sdk/api/classes/platformrequesterror/) `sdk/api/classes/platformrequesterror` | ✓ | 回落 |
-| [QueueChannel(生成页)](/sdk/api/classes/queuechannel/) `sdk/api/classes/queuechannel` | ✓ | 回落 |
-| [SdkLifecycleError(生成页)](/sdk/api/classes/sdklifecycleerror/) `sdk/api/classes/sdklifecycleerror` | ✓ | 回落 |
-| [SequentialToolExecutor(生成页)](/sdk/api/classes/sequentialtoolexecutor/) `sdk/api/classes/sequentialtoolexecutor` | ✓ | 回落 |
-| [StoreError(生成页)](/sdk/api/classes/storeerror/) `sdk/api/classes/storeerror` | ✓ | 回落 |
-| [TansrSdkError(生成页)](/sdk/api/classes/tansrsdkerror/) `sdk/api/classes/tansrsdkerror` | ✓ | 回落 |
-| [UnavailableChannel(生成页)](/sdk/api/classes/unavailablechannel/) `sdk/api/classes/unavailablechannel` | ✓ | 回落 |
-| [accumulateUsage(生成页)](/sdk/api/functions/accumulateusage/) `sdk/api/functions/accumulateusage` | ✓ | 回落 |
-| [alignHistoryPage(生成页)](/sdk/api/functions/alignhistorypage/) `sdk/api/functions/alignhistorypage` | ✓ | 回落 |
-| [appBundlePricingUpdates(生成页)](/sdk/api/functions/appbundlepricingupdates/) `sdk/api/functions/appbundlepricingupdates` | ✓ | 回落 |
-| [appBundleRegistryConfig(生成页)](/sdk/api/functions/appbundleregistryconfig/) `sdk/api/functions/appbundleregistryconfig` | ✓ | 回落 |
-| [appendUserMessage(生成页)](/sdk/api/functions/appendusermessage/) `sdk/api/functions/appendusermessage` | ✓ | 回落 |
-| [appSingleStageProtocolFingerprintFor(生成页)](/sdk/api/functions/appsinglestageprotocolfingerprintfor/) `sdk/api/functions/appsinglestageprotocolfingerprintfor` | ✓ | 回落 |
-| [assembleBundleAdjudicator(生成页)](/sdk/api/functions/assemblebundleadjudicator/) `sdk/api/functions/assemblebundleadjudicator` | ✓ | 回落 |
-| [assembleManagedModel(生成页)](/sdk/api/functions/assemblemanagedmodel/) `sdk/api/functions/assemblemanagedmodel` | ✓ | 回落 |
-| [assemblePlatformModel(生成页)](/sdk/api/functions/assembleplatformmodel/) `sdk/api/functions/assembleplatformmodel` | ✓ | 回落 |
-| [assembleSdkSkills(生成页)](/sdk/api/functions/assemblesdkskills/) `sdk/api/functions/assemblesdkskills` | ✓ | 回落 |
-| [assembleTokenTierAdjudicator(生成页)](/sdk/api/functions/assembletokentieradjudicator/) `sdk/api/functions/assembletokentieradjudicator` | ✓ | 回落 |
-| [assembleTooling(生成页)](/sdk/api/functions/assembletooling/) `sdk/api/functions/assembletooling` | ✓ | 回落 |
-| [attachSdkMcp(生成页)](/sdk/api/functions/attachsdkmcp/) `sdk/api/functions/attachsdkmcp` | ✓ | 回落 |
-| [attachSdkMcpWithDiscover(生成页)](/sdk/api/functions/attachsdkmcpwithdiscover/) `sdk/api/functions/attachsdkmcpwithdiscover` | ✓ | 回落 |
-| [attachSdkTaskTool(生成页)](/sdk/api/functions/attachsdktasktool/) `sdk/api/functions/attachsdktasktool` | ✓ | 回落 |
-| [buildClientFromRegistry(生成页)](/sdk/api/functions/buildclientfromregistry/) `sdk/api/functions/buildclientfromregistry` | ✓ | 回落 |
-| [buildSdkToolSet(生成页)](/sdk/api/functions/buildsdktoolset/) `sdk/api/functions/buildsdktoolset` | ✓ | 回落 |
-| [buildToolGuideSegment(生成页)](/sdk/api/functions/buildtoolguidesegment/) `sdk/api/functions/buildtoolguidesegment` | ✓ | 回落 |
-| [bundleKey(生成页)](/sdk/api/functions/bundlekey/) `sdk/api/functions/bundlekey` | ✓ | 回落 |
-| [classifierProtocolFingerprintFor(生成页)](/sdk/api/functions/classifierprotocolfingerprintfor/) `sdk/api/functions/classifierprotocolfingerprintfor` | ✓ | 回落 |
-| [createApplicationPromptRefresher(生成页)](/sdk/api/functions/createapplicationpromptrefresher/) `sdk/api/functions/createapplicationpromptrefresher` | ✓ | 回落 |
-| [createAppTokenFetch(生成页)](/sdk/api/functions/createapptokenfetch/) `sdk/api/functions/createapptokenfetch` | ✓ | 回落 |
-| [createBlockListClassifier(生成页)](/sdk/api/functions/createblocklistclassifier/) `sdk/api/functions/createblocklistclassifier` | ✓ | 回落 |
-| [createBundleCache(生成页)](/sdk/api/functions/createbundlecache/) `sdk/api/functions/createbundlecache` | ✓ | 回落 |
-| [createChaosBlobStore(生成页)](/sdk/api/functions/createchaosblobstore/) `sdk/api/functions/createchaosblobstore` | ✓ | 回落 |
-| [createClassifierTranscriptRecorder(生成页)](/sdk/api/functions/createclassifiertranscriptrecorder/) `sdk/api/functions/createclassifiertranscriptrecorder` | ✓ | 回落 |
-| [createFileCheckpointStore(生成页)](/sdk/api/functions/createfilecheckpointstore/) `sdk/api/functions/createfilecheckpointstore` | ✓ | 回落 |
-| [createFileSessionStore(生成页)](/sdk/api/functions/createfilesessionstore/) `sdk/api/functions/createfilesessionstore` | ✓ | 回落 |
-| [createFsBlobStore(生成页)](/sdk/api/functions/createfsblobstore/) `sdk/api/functions/createfsblobstore` | ✓ | 回落 |
-| [createImageGenTool(生成页)](/sdk/api/functions/createimagegentool/) `sdk/api/functions/createimagegentool` | ✓ | 回落 |
-| [createMcpHost(生成页)](/sdk/api/functions/createmcphost/) `sdk/api/functions/createmcphost` | ✓ | 回落 |
-| [createMemoryBlobStore(生成页)](/sdk/api/functions/creatememoryblobstore/) `sdk/api/functions/creatememoryblobstore` | ✓ | 回落 |
-| [createNarrator(生成页)](/sdk/api/functions/createnarrator/) `sdk/api/functions/createnarrator` | ✓ | 回落 |
-| [createPlatformAudioClient(生成页)](/sdk/api/functions/createplatformaudioclient/) `sdk/api/functions/createplatformaudioclient` | ✓ | 回落 |
-| [createPlatformImageGenProvider(生成页)](/sdk/api/functions/createplatformimagegenprovider/) `sdk/api/functions/createplatformimagegenprovider` | ✓ | 回落 |
-| [createPlatformSearchProvider(生成页)](/sdk/api/functions/createplatformsearchprovider/) `sdk/api/functions/createplatformsearchprovider` | ✓ | 回落 |
-| [createPlatformSpeechToTextProvider(生成页)](/sdk/api/functions/createplatformspeechtotextprovider/) `sdk/api/functions/createplatformspeechtotextprovider` | ✓ | 回落 |
-| [createPlatformTextToSpeechProvider(生成页)](/sdk/api/functions/createplatformtexttospeechprovider/) `sdk/api/functions/createplatformtexttospeechprovider` | ✓ | 回落 |
-| [createPlatformVideoGenProvider(生成页)](/sdk/api/functions/createplatformvideogenprovider/) `sdk/api/functions/createplatformvideogenprovider` | ✓ | 回落 |
-| [createSdkPermissionGate(生成页)](/sdk/api/functions/createsdkpermissiongate/) `sdk/api/functions/createsdkpermissiongate` | ✓ | 回落 |
-| [createSession(生成页)](/sdk/api/functions/createsession/) `sdk/api/functions/createsession` | ✓ | 回落 |
-| [createSessionView(生成页)](/sdk/api/functions/createsessionview/) `sdk/api/functions/createsessionview` | ✓ | 回落 |
-| [createSingleStageClassifier(生成页)](/sdk/api/functions/createsinglestageclassifier/) `sdk/api/functions/createsinglestageclassifier` | ✓ | 回落 |
-| [createSpeechToTextTool(生成页)](/sdk/api/functions/createspeechtotexttool/) `sdk/api/functions/createspeechtotexttool` | ✓ | 回落 |
-| [createTextToSpeechTool(生成页)](/sdk/api/functions/createtexttospeechtool/) `sdk/api/functions/createtexttospeechtool` | ✓ | 回落 |
-| [createTwoStageClassifier(生成页)](/sdk/api/functions/createtwostageclassifier/) `sdk/api/functions/createtwostageclassifier` | ✓ | 回落 |
-| [createUnavailablePlatformAudioClient(生成页)](/sdk/api/functions/createunavailableplatformaudioclient/) `sdk/api/functions/createunavailableplatformaudioclient` | ✓ | 回落 |
-| [createVideoGenTool(生成页)](/sdk/api/functions/createvideogentool/) `sdk/api/functions/createvideogentool` | ✓ | 回落 |
-| [defaultAppCapabilities(生成页)](/sdk/api/functions/defaultappcapabilities/) `sdk/api/functions/defaultappcapabilities` | ✓ | 回落 |
-| [defineSkill(生成页)](/sdk/api/functions/defineskill/) `sdk/api/functions/defineskill` | ✓ | 回落 |
-| [defineTool(生成页)](/sdk/api/functions/definetool/) `sdk/api/functions/definetool` | ✓ | 回落 |
-| [featuresFingerprintOf(生成页)](/sdk/api/functions/featuresfingerprintof/) `sdk/api/functions/featuresfingerprintof` | ✓ | 回落 |
-| [fetchAppBundle(生成页)](/sdk/api/functions/fetchappbundle/) `sdk/api/functions/fetchappbundle` | ✓ | 回落 |
-| [fetchTwpFeatures(生成页)](/sdk/api/functions/fetchtwpfeatures/) `sdk/api/functions/fetchtwpfeatures` | ✓ | 回落 |
-| [fetchTwpHeartbeat(生成页)](/sdk/api/functions/fetchtwpheartbeat/) `sdk/api/functions/fetchtwpheartbeat` | ✓ | 回落 |
-| [hintFor(生成页)](/sdk/api/functions/hintfor/) `sdk/api/functions/hintfor` | ✓ | 回落 |
-| [hostedToolUniverse(生成页)](/sdk/api/functions/hostedtooluniverse/) `sdk/api/functions/hostedtooluniverse` | ✓ | 回落 |
-| [inapplicableTrueBits(生成页)](/sdk/api/functions/inapplicabletruebits/) `sdk/api/functions/inapplicabletruebits` | ✓ | 回落 |
-| [initialSessionViewState(生成页)](/sdk/api/functions/initialsessionviewstate/) `sdk/api/functions/initialsessionviewstate` | ✓ | 回落 |
-| [isPlanErrorCode(生成页)](/sdk/api/functions/isplanerrorcode/) `sdk/api/functions/isplanerrorcode` | ✓ | 回落 |
-| [isRenderableArtifact(生成页)](/sdk/api/functions/isrenderableartifact/) `sdk/api/functions/isrenderableartifact` | ✓ | 回落 |
-| [isSessionHistoryStore(生成页)](/sdk/api/functions/issessionhistorystore/) `sdk/api/functions/issessionhistorystore` | ✓ | 回落 |
-| [isTokenInvalidatingCode(生成页)](/sdk/api/functions/istokeninvalidatingcode/) `sdk/api/functions/istokeninvalidatingcode` | ✓ | 回落 |
-| [isTransientAppTokenReason(生成页)](/sdk/api/functions/istransientapptokenreason/) `sdk/api/functions/istransientapptokenreason` | ✓ | 回落 |
-| [markSourceFailure(生成页)](/sdk/api/functions/marksourcefailure/) `sdk/api/functions/marksourcefailure` | ✓ | 回落 |
-| [normalizeAppCapabilitiesForPlatform(生成页)](/sdk/api/functions/normalizeappcapabilitiesforplatform/) `sdk/api/functions/normalizeappcapabilitiesforplatform` | ✓ | 回落 |
-| [normalizeEtagValue(生成页)](/sdk/api/functions/normalizeetagvalue/) `sdk/api/functions/normalizeetagvalue` | ✓ | 回落 |
-| [parseAppBundle(生成页)](/sdk/api/functions/parseappbundle/) `sdk/api/functions/parseappbundle` | ✓ | 回落 |
-| [parseCacheControlMaxAgeMs(生成页)](/sdk/api/functions/parsecachecontrolmaxagems/) `sdk/api/functions/parsecachecontrolmaxagems` | ✓ | 回落 |
-| [parseMediaArtifact(生成页)](/sdk/api/functions/parsemediaartifact/) `sdk/api/functions/parsemediaartifact` | ✓ | 回落 |
-| [parseSpeechData(生成页)](/sdk/api/functions/parsespeechdata/) `sdk/api/functions/parsespeechdata` | ✓ | 回落 |
-| [parseStage1Output(生成页)](/sdk/api/functions/parsestage1output/) `sdk/api/functions/parsestage1output` | ✓ | 回落 |
-| [parseStage2Output(生成页)](/sdk/api/functions/parsestage2output/) `sdk/api/functions/parsestage2output` | ✓ | 回落 |
-| [parseTranscriptData(生成页)](/sdk/api/functions/parsetranscriptdata/) `sdk/api/functions/parsetranscriptdata` | ✓ | 回落 |
-| [planErrorGuidance(生成页)](/sdk/api/functions/planerrorguidance/) `sdk/api/functions/planerrorguidance` | ✓ | 回落 |
-| [planUpgradeUrlOf(生成页)](/sdk/api/functions/planupgradeurlof/) `sdk/api/functions/planupgradeurlof` | ✓ | 回落 |
-| [platformErrorOf(生成页)](/sdk/api/functions/platformerrorof/) `sdk/api/functions/platformerrorof` | ✓ | 回落 |
-| [prepareAdjudication(生成页)](/sdk/api/functions/prepareadjudication/) `sdk/api/functions/prepareadjudication` | ✓ | 回落 |
-| [prepareApplicationPromptTurn(生成页)](/sdk/api/functions/prepareapplicationpromptturn/) `sdk/api/functions/prepareapplicationpromptturn` | ✓ | 回落 |
-| [providerSwitchedBody(生成页)](/sdk/api/functions/providerswitchedbody/) `sdk/api/functions/providerswitchedbody` | ✓ | 回落 |
-| [query(生成页)](/sdk/api/functions/query/) `sdk/api/functions/query` | ✓ | 回落 |
-| [readHistoryPage(生成页)](/sdk/api/functions/readhistorypage/) `sdk/api/functions/readhistorypage` | ✓ | 回落 |
-| [reduceSessionView(生成页)](/sdk/api/functions/reducesessionview/) `sdk/api/functions/reducesessionview` | ✓ | 回落 |
-| [renderAppContext(生成页)](/sdk/api/functions/renderappcontext/) `sdk/api/functions/renderappcontext` | ✓ | 回落 |
-| [renderCallPayloadDetailed(生成页)](/sdk/api/functions/rendercallpayloaddetailed/) `sdk/api/functions/rendercallpayloaddetailed` | ✓ | 回落 |
-| [renderClassifierStagePrompt(生成页)](/sdk/api/functions/renderclassifierstageprompt/) `sdk/api/functions/renderclassifierstageprompt` | ✓ | 回落 |
-| [renderEngineFacts(生成页)](/sdk/api/functions/renderenginefacts/) `sdk/api/functions/renderenginefacts` | ✓ | 回落 |
-| [requestPlatformAudio(生成页)](/sdk/api/functions/requestplatformaudio/) `sdk/api/functions/requestplatformaudio` | ✓ | 回落 |
-| [resolveAdjudicationPosture(生成页)](/sdk/api/functions/resolveadjudicationposture/) `sdk/api/functions/resolveadjudicationposture` | ✓ | 回落 |
-| [resolveAdjudicatorGovernance(生成页)](/sdk/api/functions/resolveadjudicatorgovernance/) `sdk/api/functions/resolveadjudicatorgovernance` | ✓ | 回落 |
-| [resolveApplicationSystem(生成页)](/sdk/api/functions/resolveapplicationsystem/) `sdk/api/functions/resolveapplicationsystem` | ✓ | 回落 |
-| [resolveBuiltinSelection(生成页)](/sdk/api/functions/resolvebuiltinselection/) `sdk/api/functions/resolvebuiltinselection` | ✓ | 回落 |
-| [resolveInitialMessages(生成页)](/sdk/api/functions/resolveinitialmessages/) `sdk/api/functions/resolveinitialmessages` | ✓ | 回落 |
-| [resolvePlatformSelection(生成页)](/sdk/api/functions/resolveplatformselection/) `sdk/api/functions/resolveplatformselection` | ✓ | 回落 |
-| [resolveStageHandle(生成页)](/sdk/api/functions/resolvestagehandle/) `sdk/api/functions/resolvestagehandle` | ✓ | 回落 |
-| [runAgent(生成页)](/sdk/api/functions/runagent/) `sdk/api/functions/runagent` | ✓ | 回落 |
-| [runIdleCompaction(生成页)](/sdk/api/functions/runidlecompaction/) `sdk/api/functions/runidlecompaction` | ✓ | 回落 |
-| [runStorageConformance(生成页)](/sdk/api/functions/runstorageconformance/) `sdk/api/functions/runstorageconformance` | ✓ | 回落 |
-| [serializeTimeoutPolicy(生成页)](/sdk/api/functions/serializetimeoutpolicy/) `sdk/api/functions/serializetimeoutpolicy` | ✓ | 回落 |
-| [setSessionViewDelivery(生成页)](/sdk/api/functions/setsessionviewdelivery/) `sdk/api/functions/setsessionviewdelivery` | ✓ | 回落 |
-| [singleStageProtocolFingerprintFor(生成页)](/sdk/api/functions/singlestageprotocolfingerprintfor/) `sdk/api/functions/singlestageprotocolfingerprintfor` | ✓ | 回落 |
-| [sliceHistoryPage(生成页)](/sdk/api/functions/slicehistorypage/) `sdk/api/functions/slicehistorypage` | ✓ | 回落 |
-| [stripThinkingParts(生成页)](/sdk/api/functions/stripthinkingparts/) `sdk/api/functions/stripthinkingparts` | ✓ | 回落 |
-| [subagentModelResolverOf(生成页)](/sdk/api/functions/subagentmodelresolverof/) `sdk/api/functions/subagentmodelresolverof` | ✓ | 回落 |
-| [topologyOf(生成页)](/sdk/api/functions/topologyof/) `sdk/api/functions/topologyof` | ✓ | 回落 |
-| [topologyToolUniverse(生成页)](/sdk/api/functions/topologytooluniverse/) `sdk/api/functions/topologytooluniverse` | ✓ | 回落 |
-| [toStoreError(生成页)](/sdk/api/functions/tostoreerror/) `sdk/api/functions/tostoreerror` | ✓ | 回落 |
-| [toToolDef(生成页)](/sdk/api/functions/totooldef/) `sdk/api/functions/totooldef` | ✓ | 回落 |
-| [validateAdjudicationOptions(生成页)](/sdk/api/functions/validateadjudicationoptions/) `sdk/api/functions/validateadjudicationoptions` | ✓ | 回落 |
-| [viewStateFromHistory(生成页)](/sdk/api/functions/viewstatefromhistory/) `sdk/api/functions/viewstatefromhistory` | ✓ | 回落 |
-| [zeroAppCapabilities(生成页)](/sdk/api/functions/zeroappcapabilities/) `sdk/api/functions/zeroappcapabilities` | ✓ | 回落 |
-| [AdjudicationOptions(生成页)](/sdk/api/interfaces/adjudicationoptions/) `sdk/api/interfaces/adjudicationoptions` | ✓ | 回落 |
-| [AdjudicationWarning(生成页)](/sdk/api/interfaces/adjudicationwarning/) `sdk/api/interfaces/adjudicationwarning` | ✓ | 回落 |
-| [AdjudicatorGovernance(生成页)](/sdk/api/interfaces/adjudicatorgovernance/) `sdk/api/interfaces/adjudicatorgovernance` | ✓ | 回落 |
-| [AdjudicatorGovernanceInput(生成页)](/sdk/api/interfaces/adjudicatorgovernanceinput/) `sdk/api/interfaces/adjudicatorgovernanceinput` | ✓ | 回落 |
-| [AdjudicatorMoneyFold(生成页)](/sdk/api/interfaces/adjudicatormoneyfold/) `sdk/api/interfaces/adjudicatormoneyfold` | ✓ | 回落 |
-| [AlignedHistoryPage(生成页)](/sdk/api/interfaces/alignedhistorypage/) `sdk/api/interfaces/alignedhistorypage` | ✓ | 回落 |
-| [Answer(生成页)](/sdk/api/interfaces/answer/) `sdk/api/interfaces/answer` | ✓ | 回落 |
-| [AppBundle(生成页)](/sdk/api/interfaces/appbundle/) `sdk/api/interfaces/appbundle` | ✓ | 回落 |
-| [AppBundleAdjudicator(生成页)](/sdk/api/interfaces/appbundleadjudicator/) `sdk/api/interfaces/appbundleadjudicator` | ✓ | 回落 |
-| [AppBundleContextScheme(生成页)](/sdk/api/interfaces/appbundlecontextscheme/) `sdk/api/interfaces/appbundlecontextscheme` | ✓ | 回落 |
-| [AppBundleGovernance(生成页)](/sdk/api/interfaces/appbundlegovernance/) `sdk/api/interfaces/appbundlegovernance` | ✓ | 回落 |
-| [AppBundleModel(生成页)](/sdk/api/interfaces/appbundlemodel/) `sdk/api/interfaces/appbundlemodel` | ✓ | 回落 |
-| [AppBundleModelPricing(生成页)](/sdk/api/interfaces/appbundlemodelpricing/) `sdk/api/interfaces/appbundlemodelpricing` | ✓ | 回落 |
-| [AppBundlePlatformModels(生成页)](/sdk/api/interfaces/appbundleplatformmodels/) `sdk/api/interfaces/appbundleplatformmodels` | ✓ | 回落 |
-| [ApplicationPromptInfo(生成页)](/sdk/api/interfaces/applicationpromptinfo/) `sdk/api/interfaces/applicationpromptinfo` | ✓ | 回落 |
-| [ApplicationPromptSnapshot(生成页)](/sdk/api/interfaces/applicationpromptsnapshot/) `sdk/api/interfaces/applicationpromptsnapshot` | ✓ | 回落 |
-| [ApplicationPromptTurnOptions(生成页)](/sdk/api/interfaces/applicationpromptturnoptions/) `sdk/api/interfaces/applicationpromptturnoptions` | ✓ | 回落 |
-| [AssembleBundleAdjudicatorOptions(生成页)](/sdk/api/interfaces/assemblebundleadjudicatoroptions/) `sdk/api/interfaces/assemblebundleadjudicatoroptions` | ✓ | 回落 |
-| [AssembledBundleAdjudicator(生成页)](/sdk/api/interfaces/assembledbundleadjudicator/) `sdk/api/interfaces/assembledbundleadjudicator` | ✓ | 回落 |
-| [AssembledManagedModel(生成页)](/sdk/api/interfaces/assembledmanagedmodel/) `sdk/api/interfaces/assembledmanagedmodel` | ✓ | 回落 |
-| [AssembledPlatformModel(生成页)](/sdk/api/interfaces/assembledplatformmodel/) `sdk/api/interfaces/assembledplatformmodel` | ✓ | 回落 |
-| [AssembledSkills(生成页)](/sdk/api/interfaces/assembledskills/) `sdk/api/interfaces/assembledskills` | ✓ | 回落 |
-| [AssembledTooling(生成页)](/sdk/api/interfaces/assembledtooling/) `sdk/api/interfaces/assembledtooling` | ✓ | 回落 |
-| [AssembleManagedModelOptions(生成页)](/sdk/api/interfaces/assemblemanagedmodeloptions/) `sdk/api/interfaces/assemblemanagedmodeloptions` | ✓ | 回落 |
-| [AssemblePlatformModelOptions(生成页)](/sdk/api/interfaces/assembleplatformmodeloptions/) `sdk/api/interfaces/assembleplatformmodeloptions` | ✓ | 回落 |
-| [AssembleToolingAdjudication(生成页)](/sdk/api/interfaces/assembletoolingadjudication/) `sdk/api/interfaces/assembletoolingadjudication` | ✓ | 回落 |
-| [AssembleToolingOptions(生成页)](/sdk/api/interfaces/assembletoolingoptions/) `sdk/api/interfaces/assembletoolingoptions` | ✓ | 回落 |
-| [AudioAsrConstraints(生成页)](/sdk/api/interfaces/audioasrconstraints/) `sdk/api/interfaces/audioasrconstraints` | ✓ | 回落 |
-| [AudioTtsConstraints(生成页)](/sdk/api/interfaces/audiottsconstraints/) `sdk/api/interfaces/audiottsconstraints` | ✓ | 回落 |
-| [BlobListEntry(生成页)](/sdk/api/interfaces/bloblistentry/) `sdk/api/interfaces/bloblistentry` | ✓ | 回落 |
-| [BlobMeta(生成页)](/sdk/api/interfaces/blobmeta/) `sdk/api/interfaces/blobmeta` | ✓ | 回落 |
-| [BlobStoreCapabilities(生成页)](/sdk/api/interfaces/blobstorecapabilities/) `sdk/api/interfaces/blobstorecapabilities` | ✓ | 回落 |
-| [BlockListClassifierConfig(生成页)](/sdk/api/interfaces/blocklistclassifierconfig/) `sdk/api/interfaces/blocklistclassifierconfig` | ✓ | 回落 |
-| [BuildSdkToolSetOptions(生成页)](/sdk/api/interfaces/buildsdktoolsetoptions/) `sdk/api/interfaces/buildsdktoolsetoptions` | ✓ | 回落 |
-| [BundleCache(生成页)](/sdk/api/interfaces/bundlecache/) `sdk/api/interfaces/bundlecache` | ✓ | 回落 |
-| [BundleCacheKey(生成页)](/sdk/api/interfaces/bundlecachekey/) `sdk/api/interfaces/bundlecachekey` | ✓ | 回落 |
-| [BundleCacheResolveInput(生成页)](/sdk/api/interfaces/bundlecacheresolveinput/) `sdk/api/interfaces/bundlecacheresolveinput` | ✓ | 回落 |
-| [BundleCacheStats(生成页)](/sdk/api/interfaces/bundlecachestats/) `sdk/api/interfaces/bundlecachestats` | ✓ | 回落 |
-| [ByteRange(生成页)](/sdk/api/interfaces/byterange/) `sdk/api/interfaces/byterange` | ✓ | 回落 |
-| [CapabilityTopologyProfile(生成页)](/sdk/api/interfaces/capabilitytopologyprofile/) `sdk/api/interfaces/capabilitytopologyprofile` | ✓ | 回落 |
-| [ChaosBlobStore(生成页)](/sdk/api/interfaces/chaosblobstore/) `sdk/api/interfaces/chaosblobstore` | ✓ | 回落 |
-| [ChaosFaults(生成页)](/sdk/api/interfaces/chaosfaults/) `sdk/api/interfaces/chaosfaults` | ✓ | 回落 |
-| [ChaosStats(生成页)](/sdk/api/interfaces/chaosstats/) `sdk/api/interfaces/chaosstats` | ✓ | 回落 |
-| [CheckpointOptions(生成页)](/sdk/api/interfaces/checkpointoptions/) `sdk/api/interfaces/checkpointoptions` | ✓ | 回落 |
-| [CheckpointRetention(生成页)](/sdk/api/interfaces/checkpointretention/) `sdk/api/interfaces/checkpointretention` | ✓ | 回落 |
-| [CheckpointStore(生成页)](/sdk/api/interfaces/checkpointstore/) `sdk/api/interfaces/checkpointstore` | ✓ | 回落 |
-| [ClassifierLiveStages(生成页)](/sdk/api/interfaces/classifierlivestages/) `sdk/api/interfaces/classifierlivestages` | ✓ | 回落 |
-| [ClassifierStageBudgetOverrides(生成页)](/sdk/api/interfaces/classifierstagebudgetoverrides/) `sdk/api/interfaces/classifierstagebudgetoverrides` | ✓ | 回落 |
-| [ClassifierStageHandle(生成页)](/sdk/api/interfaces/classifierstagehandle/) `sdk/api/interfaces/classifierstagehandle` | ✓ | 回落 |
-| [ClassifierTimeoutPolicy(生成页)](/sdk/api/interfaces/classifiertimeoutpolicy/) `sdk/api/interfaces/classifiertimeoutpolicy` | ✓ | 回落 |
-| [ClassifierTranscriptRecorder(生成页)](/sdk/api/interfaces/classifiertranscriptrecorder/) `sdk/api/interfaces/classifiertranscriptrecorder` | ✓ | 回落 |
-| [ColdStoredSessionMeta(生成页)](/sdk/api/interfaces/coldstoredsessionmeta/) `sdk/api/interfaces/coldstoredsessionmeta` | ✓ | 回落 |
-| [ColdTierStats(生成页)](/sdk/api/interfaces/coldtierstats/) `sdk/api/interfaces/coldtierstats` | ✓ | 回落 |
-| [CompactNowOptions(生成页)](/sdk/api/interfaces/compactnowoptions/) `sdk/api/interfaces/compactnowoptions` | ✓ | 回落 |
-| [CompactOptions(生成页)](/sdk/api/interfaces/compactoptions/) `sdk/api/interfaces/compactoptions` | ✓ | 回落 |
-| [ConfigDiagnostic(生成页)](/sdk/api/interfaces/configdiagnostic/) `sdk/api/interfaces/configdiagnostic` | ✓ | 回落 |
-| [CreateBlockListClassifierOptions(生成页)](/sdk/api/interfaces/createblocklistclassifieroptions/) `sdk/api/interfaces/createblocklistclassifieroptions` | ✓ | 回落 |
-| [CreateBundleCacheOptions(生成页)](/sdk/api/interfaces/createbundlecacheoptions/) `sdk/api/interfaces/createbundlecacheoptions` | ✓ | 回落 |
-| [CreateFileCheckpointStoreOptions(生成页)](/sdk/api/interfaces/createfilecheckpointstoreoptions/) `sdk/api/interfaces/createfilecheckpointstoreoptions` | ✓ | 回落 |
-| [CreateFileSessionStoreOptions(生成页)](/sdk/api/interfaces/createfilesessionstoreoptions/) `sdk/api/interfaces/createfilesessionstoreoptions` | ✓ | 回落 |
-| [CreatePlatformAudioClientOptions(生成页)](/sdk/api/interfaces/createplatformaudioclientoptions/) `sdk/api/interfaces/createplatformaudioclientoptions` | ✓ | 回落 |
-| [CreatePlatformImageGenProviderOptions(生成页)](/sdk/api/interfaces/createplatformimagegenprovideroptions/) `sdk/api/interfaces/createplatformimagegenprovideroptions` | ✓ | 回落 |
-| [CreatePlatformSearchProviderOptions(生成页)](/sdk/api/interfaces/createplatformsearchprovideroptions/) `sdk/api/interfaces/createplatformsearchprovideroptions` | ✓ | 回落 |
-| [CreatePlatformSpeechToTextProviderOptions(生成页)](/sdk/api/interfaces/createplatformspeechtotextprovideroptions/) `sdk/api/interfaces/createplatformspeechtotextprovideroptions` | ✓ | 回落 |
-| [CreatePlatformTextToSpeechProviderOptions(生成页)](/sdk/api/interfaces/createplatformtexttospeechprovideroptions/) `sdk/api/interfaces/createplatformtexttospeechprovideroptions` | ✓ | 回落 |
-| [CreatePlatformVideoGenProviderOptions(生成页)](/sdk/api/interfaces/createplatformvideogenprovideroptions/) `sdk/api/interfaces/createplatformvideogenprovideroptions` | ✓ | 回落 |
-| [CreateSdkPermissionGateOptions(生成页)](/sdk/api/interfaces/createsdkpermissiongateoptions/) `sdk/api/interfaces/createsdkpermissiongateoptions` | ✓ | 回落 |
-| [CreateSessionOptions(生成页)](/sdk/api/interfaces/createsessionoptions/) `sdk/api/interfaces/createsessionoptions` | ✓ | 回落 |
-| [DefinedSkill(生成页)](/sdk/api/interfaces/definedskill/) `sdk/api/interfaces/definedskill` | ✓ | 回落 |
-| [DefinedTool(生成页)](/sdk/api/interfaces/definedtool/) `sdk/api/interfaces/definedtool` | ✓ | 回落 |
-| [DefineSkillOptions(生成页)](/sdk/api/interfaces/defineskilloptions/) `sdk/api/interfaces/defineskilloptions` | ✓ | 回落 |
-| [DefineToolOptions(生成页)](/sdk/api/interfaces/definetooloptions/) `sdk/api/interfaces/definetooloptions` | ✓ | 回落 |
-| [DeliveryConfig(生成页)](/sdk/api/interfaces/deliveryconfig/) `sdk/api/interfaces/deliveryconfig` | ✓ | 回落 |
-| [ErrorView(生成页)](/sdk/api/interfaces/errorview/) `sdk/api/interfaces/errorview` | ✓ | 回落 |
-| [FetchedAppBundle(生成页)](/sdk/api/interfaces/fetchedappbundle/) `sdk/api/interfaces/fetchedappbundle` | ✓ | 回落 |
-| [ForkOptions(生成页)](/sdk/api/interfaces/forkoptions/) `sdk/api/interfaces/forkoptions` | ✓ | 回落 |
-| [ForkResult(生成页)](/sdk/api/interfaces/forkresult/) `sdk/api/interfaces/forkresult` | ✓ | 回落 |
-| [FsBlobStoreOptions(生成页)](/sdk/api/interfaces/fsblobstoreoptions/) `sdk/api/interfaces/fsblobstoreoptions` | ✓ | 回落 |
-| [GateDecision(生成页)](/sdk/api/interfaces/gatedecision/) `sdk/api/interfaces/gatedecision` | ✓ | 回落 |
-| [HistoryCommitMeta(生成页)](/sdk/api/interfaces/historycommitmeta/) `sdk/api/interfaces/historycommitmeta` | ✓ | 回落 |
-| [HistoryPage(生成页)](/sdk/api/interfaces/historypage/) `sdk/api/interfaces/historypage` | ✓ | 回落 |
-| [HistoryPageOptions(生成页)](/sdk/api/interfaces/historypageoptions/) `sdk/api/interfaces/historypageoptions` | ✓ | 回落 |
-| [IdleCompactionInput(生成页)](/sdk/api/interfaces/idlecompactioninput/) `sdk/api/interfaces/idlecompactioninput` | ✓ | 回落 |
-| [ImageGenData(生成页)](/sdk/api/interfaces/imagegendata/) `sdk/api/interfaces/imagegendata` | ✓ | 回落 |
-| [ImageModelConstraints(生成页)](/sdk/api/interfaces/imagemodelconstraints/) `sdk/api/interfaces/imagemodelconstraints` | ✓ | 回落 |
-| [ImportCheckpointOptions(生成页)](/sdk/api/interfaces/importcheckpointoptions/) `sdk/api/interfaces/importcheckpointoptions` | ✓ | 回落 |
-| [LoadConfigOptions(生成页)](/sdk/api/interfaces/loadconfigoptions/) `sdk/api/interfaces/loadconfigoptions` | ✓ | 回落 |
-| [LoadedConfig(生成页)](/sdk/api/interfaces/loadedconfig/) `sdk/api/interfaces/loadedconfig` | ✓ | 回落 |
-| [LoadQuery(生成页)](/sdk/api/interfaces/loadquery/) `sdk/api/interfaces/loadquery` | ✓ | 回落 |
-| [LoadResult(生成页)](/sdk/api/interfaces/loadresult/) `sdk/api/interfaces/loadresult` | ✓ | 回落 |
-| [ManagedQueryOptions(生成页)](/sdk/api/interfaces/managedqueryoptions/) `sdk/api/interfaces/managedqueryoptions` | ✓ | 回落 |
-| [McpConnection(生成页)](/sdk/api/interfaces/mcpconnection/) `sdk/api/interfaces/mcpconnection` | ✓ | 回落 |
-| [McpHostOptions(生成页)](/sdk/api/interfaces/mcphostoptions/) `sdk/api/interfaces/mcphostoptions` | ✓ | 回落 |
-| [MediaModelDescriptor(生成页)](/sdk/api/interfaces/mediamodeldescriptor/) `sdk/api/interfaces/mediamodeldescriptor` | ✓ | 回落 |
-| [MemoryBlobStoreOptions(生成页)](/sdk/api/interfaces/memoryblobstoreoptions/) `sdk/api/interfaces/memoryblobstoreoptions` | ✓ | 回落 |
-| [ModelCallOptions(生成页)](/sdk/api/interfaces/modelcalloptions/) `sdk/api/interfaces/modelcalloptions` | ✓ | 回落 |
-| [ModelClient(生成页)](/sdk/api/interfaces/modelclient/) `sdk/api/interfaces/modelclient` | ✓ | 回落 |
-| [Narrator(生成页)](/sdk/api/interfaces/narrator/) `sdk/api/interfaces/narrator` | ✓ | 回落 |
-| [NarratorOptions(生成页)](/sdk/api/interfaces/narratoroptions/) `sdk/api/interfaces/narratoroptions` | ✓ | 回落 |
-| [PermissionGate(生成页)](/sdk/api/interfaces/permissiongate/) `sdk/api/interfaces/permissiongate` | ✓ | 回落 |
-| [PermissionOptions(生成页)](/sdk/api/interfaces/permissionoptions/) `sdk/api/interfaces/permissionoptions` | ✓ | 回落 |
-| [PermissionRules(生成页)](/sdk/api/interfaces/permissionrules/) `sdk/api/interfaces/permissionrules` | ✓ | 回落 |
-| [PlatformAudioCallOptions(生成页)](/sdk/api/interfaces/platformaudiocalloptions/) `sdk/api/interfaces/platformaudiocalloptions` | ✓ | 回落 |
-| [PlatformAudioClient(生成页)](/sdk/api/interfaces/platformaudioclient/) `sdk/api/interfaces/platformaudioclient` | ✓ | 回落 |
-| [PlatformMediaProviderOptions(生成页)](/sdk/api/interfaces/platformmediaprovideroptions/) `sdk/api/interfaces/platformmediaprovideroptions` | ✓ | 回落 |
-| [PlatformToolContext(生成页)](/sdk/api/interfaces/platformtoolcontext/) `sdk/api/interfaces/platformtoolcontext` | ✓ | 回落 |
-| [PlatformWarning(生成页)](/sdk/api/interfaces/platformwarning/) `sdk/api/interfaces/platformwarning` | ✓ | 回落 |
-| [PreparedAdjudication(生成页)](/sdk/api/interfaces/preparedadjudication/) `sdk/api/interfaces/preparedadjudication` | ✓ | 回落 |
-| [PromptChannel(生成页)](/sdk/api/interfaces/promptchannel/) `sdk/api/interfaces/promptchannel` | ✓ | 回落 |
-| [ProposedToolCall(生成页)](/sdk/api/interfaces/proposedtoolcall/) `sdk/api/interfaces/proposedtoolcall` | ✓ | 回落 |
-| [PutOptions(生成页)](/sdk/api/interfaces/putoptions/) `sdk/api/interfaces/putoptions` | ✓ | 回落 |
-| [PutResult(生成页)](/sdk/api/interfaces/putresult/) `sdk/api/interfaces/putresult` | ✓ | 回落 |
-| [QueryBeforeCompactContext(生成页)](/sdk/api/interfaces/querybeforecompactcontext/) `sdk/api/interfaces/querybeforecompactcontext` | ✓ | 回落 |
-| [QueryCompactionOptions(生成页)](/sdk/api/interfaces/querycompactionoptions/) `sdk/api/interfaces/querycompactionoptions` | ✓ | 回落 |
-| [QueryCounters(生成页)](/sdk/api/interfaces/querycounters/) `sdk/api/interfaces/querycounters` | ✓ | 回落 |
-| [QueryHandle(生成页)](/sdk/api/interfaces/queryhandle/) `sdk/api/interfaces/queryhandle` | ✓ | 回落 |
-| [QueryLifecycleOptions(生成页)](/sdk/api/interfaces/querylifecycleoptions/) `sdk/api/interfaces/querylifecycleoptions` | ✓ | 回落 |
-| [QueryResult(生成页)](/sdk/api/interfaces/queryresult/) `sdk/api/interfaces/queryresult` | ✓ | 回落 |
-| [QuerySettlement(生成页)](/sdk/api/interfaces/querysettlement/) `sdk/api/interfaces/querysettlement` | ✓ | 回落 |
-| [QuerySettlementFailure(生成页)](/sdk/api/interfaces/querysettlementfailure/) `sdk/api/interfaces/querysettlementfailure` | ✓ | 回落 |
-| [QuerySettleOptions(生成页)](/sdk/api/interfaces/querysettleoptions/) `sdk/api/interfaces/querysettleoptions` | ✓ | 回落 |
-| [Question(生成页)](/sdk/api/interfaces/question/) `sdk/api/interfaces/question` | ✓ | 回落 |
-| [QuestionOption(生成页)](/sdk/api/interfaces/questionoption/) `sdk/api/interfaces/questionoption` | ✓ | 回落 |
-| [RenderPayloadOptions(生成页)](/sdk/api/interfaces/renderpayloadoptions/) `sdk/api/interfaces/renderpayloadoptions` | ✓ | 回落 |
-| [RequestPlatformAudioOptions(生成页)](/sdk/api/interfaces/requestplatformaudiooptions/) `sdk/api/interfaces/requestplatformaudiooptions` | ✓ | 回落 |
-| [ResolvedBundle(生成页)](/sdk/api/interfaces/resolvedbundle/) `sdk/api/interfaces/resolvedbundle` | ✓ | 回落 |
-| [RestoreOptions(生成页)](/sdk/api/interfaces/restoreoptions/) `sdk/api/interfaces/restoreoptions` | ✓ | 回落 |
-| [RunAgentOptions(生成页)](/sdk/api/interfaces/runagentoptions/) `sdk/api/interfaces/runagentoptions` | ✓ | 回落 |
-| [SdkCleanupHandle(生成页)](/sdk/api/interfaces/sdkcleanuphandle/) `sdk/api/interfaces/sdkcleanuphandle` | ✓ | 回落 |
-| [SdkMcpAttachment(生成页)](/sdk/api/interfaces/sdkmcpattachment/) `sdk/api/interfaces/sdkmcpattachment` | ✓ | 回落 |
-| [SdkSkillsOptions(生成页)](/sdk/api/interfaces/sdkskillsoptions/) `sdk/api/interfaces/sdkskillsoptions` | ✓ | 回落 |
-| [SdkToolSet(生成页)](/sdk/api/interfaces/sdktoolset/) `sdk/api/interfaces/sdktoolset` | ✓ | 回落 |
-| [SdkToolsetRef(生成页)](/sdk/api/interfaces/sdktoolsetref/) `sdk/api/interfaces/sdktoolsetref` | ✓ | 回落 |
-| [SdkToolsOptions(生成页)](/sdk/api/interfaces/sdktoolsoptions/) `sdk/api/interfaces/sdktoolsoptions` | ✓ | 回落 |
-| [SdkWarning(生成页)](/sdk/api/interfaces/sdkwarning/) `sdk/api/interfaces/sdkwarning` | ✓ | 回落 |
-| [SegmentationOptions(生成页)](/sdk/api/interfaces/segmentationoptions/) `sdk/api/interfaces/segmentationoptions` | ✓ | 回落 |
-| [SegmentBlobStore(生成页)](/sdk/api/interfaces/segmentblobstore/) `sdk/api/interfaces/segmentblobstore` | ✓ | 回落 |
-| [SegmentedStorePolicy(生成页)](/sdk/api/interfaces/segmentedstorepolicy/) `sdk/api/interfaces/segmentedstorepolicy` | ✓ | 回落 |
-| [SequentialToolResult(生成页)](/sdk/api/interfaces/sequentialtoolresult/) `sdk/api/interfaces/sequentialtoolresult` | ✓ | 回落 |
-| [SessionCheckpointOptions(生成页)](/sdk/api/interfaces/sessioncheckpointoptions/) `sdk/api/interfaces/sessioncheckpointoptions` | ✓ | 回落 |
-| [SessionCwdChange(生成页)](/sdk/api/interfaces/sessioncwdchange/) `sdk/api/interfaces/sessioncwdchange` | ✓ | 回落 |
-| [SessionDrainOptions(生成页)](/sdk/api/interfaces/sessiondrainoptions/) `sdk/api/interfaces/sessiondrainoptions` | ✓ | 回落 |
-| [SessionDrainResult(生成页)](/sdk/api/interfaces/sessiondrainresult/) `sdk/api/interfaces/sessiondrainresult` | ✓ | 回落 |
-| [SessionEventSource(生成页)](/sdk/api/interfaces/sessioneventsource/) `sdk/api/interfaces/sessioneventsource` | ✓ | 回落 |
-| [SessionHistoryStore(生成页)](/sdk/api/interfaces/sessionhistorystore/) `sdk/api/interfaces/sessionhistorystore` | ✓ | 回落 |
-| [SessionIndexStore(生成页)](/sdk/api/interfaces/sessionindexstore/) `sdk/api/interfaces/sessionindexstore` | ✓ | 回落 |
-| [SessionInputCapabilities(生成页)](/sdk/api/interfaces/sessioninputcapabilities/) `sdk/api/interfaces/sessioninputcapabilities` | ✓ | 回落 |
-| [SessionInputReceipt(生成页)](/sdk/api/interfaces/sessioninputreceipt/) `sdk/api/interfaces/sessioninputreceipt` | ✓ | 回落 |
-| [SessionInputSubmission(生成页)](/sdk/api/interfaces/sessioninputsubmission/) `sdk/api/interfaces/sessioninputsubmission` | ✓ | 回落 |
-| [SessionInputTarget(生成页)](/sdk/api/interfaces/sessioninputtarget/) `sdk/api/interfaces/sessioninputtarget` | ✓ | 回落 |
-| [SessionLifecycleFailure(生成页)](/sdk/api/interfaces/sessionlifecyclefailure/) `sdk/api/interfaces/sessionlifecyclefailure` | ✓ | 回落 |
-| [SessionNotice(生成页)](/sdk/api/interfaces/sessionnotice/) `sdk/api/interfaces/sessionnotice` | ✓ | 回落 |
-| [SessionRecord(生成页)](/sdk/api/interfaces/sessionrecord/) `sdk/api/interfaces/sessionrecord` | ✓ | 回落 |
-| [SessionRecordMeta(生成页)](/sdk/api/interfaces/sessionrecordmeta/) `sdk/api/interfaces/sessionrecordmeta` | ✓ | 回落 |
-| [SessionStore(生成页)](/sdk/api/interfaces/sessionstore/) `sdk/api/interfaces/sessionstore` | ✓ | 回落 |
-| [SessionStoreCommitMeta(生成页)](/sdk/api/interfaces/sessionstorecommitmeta/) `sdk/api/interfaces/sessionstorecommitmeta` | ✓ | 回落 |
-| [SessionStoreCreateInit(生成页)](/sdk/api/interfaces/sessionstorecreateinit/) `sdk/api/interfaces/sessionstorecreateinit` | ✓ | 回落 |
-| [SessionStoreForkInput(生成页)](/sdk/api/interfaces/sessionstoreforkinput/) `sdk/api/interfaces/sessionstoreforkinput` | ✓ | 回落 |
-| [SessionView(生成页)](/sdk/api/interfaces/sessionview/) `sdk/api/interfaces/sessionview` | ✓ | 回落 |
-| [SessionViewDeliveryOptions(生成页)](/sdk/api/interfaces/sessionviewdeliveryoptions/) `sdk/api/interfaces/sessionviewdeliveryoptions` | ✓ | 回落 |
-| [SessionViewOptions(生成页)](/sdk/api/interfaces/sessionviewoptions/) `sdk/api/interfaces/sessionviewoptions` | ✓ | 回落 |
-| [SessionViewReducerState(生成页)](/sdk/api/interfaces/sessionviewreducerstate/) `sdk/api/interfaces/sessionviewreducerstate` | ✓ | 回落 |
-| [SessionViewState(生成页)](/sdk/api/interfaces/sessionviewstate/) `sdk/api/interfaces/sessionviewstate` | ✓ | 回落 |
-| [SetModelBinding(生成页)](/sdk/api/interfaces/setmodelbinding/) `sdk/api/interfaces/setmodelbinding` | ✓ | 回落 |
-| [SkillsFileSystem(生成页)](/sdk/api/interfaces/skillsfilesystem/) `sdk/api/interfaces/skillsfilesystem` | ✓ | 回落 |
-| [SpeakInput(生成页)](/sdk/api/interfaces/speakinput/) `sdk/api/interfaces/speakinput` | ✓ | 回落 |
-| [SpeechAudio(生成页)](/sdk/api/interfaces/speechaudio/) `sdk/api/interfaces/speechaudio` | ✓ | 回落 |
-| [SpeechData(生成页)](/sdk/api/interfaces/speechdata/) `sdk/api/interfaces/speechdata` | ✓ | 回落 |
-| [StorageConformanceCase(生成页)](/sdk/api/interfaces/storageconformancecase/) `sdk/api/interfaces/storageconformancecase` | ✓ | 回落 |
-| [StorageConformanceOptions(生成页)](/sdk/api/interfaces/storageconformanceoptions/) `sdk/api/interfaces/storageconformanceoptions` | ✓ | 回落 |
-| [StorageConformanceReport(生成页)](/sdk/api/interfaces/storageconformancereport/) `sdk/api/interfaces/storageconformancereport` | ✓ | 回落 |
-| [StoreErrorOptions(生成页)](/sdk/api/interfaces/storeerroroptions/) `sdk/api/interfaces/storeerroroptions` | ✓ | 回落 |
-| [StoreInput(生成页)](/sdk/api/interfaces/storeinput/) `sdk/api/interfaces/storeinput` | ✓ | 回落 |
-| [StreamTransform(生成页)](/sdk/api/interfaces/streamtransform/) `sdk/api/interfaces/streamtransform` | ✓ | 回落 |
-| [TodoView(生成页)](/sdk/api/interfaces/todoview/) `sdk/api/interfaces/todoview` | ✓ | 回落 |
-| [Tool(生成页)](/sdk/api/interfaces/tool/) `sdk/api/interfaces/tool` | ✓ | 回落 |
-| [ToolCallView(生成页)](/sdk/api/interfaces/toolcallview/) `sdk/api/interfaces/toolcallview` | ✓ | 回落 |
-| [ToolContext(生成页)](/sdk/api/interfaces/toolcontext/) `sdk/api/interfaces/toolcontext` | ✓ | 回落 |
-| [ToolExecutionContext(生成页)](/sdk/api/interfaces/toolexecutioncontext/) `sdk/api/interfaces/toolexecutioncontext` | ✓ | 回落 |
-| [ToolExecutionOutcome(生成页)](/sdk/api/interfaces/toolexecutionoutcome/) `sdk/api/interfaces/toolexecutionoutcome` | ✓ | 回落 |
-| [ToolExecutor(生成页)](/sdk/api/interfaces/toolexecutor/) `sdk/api/interfaces/toolexecutor` | ✓ | 回落 |
-| [ToolParameterSpec(生成页)](/sdk/api/interfaces/toolparameterspec/) `sdk/api/interfaces/toolparameterspec` | ✓ | 回落 |
-| [ToolResult(生成页)](/sdk/api/interfaces/toolresult/) `sdk/api/interfaces/toolresult` | ✓ | 回落 |
-| [TranscribeInput(生成页)](/sdk/api/interfaces/transcribeinput/) `sdk/api/interfaces/transcribeinput` | ✓ | 回落 |
-| [TranscriptData(生成页)](/sdk/api/interfaces/transcriptdata/) `sdk/api/interfaces/transcriptdata` | ✓ | 回落 |
-| [TranscriptSegment(生成页)](/sdk/api/interfaces/transcriptsegment/) `sdk/api/interfaces/transcriptsegment` | ✓ | 回落 |
-| [TwpHeartbeatResult(生成页)](/sdk/api/interfaces/twpheartbeatresult/) `sdk/api/interfaces/twpheartbeatresult` | ✓ | 回落 |
-| [UIMessage(生成页)](/sdk/api/interfaces/uimessage/) `sdk/api/interfaces/uimessage` | ✓ | 回落 |
-| [UITextPart(生成页)](/sdk/api/interfaces/uitextpart/) `sdk/api/interfaces/uitextpart` | ✓ | 回落 |
-| [UIThinkingPart(生成页)](/sdk/api/interfaces/uithinkingpart/) `sdk/api/interfaces/uithinkingpart` | ✓ | 回落 |
-| [UIToolCallPart(生成页)](/sdk/api/interfaces/uitoolcallpart/) `sdk/api/interfaces/uitoolcallpart` | ✓ | 回落 |
-| [UsageView(生成页)](/sdk/api/interfaces/usageview/) `sdk/api/interfaces/usageview` | ✓ | 回落 |
-| [VideoGenData(生成页)](/sdk/api/interfaces/videogendata/) `sdk/api/interfaces/videogendata` | ✓ | 回落 |
-| [VideoModelConstraints(生成页)](/sdk/api/interfaces/videomodelconstraints/) `sdk/api/interfaces/videomodelconstraints` | ✓ | 回落 |
-| [ActiveToolStatus(生成页)](/sdk/api/type-aliases/activetoolstatus/) `sdk/api/type-aliases/activetoolstatus` | ✓ | 回落 |
-| [AdjudicationPosture(生成页)](/sdk/api/type-aliases/adjudicationposture/) `sdk/api/type-aliases/adjudicationposture` | ✓ | 回落 |
-| [AdjudicatorTier(生成页)](/sdk/api/type-aliases/adjudicatortier/) `sdk/api/type-aliases/adjudicatortier` | ✓ | 回落 |
-| [AppBundleImageModel(生成页)](/sdk/api/type-aliases/appbundleimagemodel/) `sdk/api/type-aliases/appbundleimagemodel` | ✓ | 回落 |
-| [AppBundleMediaModel(生成页)](/sdk/api/type-aliases/appbundlemediamodel/) `sdk/api/type-aliases/appbundlemediamodel` | ✓ | 回落 |
-| [AppBundlePlan(生成页)](/sdk/api/type-aliases/appbundleplan/) `sdk/api/type-aliases/appbundleplan` | ✓ | 回落 |
-| [AppBundleSpeechToTextModel(生成页)](/sdk/api/type-aliases/appbundlespeechtotextmodel/) `sdk/api/type-aliases/appbundlespeechtotextmodel` | ✓ | 回落 |
-| [AppBundleTextToSpeechModel(生成页)](/sdk/api/type-aliases/appbundletexttospeechmodel/) `sdk/api/type-aliases/appbundletexttospeechmodel` | ✓ | 回落 |
-| [AppBundleVideoModel(生成页)](/sdk/api/type-aliases/appbundlevideomodel/) `sdk/api/type-aliases/appbundlevideomodel` | ✓ | 回落 |
-| [AppCapabilities(生成页)](/sdk/api/type-aliases/appcapabilities/) `sdk/api/type-aliases/appcapabilities` | ✓ | 回落 |
-| [AppPlatform(生成页)](/sdk/api/type-aliases/appplatform/) `sdk/api/type-aliases/appplatform` | ✓ | 回落 |
-| [AppTokenRejectReason(生成页)](/sdk/api/type-aliases/apptokenrejectreason/) `sdk/api/type-aliases/apptokenrejectreason` | ✓ | 回落 |
-| [AppTokenRequest(生成页)](/sdk/api/type-aliases/apptokenrequest/) `sdk/api/type-aliases/apptokenrequest` | ✓ | 回落 |
-| [AppTokenResponse(生成页)](/sdk/api/type-aliases/apptokenresponse/) `sdk/api/type-aliases/apptokenresponse` | ✓ | 回落 |
-| [AskUserCallback(生成页)](/sdk/api/type-aliases/askusercallback/) `sdk/api/type-aliases/askusercallback` | ✓ | 回落 |
-| [AttachSdkTaskToolConfig(生成页)](/sdk/api/type-aliases/attachsdktasktoolconfig/) `sdk/api/type-aliases/attachsdktasktoolconfig` | ✓ | 回落 |
-| [BuiltinToolName(生成页)](/sdk/api/type-aliases/builtintoolname/) `sdk/api/type-aliases/builtintoolname` | ✓ | 回落 |
-| [BundleCacheScope(生成页)](/sdk/api/type-aliases/bundlecachescope/) `sdk/api/type-aliases/bundlecachescope` | ✓ | 回落 |
-| [Capability(生成页)](/sdk/api/type-aliases/capability/) `sdk/api/type-aliases/capability` | ✓ | 回落 |
-| [CapabilityPlatformKey(生成页)](/sdk/api/type-aliases/capabilityplatformkey/) `sdk/api/type-aliases/capabilityplatformkey` | ✓ | 回落 |
-| [CapabilityToolKey(生成页)](/sdk/api/type-aliases/capabilitytoolkey/) `sdk/api/type-aliases/capabilitytoolkey` | ✓ | 回落 |
-| [CapabilityTopology(生成页)](/sdk/api/type-aliases/capabilitytopology/) `sdk/api/type-aliases/capabilitytopology` | ✓ | 回落 |
-| [Checkpoint(生成页)](/sdk/api/type-aliases/checkpoint/) `sdk/api/type-aliases/checkpoint` | ✓ | 回落 |
-| [CheckpointInput(生成页)](/sdk/api/type-aliases/checkpointinput/) `sdk/api/type-aliases/checkpointinput` | ✓ | 回落 |
-| [CheckpointMeta(生成页)](/sdk/api/type-aliases/checkpointmeta/) `sdk/api/type-aliases/checkpointmeta` | ✓ | 回落 |
-| [CheckpointTrigger(生成页)](/sdk/api/type-aliases/checkpointtrigger/) `sdk/api/type-aliases/checkpointtrigger` | ✓ | 回落 |
-| [ClassifierAssemblyMode(生成页)](/sdk/api/type-aliases/classifierassemblymode/) `sdk/api/type-aliases/classifierassemblymode` | ✓ | 回落 |
-| [ClassifierProtocol(生成页)](/sdk/api/type-aliases/classifierprotocol/) `sdk/api/type-aliases/classifierprotocol` | ✓ | 回落 |
-| [ClientFeature(生成页)](/sdk/api/type-aliases/clientfeature/) `sdk/api/type-aliases/clientfeature` | ✓ | 回落 |
-| [ColdTierEvent(生成页)](/sdk/api/type-aliases/coldtierevent/) `sdk/api/type-aliases/coldtierevent` | ✓ | 回落 |
-| [ColdTierEventType(生成页)](/sdk/api/type-aliases/coldtiereventtype/) `sdk/api/type-aliases/coldtiereventtype` | ✓ | 回落 |
-| [CompactionFailureReason(生成页)](/sdk/api/type-aliases/compactionfailurereason/) `sdk/api/type-aliases/compactionfailurereason` | ✓ | 回落 |
-| [CompactNowResult(生成页)](/sdk/api/type-aliases/compactnowresult/) `sdk/api/type-aliases/compactnowresult` | ✓ | 回落 |
-| [CompactResult(生成页)](/sdk/api/type-aliases/compactresult/) `sdk/api/type-aliases/compactresult` | ✓ | 回落 |
-| [CreateImageGenToolOptions(生成页)](/sdk/api/type-aliases/createimagegentooloptions/) `sdk/api/type-aliases/createimagegentooloptions` | ✓ | 回落 |
-| [CreateSpeechToTextToolOptions(生成页)](/sdk/api/type-aliases/createspeechtotexttooloptions/) `sdk/api/type-aliases/createspeechtotexttooloptions` | ✓ | 回落 |
-| [CreateTextToSpeechToolOptions(生成页)](/sdk/api/type-aliases/createtexttospeechtooloptions/) `sdk/api/type-aliases/createtexttospeechtooloptions` | ✓ | 回落 |
-| [CreateVideoGenToolOptions(生成页)](/sdk/api/type-aliases/createvideogentooloptions/) `sdk/api/type-aliases/createvideogentooloptions` | ✓ | 回落 |
-| [DecisionSource(生成页)](/sdk/api/type-aliases/decisionsource/) `sdk/api/type-aliases/decisionsource` | ✓ | 回落 |
-| [EventBody(生成页)](/sdk/api/type-aliases/eventbody/) `sdk/api/type-aliases/eventbody` | ✓ | 回落 |
-| [EventEnvelope(生成页)](/sdk/api/type-aliases/eventenvelope/) `sdk/api/type-aliases/eventenvelope` | ✓ | 回落 |
-| [HistoryRewriteReason(生成页)](/sdk/api/type-aliases/historyrewritereason/) `sdk/api/type-aliases/historyrewritereason` | ✓ | 回落 |
-| [HookOutcomeStatus(生成页)](/sdk/api/type-aliases/hookoutcomestatus/) `sdk/api/type-aliases/hookoutcomestatus` | ✓ | 回落 |
-| [IdleCompactionResult(生成页)](/sdk/api/type-aliases/idlecompactionresult/) `sdk/api/type-aliases/idlecompactionresult` | ✓ | 回落 |
-| [ImageGenArgs(生成页)](/sdk/api/type-aliases/imagegenargs/) `sdk/api/type-aliases/imagegenargs` | ✓ | 回落 |
-| [ImageModelDescriptor(生成页)](/sdk/api/type-aliases/imagemodeldescriptor/) `sdk/api/type-aliases/imagemodeldescriptor` | ✓ | 回落 |
-| [Integrity(生成页)](/sdk/api/type-aliases/integrity/) `sdk/api/type-aliases/integrity` | ✓ | 回落 |
-| [IRBlock(生成页)](/sdk/api/type-aliases/irblock/) `sdk/api/type-aliases/irblock` | ✓ | 回落 |
-| [IRErrorKind(生成页)](/sdk/api/type-aliases/irerrorkind/) `sdk/api/type-aliases/irerrorkind` | ✓ | 回落 |
-| [IRMessage(生成页)](/sdk/api/type-aliases/irmessage/) `sdk/api/type-aliases/irmessage` | ✓ | 回落 |
-| [IRRequest(生成页)](/sdk/api/type-aliases/irrequest/) `sdk/api/type-aliases/irrequest` | ✓ | 回落 |
-| [IRRole(生成页)](/sdk/api/type-aliases/irrole/) `sdk/api/type-aliases/irrole` | ✓ | 回落 |
-| [IRStreamEvent(生成页)](/sdk/api/type-aliases/irstreamevent/) `sdk/api/type-aliases/irstreamevent` | ✓ | 回落 |
-| [IRSystemSegment(生成页)](/sdk/api/type-aliases/irsystemsegment/) `sdk/api/type-aliases/irsystemsegment` | ✓ | 回落 |
-| [IRToolContent(生成页)](/sdk/api/type-aliases/irtoolcontent/) `sdk/api/type-aliases/irtoolcontent` | ✓ | 回落 |
-| [IRToolDef(生成页)](/sdk/api/type-aliases/irtooldef/) `sdk/api/type-aliases/irtooldef` | ✓ | 回落 |
-| [IRToolResultBlock(生成页)](/sdk/api/type-aliases/irtoolresultblock/) `sdk/api/type-aliases/irtoolresultblock` | ✓ | 回落 |
-| [IRUsage(生成页)](/sdk/api/type-aliases/irusage/) `sdk/api/type-aliases/irusage` | ✓ | 回落 |
-| [JournalKind(生成页)](/sdk/api/type-aliases/journalkind/) `sdk/api/type-aliases/journalkind` | ✓ | 回落 |
-| [JournalRecord(生成页)](/sdk/api/type-aliases/journalrecord/) `sdk/api/type-aliases/journalrecord` | ✓ | 回落 |
-| [KernelEvent(生成页)](/sdk/api/type-aliases/kernelevent/) `sdk/api/type-aliases/kernelevent` | ✓ | 回落 |
-| [KernelState(生成页)](/sdk/api/type-aliases/kernelstate/) `sdk/api/type-aliases/kernelstate` | ✓ | 回落 |
-| [KeyPredicate(生成页)](/sdk/api/type-aliases/keypredicate/) `sdk/api/type-aliases/keypredicate` | ✓ | 回落 |
-| [McpClientEvent(生成页)](/sdk/api/type-aliases/mcpclientevent/) `sdk/api/type-aliases/mcpclientevent` | ✓ | 回落 |
-| [McpConnectFactory(生成页)](/sdk/api/type-aliases/mcpconnectfactory/) `sdk/api/type-aliases/mcpconnectfactory` | ✓ | 回落 |
-| [McpEventObserver(生成页)](/sdk/api/type-aliases/mcpeventobserver/) `sdk/api/type-aliases/mcpeventobserver` | ✓ | 回落 |
-| [McpServerConfig(生成页)](/sdk/api/type-aliases/mcpserverconfig/) `sdk/api/type-aliases/mcpserverconfig` | ✓ | 回落 |
-| [McpSessionOption(生成页)](/sdk/api/type-aliases/mcpsessionoption/) `sdk/api/type-aliases/mcpsessionoption` | ✓ | 回落 |
-| [MediaArtifact(生成页)](/sdk/api/type-aliases/mediaartifact/) `sdk/api/type-aliases/mediaartifact` | ✓ | 回落 |
-| [MediaHintAudience(生成页)](/sdk/api/type-aliases/mediahintaudience/) `sdk/api/type-aliases/mediahintaudience` | ✓ | 回落 |
-| [MediaHintFace(生成页)](/sdk/api/type-aliases/mediahintface/) `sdk/api/type-aliases/mediahintface` | ✓ | 回落 |
-| [MediaOutputHosting(生成页)](/sdk/api/type-aliases/mediaoutputhosting/) `sdk/api/type-aliases/mediaoutputhosting` | ✓ | 回落 |
-| [NarratorVerbosity(生成页)](/sdk/api/type-aliases/narratorverbosity/) `sdk/api/type-aliases/narratorverbosity` | ✓ | 回落 |
-| [PermissionDecision(生成页)](/sdk/api/type-aliases/permissiondecision/) `sdk/api/type-aliases/permissiondecision` | ✓ | 回落 |
-| [PermissionMode(生成页)](/sdk/api/type-aliases/permissionmode/) `sdk/api/type-aliases/permissionmode` | ✓ | 回落 |
-| [PlanCaps(生成页)](/sdk/api/type-aliases/plancaps/) `sdk/api/type-aliases/plancaps` | ✓ | 回落 |
-| [PlanErrorCode(生成页)](/sdk/api/type-aliases/planerrorcode/) `sdk/api/type-aliases/planerrorcode` | ✓ | 回落 |
-| [PlanStatus(生成页)](/sdk/api/type-aliases/planstatus/) `sdk/api/type-aliases/planstatus` | ✓ | 回落 |
-| [PlanTier(生成页)](/sdk/api/type-aliases/plantier/) `sdk/api/type-aliases/plantier` | ✓ | 回落 |
-| [PlatformAudioFace(生成页)](/sdk/api/type-aliases/platformaudioface/) `sdk/api/type-aliases/platformaudioface` | ✓ | 回落 |
-| [PlatformAudioResponse(生成页)](/sdk/api/type-aliases/platformaudioresponse/) `sdk/api/type-aliases/platformaudioresponse` | ✓ | 回落 |
-| [PlatformCapabilityName(生成页)](/sdk/api/type-aliases/platformcapabilityname/) `sdk/api/type-aliases/platformcapabilityname` | ✓ | 回落 |
-| [Pricing(生成页)](/sdk/api/type-aliases/pricing/) `sdk/api/type-aliases/pricing` | ✓ | 回落 |
-| [PromptCachingMode(生成页)](/sdk/api/type-aliases/promptcachingmode/) `sdk/api/type-aliases/promptcachingmode` | ✓ | 回落 |
-| [ProtocolKind(生成页)](/sdk/api/type-aliases/protocolkind/) `sdk/api/type-aliases/protocolkind` | ✓ | 回落 |
-| [ProviderProfile(生成页)](/sdk/api/type-aliases/providerprofile/) `sdk/api/type-aliases/providerprofile` | ✓ | 回落 |
-| [QueryBeforeCompactHook(生成页)](/sdk/api/type-aliases/querybeforecompacthook/) `sdk/api/type-aliases/querybeforecompacthook` | ✓ | 回落 |
-| [QueryOptions(生成页)](/sdk/api/type-aliases/queryoptions/) `sdk/api/type-aliases/queryoptions` | ✓ | 回落 |
-| [ResolvedModel(生成页)](/sdk/api/type-aliases/resolvedmodel/) `sdk/api/type-aliases/resolvedmodel` | ✓ | 回落 |
-| [RestoreResult(生成页)](/sdk/api/type-aliases/restoreresult/) `sdk/api/type-aliases/restoreresult` | ✓ | 回落 |
-| [SdkErrorCode(生成页)](/sdk/api/type-aliases/sdkerrorcode/) `sdk/api/type-aliases/sdkerrorcode` | ✓ | 回落 |
-| [SequentialToolHandler(生成页)](/sdk/api/type-aliases/sequentialtoolhandler/) `sdk/api/type-aliases/sequentialtoolhandler` | ✓ | 回落 |
-| [SessionInputContent(生成页)](/sdk/api/type-aliases/sessioninputcontent/) `sdk/api/type-aliases/sessioninputcontent` | ✓ | 回落 |
-| [SessionInputRejectCode(生成页)](/sdk/api/type-aliases/sessioninputrejectcode/) `sdk/api/type-aliases/sessioninputrejectcode` | ✓ | 回落 |
-| [SessionInputResult(生成页)](/sdk/api/type-aliases/sessioninputresult/) `sdk/api/type-aliases/sessioninputresult` | ✓ | 回落 |
-| [SessionLifecyclePhase(生成页)](/sdk/api/type-aliases/sessionlifecyclephase/) `sdk/api/type-aliases/sessionlifecyclephase` | ✓ | 回落 |
-| [SessionViewSource(生成页)](/sdk/api/type-aliases/sessionviewsource/) `sdk/api/type-aliases/sessionviewsource` | ✓ | 回落 |
-| [SessionViewStatus(生成页)](/sdk/api/type-aliases/sessionviewstatus/) `sdk/api/type-aliases/sessionviewstatus` | ✓ | 回落 |
-| [SetCwdResult(生成页)](/sdk/api/type-aliases/setcwdresult/) `sdk/api/type-aliases/setcwdresult` | ✓ | 回落 |
-| [SpeechToTextArgs(生成页)](/sdk/api/type-aliases/speechtotextargs/) `sdk/api/type-aliases/speechtotextargs` | ✓ | 回落 |
-| [SpeechToTextModelDescriptor(生成页)](/sdk/api/type-aliases/speechtotextmodeldescriptor/) `sdk/api/type-aliases/speechtotextmodeldescriptor` | ✓ | 回落 |
-| [StoreErrorKind(生成页)](/sdk/api/type-aliases/storeerrorkind/) `sdk/api/type-aliases/storeerrorkind` | ✓ | 回落 |
-| [SystemPromptPolicy(生成页)](/sdk/api/type-aliases/systempromptpolicy/) `sdk/api/type-aliases/systempromptpolicy` | ✓ | 回落 |
-| [TansrConfig(生成页)](/sdk/api/type-aliases/tansrconfig/) `sdk/api/type-aliases/tansrconfig` | ✓ | 回落 |
-| [TerminalReason(生成页)](/sdk/api/type-aliases/terminalreason/) `sdk/api/type-aliases/terminalreason` | ✓ | 回落 |
-| [TextDeliveryMode(生成页)](/sdk/api/type-aliases/textdeliverymode/) `sdk/api/type-aliases/textdeliverymode` | ✓ | 回落 |
-| [TextToSpeechArgs(生成页)](/sdk/api/type-aliases/texttospeechargs/) `sdk/api/type-aliases/texttospeechargs` | ✓ | 回落 |
-| [TextToSpeechModelDescriptor(生成页)](/sdk/api/type-aliases/texttospeechmodeldescriptor/) `sdk/api/type-aliases/texttospeechmodeldescriptor` | ✓ | 回落 |
-| [ThinkingDeliveryMode(生成页)](/sdk/api/type-aliases/thinkingdeliverymode/) `sdk/api/type-aliases/thinkingdeliverymode` | ✓ | 回落 |
-| [TokenInvalidatingCode(生成页)](/sdk/api/type-aliases/tokeninvalidatingcode/) `sdk/api/type-aliases/tokeninvalidatingcode` | ✓ | 回落 |
-| [ToolCallPartStatus(生成页)](/sdk/api/type-aliases/toolcallpartstatus/) `sdk/api/type-aliases/toolcallpartstatus` | ✓ | 回落 |
-| [ToolErrorType(生成页)](/sdk/api/type-aliases/toolerrortype/) `sdk/api/type-aliases/toolerrortype` | ✓ | 回落 |
-| [ToolExecutorYield(生成页)](/sdk/api/type-aliases/toolexecutoryield/) `sdk/api/type-aliases/toolexecutoryield` | ✓ | 回落 |
-| [ToolResultContent(生成页)](/sdk/api/type-aliases/toolresultcontent/) `sdk/api/type-aliases/toolresultcontent` | ✓ | 回落 |
-| [UIMessagePart(生成页)](/sdk/api/type-aliases/uimessagepart/) `sdk/api/type-aliases/uimessagepart` | ✓ | 回落 |
-| [VideoGenArgs(生成页)](/sdk/api/type-aliases/videogenargs/) `sdk/api/type-aliases/videogenargs` | ✓ | 回落 |
-| [VideoModelDescriptor(生成页)](/sdk/api/type-aliases/videomodeldescriptor/) `sdk/api/type-aliases/videomodeldescriptor` | ✓ | 回落 |
-| [Visibility(生成页)](/sdk/api/type-aliases/visibility/) `sdk/api/type-aliases/visibility` | ✓ | 回落 |
-| [ADJUDICATION_CONSULT_TOKEN_ESTIMATE(生成页)](/sdk/api/variables/adjudication_consult_token_estimate/) `sdk/api/variables/adjudication_consult_token_estimate` | ✓ | 回落 |
-| [ADJUDICATION_POSTURES(生成页)](/sdk/api/variables/adjudication_postures/) `sdk/api/variables/adjudication_postures` | ✓ | 回落 |
-| [ADJUDICATOR_TIERS(生成页)](/sdk/api/variables/adjudicator_tiers/) `sdk/api/variables/adjudicator_tiers` | ✓ | 回落 |
-| [ADJUDICATOR_UNAVAILABLE_WARNING(生成页)](/sdk/api/variables/adjudicator_unavailable_warning/) `sdk/api/variables/adjudicator_unavailable_warning` | ✓ | 回落 |
-| [AdjudicatorTierSchema(生成页)](/sdk/api/variables/adjudicatortierschema/) `sdk/api/variables/adjudicatortierschema` | ✓ | 回落 |
-| [APP_PLATFORM_TOPOLOGY(生成页)](/sdk/api/variables/app_platform_topology/) `sdk/api/variables/app_platform_topology` | ✓ | 回落 |
-| [APP_PLATFORMS(生成页)](/sdk/api/variables/app_platforms/) `sdk/api/variables/app_platforms` | ✓ | 回落 |
-| [APP_SDK_CONTRACT_VERSION(生成页)](/sdk/api/variables/app_sdk_contract_version/) `sdk/api/variables/app_sdk_contract_version` | ✓ | 回落 |
-| [APP_SINGLE_STAGE_INSTRUCTION(生成页)](/sdk/api/variables/app_single_stage_instruction/) `sdk/api/variables/app_single_stage_instruction` | ✓ | 回落 |
-| [APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/app_single_stage_protocol_fingerprint/) `sdk/api/variables/app_single_stage_protocol_fingerprint` | ✓ | 回落 |
-| [APP_TOKEN_PLACEHOLDER_ENV(生成页)](/sdk/api/variables/app_token_placeholder_env/) `sdk/api/variables/app_token_placeholder_env` | ✓ | 回落 |
-| [APP_TOKEN_PLACEHOLDER_VALUE(生成页)](/sdk/api/variables/app_token_placeholder_value/) `sdk/api/variables/app_token_placeholder_value` | ✓ | 回落 |
-| [APP_TOKEN_REJECT_REASONS(生成页)](/sdk/api/variables/app_token_reject_reasons/) `sdk/api/variables/app_token_reject_reasons` | ✓ | 回落 |
-| [APP_TOKEN_TRANSIENT_REASONS(生成页)](/sdk/api/variables/app_token_transient_reasons/) `sdk/api/variables/app_token_transient_reasons` | ✓ | 回落 |
-| [AppBundlePlanSchema(生成页)](/sdk/api/variables/appbundleplanschema/) `sdk/api/variables/appbundleplanschema` | ✓ | 回落 |
-| [AppCapabilitiesSchema(生成页)](/sdk/api/variables/appcapabilitiesschema/) `sdk/api/variables/appcapabilitiesschema` | ✓ | 回落 |
-| [AppPlatformSchema(生成页)](/sdk/api/variables/appplatformschema/) `sdk/api/variables/appplatformschema` | ✓ | 回落 |
-| [AppTokenRequestSchema(生成页)](/sdk/api/variables/apptokenrequestschema/) `sdk/api/variables/apptokenrequestschema` | ✓ | 回落 |
-| [AppTokenResponseSchema(生成页)](/sdk/api/variables/apptokenresponseschema/) `sdk/api/variables/apptokenresponseschema` | ✓ | 回落 |
-| [CAPABILITY_BIT_TOOL_NAMES(生成页)](/sdk/api/variables/capability_bit_tool_names/) `sdk/api/variables/capability_bit_tool_names` | ✓ | 回落 |
-| [CAPABILITY_PLATFORM_KEYS(生成页)](/sdk/api/variables/capability_platform_keys/) `sdk/api/variables/capability_platform_keys` | ✓ | 回落 |
-| [CAPABILITY_TOOL_KEYS(生成页)](/sdk/api/variables/capability_tool_keys/) `sdk/api/variables/capability_tool_keys` | ✓ | 回落 |
-| [CAPABILITY_TOPOLOGIES(生成页)](/sdk/api/variables/capability_topologies/) `sdk/api/variables/capability_topologies` | ✓ | 回落 |
-| [CHECKPOINT_EXPORT_FORMAT(生成页)](/sdk/api/variables/checkpoint_export_format/) `sdk/api/variables/checkpoint_export_format` | ✓ | 回落 |
-| [CLASSIFIER_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/classifier_protocol_fingerprint/) `sdk/api/variables/classifier_protocol_fingerprint` | ✓ | 回落 |
-| [CLASSIFIER_TIMEOUT_POLICY(生成页)](/sdk/api/variables/classifier_timeout_policy/) `sdk/api/variables/classifier_timeout_policy` | ✓ | 回落 |
-| [CLIENT_FEATURES(生成页)](/sdk/api/variables/client_features/) `sdk/api/variables/client_features` | ✓ | 回落 |
-| [DEFAULT_APP_CAPABILITIES(生成页)](/sdk/api/variables/default_app_capabilities/) `sdk/api/variables/default_app_capabilities` | ✓ | 回落 |
-| [DEFAULT_BUNDLE_CACHE_SCOPE(生成页)](/sdk/api/variables/default_bundle_cache_scope/) `sdk/api/variables/default_bundle_cache_scope` | ✓ | 回落 |
-| [DEFAULT_BUNDLE_CACHE_TTL_MS(生成页)](/sdk/api/variables/default_bundle_cache_ttl_ms/) `sdk/api/variables/default_bundle_cache_ttl_ms` | ✓ | 回落 |
-| [DEFAULT_MAX_TOKENS(生成页)](/sdk/api/variables/default_max_tokens/) `sdk/api/variables/default_max_tokens` | ✓ | 回落 |
-| [DEFAULT_MAX_TURNS(生成页)](/sdk/api/variables/default_max_turns/) `sdk/api/variables/default_max_turns` | ✓ | 回落 |
-| [DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES(生成页)](/sdk/api/variables/developer_only_adjudicator_warning_codes/) `sdk/api/variables/developer_only_adjudicator_warning_codes` | ✓ | 回落 |
-| [EndUserIdSchema(生成页)](/sdk/api/variables/enduseridschema/) `sdk/api/variables/enduseridschema` | ✓ | 回落 |
-| [HEADER_APP_TOKEN(生成页)](/sdk/api/variables/header_app_token/) `sdk/api/variables/header_app_token` | ✓ | 回落 |
-| [HEADER_CLIENT_FEATURES(生成页)](/sdk/api/variables/header_client_features/) `sdk/api/variables/header_client_features` | ✓ | 回落 |
-| [IMAGEGEN_TOOL_MAX_N(生成页)](/sdk/api/variables/imagegen_tool_max_n/) `sdk/api/variables/imagegen_tool_max_n` | ✓ | 回落 |
-| [IMAGEGEN_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/imagegen_tool_timeout_ms/) `sdk/api/variables/imagegen_tool_timeout_ms` | ✓ | 回落 |
-| [ImageGenArgsSchema(生成页)](/sdk/api/variables/imagegenargsschema/) `sdk/api/variables/imagegenargsschema` | ✓ | 回落 |
-| [ImageGenDataSchema(生成页)](/sdk/api/variables/imagegendataschema/) `sdk/api/variables/imagegendataschema` | ✓ | 回落 |
-| [LOCAL_END_USER_KEY(生成页)](/sdk/api/variables/local_end_user_key/) `sdk/api/variables/local_end_user_key` | ✓ | 回落 |
-| [OUTPUT_TAIL_MAX_CHARS(生成页)](/sdk/api/variables/output_tail_max_chars/) `sdk/api/variables/output_tail_max_chars` | ✓ | 回落 |
-| [PLAN_ERROR_CODES(生成页)](/sdk/api/variables/plan_error_codes/) `sdk/api/variables/plan_error_codes` | ✓ | 回落 |
-| [PLAN_ERROR_HTTP_STATUS(生成页)](/sdk/api/variables/plan_error_http_status/) `sdk/api/variables/plan_error_http_status` | ✓ | 回落 |
-| [PLAN_STATUSES(生成页)](/sdk/api/variables/plan_statuses/) `sdk/api/variables/plan_statuses` | ✓ | 回落 |
-| [PLAN_TIERS(生成页)](/sdk/api/variables/plan_tiers/) `sdk/api/variables/plan_tiers` | ✓ | 回落 |
-| [PlanCapsSchema(生成页)](/sdk/api/variables/plancapsschema/) `sdk/api/variables/plancapsschema` | ✓ | 回落 |
-| [PlanStatusSchema(生成页)](/sdk/api/variables/planstatusschema/) `sdk/api/variables/planstatusschema` | ✓ | 回落 |
-| [PlanTierSchema(生成页)](/sdk/api/variables/plantierschema/) `sdk/api/variables/plantierschema` | ✓ | 回落 |
-| [PLATFORM_MEDIA_PROVIDER_NAME(生成页)](/sdk/api/variables/platform_media_provider_name/) `sdk/api/variables/platform_media_provider_name` | ✓ | 回落 |
-| [PLATFORM_SEARCH_PROVIDER_NAME(生成页)](/sdk/api/variables/platform_search_provider_name/) `sdk/api/variables/platform_search_provider_name` | ✓ | 回落 |
-| [SEGMENTED_STORE_DEFAULTS(生成页)](/sdk/api/variables/segmented_store_defaults/) `sdk/api/variables/segmented_store_defaults` | ✓ | 回落 |
-| [SESSION_NOTICES_MAX(生成页)](/sdk/api/variables/session_notices_max/) `sdk/api/variables/session_notices_max` | ✓ | 回落 |
-| [SINGLE_STAGE_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/single_stage_protocol_fingerprint/) `sdk/api/variables/single_stage_protocol_fingerprint` | ✓ | 回落 |
-| [SPEECH_TO_TEXT_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/speech_to_text_tool_timeout_ms/) `sdk/api/variables/speech_to_text_tool_timeout_ms` | ✓ | 回落 |
-| [SpeechAudioSchema(生成页)](/sdk/api/variables/speechaudioschema/) `sdk/api/variables/speechaudioschema` | ✓ | 回落 |
-| [SpeechDataSchema(生成页)](/sdk/api/variables/speechdataschema/) `sdk/api/variables/speechdataschema` | ✓ | 回落 |
-| [SpeechToTextArgsSchema(生成页)](/sdk/api/variables/speechtotextargsschema/) `sdk/api/variables/speechtotextargsschema` | ✓ | 回落 |
-| [TANSR_PROVIDER_ID(生成页)](/sdk/api/variables/tansr_provider_id/) `sdk/api/variables/tansr_provider_id` | ✓ | 回落 |
-| [TEXT_TO_SPEECH_DEFAULT_MAX_CHARS(生成页)](/sdk/api/variables/text_to_speech_default_max_chars/) `sdk/api/variables/text_to_speech_default_max_chars` | ✓ | 回落 |
-| [TEXT_TO_SPEECH_FORMATS(生成页)](/sdk/api/variables/text_to_speech_formats/) `sdk/api/variables/text_to_speech_formats` | ✓ | 回落 |
-| [TEXT_TO_SPEECH_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/text_to_speech_tool_timeout_ms/) `sdk/api/variables/text_to_speech_tool_timeout_ms` | ✓ | 回落 |
-| [TextToSpeechArgsSchema(生成页)](/sdk/api/variables/texttospeechargsschema/) `sdk/api/variables/texttospeechargsschema` | ✓ | 回落 |
-| [TOKEN_INVALIDATING_CODES(生成页)](/sdk/api/variables/token_invalidating_codes/) `sdk/api/variables/token_invalidating_codes` | ✓ | 回落 |
-| [TOOL_GUIDE_LABEL(生成页)](/sdk/api/variables/tool_guide_label/) `sdk/api/variables/tool_guide_label` | ✓ | 回落 |
-| [TOOLS_PLATFORM_DEPRECATED_CODE(生成页)](/sdk/api/variables/tools_platform_deprecated_code/) `sdk/api/variables/tools_platform_deprecated_code` | ✓ | 回落 |
-| [TranscriptDataSchema(生成页)](/sdk/api/variables/transcriptdataschema/) `sdk/api/variables/transcriptdataschema` | ✓ | 回落 |
-| [TranscriptSegmentSchema(生成页)](/sdk/api/variables/transcriptsegmentschema/) `sdk/api/variables/transcriptsegmentschema` | ✓ | 回落 |
-| [TWO_STAGE_TIMEOUT_MS(生成页)](/sdk/api/variables/two_stage_timeout_ms/) `sdk/api/variables/two_stage_timeout_ms` | ✓ | 回落 |
-| [VIDEOGEN_TOOL_MAX_DURATION(生成页)](/sdk/api/variables/videogen_tool_max_duration/) `sdk/api/variables/videogen_tool_max_duration` | ✓ | 回落 |
-| [VIDEOGEN_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/videogen_tool_timeout_ms/) `sdk/api/variables/videogen_tool_timeout_ms` | ✓ | 回落 |
-| [VideoGenArgsSchema(生成页)](/sdk/api/variables/videogenargsschema/) `sdk/api/variables/videogenargsschema` | ✓ | 回落 |
-| [VideoGenDataSchema(生成页)](/sdk/api/variables/videogendataschema/) `sdk/api/variables/videogendataschema` | ✓ | 回落 |
-| [serve 环境变量(生成页)](/serve/env/) `serve/env` | ✓ | 回落 |
-
-</details>
+| 页面 | zh-CN | `en` | `ja` | `ko` |
+|---|---|---|---|---|
+| [tansr 资料站](/) `/` | ✓ | 回落 | 回落 | 回落 |
+| [Android 接入指南](/android/) `android` | ✓ | 回落 | 回落 | 回落 |
+| [CLI 命令参考(生成页)](/cli/commands/) `cli/commands` | ✓ | 回落 | 回落 | 回落 |
+| [设置与 doctor](/cli/settings-and-doctor/) `cli/settings-and-doctor` | ✓ | 回落 | 回落 | 回落 |
+| [错误码参考(生成页)](/errors/codes/) `errors/codes` | ✓ | 回落 | 回落 | 回落 |
+| [快速开始：选一条路，5 分钟跑通](/getting-started/) `getting-started` | ✓ | ✓ [Getting started: pick a path, run in 5 minutes](/en/getting-started/) | ✓ [クイックスタート：道を 1 つ選び、5 分で動かす](/ja/getting-started/) | ✓ [빠른 시작: 길 하나를 골라 5분 안에 실행하기](/ko/getting-started/) |
+| [Android 与 iOS 5 分钟跑通](/getting-started/android/) `getting-started/android` | ✓ | ✓ [Android and iOS in 5 minutes](/en/getting-started/android/) | ✓ [Android と iOS を 5 分で動かす](/ja/getting-started/android/) | ✓ [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
+| [命令行 5 分钟跑通](/getting-started/cli/) `getting-started/cli` | ✓ | ✓ [CLI in 5 minutes](/en/getting-started/cli/) | ✓ [CLI を 5 分で動かす](/ja/getting-started/cli/) | ✓ [CLI 5분 안에 실행하기](/ko/getting-started/cli/) |
+| [Node SDK 5 分钟跑通](/getting-started/sdk/) `getting-started/sdk` | ✓ | ✓ [Node SDK in 5 minutes](/en/getting-started/sdk/) | ✓ [Node SDK を 5 分で動かす](/ja/getting-started/sdk/) | ✓ [Node SDK 5분 안에 실행하기](/ko/getting-started/sdk/) |
+| [会话服务 5 分钟跑通](/getting-started/serve/) `getting-started/serve` | ✓ | ✓ [Session service in 5 minutes](/en/getting-started/serve/) | ✓ [セッションサービスを 5 分で動かす](/ja/getting-started/serve/) | ✓ [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) |
+| [iOS 接入指南](/ios/) `ios` | ✓ | 回落 | 回落 | 回落 |
+| [@tansr/cli Changelog(生成页)](/releases/cli/) `releases/cli` | ✓ | 回落 | 回落 | 回落 |
+| [@tansr/sdk Changelog(生成页)](/releases/sdk/) `releases/sdk` | ✓ | 回落 | 回落 | 回落 |
+| [@tansr/serve Changelog(生成页)](/releases/serve/) `releases/serve` | ✓ | 回落 | 回落 | 回落 |
+| [API 参考总览(生成页)](/sdk/api/) `sdk/api` | ✓ | 回落 | 回落 | 回落 |
+| [AgentSession(生成页)](/sdk/api/classes/agentsession/) `sdk/api/classes/agentsession` | ✓ | 回落 | 回落 | 回落 |
+| [McpHost(生成页)](/sdk/api/classes/mcphost/) `sdk/api/classes/mcphost` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformRequestError(生成页)](/sdk/api/classes/platformrequesterror/) `sdk/api/classes/platformrequesterror` | ✓ | 回落 | 回落 | 回落 |
+| [QueueChannel(生成页)](/sdk/api/classes/queuechannel/) `sdk/api/classes/queuechannel` | ✓ | 回落 | 回落 | 回落 |
+| [SdkLifecycleError(生成页)](/sdk/api/classes/sdklifecycleerror/) `sdk/api/classes/sdklifecycleerror` | ✓ | 回落 | 回落 | 回落 |
+| [SequentialToolExecutor(生成页)](/sdk/api/classes/sequentialtoolexecutor/) `sdk/api/classes/sequentialtoolexecutor` | ✓ | 回落 | 回落 | 回落 |
+| [StoreError(生成页)](/sdk/api/classes/storeerror/) `sdk/api/classes/storeerror` | ✓ | 回落 | 回落 | 回落 |
+| [TansrSdkError(生成页)](/sdk/api/classes/tansrsdkerror/) `sdk/api/classes/tansrsdkerror` | ✓ | 回落 | 回落 | 回落 |
+| [UnavailableChannel(生成页)](/sdk/api/classes/unavailablechannel/) `sdk/api/classes/unavailablechannel` | ✓ | 回落 | 回落 | 回落 |
+| [accumulateUsage(生成页)](/sdk/api/functions/accumulateusage/) `sdk/api/functions/accumulateusage` | ✓ | 回落 | 回落 | 回落 |
+| [alignHistoryPage(生成页)](/sdk/api/functions/alignhistorypage/) `sdk/api/functions/alignhistorypage` | ✓ | 回落 | 回落 | 回落 |
+| [appBundlePricingUpdates(生成页)](/sdk/api/functions/appbundlepricingupdates/) `sdk/api/functions/appbundlepricingupdates` | ✓ | 回落 | 回落 | 回落 |
+| [appBundleRegistryConfig(生成页)](/sdk/api/functions/appbundleregistryconfig/) `sdk/api/functions/appbundleregistryconfig` | ✓ | 回落 | 回落 | 回落 |
+| [appendUserMessage(生成页)](/sdk/api/functions/appendusermessage/) `sdk/api/functions/appendusermessage` | ✓ | 回落 | 回落 | 回落 |
+| [appSingleStageProtocolFingerprintFor(生成页)](/sdk/api/functions/appsinglestageprotocolfingerprintfor/) `sdk/api/functions/appsinglestageprotocolfingerprintfor` | ✓ | 回落 | 回落 | 回落 |
+| [assembleBundleAdjudicator(生成页)](/sdk/api/functions/assemblebundleadjudicator/) `sdk/api/functions/assemblebundleadjudicator` | ✓ | 回落 | 回落 | 回落 |
+| [assembleManagedModel(生成页)](/sdk/api/functions/assemblemanagedmodel/) `sdk/api/functions/assemblemanagedmodel` | ✓ | 回落 | 回落 | 回落 |
+| [assemblePlatformModel(生成页)](/sdk/api/functions/assembleplatformmodel/) `sdk/api/functions/assembleplatformmodel` | ✓ | 回落 | 回落 | 回落 |
+| [assembleSdkSkills(生成页)](/sdk/api/functions/assemblesdkskills/) `sdk/api/functions/assemblesdkskills` | ✓ | 回落 | 回落 | 回落 |
+| [assembleTokenTierAdjudicator(生成页)](/sdk/api/functions/assembletokentieradjudicator/) `sdk/api/functions/assembletokentieradjudicator` | ✓ | 回落 | 回落 | 回落 |
+| [assembleTooling(生成页)](/sdk/api/functions/assembletooling/) `sdk/api/functions/assembletooling` | ✓ | 回落 | 回落 | 回落 |
+| [attachSdkMcp(生成页)](/sdk/api/functions/attachsdkmcp/) `sdk/api/functions/attachsdkmcp` | ✓ | 回落 | 回落 | 回落 |
+| [attachSdkMcpWithDiscover(生成页)](/sdk/api/functions/attachsdkmcpwithdiscover/) `sdk/api/functions/attachsdkmcpwithdiscover` | ✓ | 回落 | 回落 | 回落 |
+| [attachSdkTaskTool(生成页)](/sdk/api/functions/attachsdktasktool/) `sdk/api/functions/attachsdktasktool` | ✓ | 回落 | 回落 | 回落 |
+| [buildClientFromRegistry(生成页)](/sdk/api/functions/buildclientfromregistry/) `sdk/api/functions/buildclientfromregistry` | ✓ | 回落 | 回落 | 回落 |
+| [buildSdkToolSet(生成页)](/sdk/api/functions/buildsdktoolset/) `sdk/api/functions/buildsdktoolset` | ✓ | 回落 | 回落 | 回落 |
+| [buildToolGuideSegment(生成页)](/sdk/api/functions/buildtoolguidesegment/) `sdk/api/functions/buildtoolguidesegment` | ✓ | 回落 | 回落 | 回落 |
+| [bundleKey(生成页)](/sdk/api/functions/bundlekey/) `sdk/api/functions/bundlekey` | ✓ | 回落 | 回落 | 回落 |
+| [classifierProtocolFingerprintFor(生成页)](/sdk/api/functions/classifierprotocolfingerprintfor/) `sdk/api/functions/classifierprotocolfingerprintfor` | ✓ | 回落 | 回落 | 回落 |
+| [createApplicationPromptRefresher(生成页)](/sdk/api/functions/createapplicationpromptrefresher/) `sdk/api/functions/createapplicationpromptrefresher` | ✓ | 回落 | 回落 | 回落 |
+| [createAppTokenFetch(生成页)](/sdk/api/functions/createapptokenfetch/) `sdk/api/functions/createapptokenfetch` | ✓ | 回落 | 回落 | 回落 |
+| [createBlockListClassifier(生成页)](/sdk/api/functions/createblocklistclassifier/) `sdk/api/functions/createblocklistclassifier` | ✓ | 回落 | 回落 | 回落 |
+| [createBundleCache(生成页)](/sdk/api/functions/createbundlecache/) `sdk/api/functions/createbundlecache` | ✓ | 回落 | 回落 | 回落 |
+| [createChaosBlobStore(生成页)](/sdk/api/functions/createchaosblobstore/) `sdk/api/functions/createchaosblobstore` | ✓ | 回落 | 回落 | 回落 |
+| [createClassifierTranscriptRecorder(生成页)](/sdk/api/functions/createclassifiertranscriptrecorder/) `sdk/api/functions/createclassifiertranscriptrecorder` | ✓ | 回落 | 回落 | 回落 |
+| [createFileCheckpointStore(生成页)](/sdk/api/functions/createfilecheckpointstore/) `sdk/api/functions/createfilecheckpointstore` | ✓ | 回落 | 回落 | 回落 |
+| [createFileSessionStore(生成页)](/sdk/api/functions/createfilesessionstore/) `sdk/api/functions/createfilesessionstore` | ✓ | 回落 | 回落 | 回落 |
+| [createFsBlobStore(生成页)](/sdk/api/functions/createfsblobstore/) `sdk/api/functions/createfsblobstore` | ✓ | 回落 | 回落 | 回落 |
+| [createImageGenTool(生成页)](/sdk/api/functions/createimagegentool/) `sdk/api/functions/createimagegentool` | ✓ | 回落 | 回落 | 回落 |
+| [createMcpHost(生成页)](/sdk/api/functions/createmcphost/) `sdk/api/functions/createmcphost` | ✓ | 回落 | 回落 | 回落 |
+| [createMemoryBlobStore(生成页)](/sdk/api/functions/creatememoryblobstore/) `sdk/api/functions/creatememoryblobstore` | ✓ | 回落 | 回落 | 回落 |
+| [createNarrator(生成页)](/sdk/api/functions/createnarrator/) `sdk/api/functions/createnarrator` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformAudioClient(生成页)](/sdk/api/functions/createplatformaudioclient/) `sdk/api/functions/createplatformaudioclient` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformImageGenProvider(生成页)](/sdk/api/functions/createplatformimagegenprovider/) `sdk/api/functions/createplatformimagegenprovider` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformSearchProvider(生成页)](/sdk/api/functions/createplatformsearchprovider/) `sdk/api/functions/createplatformsearchprovider` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformSpeechToTextProvider(生成页)](/sdk/api/functions/createplatformspeechtotextprovider/) `sdk/api/functions/createplatformspeechtotextprovider` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformTextToSpeechProvider(生成页)](/sdk/api/functions/createplatformtexttospeechprovider/) `sdk/api/functions/createplatformtexttospeechprovider` | ✓ | 回落 | 回落 | 回落 |
+| [createPlatformVideoGenProvider(生成页)](/sdk/api/functions/createplatformvideogenprovider/) `sdk/api/functions/createplatformvideogenprovider` | ✓ | 回落 | 回落 | 回落 |
+| [createSdkPermissionGate(生成页)](/sdk/api/functions/createsdkpermissiongate/) `sdk/api/functions/createsdkpermissiongate` | ✓ | 回落 | 回落 | 回落 |
+| [createSession(生成页)](/sdk/api/functions/createsession/) `sdk/api/functions/createsession` | ✓ | 回落 | 回落 | 回落 |
+| [createSessionView(生成页)](/sdk/api/functions/createsessionview/) `sdk/api/functions/createsessionview` | ✓ | 回落 | 回落 | 回落 |
+| [createSingleStageClassifier(生成页)](/sdk/api/functions/createsinglestageclassifier/) `sdk/api/functions/createsinglestageclassifier` | ✓ | 回落 | 回落 | 回落 |
+| [createSpeechToTextTool(生成页)](/sdk/api/functions/createspeechtotexttool/) `sdk/api/functions/createspeechtotexttool` | ✓ | 回落 | 回落 | 回落 |
+| [createTextToSpeechTool(生成页)](/sdk/api/functions/createtexttospeechtool/) `sdk/api/functions/createtexttospeechtool` | ✓ | 回落 | 回落 | 回落 |
+| [createTwoStageClassifier(生成页)](/sdk/api/functions/createtwostageclassifier/) `sdk/api/functions/createtwostageclassifier` | ✓ | 回落 | 回落 | 回落 |
+| [createUnavailablePlatformAudioClient(生成页)](/sdk/api/functions/createunavailableplatformaudioclient/) `sdk/api/functions/createunavailableplatformaudioclient` | ✓ | 回落 | 回落 | 回落 |
+| [createVideoGenTool(生成页)](/sdk/api/functions/createvideogentool/) `sdk/api/functions/createvideogentool` | ✓ | 回落 | 回落 | 回落 |
+| [defaultAppCapabilities(生成页)](/sdk/api/functions/defaultappcapabilities/) `sdk/api/functions/defaultappcapabilities` | ✓ | 回落 | 回落 | 回落 |
+| [defineSkill(生成页)](/sdk/api/functions/defineskill/) `sdk/api/functions/defineskill` | ✓ | 回落 | 回落 | 回落 |
+| [defineTool(生成页)](/sdk/api/functions/definetool/) `sdk/api/functions/definetool` | ✓ | 回落 | 回落 | 回落 |
+| [featuresFingerprintOf(生成页)](/sdk/api/functions/featuresfingerprintof/) `sdk/api/functions/featuresfingerprintof` | ✓ | 回落 | 回落 | 回落 |
+| [fetchAppBundle(生成页)](/sdk/api/functions/fetchappbundle/) `sdk/api/functions/fetchappbundle` | ✓ | 回落 | 回落 | 回落 |
+| [fetchTwpFeatures(生成页)](/sdk/api/functions/fetchtwpfeatures/) `sdk/api/functions/fetchtwpfeatures` | ✓ | 回落 | 回落 | 回落 |
+| [fetchTwpHeartbeat(生成页)](/sdk/api/functions/fetchtwpheartbeat/) `sdk/api/functions/fetchtwpheartbeat` | ✓ | 回落 | 回落 | 回落 |
+| [hintFor(生成页)](/sdk/api/functions/hintfor/) `sdk/api/functions/hintfor` | ✓ | 回落 | 回落 | 回落 |
+| [hostedToolUniverse(生成页)](/sdk/api/functions/hostedtooluniverse/) `sdk/api/functions/hostedtooluniverse` | ✓ | 回落 | 回落 | 回落 |
+| [inapplicableTrueBits(生成页)](/sdk/api/functions/inapplicabletruebits/) `sdk/api/functions/inapplicabletruebits` | ✓ | 回落 | 回落 | 回落 |
+| [initialSessionViewState(生成页)](/sdk/api/functions/initialsessionviewstate/) `sdk/api/functions/initialsessionviewstate` | ✓ | 回落 | 回落 | 回落 |
+| [isPlanErrorCode(生成页)](/sdk/api/functions/isplanerrorcode/) `sdk/api/functions/isplanerrorcode` | ✓ | 回落 | 回落 | 回落 |
+| [isRenderableArtifact(生成页)](/sdk/api/functions/isrenderableartifact/) `sdk/api/functions/isrenderableartifact` | ✓ | 回落 | 回落 | 回落 |
+| [isSessionHistoryStore(生成页)](/sdk/api/functions/issessionhistorystore/) `sdk/api/functions/issessionhistorystore` | ✓ | 回落 | 回落 | 回落 |
+| [isTokenInvalidatingCode(生成页)](/sdk/api/functions/istokeninvalidatingcode/) `sdk/api/functions/istokeninvalidatingcode` | ✓ | 回落 | 回落 | 回落 |
+| [isTransientAppTokenReason(生成页)](/sdk/api/functions/istransientapptokenreason/) `sdk/api/functions/istransientapptokenreason` | ✓ | 回落 | 回落 | 回落 |
+| [markSourceFailure(生成页)](/sdk/api/functions/marksourcefailure/) `sdk/api/functions/marksourcefailure` | ✓ | 回落 | 回落 | 回落 |
+| [normalizeAppCapabilitiesForPlatform(生成页)](/sdk/api/functions/normalizeappcapabilitiesforplatform/) `sdk/api/functions/normalizeappcapabilitiesforplatform` | ✓ | 回落 | 回落 | 回落 |
+| [normalizeEtagValue(生成页)](/sdk/api/functions/normalizeetagvalue/) `sdk/api/functions/normalizeetagvalue` | ✓ | 回落 | 回落 | 回落 |
+| [parseAppBundle(生成页)](/sdk/api/functions/parseappbundle/) `sdk/api/functions/parseappbundle` | ✓ | 回落 | 回落 | 回落 |
+| [parseCacheControlMaxAgeMs(生成页)](/sdk/api/functions/parsecachecontrolmaxagems/) `sdk/api/functions/parsecachecontrolmaxagems` | ✓ | 回落 | 回落 | 回落 |
+| [parseMediaArtifact(生成页)](/sdk/api/functions/parsemediaartifact/) `sdk/api/functions/parsemediaartifact` | ✓ | 回落 | 回落 | 回落 |
+| [parseSpeechData(生成页)](/sdk/api/functions/parsespeechdata/) `sdk/api/functions/parsespeechdata` | ✓ | 回落 | 回落 | 回落 |
+| [parseStage1Output(生成页)](/sdk/api/functions/parsestage1output/) `sdk/api/functions/parsestage1output` | ✓ | 回落 | 回落 | 回落 |
+| [parseStage2Output(生成页)](/sdk/api/functions/parsestage2output/) `sdk/api/functions/parsestage2output` | ✓ | 回落 | 回落 | 回落 |
+| [parseTranscriptData(生成页)](/sdk/api/functions/parsetranscriptdata/) `sdk/api/functions/parsetranscriptdata` | ✓ | 回落 | 回落 | 回落 |
+| [planErrorGuidance(生成页)](/sdk/api/functions/planerrorguidance/) `sdk/api/functions/planerrorguidance` | ✓ | 回落 | 回落 | 回落 |
+| [planUpgradeUrlOf(生成页)](/sdk/api/functions/planupgradeurlof/) `sdk/api/functions/planupgradeurlof` | ✓ | 回落 | 回落 | 回落 |
+| [platformErrorOf(生成页)](/sdk/api/functions/platformerrorof/) `sdk/api/functions/platformerrorof` | ✓ | 回落 | 回落 | 回落 |
+| [prepareAdjudication(生成页)](/sdk/api/functions/prepareadjudication/) `sdk/api/functions/prepareadjudication` | ✓ | 回落 | 回落 | 回落 |
+| [prepareApplicationPromptTurn(生成页)](/sdk/api/functions/prepareapplicationpromptturn/) `sdk/api/functions/prepareapplicationpromptturn` | ✓ | 回落 | 回落 | 回落 |
+| [providerSwitchedBody(生成页)](/sdk/api/functions/providerswitchedbody/) `sdk/api/functions/providerswitchedbody` | ✓ | 回落 | 回落 | 回落 |
+| [query(生成页)](/sdk/api/functions/query/) `sdk/api/functions/query` | ✓ | 回落 | 回落 | 回落 |
+| [readHistoryPage(生成页)](/sdk/api/functions/readhistorypage/) `sdk/api/functions/readhistorypage` | ✓ | 回落 | 回落 | 回落 |
+| [reduceSessionView(生成页)](/sdk/api/functions/reducesessionview/) `sdk/api/functions/reducesessionview` | ✓ | 回落 | 回落 | 回落 |
+| [renderAppContext(生成页)](/sdk/api/functions/renderappcontext/) `sdk/api/functions/renderappcontext` | ✓ | 回落 | 回落 | 回落 |
+| [renderCallPayloadDetailed(生成页)](/sdk/api/functions/rendercallpayloaddetailed/) `sdk/api/functions/rendercallpayloaddetailed` | ✓ | 回落 | 回落 | 回落 |
+| [renderClassifierStagePrompt(生成页)](/sdk/api/functions/renderclassifierstageprompt/) `sdk/api/functions/renderclassifierstageprompt` | ✓ | 回落 | 回落 | 回落 |
+| [renderEngineFacts(生成页)](/sdk/api/functions/renderenginefacts/) `sdk/api/functions/renderenginefacts` | ✓ | 回落 | 回落 | 回落 |
+| [requestPlatformAudio(生成页)](/sdk/api/functions/requestplatformaudio/) `sdk/api/functions/requestplatformaudio` | ✓ | 回落 | 回落 | 回落 |
+| [resolveAdjudicationPosture(生成页)](/sdk/api/functions/resolveadjudicationposture/) `sdk/api/functions/resolveadjudicationposture` | ✓ | 回落 | 回落 | 回落 |
+| [resolveAdjudicatorGovernance(生成页)](/sdk/api/functions/resolveadjudicatorgovernance/) `sdk/api/functions/resolveadjudicatorgovernance` | ✓ | 回落 | 回落 | 回落 |
+| [resolveApplicationSystem(生成页)](/sdk/api/functions/resolveapplicationsystem/) `sdk/api/functions/resolveapplicationsystem` | ✓ | 回落 | 回落 | 回落 |
+| [resolveBuiltinSelection(生成页)](/sdk/api/functions/resolvebuiltinselection/) `sdk/api/functions/resolvebuiltinselection` | ✓ | 回落 | 回落 | 回落 |
+| [resolveInitialMessages(生成页)](/sdk/api/functions/resolveinitialmessages/) `sdk/api/functions/resolveinitialmessages` | ✓ | 回落 | 回落 | 回落 |
+| [resolvePlatformSelection(生成页)](/sdk/api/functions/resolveplatformselection/) `sdk/api/functions/resolveplatformselection` | ✓ | 回落 | 回落 | 回落 |
+| [resolveStageHandle(生成页)](/sdk/api/functions/resolvestagehandle/) `sdk/api/functions/resolvestagehandle` | ✓ | 回落 | 回落 | 回落 |
+| [runAgent(生成页)](/sdk/api/functions/runagent/) `sdk/api/functions/runagent` | ✓ | 回落 | 回落 | 回落 |
+| [runIdleCompaction(生成页)](/sdk/api/functions/runidlecompaction/) `sdk/api/functions/runidlecompaction` | ✓ | 回落 | 回落 | 回落 |
+| [runStorageConformance(生成页)](/sdk/api/functions/runstorageconformance/) `sdk/api/functions/runstorageconformance` | ✓ | 回落 | 回落 | 回落 |
+| [serializeTimeoutPolicy(生成页)](/sdk/api/functions/serializetimeoutpolicy/) `sdk/api/functions/serializetimeoutpolicy` | ✓ | 回落 | 回落 | 回落 |
+| [setSessionViewDelivery(生成页)](/sdk/api/functions/setsessionviewdelivery/) `sdk/api/functions/setsessionviewdelivery` | ✓ | 回落 | 回落 | 回落 |
+| [singleStageProtocolFingerprintFor(生成页)](/sdk/api/functions/singlestageprotocolfingerprintfor/) `sdk/api/functions/singlestageprotocolfingerprintfor` | ✓ | 回落 | 回落 | 回落 |
+| [sliceHistoryPage(生成页)](/sdk/api/functions/slicehistorypage/) `sdk/api/functions/slicehistorypage` | ✓ | 回落 | 回落 | 回落 |
+| [stripThinkingParts(生成页)](/sdk/api/functions/stripthinkingparts/) `sdk/api/functions/stripthinkingparts` | ✓ | 回落 | 回落 | 回落 |
+| [subagentModelResolverOf(生成页)](/sdk/api/functions/subagentmodelresolverof/) `sdk/api/functions/subagentmodelresolverof` | ✓ | 回落 | 回落 | 回落 |
+| [topologyOf(生成页)](/sdk/api/functions/topologyof/) `sdk/api/functions/topologyof` | ✓ | 回落 | 回落 | 回落 |
+| [topologyToolUniverse(生成页)](/sdk/api/functions/topologytooluniverse/) `sdk/api/functions/topologytooluniverse` | ✓ | 回落 | 回落 | 回落 |
+| [toStoreError(生成页)](/sdk/api/functions/tostoreerror/) `sdk/api/functions/tostoreerror` | ✓ | 回落 | 回落 | 回落 |
+| [toToolDef(生成页)](/sdk/api/functions/totooldef/) `sdk/api/functions/totooldef` | ✓ | 回落 | 回落 | 回落 |
+| [validateAdjudicationOptions(生成页)](/sdk/api/functions/validateadjudicationoptions/) `sdk/api/functions/validateadjudicationoptions` | ✓ | 回落 | 回落 | 回落 |
+| [viewStateFromHistory(生成页)](/sdk/api/functions/viewstatefromhistory/) `sdk/api/functions/viewstatefromhistory` | ✓ | 回落 | 回落 | 回落 |
+| [zeroAppCapabilities(生成页)](/sdk/api/functions/zeroappcapabilities/) `sdk/api/functions/zeroappcapabilities` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicationOptions(生成页)](/sdk/api/interfaces/adjudicationoptions/) `sdk/api/interfaces/adjudicationoptions` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicationWarning(生成页)](/sdk/api/interfaces/adjudicationwarning/) `sdk/api/interfaces/adjudicationwarning` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicatorGovernance(生成页)](/sdk/api/interfaces/adjudicatorgovernance/) `sdk/api/interfaces/adjudicatorgovernance` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicatorGovernanceInput(生成页)](/sdk/api/interfaces/adjudicatorgovernanceinput/) `sdk/api/interfaces/adjudicatorgovernanceinput` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicatorMoneyFold(生成页)](/sdk/api/interfaces/adjudicatormoneyfold/) `sdk/api/interfaces/adjudicatormoneyfold` | ✓ | 回落 | 回落 | 回落 |
+| [AlignedHistoryPage(生成页)](/sdk/api/interfaces/alignedhistorypage/) `sdk/api/interfaces/alignedhistorypage` | ✓ | 回落 | 回落 | 回落 |
+| [Answer(生成页)](/sdk/api/interfaces/answer/) `sdk/api/interfaces/answer` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundle(生成页)](/sdk/api/interfaces/appbundle/) `sdk/api/interfaces/appbundle` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleAdjudicator(生成页)](/sdk/api/interfaces/appbundleadjudicator/) `sdk/api/interfaces/appbundleadjudicator` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleContextScheme(生成页)](/sdk/api/interfaces/appbundlecontextscheme/) `sdk/api/interfaces/appbundlecontextscheme` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleGovernance(生成页)](/sdk/api/interfaces/appbundlegovernance/) `sdk/api/interfaces/appbundlegovernance` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModel(生成页)](/sdk/api/interfaces/appbundlemodel/) `sdk/api/interfaces/appbundlemodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModelPricing(生成页)](/sdk/api/interfaces/appbundlemodelpricing/) `sdk/api/interfaces/appbundlemodelpricing` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundlePlatformModels(生成页)](/sdk/api/interfaces/appbundleplatformmodels/) `sdk/api/interfaces/appbundleplatformmodels` | ✓ | 回落 | 回落 | 回落 |
+| [ApplicationPromptInfo(生成页)](/sdk/api/interfaces/applicationpromptinfo/) `sdk/api/interfaces/applicationpromptinfo` | ✓ | 回落 | 回落 | 回落 |
+| [ApplicationPromptSnapshot(生成页)](/sdk/api/interfaces/applicationpromptsnapshot/) `sdk/api/interfaces/applicationpromptsnapshot` | ✓ | 回落 | 回落 | 回落 |
+| [ApplicationPromptTurnOptions(生成页)](/sdk/api/interfaces/applicationpromptturnoptions/) `sdk/api/interfaces/applicationpromptturnoptions` | ✓ | 回落 | 回落 | 回落 |
+| [AssembleBundleAdjudicatorOptions(生成页)](/sdk/api/interfaces/assemblebundleadjudicatoroptions/) `sdk/api/interfaces/assemblebundleadjudicatoroptions` | ✓ | 回落 | 回落 | 回落 |
+| [AssembledBundleAdjudicator(生成页)](/sdk/api/interfaces/assembledbundleadjudicator/) `sdk/api/interfaces/assembledbundleadjudicator` | ✓ | 回落 | 回落 | 回落 |
+| [AssembledManagedModel(生成页)](/sdk/api/interfaces/assembledmanagedmodel/) `sdk/api/interfaces/assembledmanagedmodel` | ✓ | 回落 | 回落 | 回落 |
+| [AssembledPlatformModel(生成页)](/sdk/api/interfaces/assembledplatformmodel/) `sdk/api/interfaces/assembledplatformmodel` | ✓ | 回落 | 回落 | 回落 |
+| [AssembledSkills(生成页)](/sdk/api/interfaces/assembledskills/) `sdk/api/interfaces/assembledskills` | ✓ | 回落 | 回落 | 回落 |
+| [AssembledTooling(生成页)](/sdk/api/interfaces/assembledtooling/) `sdk/api/interfaces/assembledtooling` | ✓ | 回落 | 回落 | 回落 |
+| [AssembleManagedModelOptions(生成页)](/sdk/api/interfaces/assemblemanagedmodeloptions/) `sdk/api/interfaces/assemblemanagedmodeloptions` | ✓ | 回落 | 回落 | 回落 |
+| [AssemblePlatformModelOptions(生成页)](/sdk/api/interfaces/assembleplatformmodeloptions/) `sdk/api/interfaces/assembleplatformmodeloptions` | ✓ | 回落 | 回落 | 回落 |
+| [AssembleToolingAdjudication(生成页)](/sdk/api/interfaces/assembletoolingadjudication/) `sdk/api/interfaces/assembletoolingadjudication` | ✓ | 回落 | 回落 | 回落 |
+| [AssembleToolingOptions(生成页)](/sdk/api/interfaces/assembletoolingoptions/) `sdk/api/interfaces/assembletoolingoptions` | ✓ | 回落 | 回落 | 回落 |
+| [AudioAsrConstraints(生成页)](/sdk/api/interfaces/audioasrconstraints/) `sdk/api/interfaces/audioasrconstraints` | ✓ | 回落 | 回落 | 回落 |
+| [AudioTtsConstraints(生成页)](/sdk/api/interfaces/audiottsconstraints/) `sdk/api/interfaces/audiottsconstraints` | ✓ | 回落 | 回落 | 回落 |
+| [BlobListEntry(生成页)](/sdk/api/interfaces/bloblistentry/) `sdk/api/interfaces/bloblistentry` | ✓ | 回落 | 回落 | 回落 |
+| [BlobMeta(生成页)](/sdk/api/interfaces/blobmeta/) `sdk/api/interfaces/blobmeta` | ✓ | 回落 | 回落 | 回落 |
+| [BlobStoreCapabilities(生成页)](/sdk/api/interfaces/blobstorecapabilities/) `sdk/api/interfaces/blobstorecapabilities` | ✓ | 回落 | 回落 | 回落 |
+| [BlockListClassifierConfig(生成页)](/sdk/api/interfaces/blocklistclassifierconfig/) `sdk/api/interfaces/blocklistclassifierconfig` | ✓ | 回落 | 回落 | 回落 |
+| [BuildSdkToolSetOptions(生成页)](/sdk/api/interfaces/buildsdktoolsetoptions/) `sdk/api/interfaces/buildsdktoolsetoptions` | ✓ | 回落 | 回落 | 回落 |
+| [BundleCache(生成页)](/sdk/api/interfaces/bundlecache/) `sdk/api/interfaces/bundlecache` | ✓ | 回落 | 回落 | 回落 |
+| [BundleCacheKey(生成页)](/sdk/api/interfaces/bundlecachekey/) `sdk/api/interfaces/bundlecachekey` | ✓ | 回落 | 回落 | 回落 |
+| [BundleCacheResolveInput(生成页)](/sdk/api/interfaces/bundlecacheresolveinput/) `sdk/api/interfaces/bundlecacheresolveinput` | ✓ | 回落 | 回落 | 回落 |
+| [BundleCacheStats(生成页)](/sdk/api/interfaces/bundlecachestats/) `sdk/api/interfaces/bundlecachestats` | ✓ | 回落 | 回落 | 回落 |
+| [ByteRange(生成页)](/sdk/api/interfaces/byterange/) `sdk/api/interfaces/byterange` | ✓ | 回落 | 回落 | 回落 |
+| [CapabilityTopologyProfile(生成页)](/sdk/api/interfaces/capabilitytopologyprofile/) `sdk/api/interfaces/capabilitytopologyprofile` | ✓ | 回落 | 回落 | 回落 |
+| [ChaosBlobStore(生成页)](/sdk/api/interfaces/chaosblobstore/) `sdk/api/interfaces/chaosblobstore` | ✓ | 回落 | 回落 | 回落 |
+| [ChaosFaults(生成页)](/sdk/api/interfaces/chaosfaults/) `sdk/api/interfaces/chaosfaults` | ✓ | 回落 | 回落 | 回落 |
+| [ChaosStats(生成页)](/sdk/api/interfaces/chaosstats/) `sdk/api/interfaces/chaosstats` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointOptions(生成页)](/sdk/api/interfaces/checkpointoptions/) `sdk/api/interfaces/checkpointoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointRetention(生成页)](/sdk/api/interfaces/checkpointretention/) `sdk/api/interfaces/checkpointretention` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointStore(生成页)](/sdk/api/interfaces/checkpointstore/) `sdk/api/interfaces/checkpointstore` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierLiveStages(生成页)](/sdk/api/interfaces/classifierlivestages/) `sdk/api/interfaces/classifierlivestages` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierStageBudgetOverrides(生成页)](/sdk/api/interfaces/classifierstagebudgetoverrides/) `sdk/api/interfaces/classifierstagebudgetoverrides` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierStageHandle(生成页)](/sdk/api/interfaces/classifierstagehandle/) `sdk/api/interfaces/classifierstagehandle` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierTimeoutPolicy(生成页)](/sdk/api/interfaces/classifiertimeoutpolicy/) `sdk/api/interfaces/classifiertimeoutpolicy` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierTranscriptRecorder(生成页)](/sdk/api/interfaces/classifiertranscriptrecorder/) `sdk/api/interfaces/classifiertranscriptrecorder` | ✓ | 回落 | 回落 | 回落 |
+| [ColdStoredSessionMeta(生成页)](/sdk/api/interfaces/coldstoredsessionmeta/) `sdk/api/interfaces/coldstoredsessionmeta` | ✓ | 回落 | 回落 | 回落 |
+| [ColdTierStats(生成页)](/sdk/api/interfaces/coldtierstats/) `sdk/api/interfaces/coldtierstats` | ✓ | 回落 | 回落 | 回落 |
+| [CompactNowOptions(生成页)](/sdk/api/interfaces/compactnowoptions/) `sdk/api/interfaces/compactnowoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CompactOptions(生成页)](/sdk/api/interfaces/compactoptions/) `sdk/api/interfaces/compactoptions` | ✓ | 回落 | 回落 | 回落 |
+| [ConfigDiagnostic(生成页)](/sdk/api/interfaces/configdiagnostic/) `sdk/api/interfaces/configdiagnostic` | ✓ | 回落 | 回落 | 回落 |
+| [CreateBlockListClassifierOptions(生成页)](/sdk/api/interfaces/createblocklistclassifieroptions/) `sdk/api/interfaces/createblocklistclassifieroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateBundleCacheOptions(生成页)](/sdk/api/interfaces/createbundlecacheoptions/) `sdk/api/interfaces/createbundlecacheoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateFileCheckpointStoreOptions(生成页)](/sdk/api/interfaces/createfilecheckpointstoreoptions/) `sdk/api/interfaces/createfilecheckpointstoreoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateFileSessionStoreOptions(生成页)](/sdk/api/interfaces/createfilesessionstoreoptions/) `sdk/api/interfaces/createfilesessionstoreoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformAudioClientOptions(生成页)](/sdk/api/interfaces/createplatformaudioclientoptions/) `sdk/api/interfaces/createplatformaudioclientoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformImageGenProviderOptions(生成页)](/sdk/api/interfaces/createplatformimagegenprovideroptions/) `sdk/api/interfaces/createplatformimagegenprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformSearchProviderOptions(生成页)](/sdk/api/interfaces/createplatformsearchprovideroptions/) `sdk/api/interfaces/createplatformsearchprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformSpeechToTextProviderOptions(生成页)](/sdk/api/interfaces/createplatformspeechtotextprovideroptions/) `sdk/api/interfaces/createplatformspeechtotextprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformTextToSpeechProviderOptions(生成页)](/sdk/api/interfaces/createplatformtexttospeechprovideroptions/) `sdk/api/interfaces/createplatformtexttospeechprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreatePlatformVideoGenProviderOptions(生成页)](/sdk/api/interfaces/createplatformvideogenprovideroptions/) `sdk/api/interfaces/createplatformvideogenprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateSdkPermissionGateOptions(生成页)](/sdk/api/interfaces/createsdkpermissiongateoptions/) `sdk/api/interfaces/createsdkpermissiongateoptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateSessionOptions(生成页)](/sdk/api/interfaces/createsessionoptions/) `sdk/api/interfaces/createsessionoptions` | ✓ | 回落 | 回落 | 回落 |
+| [DefinedSkill(生成页)](/sdk/api/interfaces/definedskill/) `sdk/api/interfaces/definedskill` | ✓ | 回落 | 回落 | 回落 |
+| [DefinedTool(生成页)](/sdk/api/interfaces/definedtool/) `sdk/api/interfaces/definedtool` | ✓ | 回落 | 回落 | 回落 |
+| [DefineSkillOptions(生成页)](/sdk/api/interfaces/defineskilloptions/) `sdk/api/interfaces/defineskilloptions` | ✓ | 回落 | 回落 | 回落 |
+| [DefineToolOptions(生成页)](/sdk/api/interfaces/definetooloptions/) `sdk/api/interfaces/definetooloptions` | ✓ | 回落 | 回落 | 回落 |
+| [DeliveryConfig(生成页)](/sdk/api/interfaces/deliveryconfig/) `sdk/api/interfaces/deliveryconfig` | ✓ | 回落 | 回落 | 回落 |
+| [ErrorView(生成页)](/sdk/api/interfaces/errorview/) `sdk/api/interfaces/errorview` | ✓ | 回落 | 回落 | 回落 |
+| [FetchedAppBundle(生成页)](/sdk/api/interfaces/fetchedappbundle/) `sdk/api/interfaces/fetchedappbundle` | ✓ | 回落 | 回落 | 回落 |
+| [ForkOptions(生成页)](/sdk/api/interfaces/forkoptions/) `sdk/api/interfaces/forkoptions` | ✓ | 回落 | 回落 | 回落 |
+| [ForkResult(生成页)](/sdk/api/interfaces/forkresult/) `sdk/api/interfaces/forkresult` | ✓ | 回落 | 回落 | 回落 |
+| [FsBlobStoreOptions(生成页)](/sdk/api/interfaces/fsblobstoreoptions/) `sdk/api/interfaces/fsblobstoreoptions` | ✓ | 回落 | 回落 | 回落 |
+| [GateDecision(生成页)](/sdk/api/interfaces/gatedecision/) `sdk/api/interfaces/gatedecision` | ✓ | 回落 | 回落 | 回落 |
+| [HistoryCommitMeta(生成页)](/sdk/api/interfaces/historycommitmeta/) `sdk/api/interfaces/historycommitmeta` | ✓ | 回落 | 回落 | 回落 |
+| [HistoryPage(生成页)](/sdk/api/interfaces/historypage/) `sdk/api/interfaces/historypage` | ✓ | 回落 | 回落 | 回落 |
+| [HistoryPageOptions(生成页)](/sdk/api/interfaces/historypageoptions/) `sdk/api/interfaces/historypageoptions` | ✓ | 回落 | 回落 | 回落 |
+| [IdleCompactionInput(生成页)](/sdk/api/interfaces/idlecompactioninput/) `sdk/api/interfaces/idlecompactioninput` | ✓ | 回落 | 回落 | 回落 |
+| [ImageGenData(生成页)](/sdk/api/interfaces/imagegendata/) `sdk/api/interfaces/imagegendata` | ✓ | 回落 | 回落 | 回落 |
+| [ImageModelConstraints(生成页)](/sdk/api/interfaces/imagemodelconstraints/) `sdk/api/interfaces/imagemodelconstraints` | ✓ | 回落 | 回落 | 回落 |
+| [ImportCheckpointOptions(生成页)](/sdk/api/interfaces/importcheckpointoptions/) `sdk/api/interfaces/importcheckpointoptions` | ✓ | 回落 | 回落 | 回落 |
+| [LoadConfigOptions(生成页)](/sdk/api/interfaces/loadconfigoptions/) `sdk/api/interfaces/loadconfigoptions` | ✓ | 回落 | 回落 | 回落 |
+| [LoadedConfig(生成页)](/sdk/api/interfaces/loadedconfig/) `sdk/api/interfaces/loadedconfig` | ✓ | 回落 | 回落 | 回落 |
+| [LoadQuery(生成页)](/sdk/api/interfaces/loadquery/) `sdk/api/interfaces/loadquery` | ✓ | 回落 | 回落 | 回落 |
+| [LoadResult(生成页)](/sdk/api/interfaces/loadresult/) `sdk/api/interfaces/loadresult` | ✓ | 回落 | 回落 | 回落 |
+| [ManagedQueryOptions(生成页)](/sdk/api/interfaces/managedqueryoptions/) `sdk/api/interfaces/managedqueryoptions` | ✓ | 回落 | 回落 | 回落 |
+| [McpConnection(生成页)](/sdk/api/interfaces/mcpconnection/) `sdk/api/interfaces/mcpconnection` | ✓ | 回落 | 回落 | 回落 |
+| [McpHostOptions(生成页)](/sdk/api/interfaces/mcphostoptions/) `sdk/api/interfaces/mcphostoptions` | ✓ | 回落 | 回落 | 回落 |
+| [MediaModelDescriptor(生成页)](/sdk/api/interfaces/mediamodeldescriptor/) `sdk/api/interfaces/mediamodeldescriptor` | ✓ | 回落 | 回落 | 回落 |
+| [MemoryBlobStoreOptions(生成页)](/sdk/api/interfaces/memoryblobstoreoptions/) `sdk/api/interfaces/memoryblobstoreoptions` | ✓ | 回落 | 回落 | 回落 |
+| [ModelCallOptions(生成页)](/sdk/api/interfaces/modelcalloptions/) `sdk/api/interfaces/modelcalloptions` | ✓ | 回落 | 回落 | 回落 |
+| [ModelClient(生成页)](/sdk/api/interfaces/modelclient/) `sdk/api/interfaces/modelclient` | ✓ | 回落 | 回落 | 回落 |
+| [Narrator(生成页)](/sdk/api/interfaces/narrator/) `sdk/api/interfaces/narrator` | ✓ | 回落 | 回落 | 回落 |
+| [NarratorOptions(生成页)](/sdk/api/interfaces/narratoroptions/) `sdk/api/interfaces/narratoroptions` | ✓ | 回落 | 回落 | 回落 |
+| [PermissionGate(生成页)](/sdk/api/interfaces/permissiongate/) `sdk/api/interfaces/permissiongate` | ✓ | 回落 | 回落 | 回落 |
+| [PermissionOptions(生成页)](/sdk/api/interfaces/permissionoptions/) `sdk/api/interfaces/permissionoptions` | ✓ | 回落 | 回落 | 回落 |
+| [PermissionRules(生成页)](/sdk/api/interfaces/permissionrules/) `sdk/api/interfaces/permissionrules` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformAudioCallOptions(生成页)](/sdk/api/interfaces/platformaudiocalloptions/) `sdk/api/interfaces/platformaudiocalloptions` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformAudioClient(生成页)](/sdk/api/interfaces/platformaudioclient/) `sdk/api/interfaces/platformaudioclient` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformMediaProviderOptions(生成页)](/sdk/api/interfaces/platformmediaprovideroptions/) `sdk/api/interfaces/platformmediaprovideroptions` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformToolContext(生成页)](/sdk/api/interfaces/platformtoolcontext/) `sdk/api/interfaces/platformtoolcontext` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformWarning(生成页)](/sdk/api/interfaces/platformwarning/) `sdk/api/interfaces/platformwarning` | ✓ | 回落 | 回落 | 回落 |
+| [PreparedAdjudication(生成页)](/sdk/api/interfaces/preparedadjudication/) `sdk/api/interfaces/preparedadjudication` | ✓ | 回落 | 回落 | 回落 |
+| [PromptChannel(生成页)](/sdk/api/interfaces/promptchannel/) `sdk/api/interfaces/promptchannel` | ✓ | 回落 | 回落 | 回落 |
+| [ProposedToolCall(生成页)](/sdk/api/interfaces/proposedtoolcall/) `sdk/api/interfaces/proposedtoolcall` | ✓ | 回落 | 回落 | 回落 |
+| [PutOptions(生成页)](/sdk/api/interfaces/putoptions/) `sdk/api/interfaces/putoptions` | ✓ | 回落 | 回落 | 回落 |
+| [PutResult(生成页)](/sdk/api/interfaces/putresult/) `sdk/api/interfaces/putresult` | ✓ | 回落 | 回落 | 回落 |
+| [QueryBeforeCompactContext(生成页)](/sdk/api/interfaces/querybeforecompactcontext/) `sdk/api/interfaces/querybeforecompactcontext` | ✓ | 回落 | 回落 | 回落 |
+| [QueryCompactionOptions(生成页)](/sdk/api/interfaces/querycompactionoptions/) `sdk/api/interfaces/querycompactionoptions` | ✓ | 回落 | 回落 | 回落 |
+| [QueryCounters(生成页)](/sdk/api/interfaces/querycounters/) `sdk/api/interfaces/querycounters` | ✓ | 回落 | 回落 | 回落 |
+| [QueryHandle(生成页)](/sdk/api/interfaces/queryhandle/) `sdk/api/interfaces/queryhandle` | ✓ | 回落 | 回落 | 回落 |
+| [QueryLifecycleOptions(生成页)](/sdk/api/interfaces/querylifecycleoptions/) `sdk/api/interfaces/querylifecycleoptions` | ✓ | 回落 | 回落 | 回落 |
+| [QueryResult(生成页)](/sdk/api/interfaces/queryresult/) `sdk/api/interfaces/queryresult` | ✓ | 回落 | 回落 | 回落 |
+| [QuerySettlement(生成页)](/sdk/api/interfaces/querysettlement/) `sdk/api/interfaces/querysettlement` | ✓ | 回落 | 回落 | 回落 |
+| [QuerySettlementFailure(生成页)](/sdk/api/interfaces/querysettlementfailure/) `sdk/api/interfaces/querysettlementfailure` | ✓ | 回落 | 回落 | 回落 |
+| [QuerySettleOptions(生成页)](/sdk/api/interfaces/querysettleoptions/) `sdk/api/interfaces/querysettleoptions` | ✓ | 回落 | 回落 | 回落 |
+| [Question(生成页)](/sdk/api/interfaces/question/) `sdk/api/interfaces/question` | ✓ | 回落 | 回落 | 回落 |
+| [QuestionOption(生成页)](/sdk/api/interfaces/questionoption/) `sdk/api/interfaces/questionoption` | ✓ | 回落 | 回落 | 回落 |
+| [RenderPayloadOptions(生成页)](/sdk/api/interfaces/renderpayloadoptions/) `sdk/api/interfaces/renderpayloadoptions` | ✓ | 回落 | 回落 | 回落 |
+| [RequestPlatformAudioOptions(生成页)](/sdk/api/interfaces/requestplatformaudiooptions/) `sdk/api/interfaces/requestplatformaudiooptions` | ✓ | 回落 | 回落 | 回落 |
+| [ResolvedBundle(生成页)](/sdk/api/interfaces/resolvedbundle/) `sdk/api/interfaces/resolvedbundle` | ✓ | 回落 | 回落 | 回落 |
+| [RestoreOptions(生成页)](/sdk/api/interfaces/restoreoptions/) `sdk/api/interfaces/restoreoptions` | ✓ | 回落 | 回落 | 回落 |
+| [RunAgentOptions(生成页)](/sdk/api/interfaces/runagentoptions/) `sdk/api/interfaces/runagentoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SdkCleanupHandle(生成页)](/sdk/api/interfaces/sdkcleanuphandle/) `sdk/api/interfaces/sdkcleanuphandle` | ✓ | 回落 | 回落 | 回落 |
+| [SdkMcpAttachment(生成页)](/sdk/api/interfaces/sdkmcpattachment/) `sdk/api/interfaces/sdkmcpattachment` | ✓ | 回落 | 回落 | 回落 |
+| [SdkSkillsOptions(生成页)](/sdk/api/interfaces/sdkskillsoptions/) `sdk/api/interfaces/sdkskillsoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SdkToolSet(生成页)](/sdk/api/interfaces/sdktoolset/) `sdk/api/interfaces/sdktoolset` | ✓ | 回落 | 回落 | 回落 |
+| [SdkToolsetRef(生成页)](/sdk/api/interfaces/sdktoolsetref/) `sdk/api/interfaces/sdktoolsetref` | ✓ | 回落 | 回落 | 回落 |
+| [SdkToolsOptions(生成页)](/sdk/api/interfaces/sdktoolsoptions/) `sdk/api/interfaces/sdktoolsoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SdkWarning(生成页)](/sdk/api/interfaces/sdkwarning/) `sdk/api/interfaces/sdkwarning` | ✓ | 回落 | 回落 | 回落 |
+| [SegmentationOptions(生成页)](/sdk/api/interfaces/segmentationoptions/) `sdk/api/interfaces/segmentationoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SegmentBlobStore(生成页)](/sdk/api/interfaces/segmentblobstore/) `sdk/api/interfaces/segmentblobstore` | ✓ | 回落 | 回落 | 回落 |
+| [SegmentedStorePolicy(生成页)](/sdk/api/interfaces/segmentedstorepolicy/) `sdk/api/interfaces/segmentedstorepolicy` | ✓ | 回落 | 回落 | 回落 |
+| [SequentialToolResult(生成页)](/sdk/api/interfaces/sequentialtoolresult/) `sdk/api/interfaces/sequentialtoolresult` | ✓ | 回落 | 回落 | 回落 |
+| [SessionCheckpointOptions(生成页)](/sdk/api/interfaces/sessioncheckpointoptions/) `sdk/api/interfaces/sessioncheckpointoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SessionCwdChange(生成页)](/sdk/api/interfaces/sessioncwdchange/) `sdk/api/interfaces/sessioncwdchange` | ✓ | 回落 | 回落 | 回落 |
+| [SessionDrainOptions(生成页)](/sdk/api/interfaces/sessiondrainoptions/) `sdk/api/interfaces/sessiondrainoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SessionDrainResult(生成页)](/sdk/api/interfaces/sessiondrainresult/) `sdk/api/interfaces/sessiondrainresult` | ✓ | 回落 | 回落 | 回落 |
+| [SessionEventSource(生成页)](/sdk/api/interfaces/sessioneventsource/) `sdk/api/interfaces/sessioneventsource` | ✓ | 回落 | 回落 | 回落 |
+| [SessionHistoryStore(生成页)](/sdk/api/interfaces/sessionhistorystore/) `sdk/api/interfaces/sessionhistorystore` | ✓ | 回落 | 回落 | 回落 |
+| [SessionIndexStore(生成页)](/sdk/api/interfaces/sessionindexstore/) `sdk/api/interfaces/sessionindexstore` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputCapabilities(生成页)](/sdk/api/interfaces/sessioninputcapabilities/) `sdk/api/interfaces/sessioninputcapabilities` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputReceipt(生成页)](/sdk/api/interfaces/sessioninputreceipt/) `sdk/api/interfaces/sessioninputreceipt` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputSubmission(生成页)](/sdk/api/interfaces/sessioninputsubmission/) `sdk/api/interfaces/sessioninputsubmission` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputTarget(生成页)](/sdk/api/interfaces/sessioninputtarget/) `sdk/api/interfaces/sessioninputtarget` | ✓ | 回落 | 回落 | 回落 |
+| [SessionLifecycleFailure(生成页)](/sdk/api/interfaces/sessionlifecyclefailure/) `sdk/api/interfaces/sessionlifecyclefailure` | ✓ | 回落 | 回落 | 回落 |
+| [SessionNotice(生成页)](/sdk/api/interfaces/sessionnotice/) `sdk/api/interfaces/sessionnotice` | ✓ | 回落 | 回落 | 回落 |
+| [SessionRecord(生成页)](/sdk/api/interfaces/sessionrecord/) `sdk/api/interfaces/sessionrecord` | ✓ | 回落 | 回落 | 回落 |
+| [SessionRecordMeta(生成页)](/sdk/api/interfaces/sessionrecordmeta/) `sdk/api/interfaces/sessionrecordmeta` | ✓ | 回落 | 回落 | 回落 |
+| [SessionStore(生成页)](/sdk/api/interfaces/sessionstore/) `sdk/api/interfaces/sessionstore` | ✓ | 回落 | 回落 | 回落 |
+| [SessionStoreCommitMeta(生成页)](/sdk/api/interfaces/sessionstorecommitmeta/) `sdk/api/interfaces/sessionstorecommitmeta` | ✓ | 回落 | 回落 | 回落 |
+| [SessionStoreCreateInit(生成页)](/sdk/api/interfaces/sessionstorecreateinit/) `sdk/api/interfaces/sessionstorecreateinit` | ✓ | 回落 | 回落 | 回落 |
+| [SessionStoreForkInput(生成页)](/sdk/api/interfaces/sessionstoreforkinput/) `sdk/api/interfaces/sessionstoreforkinput` | ✓ | 回落 | 回落 | 回落 |
+| [SessionView(生成页)](/sdk/api/interfaces/sessionview/) `sdk/api/interfaces/sessionview` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewDeliveryOptions(生成页)](/sdk/api/interfaces/sessionviewdeliveryoptions/) `sdk/api/interfaces/sessionviewdeliveryoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewOptions(生成页)](/sdk/api/interfaces/sessionviewoptions/) `sdk/api/interfaces/sessionviewoptions` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewReducerState(生成页)](/sdk/api/interfaces/sessionviewreducerstate/) `sdk/api/interfaces/sessionviewreducerstate` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewState(生成页)](/sdk/api/interfaces/sessionviewstate/) `sdk/api/interfaces/sessionviewstate` | ✓ | 回落 | 回落 | 回落 |
+| [SetModelBinding(生成页)](/sdk/api/interfaces/setmodelbinding/) `sdk/api/interfaces/setmodelbinding` | ✓ | 回落 | 回落 | 回落 |
+| [SkillsFileSystem(生成页)](/sdk/api/interfaces/skillsfilesystem/) `sdk/api/interfaces/skillsfilesystem` | ✓ | 回落 | 回落 | 回落 |
+| [SpeakInput(生成页)](/sdk/api/interfaces/speakinput/) `sdk/api/interfaces/speakinput` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechAudio(生成页)](/sdk/api/interfaces/speechaudio/) `sdk/api/interfaces/speechaudio` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechData(生成页)](/sdk/api/interfaces/speechdata/) `sdk/api/interfaces/speechdata` | ✓ | 回落 | 回落 | 回落 |
+| [StorageConformanceCase(生成页)](/sdk/api/interfaces/storageconformancecase/) `sdk/api/interfaces/storageconformancecase` | ✓ | 回落 | 回落 | 回落 |
+| [StorageConformanceOptions(生成页)](/sdk/api/interfaces/storageconformanceoptions/) `sdk/api/interfaces/storageconformanceoptions` | ✓ | 回落 | 回落 | 回落 |
+| [StorageConformanceReport(生成页)](/sdk/api/interfaces/storageconformancereport/) `sdk/api/interfaces/storageconformancereport` | ✓ | 回落 | 回落 | 回落 |
+| [StoreErrorOptions(生成页)](/sdk/api/interfaces/storeerroroptions/) `sdk/api/interfaces/storeerroroptions` | ✓ | 回落 | 回落 | 回落 |
+| [StoreInput(生成页)](/sdk/api/interfaces/storeinput/) `sdk/api/interfaces/storeinput` | ✓ | 回落 | 回落 | 回落 |
+| [StreamTransform(生成页)](/sdk/api/interfaces/streamtransform/) `sdk/api/interfaces/streamtransform` | ✓ | 回落 | 回落 | 回落 |
+| [TodoView(生成页)](/sdk/api/interfaces/todoview/) `sdk/api/interfaces/todoview` | ✓ | 回落 | 回落 | 回落 |
+| [Tool(生成页)](/sdk/api/interfaces/tool/) `sdk/api/interfaces/tool` | ✓ | 回落 | 回落 | 回落 |
+| [ToolCallView(生成页)](/sdk/api/interfaces/toolcallview/) `sdk/api/interfaces/toolcallview` | ✓ | 回落 | 回落 | 回落 |
+| [ToolContext(生成页)](/sdk/api/interfaces/toolcontext/) `sdk/api/interfaces/toolcontext` | ✓ | 回落 | 回落 | 回落 |
+| [ToolExecutionContext(生成页)](/sdk/api/interfaces/toolexecutioncontext/) `sdk/api/interfaces/toolexecutioncontext` | ✓ | 回落 | 回落 | 回落 |
+| [ToolExecutionOutcome(生成页)](/sdk/api/interfaces/toolexecutionoutcome/) `sdk/api/interfaces/toolexecutionoutcome` | ✓ | 回落 | 回落 | 回落 |
+| [ToolExecutor(生成页)](/sdk/api/interfaces/toolexecutor/) `sdk/api/interfaces/toolexecutor` | ✓ | 回落 | 回落 | 回落 |
+| [ToolParameterSpec(生成页)](/sdk/api/interfaces/toolparameterspec/) `sdk/api/interfaces/toolparameterspec` | ✓ | 回落 | 回落 | 回落 |
+| [ToolResult(生成页)](/sdk/api/interfaces/toolresult/) `sdk/api/interfaces/toolresult` | ✓ | 回落 | 回落 | 回落 |
+| [TranscribeInput(生成页)](/sdk/api/interfaces/transcribeinput/) `sdk/api/interfaces/transcribeinput` | ✓ | 回落 | 回落 | 回落 |
+| [TranscriptData(生成页)](/sdk/api/interfaces/transcriptdata/) `sdk/api/interfaces/transcriptdata` | ✓ | 回落 | 回落 | 回落 |
+| [TranscriptSegment(生成页)](/sdk/api/interfaces/transcriptsegment/) `sdk/api/interfaces/transcriptsegment` | ✓ | 回落 | 回落 | 回落 |
+| [TwpHeartbeatResult(生成页)](/sdk/api/interfaces/twpheartbeatresult/) `sdk/api/interfaces/twpheartbeatresult` | ✓ | 回落 | 回落 | 回落 |
+| [UIMessage(生成页)](/sdk/api/interfaces/uimessage/) `sdk/api/interfaces/uimessage` | ✓ | 回落 | 回落 | 回落 |
+| [UITextPart(生成页)](/sdk/api/interfaces/uitextpart/) `sdk/api/interfaces/uitextpart` | ✓ | 回落 | 回落 | 回落 |
+| [UIThinkingPart(生成页)](/sdk/api/interfaces/uithinkingpart/) `sdk/api/interfaces/uithinkingpart` | ✓ | 回落 | 回落 | 回落 |
+| [UIToolCallPart(生成页)](/sdk/api/interfaces/uitoolcallpart/) `sdk/api/interfaces/uitoolcallpart` | ✓ | 回落 | 回落 | 回落 |
+| [UsageView(生成页)](/sdk/api/interfaces/usageview/) `sdk/api/interfaces/usageview` | ✓ | 回落 | 回落 | 回落 |
+| [VideoGenData(生成页)](/sdk/api/interfaces/videogendata/) `sdk/api/interfaces/videogendata` | ✓ | 回落 | 回落 | 回落 |
+| [VideoModelConstraints(生成页)](/sdk/api/interfaces/videomodelconstraints/) `sdk/api/interfaces/videomodelconstraints` | ✓ | 回落 | 回落 | 回落 |
+| [ActiveToolStatus(生成页)](/sdk/api/type-aliases/activetoolstatus/) `sdk/api/type-aliases/activetoolstatus` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicationPosture(生成页)](/sdk/api/type-aliases/adjudicationposture/) `sdk/api/type-aliases/adjudicationposture` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicatorTier(生成页)](/sdk/api/type-aliases/adjudicatortier/) `sdk/api/type-aliases/adjudicatortier` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleImageModel(生成页)](/sdk/api/type-aliases/appbundleimagemodel/) `sdk/api/type-aliases/appbundleimagemodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleMediaModel(生成页)](/sdk/api/type-aliases/appbundlemediamodel/) `sdk/api/type-aliases/appbundlemediamodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundlePlan(生成页)](/sdk/api/type-aliases/appbundleplan/) `sdk/api/type-aliases/appbundleplan` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleSpeechToTextModel(生成页)](/sdk/api/type-aliases/appbundlespeechtotextmodel/) `sdk/api/type-aliases/appbundlespeechtotextmodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleTextToSpeechModel(生成页)](/sdk/api/type-aliases/appbundletexttospeechmodel/) `sdk/api/type-aliases/appbundletexttospeechmodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleVideoModel(生成页)](/sdk/api/type-aliases/appbundlevideomodel/) `sdk/api/type-aliases/appbundlevideomodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppCapabilities(生成页)](/sdk/api/type-aliases/appcapabilities/) `sdk/api/type-aliases/appcapabilities` | ✓ | 回落 | 回落 | 回落 |
+| [AppPlatform(生成页)](/sdk/api/type-aliases/appplatform/) `sdk/api/type-aliases/appplatform` | ✓ | 回落 | 回落 | 回落 |
+| [AppTokenRejectReason(生成页)](/sdk/api/type-aliases/apptokenrejectreason/) `sdk/api/type-aliases/apptokenrejectreason` | ✓ | 回落 | 回落 | 回落 |
+| [AppTokenRequest(生成页)](/sdk/api/type-aliases/apptokenrequest/) `sdk/api/type-aliases/apptokenrequest` | ✓ | 回落 | 回落 | 回落 |
+| [AppTokenResponse(生成页)](/sdk/api/type-aliases/apptokenresponse/) `sdk/api/type-aliases/apptokenresponse` | ✓ | 回落 | 回落 | 回落 |
+| [AskUserCallback(生成页)](/sdk/api/type-aliases/askusercallback/) `sdk/api/type-aliases/askusercallback` | ✓ | 回落 | 回落 | 回落 |
+| [AttachSdkTaskToolConfig(生成页)](/sdk/api/type-aliases/attachsdktasktoolconfig/) `sdk/api/type-aliases/attachsdktasktoolconfig` | ✓ | 回落 | 回落 | 回落 |
+| [BuiltinToolName(生成页)](/sdk/api/type-aliases/builtintoolname/) `sdk/api/type-aliases/builtintoolname` | ✓ | 回落 | 回落 | 回落 |
+| [BundleCacheScope(生成页)](/sdk/api/type-aliases/bundlecachescope/) `sdk/api/type-aliases/bundlecachescope` | ✓ | 回落 | 回落 | 回落 |
+| [Capability(生成页)](/sdk/api/type-aliases/capability/) `sdk/api/type-aliases/capability` | ✓ | 回落 | 回落 | 回落 |
+| [CapabilityPlatformKey(生成页)](/sdk/api/type-aliases/capabilityplatformkey/) `sdk/api/type-aliases/capabilityplatformkey` | ✓ | 回落 | 回落 | 回落 |
+| [CapabilityToolKey(生成页)](/sdk/api/type-aliases/capabilitytoolkey/) `sdk/api/type-aliases/capabilitytoolkey` | ✓ | 回落 | 回落 | 回落 |
+| [CapabilityTopology(生成页)](/sdk/api/type-aliases/capabilitytopology/) `sdk/api/type-aliases/capabilitytopology` | ✓ | 回落 | 回落 | 回落 |
+| [Checkpoint(生成页)](/sdk/api/type-aliases/checkpoint/) `sdk/api/type-aliases/checkpoint` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointInput(生成页)](/sdk/api/type-aliases/checkpointinput/) `sdk/api/type-aliases/checkpointinput` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointMeta(生成页)](/sdk/api/type-aliases/checkpointmeta/) `sdk/api/type-aliases/checkpointmeta` | ✓ | 回落 | 回落 | 回落 |
+| [CheckpointTrigger(生成页)](/sdk/api/type-aliases/checkpointtrigger/) `sdk/api/type-aliases/checkpointtrigger` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierAssemblyMode(生成页)](/sdk/api/type-aliases/classifierassemblymode/) `sdk/api/type-aliases/classifierassemblymode` | ✓ | 回落 | 回落 | 回落 |
+| [ClassifierProtocol(生成页)](/sdk/api/type-aliases/classifierprotocol/) `sdk/api/type-aliases/classifierprotocol` | ✓ | 回落 | 回落 | 回落 |
+| [ClientFeature(生成页)](/sdk/api/type-aliases/clientfeature/) `sdk/api/type-aliases/clientfeature` | ✓ | 回落 | 回落 | 回落 |
+| [ColdTierEvent(生成页)](/sdk/api/type-aliases/coldtierevent/) `sdk/api/type-aliases/coldtierevent` | ✓ | 回落 | 回落 | 回落 |
+| [ColdTierEventType(生成页)](/sdk/api/type-aliases/coldtiereventtype/) `sdk/api/type-aliases/coldtiereventtype` | ✓ | 回落 | 回落 | 回落 |
+| [CompactionFailureReason(生成页)](/sdk/api/type-aliases/compactionfailurereason/) `sdk/api/type-aliases/compactionfailurereason` | ✓ | 回落 | 回落 | 回落 |
+| [CompactNowResult(生成页)](/sdk/api/type-aliases/compactnowresult/) `sdk/api/type-aliases/compactnowresult` | ✓ | 回落 | 回落 | 回落 |
+| [CompactResult(生成页)](/sdk/api/type-aliases/compactresult/) `sdk/api/type-aliases/compactresult` | ✓ | 回落 | 回落 | 回落 |
+| [CreateImageGenToolOptions(生成页)](/sdk/api/type-aliases/createimagegentooloptions/) `sdk/api/type-aliases/createimagegentooloptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateSpeechToTextToolOptions(生成页)](/sdk/api/type-aliases/createspeechtotexttooloptions/) `sdk/api/type-aliases/createspeechtotexttooloptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateTextToSpeechToolOptions(生成页)](/sdk/api/type-aliases/createtexttospeechtooloptions/) `sdk/api/type-aliases/createtexttospeechtooloptions` | ✓ | 回落 | 回落 | 回落 |
+| [CreateVideoGenToolOptions(生成页)](/sdk/api/type-aliases/createvideogentooloptions/) `sdk/api/type-aliases/createvideogentooloptions` | ✓ | 回落 | 回落 | 回落 |
+| [DecisionSource(生成页)](/sdk/api/type-aliases/decisionsource/) `sdk/api/type-aliases/decisionsource` | ✓ | 回落 | 回落 | 回落 |
+| [EventBody(生成页)](/sdk/api/type-aliases/eventbody/) `sdk/api/type-aliases/eventbody` | ✓ | 回落 | 回落 | 回落 |
+| [EventEnvelope(生成页)](/sdk/api/type-aliases/eventenvelope/) `sdk/api/type-aliases/eventenvelope` | ✓ | 回落 | 回落 | 回落 |
+| [HistoryRewriteReason(生成页)](/sdk/api/type-aliases/historyrewritereason/) `sdk/api/type-aliases/historyrewritereason` | ✓ | 回落 | 回落 | 回落 |
+| [HookOutcomeStatus(生成页)](/sdk/api/type-aliases/hookoutcomestatus/) `sdk/api/type-aliases/hookoutcomestatus` | ✓ | 回落 | 回落 | 回落 |
+| [IdleCompactionResult(生成页)](/sdk/api/type-aliases/idlecompactionresult/) `sdk/api/type-aliases/idlecompactionresult` | ✓ | 回落 | 回落 | 回落 |
+| [ImageGenArgs(生成页)](/sdk/api/type-aliases/imagegenargs/) `sdk/api/type-aliases/imagegenargs` | ✓ | 回落 | 回落 | 回落 |
+| [ImageModelDescriptor(生成页)](/sdk/api/type-aliases/imagemodeldescriptor/) `sdk/api/type-aliases/imagemodeldescriptor` | ✓ | 回落 | 回落 | 回落 |
+| [Integrity(生成页)](/sdk/api/type-aliases/integrity/) `sdk/api/type-aliases/integrity` | ✓ | 回落 | 回落 | 回落 |
+| [IRBlock(生成页)](/sdk/api/type-aliases/irblock/) `sdk/api/type-aliases/irblock` | ✓ | 回落 | 回落 | 回落 |
+| [IRErrorKind(生成页)](/sdk/api/type-aliases/irerrorkind/) `sdk/api/type-aliases/irerrorkind` | ✓ | 回落 | 回落 | 回落 |
+| [IRMessage(生成页)](/sdk/api/type-aliases/irmessage/) `sdk/api/type-aliases/irmessage` | ✓ | 回落 | 回落 | 回落 |
+| [IRRequest(生成页)](/sdk/api/type-aliases/irrequest/) `sdk/api/type-aliases/irrequest` | ✓ | 回落 | 回落 | 回落 |
+| [IRRole(生成页)](/sdk/api/type-aliases/irrole/) `sdk/api/type-aliases/irrole` | ✓ | 回落 | 回落 | 回落 |
+| [IRStreamEvent(生成页)](/sdk/api/type-aliases/irstreamevent/) `sdk/api/type-aliases/irstreamevent` | ✓ | 回落 | 回落 | 回落 |
+| [IRSystemSegment(生成页)](/sdk/api/type-aliases/irsystemsegment/) `sdk/api/type-aliases/irsystemsegment` | ✓ | 回落 | 回落 | 回落 |
+| [IRToolContent(生成页)](/sdk/api/type-aliases/irtoolcontent/) `sdk/api/type-aliases/irtoolcontent` | ✓ | 回落 | 回落 | 回落 |
+| [IRToolDef(生成页)](/sdk/api/type-aliases/irtooldef/) `sdk/api/type-aliases/irtooldef` | ✓ | 回落 | 回落 | 回落 |
+| [IRToolResultBlock(生成页)](/sdk/api/type-aliases/irtoolresultblock/) `sdk/api/type-aliases/irtoolresultblock` | ✓ | 回落 | 回落 | 回落 |
+| [IRUsage(生成页)](/sdk/api/type-aliases/irusage/) `sdk/api/type-aliases/irusage` | ✓ | 回落 | 回落 | 回落 |
+| [JournalKind(生成页)](/sdk/api/type-aliases/journalkind/) `sdk/api/type-aliases/journalkind` | ✓ | 回落 | 回落 | 回落 |
+| [JournalRecord(生成页)](/sdk/api/type-aliases/journalrecord/) `sdk/api/type-aliases/journalrecord` | ✓ | 回落 | 回落 | 回落 |
+| [KernelEvent(生成页)](/sdk/api/type-aliases/kernelevent/) `sdk/api/type-aliases/kernelevent` | ✓ | 回落 | 回落 | 回落 |
+| [KernelState(生成页)](/sdk/api/type-aliases/kernelstate/) `sdk/api/type-aliases/kernelstate` | ✓ | 回落 | 回落 | 回落 |
+| [KeyPredicate(生成页)](/sdk/api/type-aliases/keypredicate/) `sdk/api/type-aliases/keypredicate` | ✓ | 回落 | 回落 | 回落 |
+| [McpClientEvent(生成页)](/sdk/api/type-aliases/mcpclientevent/) `sdk/api/type-aliases/mcpclientevent` | ✓ | 回落 | 回落 | 回落 |
+| [McpConnectFactory(生成页)](/sdk/api/type-aliases/mcpconnectfactory/) `sdk/api/type-aliases/mcpconnectfactory` | ✓ | 回落 | 回落 | 回落 |
+| [McpEventObserver(生成页)](/sdk/api/type-aliases/mcpeventobserver/) `sdk/api/type-aliases/mcpeventobserver` | ✓ | 回落 | 回落 | 回落 |
+| [McpServerConfig(生成页)](/sdk/api/type-aliases/mcpserverconfig/) `sdk/api/type-aliases/mcpserverconfig` | ✓ | 回落 | 回落 | 回落 |
+| [McpSessionOption(生成页)](/sdk/api/type-aliases/mcpsessionoption/) `sdk/api/type-aliases/mcpsessionoption` | ✓ | 回落 | 回落 | 回落 |
+| [MediaArtifact(生成页)](/sdk/api/type-aliases/mediaartifact/) `sdk/api/type-aliases/mediaartifact` | ✓ | 回落 | 回落 | 回落 |
+| [MediaHintAudience(生成页)](/sdk/api/type-aliases/mediahintaudience/) `sdk/api/type-aliases/mediahintaudience` | ✓ | 回落 | 回落 | 回落 |
+| [MediaHintFace(生成页)](/sdk/api/type-aliases/mediahintface/) `sdk/api/type-aliases/mediahintface` | ✓ | 回落 | 回落 | 回落 |
+| [MediaOutputHosting(生成页)](/sdk/api/type-aliases/mediaoutputhosting/) `sdk/api/type-aliases/mediaoutputhosting` | ✓ | 回落 | 回落 | 回落 |
+| [NarratorVerbosity(生成页)](/sdk/api/type-aliases/narratorverbosity/) `sdk/api/type-aliases/narratorverbosity` | ✓ | 回落 | 回落 | 回落 |
+| [PermissionDecision(生成页)](/sdk/api/type-aliases/permissiondecision/) `sdk/api/type-aliases/permissiondecision` | ✓ | 回落 | 回落 | 回落 |
+| [PermissionMode(生成页)](/sdk/api/type-aliases/permissionmode/) `sdk/api/type-aliases/permissionmode` | ✓ | 回落 | 回落 | 回落 |
+| [PlanCaps(生成页)](/sdk/api/type-aliases/plancaps/) `sdk/api/type-aliases/plancaps` | ✓ | 回落 | 回落 | 回落 |
+| [PlanErrorCode(生成页)](/sdk/api/type-aliases/planerrorcode/) `sdk/api/type-aliases/planerrorcode` | ✓ | 回落 | 回落 | 回落 |
+| [PlanStatus(生成页)](/sdk/api/type-aliases/planstatus/) `sdk/api/type-aliases/planstatus` | ✓ | 回落 | 回落 | 回落 |
+| [PlanTier(生成页)](/sdk/api/type-aliases/plantier/) `sdk/api/type-aliases/plantier` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformAudioFace(生成页)](/sdk/api/type-aliases/platformaudioface/) `sdk/api/type-aliases/platformaudioface` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformAudioResponse(生成页)](/sdk/api/type-aliases/platformaudioresponse/) `sdk/api/type-aliases/platformaudioresponse` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformCapabilityName(生成页)](/sdk/api/type-aliases/platformcapabilityname/) `sdk/api/type-aliases/platformcapabilityname` | ✓ | 回落 | 回落 | 回落 |
+| [Pricing(生成页)](/sdk/api/type-aliases/pricing/) `sdk/api/type-aliases/pricing` | ✓ | 回落 | 回落 | 回落 |
+| [PromptCachingMode(生成页)](/sdk/api/type-aliases/promptcachingmode/) `sdk/api/type-aliases/promptcachingmode` | ✓ | 回落 | 回落 | 回落 |
+| [ProtocolKind(生成页)](/sdk/api/type-aliases/protocolkind/) `sdk/api/type-aliases/protocolkind` | ✓ | 回落 | 回落 | 回落 |
+| [ProviderProfile(生成页)](/sdk/api/type-aliases/providerprofile/) `sdk/api/type-aliases/providerprofile` | ✓ | 回落 | 回落 | 回落 |
+| [QueryBeforeCompactHook(生成页)](/sdk/api/type-aliases/querybeforecompacthook/) `sdk/api/type-aliases/querybeforecompacthook` | ✓ | 回落 | 回落 | 回落 |
+| [QueryOptions(生成页)](/sdk/api/type-aliases/queryoptions/) `sdk/api/type-aliases/queryoptions` | ✓ | 回落 | 回落 | 回落 |
+| [ResolvedModel(生成页)](/sdk/api/type-aliases/resolvedmodel/) `sdk/api/type-aliases/resolvedmodel` | ✓ | 回落 | 回落 | 回落 |
+| [RestoreResult(生成页)](/sdk/api/type-aliases/restoreresult/) `sdk/api/type-aliases/restoreresult` | ✓ | 回落 | 回落 | 回落 |
+| [SdkErrorCode(生成页)](/sdk/api/type-aliases/sdkerrorcode/) `sdk/api/type-aliases/sdkerrorcode` | ✓ | 回落 | 回落 | 回落 |
+| [SequentialToolHandler(生成页)](/sdk/api/type-aliases/sequentialtoolhandler/) `sdk/api/type-aliases/sequentialtoolhandler` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputContent(生成页)](/sdk/api/type-aliases/sessioninputcontent/) `sdk/api/type-aliases/sessioninputcontent` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputRejectCode(生成页)](/sdk/api/type-aliases/sessioninputrejectcode/) `sdk/api/type-aliases/sessioninputrejectcode` | ✓ | 回落 | 回落 | 回落 |
+| [SessionInputResult(生成页)](/sdk/api/type-aliases/sessioninputresult/) `sdk/api/type-aliases/sessioninputresult` | ✓ | 回落 | 回落 | 回落 |
+| [SessionLifecyclePhase(生成页)](/sdk/api/type-aliases/sessionlifecyclephase/) `sdk/api/type-aliases/sessionlifecyclephase` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewSource(生成页)](/sdk/api/type-aliases/sessionviewsource/) `sdk/api/type-aliases/sessionviewsource` | ✓ | 回落 | 回落 | 回落 |
+| [SessionViewStatus(生成页)](/sdk/api/type-aliases/sessionviewstatus/) `sdk/api/type-aliases/sessionviewstatus` | ✓ | 回落 | 回落 | 回落 |
+| [SetCwdResult(生成页)](/sdk/api/type-aliases/setcwdresult/) `sdk/api/type-aliases/setcwdresult` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechToTextArgs(生成页)](/sdk/api/type-aliases/speechtotextargs/) `sdk/api/type-aliases/speechtotextargs` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechToTextModelDescriptor(生成页)](/sdk/api/type-aliases/speechtotextmodeldescriptor/) `sdk/api/type-aliases/speechtotextmodeldescriptor` | ✓ | 回落 | 回落 | 回落 |
+| [StoreErrorKind(生成页)](/sdk/api/type-aliases/storeerrorkind/) `sdk/api/type-aliases/storeerrorkind` | ✓ | 回落 | 回落 | 回落 |
+| [SystemPromptPolicy(生成页)](/sdk/api/type-aliases/systempromptpolicy/) `sdk/api/type-aliases/systempromptpolicy` | ✓ | 回落 | 回落 | 回落 |
+| [TansrConfig(生成页)](/sdk/api/type-aliases/tansrconfig/) `sdk/api/type-aliases/tansrconfig` | ✓ | 回落 | 回落 | 回落 |
+| [TerminalReason(生成页)](/sdk/api/type-aliases/terminalreason/) `sdk/api/type-aliases/terminalreason` | ✓ | 回落 | 回落 | 回落 |
+| [TextDeliveryMode(生成页)](/sdk/api/type-aliases/textdeliverymode/) `sdk/api/type-aliases/textdeliverymode` | ✓ | 回落 | 回落 | 回落 |
+| [TextToSpeechArgs(生成页)](/sdk/api/type-aliases/texttospeechargs/) `sdk/api/type-aliases/texttospeechargs` | ✓ | 回落 | 回落 | 回落 |
+| [TextToSpeechModelDescriptor(生成页)](/sdk/api/type-aliases/texttospeechmodeldescriptor/) `sdk/api/type-aliases/texttospeechmodeldescriptor` | ✓ | 回落 | 回落 | 回落 |
+| [ThinkingDeliveryMode(生成页)](/sdk/api/type-aliases/thinkingdeliverymode/) `sdk/api/type-aliases/thinkingdeliverymode` | ✓ | 回落 | 回落 | 回落 |
+| [TokenInvalidatingCode(生成页)](/sdk/api/type-aliases/tokeninvalidatingcode/) `sdk/api/type-aliases/tokeninvalidatingcode` | ✓ | 回落 | 回落 | 回落 |
+| [ToolCallPartStatus(生成页)](/sdk/api/type-aliases/toolcallpartstatus/) `sdk/api/type-aliases/toolcallpartstatus` | ✓ | 回落 | 回落 | 回落 |
+| [ToolErrorType(生成页)](/sdk/api/type-aliases/toolerrortype/) `sdk/api/type-aliases/toolerrortype` | ✓ | 回落 | 回落 | 回落 |
+| [ToolExecutorYield(生成页)](/sdk/api/type-aliases/toolexecutoryield/) `sdk/api/type-aliases/toolexecutoryield` | ✓ | 回落 | 回落 | 回落 |
+| [ToolResultContent(生成页)](/sdk/api/type-aliases/toolresultcontent/) `sdk/api/type-aliases/toolresultcontent` | ✓ | 回落 | 回落 | 回落 |
+| [UIMessagePart(生成页)](/sdk/api/type-aliases/uimessagepart/) `sdk/api/type-aliases/uimessagepart` | ✓ | 回落 | 回落 | 回落 |
+| [VideoGenArgs(生成页)](/sdk/api/type-aliases/videogenargs/) `sdk/api/type-aliases/videogenargs` | ✓ | 回落 | 回落 | 回落 |
+| [VideoModelDescriptor(生成页)](/sdk/api/type-aliases/videomodeldescriptor/) `sdk/api/type-aliases/videomodeldescriptor` | ✓ | 回落 | 回落 | 回落 |
+| [Visibility(生成页)](/sdk/api/type-aliases/visibility/) `sdk/api/type-aliases/visibility` | ✓ | 回落 | 回落 | 回落 |
+| [ADJUDICATION_CONSULT_TOKEN_ESTIMATE(生成页)](/sdk/api/variables/adjudication_consult_token_estimate/) `sdk/api/variables/adjudication_consult_token_estimate` | ✓ | 回落 | 回落 | 回落 |
+| [ADJUDICATION_POSTURES(生成页)](/sdk/api/variables/adjudication_postures/) `sdk/api/variables/adjudication_postures` | ✓ | 回落 | 回落 | 回落 |
+| [ADJUDICATOR_TIERS(生成页)](/sdk/api/variables/adjudicator_tiers/) `sdk/api/variables/adjudicator_tiers` | ✓ | 回落 | 回落 | 回落 |
+| [ADJUDICATOR_UNAVAILABLE_WARNING(生成页)](/sdk/api/variables/adjudicator_unavailable_warning/) `sdk/api/variables/adjudicator_unavailable_warning` | ✓ | 回落 | 回落 | 回落 |
+| [AdjudicatorTierSchema(生成页)](/sdk/api/variables/adjudicatortierschema/) `sdk/api/variables/adjudicatortierschema` | ✓ | 回落 | 回落 | 回落 |
+| [APP_PLATFORM_TOPOLOGY(生成页)](/sdk/api/variables/app_platform_topology/) `sdk/api/variables/app_platform_topology` | ✓ | 回落 | 回落 | 回落 |
+| [APP_PLATFORMS(生成页)](/sdk/api/variables/app_platforms/) `sdk/api/variables/app_platforms` | ✓ | 回落 | 回落 | 回落 |
+| [APP_SDK_CONTRACT_VERSION(生成页)](/sdk/api/variables/app_sdk_contract_version/) `sdk/api/variables/app_sdk_contract_version` | ✓ | 回落 | 回落 | 回落 |
+| [APP_SINGLE_STAGE_INSTRUCTION(生成页)](/sdk/api/variables/app_single_stage_instruction/) `sdk/api/variables/app_single_stage_instruction` | ✓ | 回落 | 回落 | 回落 |
+| [APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/app_single_stage_protocol_fingerprint/) `sdk/api/variables/app_single_stage_protocol_fingerprint` | ✓ | 回落 | 回落 | 回落 |
+| [APP_TOKEN_PLACEHOLDER_ENV(生成页)](/sdk/api/variables/app_token_placeholder_env/) `sdk/api/variables/app_token_placeholder_env` | ✓ | 回落 | 回落 | 回落 |
+| [APP_TOKEN_PLACEHOLDER_VALUE(生成页)](/sdk/api/variables/app_token_placeholder_value/) `sdk/api/variables/app_token_placeholder_value` | ✓ | 回落 | 回落 | 回落 |
+| [APP_TOKEN_REJECT_REASONS(生成页)](/sdk/api/variables/app_token_reject_reasons/) `sdk/api/variables/app_token_reject_reasons` | ✓ | 回落 | 回落 | 回落 |
+| [APP_TOKEN_TRANSIENT_REASONS(生成页)](/sdk/api/variables/app_token_transient_reasons/) `sdk/api/variables/app_token_transient_reasons` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundlePlanSchema(生成页)](/sdk/api/variables/appbundleplanschema/) `sdk/api/variables/appbundleplanschema` | ✓ | 回落 | 回落 | 回落 |
+| [AppCapabilitiesSchema(生成页)](/sdk/api/variables/appcapabilitiesschema/) `sdk/api/variables/appcapabilitiesschema` | ✓ | 回落 | 回落 | 回落 |
+| [AppPlatformSchema(生成页)](/sdk/api/variables/appplatformschema/) `sdk/api/variables/appplatformschema` | ✓ | 回落 | 回落 | 回落 |
+| [AppTokenRequestSchema(生成页)](/sdk/api/variables/apptokenrequestschema/) `sdk/api/variables/apptokenrequestschema` | ✓ | 回落 | 回落 | 回落 |
+| [AppTokenResponseSchema(生成页)](/sdk/api/variables/apptokenresponseschema/) `sdk/api/variables/apptokenresponseschema` | ✓ | 回落 | 回落 | 回落 |
+| [CAPABILITY_BIT_TOOL_NAMES(生成页)](/sdk/api/variables/capability_bit_tool_names/) `sdk/api/variables/capability_bit_tool_names` | ✓ | 回落 | 回落 | 回落 |
+| [CAPABILITY_PLATFORM_KEYS(生成页)](/sdk/api/variables/capability_platform_keys/) `sdk/api/variables/capability_platform_keys` | ✓ | 回落 | 回落 | 回落 |
+| [CAPABILITY_TOOL_KEYS(生成页)](/sdk/api/variables/capability_tool_keys/) `sdk/api/variables/capability_tool_keys` | ✓ | 回落 | 回落 | 回落 |
+| [CAPABILITY_TOPOLOGIES(生成页)](/sdk/api/variables/capability_topologies/) `sdk/api/variables/capability_topologies` | ✓ | 回落 | 回落 | 回落 |
+| [CHECKPOINT_EXPORT_FORMAT(生成页)](/sdk/api/variables/checkpoint_export_format/) `sdk/api/variables/checkpoint_export_format` | ✓ | 回落 | 回落 | 回落 |
+| [CLASSIFIER_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/classifier_protocol_fingerprint/) `sdk/api/variables/classifier_protocol_fingerprint` | ✓ | 回落 | 回落 | 回落 |
+| [CLASSIFIER_TIMEOUT_POLICY(生成页)](/sdk/api/variables/classifier_timeout_policy/) `sdk/api/variables/classifier_timeout_policy` | ✓ | 回落 | 回落 | 回落 |
+| [CLIENT_FEATURES(生成页)](/sdk/api/variables/client_features/) `sdk/api/variables/client_features` | ✓ | 回落 | 回落 | 回落 |
+| [DEFAULT_APP_CAPABILITIES(生成页)](/sdk/api/variables/default_app_capabilities/) `sdk/api/variables/default_app_capabilities` | ✓ | 回落 | 回落 | 回落 |
+| [DEFAULT_BUNDLE_CACHE_SCOPE(生成页)](/sdk/api/variables/default_bundle_cache_scope/) `sdk/api/variables/default_bundle_cache_scope` | ✓ | 回落 | 回落 | 回落 |
+| [DEFAULT_BUNDLE_CACHE_TTL_MS(生成页)](/sdk/api/variables/default_bundle_cache_ttl_ms/) `sdk/api/variables/default_bundle_cache_ttl_ms` | ✓ | 回落 | 回落 | 回落 |
+| [DEFAULT_MAX_TOKENS(生成页)](/sdk/api/variables/default_max_tokens/) `sdk/api/variables/default_max_tokens` | ✓ | 回落 | 回落 | 回落 |
+| [DEFAULT_MAX_TURNS(生成页)](/sdk/api/variables/default_max_turns/) `sdk/api/variables/default_max_turns` | ✓ | 回落 | 回落 | 回落 |
+| [DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES(生成页)](/sdk/api/variables/developer_only_adjudicator_warning_codes/) `sdk/api/variables/developer_only_adjudicator_warning_codes` | ✓ | 回落 | 回落 | 回落 |
+| [EndUserIdSchema(生成页)](/sdk/api/variables/enduseridschema/) `sdk/api/variables/enduseridschema` | ✓ | 回落 | 回落 | 回落 |
+| [HEADER_APP_TOKEN(生成页)](/sdk/api/variables/header_app_token/) `sdk/api/variables/header_app_token` | ✓ | 回落 | 回落 | 回落 |
+| [HEADER_CLIENT_FEATURES(生成页)](/sdk/api/variables/header_client_features/) `sdk/api/variables/header_client_features` | ✓ | 回落 | 回落 | 回落 |
+| [IMAGEGEN_TOOL_MAX_N(生成页)](/sdk/api/variables/imagegen_tool_max_n/) `sdk/api/variables/imagegen_tool_max_n` | ✓ | 回落 | 回落 | 回落 |
+| [IMAGEGEN_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/imagegen_tool_timeout_ms/) `sdk/api/variables/imagegen_tool_timeout_ms` | ✓ | 回落 | 回落 | 回落 |
+| [ImageGenArgsSchema(生成页)](/sdk/api/variables/imagegenargsschema/) `sdk/api/variables/imagegenargsschema` | ✓ | 回落 | 回落 | 回落 |
+| [ImageGenDataSchema(生成页)](/sdk/api/variables/imagegendataschema/) `sdk/api/variables/imagegendataschema` | ✓ | 回落 | 回落 | 回落 |
+| [LOCAL_END_USER_KEY(生成页)](/sdk/api/variables/local_end_user_key/) `sdk/api/variables/local_end_user_key` | ✓ | 回落 | 回落 | 回落 |
+| [OUTPUT_TAIL_MAX_CHARS(生成页)](/sdk/api/variables/output_tail_max_chars/) `sdk/api/variables/output_tail_max_chars` | ✓ | 回落 | 回落 | 回落 |
+| [PLAN_ERROR_CODES(生成页)](/sdk/api/variables/plan_error_codes/) `sdk/api/variables/plan_error_codes` | ✓ | 回落 | 回落 | 回落 |
+| [PLAN_ERROR_HTTP_STATUS(生成页)](/sdk/api/variables/plan_error_http_status/) `sdk/api/variables/plan_error_http_status` | ✓ | 回落 | 回落 | 回落 |
+| [PLAN_STATUSES(生成页)](/sdk/api/variables/plan_statuses/) `sdk/api/variables/plan_statuses` | ✓ | 回落 | 回落 | 回落 |
+| [PLAN_TIERS(生成页)](/sdk/api/variables/plan_tiers/) `sdk/api/variables/plan_tiers` | ✓ | 回落 | 回落 | 回落 |
+| [PlanCapsSchema(生成页)](/sdk/api/variables/plancapsschema/) `sdk/api/variables/plancapsschema` | ✓ | 回落 | 回落 | 回落 |
+| [PlanStatusSchema(生成页)](/sdk/api/variables/planstatusschema/) `sdk/api/variables/planstatusschema` | ✓ | 回落 | 回落 | 回落 |
+| [PlanTierSchema(生成页)](/sdk/api/variables/plantierschema/) `sdk/api/variables/plantierschema` | ✓ | 回落 | 回落 | 回落 |
+| [PLATFORM_MEDIA_PROVIDER_NAME(生成页)](/sdk/api/variables/platform_media_provider_name/) `sdk/api/variables/platform_media_provider_name` | ✓ | 回落 | 回落 | 回落 |
+| [PLATFORM_SEARCH_PROVIDER_NAME(生成页)](/sdk/api/variables/platform_search_provider_name/) `sdk/api/variables/platform_search_provider_name` | ✓ | 回落 | 回落 | 回落 |
+| [SEGMENTED_STORE_DEFAULTS(生成页)](/sdk/api/variables/segmented_store_defaults/) `sdk/api/variables/segmented_store_defaults` | ✓ | 回落 | 回落 | 回落 |
+| [SESSION_NOTICES_MAX(生成页)](/sdk/api/variables/session_notices_max/) `sdk/api/variables/session_notices_max` | ✓ | 回落 | 回落 | 回落 |
+| [SINGLE_STAGE_PROTOCOL_FINGERPRINT(生成页)](/sdk/api/variables/single_stage_protocol_fingerprint/) `sdk/api/variables/single_stage_protocol_fingerprint` | ✓ | 回落 | 回落 | 回落 |
+| [SPEECH_TO_TEXT_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/speech_to_text_tool_timeout_ms/) `sdk/api/variables/speech_to_text_tool_timeout_ms` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechAudioSchema(生成页)](/sdk/api/variables/speechaudioschema/) `sdk/api/variables/speechaudioschema` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechDataSchema(生成页)](/sdk/api/variables/speechdataschema/) `sdk/api/variables/speechdataschema` | ✓ | 回落 | 回落 | 回落 |
+| [SpeechToTextArgsSchema(生成页)](/sdk/api/variables/speechtotextargsschema/) `sdk/api/variables/speechtotextargsschema` | ✓ | 回落 | 回落 | 回落 |
+| [TANSR_PROVIDER_ID(生成页)](/sdk/api/variables/tansr_provider_id/) `sdk/api/variables/tansr_provider_id` | ✓ | 回落 | 回落 | 回落 |
+| [TEXT_TO_SPEECH_DEFAULT_MAX_CHARS(生成页)](/sdk/api/variables/text_to_speech_default_max_chars/) `sdk/api/variables/text_to_speech_default_max_chars` | ✓ | 回落 | 回落 | 回落 |
+| [TEXT_TO_SPEECH_FORMATS(生成页)](/sdk/api/variables/text_to_speech_formats/) `sdk/api/variables/text_to_speech_formats` | ✓ | 回落 | 回落 | 回落 |
+| [TEXT_TO_SPEECH_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/text_to_speech_tool_timeout_ms/) `sdk/api/variables/text_to_speech_tool_timeout_ms` | ✓ | 回落 | 回落 | 回落 |
+| [TextToSpeechArgsSchema(生成页)](/sdk/api/variables/texttospeechargsschema/) `sdk/api/variables/texttospeechargsschema` | ✓ | 回落 | 回落 | 回落 |
+| [TOKEN_INVALIDATING_CODES(生成页)](/sdk/api/variables/token_invalidating_codes/) `sdk/api/variables/token_invalidating_codes` | ✓ | 回落 | 回落 | 回落 |
+| [TOOL_GUIDE_LABEL(生成页)](/sdk/api/variables/tool_guide_label/) `sdk/api/variables/tool_guide_label` | ✓ | 回落 | 回落 | 回落 |
+| [TOOLS_PLATFORM_DEPRECATED_CODE(生成页)](/sdk/api/variables/tools_platform_deprecated_code/) `sdk/api/variables/tools_platform_deprecated_code` | ✓ | 回落 | 回落 | 回落 |
+| [TranscriptDataSchema(生成页)](/sdk/api/variables/transcriptdataschema/) `sdk/api/variables/transcriptdataschema` | ✓ | 回落 | 回落 | 回落 |
+| [TranscriptSegmentSchema(生成页)](/sdk/api/variables/transcriptsegmentschema/) `sdk/api/variables/transcriptsegmentschema` | ✓ | 回落 | 回落 | 回落 |
+| [TWO_STAGE_TIMEOUT_MS(生成页)](/sdk/api/variables/two_stage_timeout_ms/) `sdk/api/variables/two_stage_timeout_ms` | ✓ | 回落 | 回落 | 回落 |
+| [VIDEOGEN_TOOL_MAX_DURATION(生成页)](/sdk/api/variables/videogen_tool_max_duration/) `sdk/api/variables/videogen_tool_max_duration` | ✓ | 回落 | 回落 | 回落 |
+| [VIDEOGEN_TOOL_TIMEOUT_MS(生成页)](/sdk/api/variables/videogen_tool_timeout_ms/) `sdk/api/variables/videogen_tool_timeout_ms` | ✓ | 回落 | 回落 | 回落 |
+| [VideoGenArgsSchema(生成页)](/sdk/api/variables/videogenargsschema/) `sdk/api/variables/videogenargsschema` | ✓ | 回落 | 回落 | 回落 |
+| [VideoGenDataSchema(生成页)](/sdk/api/variables/videogendataschema/) `sdk/api/variables/videogendataschema` | ✓ | 回落 | 回落 | 回落 |
+| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 | 回落 | 回落 |
+| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 | 回落 | 回落 |
+| [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) | ✓ [セッションを閉じてリソースのクリーンアップを待つ](/ja/sdk/lifecycle/) | ✓ [세션 닫기와 리소스 정리 대기](/ko/sdk/lifecycle/) |
+| [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) | ✓ [タスクの実行中に入力を追加する](/ja/sdk/midturn-input/) | ✓ [작업 진행 중 입력 추가](/ko/sdk/midturn-input/) |
+| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 | 回落 | 回落 |
+| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 | 回落 | 回落 |
+| [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) | ✓ [アプリケーションシステムプロンプトと SDK の結合ポリシー](/ja/sdk/system-prompts/) | ✓ [애플리케이션 시스템 프롬프트와 SDK 결합 정책](/ko/sdk/system-prompts/) |
+| [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) | ✓ [セキュリティとプライバシー](/ja/security/) | ✓ [보안과 개인정보](/ko/security/) |
+| [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 | 回落 | 回落 |
+| [serve 环境变量(生成页)](/serve/env/) `serve/env` | ✓ | 回落 | 回落 | 回落 |
+| [保留期与治理](/serve/retention-and-governance/) `serve/retention-and-governance` | ✓ | 回落 | 回落 | 回落 |
+| [v2 协议与 webhook](/serve/v2-and-webhooks/) `serve/v2-and-webhooks` | ✓ | 回落 | 回落 | 回落 |
+| [帮助中心](/support/) `support` | ✓ | ✓ [Help center](/en/support/) | ✓ [ヘルプセンター](/ja/support/) | ✓ [도움말 센터](/ko/support/) |
+| [账号、密钥、套餐与计费](/support/account/) `support/account` | ✓ | ✓ [Account, keys, plans and billing](/en/support/account/) | ✓ [アカウント、キー、プラン、課金](/ja/support/account/) | ✓ [계정, 키, 플랜, 과금](/ko/support/account/) |
+| [联系支持](/support/contact/) `support/contact` | ✓ | ✓ [Contact support](/en/support/contact/) | ✓ [サポートに連絡](/ja/support/contact/) | ✓ [지원팀에 문의](/ko/support/contact/) |
+| [排障指南](/support/troubleshooting/) `support/troubleshooting` | ✓ | ✓ [Troubleshooting](/en/support/troubleshooting/) | ✓ [トラブルシューティングガイド](/ja/support/troubleshooting/) | ✓ [문제 해결 가이드](/ko/support/troubleshooting/) |
 
 ## 术语表
 

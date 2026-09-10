@@ -28,7 +28,7 @@ function sdkSidebarItems() {
     .sort();
   const apiDir = `${sdkDir}api/`;
   if (!existsSync(`${apiDir}index.md`)) return guides;
-  return [...guides, { slug: 'sdk/api', label: 'API 参考(总览)', translations: { en: 'API reference (overview)' } }];
+  return [...guides, { slug: 'sdk/api', label: 'API 参考(总览)', translations: { en: 'API reference (overview)', ja: 'API リファレンス（概要）', ko: 'API 참조(개요)' } }];
 }
 
 /**
@@ -42,7 +42,7 @@ const sidebar = CATEGORIES.flatMap((c) => {
   return [
     {
       label: c.label,
-      translations: { en: c.en },
+      translations: { en: c.en, ja: c.ja, ko: c.ko },
       items: c.directory === 'sdk' ? sdkSidebarItems() : [{ autogenerate: { directory: c.directory } }],
     },
   ];

@@ -4,9 +4,9 @@ description: Continue the same execution without interrupting tools or opening a
 zone: docs
 category: sdk
 related:
+  - sdk/sessions-and-events
   - sdk/system-prompts
   - sdk/lifecycle
-  - getting-started/sdk
   - getting-started/serve
 sources:
   - tansr-cli:doc/INJ-同轮追加输入手册.md
@@ -32,21 +32,22 @@ const session = await createSession({ token, baseUrl });
 const pump = (async () => {
   for await (const event of session.events) render(event);
 })();
-session.send('Review the contract and list unresolved terms');
+session.send('审阅合同并整理待确认条款');
 
-// Called by the supplement action in your UI.
+// 由 UI 的“补充”操作调用；SDK 在 Electron 主进程/Node 宿主运行。
 async function supplement(text: string) {
   const target = session.getInputTarget();
   if (target === null) return { outcome: 'closed' as const, code: 'turn_closed' };
   const request = { inputId: randomUUID(), target, content: { text }, ack: 'memory' as const };
-  await retainInputDraft(request); // Persist the original ID, target and content before submission.
+  await retainInputDraft(request); // 宿主先保留原 ID、目标和内容；保存失败则不提交。
   const result = await session.submitInput(request);
-  // A transport error leaves the original request in the host; query it before retrying.
+  // 网络抛错时原 request 仍在宿主，先查询；成功时按 result 更新显示。
   return { request, result };
 }
 
-// Later: session.getInputStatus(request.inputId, request.target)
-// At application shutdown, await session.closeAsync() and inspect its cleanup receipt.
+// 在后续 UI 事件或显式查询动作中，使用原 ID 与原目标。
+// session.getInputStatus(request.inputId, request.target)
+// 退出时另行 await session.closeAsync()，并核对其真实收尾回执。
 ```
 
 The application supplies `token`, `baseUrl`, `render` and `retainInputDraft`. The latter is the host's draft-storage function, not an SDK API. It must finish before submission; a storage failure prevents sending, and a transport error must not delete the original request. Keep the event pump across turns. Do not call `createSession()`, `query()` or `interrupt()` for each supplement. The convenience `query()` event generator does not expose this session API. Low-level `runAgent()` returns a `QueryHandle` with `reserveUserInput` and related kernel capabilities; its caller owns event consumption and cleanup.
@@ -96,7 +97,7 @@ GET /v2/sessions/{sessionId}/input-capabilities
 POST /v2/sessions/{sessionId}/inputs
 Content-Type: application/json
 
-{"inputId":"ui-001","target":{"historyEpoch":"FROM_CAPABILITIES","turnId":"FROM_CAPABILITIES"},"content":{"text":"Also check renewal terms"},"ack":"memory"}
+{"inputId":"ui-001","target":{"historyEpoch":"FROM_CAPABILITIES","turnId":"FROM_CAPABILITIES"},"content":{"text":"请同时核对续约条款"},"ack":"memory"}
 ```
 
 ```http
@@ -111,7 +112,7 @@ Initialize normally and inspect `agentCapabilities._meta['tansr.com'].midTurnInp
 
 ```json
 {"jsonrpc":"2.0","id":"caps","method":"_tansr.com/session/input_capabilities","params":{"sessionId":"SESSION"}}
-{"jsonrpc":"2.0","id":"extra","method":"_tansr.com/session/steer","params":{"sessionId":"SESSION","inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"},"content":{"text":"Include renewal terms"},"ack":"memory"}}
+{"jsonrpc":"2.0","id":"extra","method":"_tansr.com/session/steer","params":{"sessionId":"SESSION","inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"},"content":{"text":"补充续约要求"},"ack":"memory"}}
 {"jsonrpc":"2.0","id":"status","method":"_tansr.com/session/input_status","params":{"sessionId":"SESSION","inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"}}}
 ```
 
@@ -120,7 +121,7 @@ The steer RPC result carries the host outcome; status returns `{ receipt }`, wit
 ## headless: one start, then control frames
 
 ```sh
-tansr -p "Review the contract" --output-format stream-json --input-format ndjson
+tansr -p "审阅合同" --output-format stream-json --input-format ndjson
 ```
 
 Do not combine this with `--cc-compat`, `--bg`, or aggregate `json`/`text` output. `--input-format text` retains legacy stdin text behavior. A nonempty `-p` is required; there is no stdin start frame in this batch.
@@ -128,7 +129,7 @@ Do not combine this with `--cc-compat`, `--bg`, or aggregate `json`/`text` outpu
 Read `tansr.input.ready` from stdout and obtain `capabilities.target`. Write each following JSON object as a separate stdin line:
 
 ```json
-{"v":1,"id":"a","method":"steer","params":{"inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"},"content":{"text":"Additional requirement"},"ack":"memory"}}
+{"v":1,"id":"a","method":"steer","params":{"inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"},"content":{"text":"追加要求"},"ack":"memory"}}
 {"v":1,"id":"b","method":"input_status","params":{"inputId":"ui-001","target":{"historyEpoch":"EPOCH","turnId":"TURN"}}}
 {"v":1,"id":"c","method":"cancel"}
 ```

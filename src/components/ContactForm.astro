@@ -4,65 +4,130 @@
  * 提交 → `POST {API_BASE}/v1/support/tickets { subject, body, email?, page?, locale }`(端点契约:202 `{ ok, ticketId }`;
  * 每 IP 5 / h → 429;邮件通道未配 → 503)。状态:idle → submitting → success(显 ticketId)| error(显「暂时无法提交,请发邮件」
  * + 带主题 / 正文的 mailto 回退)。任何非 2xx / 网络错 / 超时一律 error 态,页面不假死、不暴露错误细节(console.debug 一条)。
- * 零第三方脚本;文案两语按 Astro.currentLocale;无 JS 时 <noscript> 给 mailto。
+ * 零第三方脚本;文案四语(zh-CN · en · ja · ko)按当前语言查表,脚本侧文案经 data-* 属性下发(脚本本身不分语言);无 JS 时 <noscript> 给 mailto。
+ * 载荷里的 locale 由 docs-api `normalizeLocale` 归一到 api 契约接受的取值(ja / ko 页归 zh-CN;`page` 已带语言前缀)。
  */
-import { LIMITS, SUPPORT_MAILBOX, normalizeLocale } from '../lib/docs-api.mjs';
+import { LIMITS, SUPPORT_MAILBOX } from '../lib/docs-api.mjs';
+import { uiLocale } from '../lib/categories.mjs';
 
-const lang = normalizeLocale(Astro.currentLocale ?? Astro.locals.starlightRoute.locale);
-const t =
-  lang === 'en'
-    ? {
-        legend: 'Send us a message',
-        intro: 'The form is delivered to our support mailbox as an email. No account required.',
-        subject: 'Subject',
-        subjectHint: 'e.g. "[CLI] tansr init says the PAT is invalid"',
-        body: 'Details',
-        bodyHint: 'Which product and version, the diagnostic output, the error code and message, how to reproduce. Never paste secrets.',
-        email: 'Your email (optional)',
-        emailHint: 'We reply here. Leave it empty if you only want to report something.',
-        submit: 'Send',
-        submitting: 'Sending…',
-        successTitle: 'Received.',
-        successId: 'Ticket',
-        successNote: 'We reply to the email you left, in business hours, in the order received.',
-        errTitle: 'We could not deliver the form right now.',
-        errRate: 'Too many submissions from your network in the last hour. Please try again later, or email',
-        errUnavailable: 'Please email',
-        errTail: 'instead — your subject and details are pre-filled in the link.',
-        noscript: 'The form needs JavaScript. Without it, please email',
-        required: 'Required.',
-        tooLong: 'Too long.',
-        invalidEmail: 'That does not look like an email address.',
-        hp: 'Website',
-      }
-    : {
-        legend: '给我们留言',
-        intro: '表单会以邮件形式送到支持邮箱,无需登录。',
-        subject: '主题',
-        subjectHint: '例如「[命令行] tansr init 提示 PAT 无效」',
-        body: '问题描述',
-        bodyHint: '形态与版本、诊断输出、错误码与完整消息、复现步骤。不要贴任何密钥值。',
-        email: '你的邮箱(可选)',
-        emailHint: '我们回复到这里;只是反馈、不需要回复可以留空。',
-        submit: '提交',
-        submitting: '提交中…',
-        successTitle: '已收到。',
-        successId: '工单编号',
-        successNote: '我们会在工作时间内按收到顺序回复到你填写的邮箱。',
-        errTitle: '暂时无法提交。',
-        errRate: '你所在网络一小时内提交次数过多,请稍后再试,或发邮件到',
-        errUnavailable: '请发邮件到',
-        errTail: '——链接里已带上你填写的主题与描述。',
-        noscript: '表单需要 JavaScript;无法启用时请发邮件到',
-        required: '必填。',
-        tooLong: '超出长度上限。',
-        invalidEmail: '邮箱格式不对。',
-        hp: '网站',
-      };
+const lang = uiLocale(Astro.locals.starlightRoute.locale);
+const STRINGS = {
+  'zh-CN': {
+    legend: '给我们留言',
+    intro: '表单会以邮件形式送到支持邮箱,无需登录。',
+    subject: '主题',
+    subjectHint: '例如「[命令行] tansr init 提示 PAT 无效」',
+    body: '问题描述',
+    bodyHint: '形态与版本、诊断输出、错误码与完整消息、复现步骤。不要贴任何密钥值。',
+    email: '你的邮箱(可选)',
+    emailHint: '我们回复到这里;只是反馈、不需要回复可以留空。',
+    submit: '提交',
+    submitting: '提交中…',
+    successTitle: '已收到。',
+    successId: '工单编号',
+    successNote: '我们会在工作时间内按收到顺序回复到你填写的邮箱。',
+    errTitle: '暂时无法提交。',
+    errRate: '你所在网络一小时内提交次数过多,请稍后再试,或发邮件到',
+    errUnavailable: '请发邮件到',
+    errTail: '——链接里已带上你填写的主题与描述。',
+    noscript: '表单需要 JavaScript;无法启用时请发邮件到',
+    required: '必填。',
+    tooLong: '超出长度上限。',
+    invalidEmail: '邮箱格式不对。',
+    hp: '网站',
+    period: '。',
+  },
+  en: {
+    legend: 'Send us a message',
+    intro: 'The form is delivered to our support mailbox as an email. No account required.',
+    subject: 'Subject',
+    subjectHint: 'e.g. "[CLI] tansr init says the PAT is invalid"',
+    body: 'Details',
+    bodyHint: 'Which product and version, the diagnostic output, the error code and message, how to reproduce. Never paste secrets.',
+    email: 'Your email (optional)',
+    emailHint: 'We reply here. Leave it empty if you only want to report something.',
+    submit: 'Send',
+    submitting: 'Sending…',
+    successTitle: 'Received.',
+    successId: 'Ticket',
+    successNote: 'We reply to the email you left, in business hours, in the order received.',
+    errTitle: 'We could not deliver the form right now.',
+    errRate: 'Too many submissions from your network in the last hour. Please try again later, or email',
+    errUnavailable: 'Please email',
+    errTail: 'instead — your subject and details are pre-filled in the link.',
+    noscript: 'The form needs JavaScript. Without it, please email',
+    required: 'Required.',
+    tooLong: 'Too long.',
+    invalidEmail: 'That does not look like an email address.',
+    hp: 'Website',
+    period: '.',
+  },
+  ja: {
+    legend: 'お問い合わせ',
+    intro: 'フォームの内容はメールとしてサポート窓口に届きます。ログインは不要です。',
+    subject: '件名',
+    subjectHint: '例：「[CLI] tansr init で PAT が無効と表示される」',
+    body: '問題の詳細',
+    bodyHint: '形態とバージョン、診断出力、エラーコードと完全なメッセージ、再現手順。キーの値は絶対に貼らないでください。',
+    email: 'メールアドレス（任意）',
+    emailHint: '返信先です。報告のみで返信が不要な場合は空欄で構いません。',
+    submit: '送信',
+    submitting: '送信中…',
+    successTitle: '受け付けました。',
+    successId: 'チケット ID',
+    successNote: '営業時間内に、受信順にご記入のメールアドレスへ返信します。',
+    errTitle: '現在送信できません。',
+    errRate: 'お使いのネットワークからの送信が 1 時間以内に多すぎます。しばらくしてから再試行するか、次のアドレスへメールしてください：',
+    errUnavailable: '次のアドレスへメールしてください：',
+    errTail: '——リンクには入力した件名と詳細があらかじめ入っています。',
+    noscript: 'このフォームには JavaScript が必要です。有効にできない場合は次のアドレスへメールしてください：',
+    required: '必須です。',
+    tooLong: '長すぎます。',
+    invalidEmail: 'メールアドレスの形式が正しくありません。',
+    hp: 'ウェブサイト',
+    period: '。',
+  },
+  ko: {
+    legend: '문의 보내기',
+    intro: '폼 내용은 이메일로 지원 메일함에 전달됩니다. 로그인은 필요하지 않습니다.',
+    subject: '제목',
+    subjectHint: '예: "[CLI] tansr init에서 PAT가 유효하지 않다고 표시됨"',
+    body: '문제 설명',
+    bodyHint: '형태와 버전, 진단 출력, 오류 코드와 전체 메시지, 재현 단계. 키 값은 절대 붙이지 마세요.',
+    email: '이메일(선택)',
+    emailHint: '여기로 답변합니다. 단순 제보이고 답변이 필요 없으면 비워 두세요.',
+    submit: '보내기',
+    submitting: '보내는 중…',
+    successTitle: '접수되었습니다.',
+    successId: '티켓 ID',
+    successNote: '업무 시간 내에 접수 순서대로 입력하신 이메일로 답변합니다.',
+    errTitle: '지금은 제출할 수 없습니다.',
+    errRate: '사용 중인 네트워크에서 최근 1시간 동안 제출이 너무 많았습니다. 잠시 후 다시 시도하거나 다음 주소로 이메일을 보내 주세요:',
+    errUnavailable: '다음 주소로 이메일을 보내 주세요:',
+    errTail: '— 링크에는 입력한 제목과 설명이 미리 채워져 있습니다.',
+    noscript: '이 폼은 JavaScript가 필요합니다. 사용할 수 없으면 다음 주소로 이메일을 보내 주세요:',
+    required: '필수 항목입니다.',
+    tooLong: '길이 제한을 초과했습니다.',
+    invalidEmail: '이메일 형식이 올바르지 않습니다.',
+    hp: '웹사이트',
+    period: '.',
+  },
+} as const;
+const t = STRINGS[lang];
 const mailto = `mailto:${SUPPORT_MAILBOX}`;
 ---
 
-<form class="contact-form" data-contact-form data-contact-locale={lang} data-state="idle" novalidate>
+<form
+  class="contact-form"
+  data-contact-form
+  data-contact-locale={lang}
+  data-state="idle"
+  data-cf-submitting={t.submitting}
+  data-cf-msg-required={t.required}
+  data-cf-msg-too-long={t.tooLong}
+  data-cf-msg-invalid={t.invalidEmail}
+  novalidate
+>
   <fieldset>
     <legend>{t.legend}</legend>
     <p class="cf-intro">{t.intro}</p>
@@ -102,7 +167,7 @@ const mailto = `mailto:${SUPPORT_MAILBOX}`;
   <div class="cf-status" role="status" aria-live="polite">
     <p class="cf-success" data-cf-success hidden>
       <strong>{t.successTitle}</strong>
-      <span data-cf-ticket-wrap hidden>{t.successId} <code data-cf-ticket></code>。</span>
+      <span data-cf-ticket-wrap hidden>{t.successId} <code data-cf-ticket></code>{t.period}</span>
       <span>{t.successNote}</span>
     </p>
     <p class="cf-error" data-cf-error hidden>
@@ -114,7 +179,7 @@ const mailto = `mailto:${SUPPORT_MAILBOX}`;
     </p>
   </div>
   <noscript>
-    <p class="cf-error">{t.noscript} <a href={mailto}>{SUPPORT_MAILBOX}</a>。</p>
+    <p class="cf-error">{t.noscript} <a href={mailto}>{SUPPORT_MAILBOX}</a>{t.period}</p>
   </noscript>
 </form>
 
@@ -128,10 +193,10 @@ const mailto = `mailto:${SUPPORT_MAILBOX}`;
 
   document.querySelectorAll<HTMLFormElement>('[data-contact-form]').forEach((form) => {
     const locale = form.dataset.contactLocale;
-    const isEn = locale === 'en';
     const submit = form.querySelector<HTMLButtonElement>('[data-cf-submit]')!;
     const submitLabel = submit.textContent ?? '';
-    const submittingLabel = isEn ? 'Sending…' : '提交中…';
+    // 文案由组件按语言渲染进 data-* 属性;脚本本身不分语言
+    const submittingLabel = form.dataset.cfSubmitting ?? submitLabel;
     const success = form.querySelector<HTMLElement>('[data-cf-success]')!;
     const ticketWrap = form.querySelector<HTMLElement>('[data-cf-ticket-wrap]')!;
     const ticketEl = form.querySelector<HTMLElement>('[data-cf-ticket]')!;
@@ -139,9 +204,11 @@ const mailto = `mailto:${SUPPORT_MAILBOX}`;
     const errRate = form.querySelector<HTMLElement>('[data-cf-err-rate]')!;
     const errUnavailable = form.querySelector<HTMLElement>('[data-cf-err-unavailable]')!;
     const mailto = form.querySelector<HTMLAnchorElement>('[data-cf-mailto]')!;
-    const msgs = isEn
-      ? { required: 'Required.', 'too-long': 'Too long.', invalid: 'That does not look like an email address.' }
-      : { required: '必填。', 'too-long': '超出长度上限。', invalid: '邮箱格式不对。' };
+    const msgs = {
+      required: form.dataset.cfMsgRequired ?? '',
+      'too-long': form.dataset.cfMsgTooLong ?? '',
+      invalid: form.dataset.cfMsgInvalid ?? '',
+    };
 
     const fields = () => {
       const fd = new FormData(form);

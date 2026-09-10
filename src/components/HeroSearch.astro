@@ -4,13 +4,18 @@
  * Pagefind 未就绪(顶栏按钮仍 disabled)时,退而把焦点交给顶栏按钮。
  */
 import { Icon } from '@astrojs/starlight/components';
+import { uiLocale } from '../lib/categories.mjs';
 
 interface Props {
   placeholder?: string;
 }
-const isEn = Astro.locals.starlightRoute.locale === 'en';
-const placeholder =
-  Astro.props.placeholder ?? (isEn ? 'Search docs and help center…' : '搜索文档与帮助中心:错误码、命令、环境变量、问题关键词…');
+const PLACEHOLDER = {
+  'zh-CN': '搜索文档与帮助中心:错误码、命令、环境变量、问题关键词…',
+  en: 'Search docs and help center…',
+  ja: 'ドキュメントとヘルプセンターを検索…',
+  ko: '문서와 도움말 센터 검색…',
+} as const;
+const placeholder = Astro.props.placeholder ?? PLACEHOLDER[uiLocale(Astro.locals.starlightRoute.locale)];
 ---
 
 {/* 可访问名 = 可见文字(placeholder);不另设 aria-label,否则 Lighthouse label-content-name-mismatch 红(DS-21) */}

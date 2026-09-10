@@ -3,6 +3,8 @@
  * 一站两区入口:「开发者文档」(/)与「帮助中心」(/support/)。
  * 顶栏(Header)与移动端菜单页脚(MobileMenuFooter)共用;当前区按路径判定并加 aria-current。
  */
+import { uiLocale } from '../lib/categories.mjs';
+
 interface Props {
   class?: string;
 }
@@ -12,14 +14,20 @@ const prefix = locale ? `/${locale}` : '';
 const pathname = Astro.url.pathname;
 const inSupport = pathname === `${prefix}/support` || pathname.startsWith(`${prefix}/support/`);
 
-const isEn = locale === 'en';
+const STRINGS = {
+  'zh-CN': { docs: '开发者文档', support: '帮助中心', nav: '站点分区' },
+  en: { docs: 'Developer docs', support: 'Help center', nav: 'Site zones' },
+  ja: { docs: '開発者ドキュメント', support: 'ヘルプセンター', nav: 'サイトの区分' },
+  ko: { docs: '개발자 문서', support: '도움말 센터', nav: '사이트 구역' },
+} as const;
+const t = STRINGS[uiLocale(locale)];
 const entries = [
-  { href: `${prefix}/`, label: isEn ? 'Developer docs' : '开发者文档', current: !inSupport },
-  { href: `${prefix}/support/`, label: isEn ? 'Help center' : '帮助中心', current: inSupport },
+  { href: `${prefix}/`, label: t.docs, current: !inSupport },
+  { href: `${prefix}/support/`, label: t.support, current: inSupport },
 ];
 ---
 
-<nav class:list={['zone-nav', Astro.props.class]} aria-label={isEn ? 'Site zones' : '站点分区'}>
+<nav class:list={['zone-nav', Astro.props.class]} aria-label={t.nav}>
   {
     entries.map((e) => (
       <a href={e.href} aria-current={e.current ? 'page' : undefined}>

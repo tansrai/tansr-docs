@@ -6,12 +6,19 @@
 import EditLink from '@astrojs/starlight/components/EditLink.astro';
 import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro';
 import Pagination from '@astrojs/starlight/components/Pagination.astro';
+import { uiLocale } from '../lib/categories.mjs';
 
-const isEn = Astro.locals.starlightRoute.locale === 'en';
+const STRINGS = {
+  'zh-CN': { terms: '服务条款', privacy: '隐私政策', nav: '法律条目', copyright: '站点代码 MIT;文档内容保留所有权利。' },
+  en: { terms: 'Terms of service', privacy: 'Privacy policy', nav: 'Legal', copyright: 'Site code MIT; content all rights reserved.' },
+  ja: { terms: '利用規約', privacy: 'プライバシーポリシー', nav: '法的情報', copyright: 'サイトのコードは MIT ライセンス。ドキュメントの内容は全著作権を保有します。' },
+  ko: { terms: '서비스 약관', privacy: '개인정보 처리방침', nav: '법적 고지', copyright: '사이트 코드는 MIT 라이선스, 문서 내용은 모든 권리 보유.' },
+} as const;
+const t = STRINGS[uiLocale(Astro.locals.starlightRoute.locale)];
 const year = new Date().getFullYear();
 const legal = [
-  { href: 'https://www.tansr.com/terms', label: isEn ? 'Terms of service' : '服务条款' },
-  { href: 'https://www.tansr.com/privacy', label: isEn ? 'Privacy policy' : '隐私政策' },
+  { href: 'https://www.tansr.com/terms', label: t.terms },
+  { href: 'https://www.tansr.com/privacy', label: t.privacy },
 ];
 /** 页脚展示文本;门户页脚已有则同值(操作者项) */
 const ICP = '{ICP 备案号待填}';
@@ -24,11 +31,11 @@ const ICP = '{ICP 备案号待填}';
   </div>
   <Pagination />
   <div class="legal">
-    <nav aria-label={isEn ? 'Legal' : '法律条目'} class="legal-links">
+    <nav aria-label={t.nav} class="legal-links">
       {legal.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
       <span class="icp">{ICP}</span>
     </nav>
-    <p class="copyright">© {year} tansr · {isEn ? 'Site code MIT; content all rights reserved.' : '站点代码 MIT;文档内容保留所有权利。'}</p>
+    <p class="copyright">© {year} tansr · {t.copyright}</p>
   </div>
 </footer>
 

@@ -4,7 +4,7 @@
  * 375 px 单列;≥ 40rem 两列;≥ 64rem 三列(见 custom.css `.category-grid`)。
  */
 import { Icon } from '@astrojs/starlight/components';
-import { CATEGORIES } from '../lib/categories.mjs';
+import { CATEGORIES, uiLocale } from '../lib/categories.mjs';
 import { resolveDirectoryHref } from '../lib/resolve';
 
 interface Props {
@@ -13,12 +13,13 @@ interface Props {
 }
 
 const { locale } = Astro.locals.starlightRoute;
-const isEn = locale === 'en';
+const lang = uiLocale(locale);
 const wanted = CATEGORIES.filter((c) => !Astro.props.zone || c.zone === Astro.props.zone);
 const cards = await Promise.all(
-  wanted.map(async (c) => ({ ...c, href: await resolveDirectoryHref(locale, c.directory) })),
+  wanted.map(async (c) => ({ ...c, title: lang === 'zh-CN' ? c.label : c[lang], href: await resolveDirectoryHref(locale, c.directory) })),
 );
-const soon = isEn ? 'Coming soon' : '即将上线';
+const SOON = { 'zh-CN': '即将上线', en: 'Coming soon', ja: '近日公開', ko: '준비 중' } as const;
+const soon = SOON[lang];
 ---
 
 <ul class="category-grid" role="list">
@@ -30,7 +31,7 @@ const soon = isEn ? 'Coming soon' : '即将上线';
             <span class="category-icon" aria-hidden="true">
               <Icon name={c.icon as Parameters<typeof Icon>[0]['name']} size="1.5rem" />
             </span>
-            <span class="category-title">{isEn ? c.en : c.label}</span>
+            <span class="category-title">{c.title}</span>
             <span class="category-desc">{c.description}</span>
           </a>
         ) : (
@@ -39,7 +40,7 @@ const soon = isEn ? 'Coming soon' : '即将上线';
               <Icon name={c.icon as Parameters<typeof Icon>[0]['name']} size="1.5rem" />
             </span>
             <span class="category-title">
-              {isEn ? c.en : c.label} <span class="category-badge">{soon}</span>
+              {c.title} <span class="category-badge">{soon}</span>
             </span>
             <span class="category-desc">{c.description}</span>
           </div>
