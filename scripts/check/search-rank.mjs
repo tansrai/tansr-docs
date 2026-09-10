@@ -15,6 +15,7 @@
  */
 import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -77,6 +78,27 @@ function serveDist(dist) {
   return new Promise((ok) => server.listen(0, '127.0.0.1', () => ok(server)));
 }
 
+/** 只在原失败后取证；入口指纹不代表二次模块或 Node 实际已读取的字节，不重试加载。 */
+function runtimeFailure(cause, phase, pagefindJs) {
+  const url = pathToFileURL(pagefindJs).href;
+  const entryModule = { url: url.slice(0, 768), observation: 'after-failure' };
+  if (url.length > 768) entryModule.urlTruncated = true;
+  try {
+    entryModule.bytes = statSync(pagefindJs).size;
+    if (entryModule.bytes <= 1024 * 1024) {
+      const bytes = readFileSync(pagefindJs);
+      entryModule.bytes = bytes.length;
+      entryModule.sha256 = createHash('sha256').update(bytes).digest('hex');
+    } else entryModule.hashOmitted = 'over-1-MiB';
+  } catch {
+    entryModule.readError = 'unavailable';
+  }
+  const diagnostic = { phase, node: process.version, entryModule };
+  return Object.assign(new Error(`[search-rank] ${JSON.stringify(diagnostic)}`, { cause }), {
+    code: 'SEARCH_RUNTIME_FAILED', diagnostic,
+  });
+}
+
 /**
  * 跑查询。返回 { options, results: [{ term, total, top: [{ url, title, score }], want, rankOfWant, ok }] }。
  * `terms` 缺省取 EXPECTATIONS;自定义词无 want 时 ok 恒 true(只看榜)。
@@ -91,13 +113,18 @@ export async function searchRank({ dist, terms, topN = 5 } = {}) {
   const prevDocument = globalThis.document;
   globalThis.document = { currentScript: null, querySelector: () => ({ getAttribute: () => PAGE_LANG }) };
   let pf;
+  let phase = 'import';
   try {
     pf = await import(`${pathToFileURL(pagefindJs).href}?t=${Date.now()}`);
+    phase = 'options';
     await pf.options({ ...options, basePath: `http://127.0.0.1:${server.address().port}/pagefind/` });
+    phase = 'init';
     await pf.init();
     const results = [];
     for (const e of expectations) {
+      phase = 'search';
       const r = await pf.search(e.term);
+      phase = 'data';
       const all = await Promise.all(r.results.map((x) => x.data()));
       const pathOf = (u) => new URL(u, 'http://x').pathname;
       const top = all.slice(0, topN).map((d, i) => ({ url: pathOf(d.url), title: d.meta?.title ?? '', score: Number(r.results[i].score.toFixed(3)) }));
@@ -106,6 +133,8 @@ export async function searchRank({ dist, terms, topN = 5 } = {}) {
       results.push({ term: e.term, total: r.results.length, top, want: e.want, rankOfWant, ok });
     }
     return { options, results };
+  } catch (cause) {
+    throw runtimeFailure(cause, phase, pagefindJs);
   } finally {
     await pf?.destroy?.();
     server.close();

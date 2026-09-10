@@ -11,11 +11,14 @@ tansr 的开发者文档与帮助中心(一站两区):`/` 开发者文档(SDK ·
 ```bash
 pnpm install
 pnpm dev          # http://localhost:4321
-pnpm gate         # astro check · build · gen --check · lint:text · links · frontmatter
+pnpm gate         # check · build · gen:check · lint:text · links · frontmatter · release-notes · i18n:coverage
+pnpm test         # 放在 gate 构建之后，实际执行依赖 dist 的搜索与侧栏测试
 pnpm vendor --api <tansr-api 检出> --cli <tansr-cli 检出>   # 更新 contract/ 副本(主线跑)
 ```
 
 构建依赖说明(INJ-DOC-01):Astro 7 的预渲染产物直接导入 `cookie`,因此本仓显式声明已锁定的 `cookie@2.0.1`,避免干净检出缺少依赖或解析到上级目录的旧版本。该修复不修改 vendored SDK / CLI / API 源内容,也不改变构建与验收门。
+
+搜索运行时取证(REL-04-DOC-02):`db64cf84` 主线 CI 曾出现一次构建后模块编译 `Unexpected end of input`，目前未确认唯一根因。搜索核验失败现保留原始 `cause`，附加 import/options/init/search/data 阶段、Node 版本与入口模块的失败后指纹，不重试或回落。构建前的 dist 缺席跳过不能作为构建后验收；状态、原红与上游候选边界见[任务回执](doc/report/REL-04-DOC-02-搜索运行时诊断回执-2026-09-10.md)。
 
 ## 目录
 
