@@ -6,9 +6,13 @@ import { join } from 'node:path';
 import { repoRootFrom } from '../lib/text.mjs';
 import { GENERATED_MARKER } from '../../src/lib/contract.mjs';
 import { GLOSSARY } from '../../src/lib/glossary.mjs';
+import { EXTRA_LOCALES } from '../../src/lib/categories.mjs';
 import { buildCoverage, fileToSlug, generate, OUT_REL, OUT_SLUG, readMeta, render } from './i18n-coverage.mjs';
 
 const root = repoRootFrom(import.meta.url);
+/** 语言集随 EXTRA_LOCALES(现 en / ja / ko;DS-32 起不止 en);fixture 只有 en 译文,其余语言计数为 0 */
+const LOCALES = Object.keys(EXTRA_LOCALES);
+const zeros = (except) => Object.fromEntries(LOCALES.map((l) => [l, except?.[l] ?? 0]));
 
 /** 最小内容目录 fixture:根 3 页 + en 1 页翻译 + en 1 页孤儿 */
 function fixture() {
@@ -62,9 +66,10 @@ test('buildCoverage(fixture):分母 = 根 slug 集;en 计数;孤儿另列;lastVe
   const { tmp } = fixture();
   try {
     const cov = buildCoverage(tmp);
-    assert.deepEqual(cov.locales, ['en']);
+    assert.deepEqual(cov.locales, LOCALES);
+    assert.ok(cov.locales.includes('en'));
     assert.deepEqual(cov.rows.map((r) => r.slug), ['', 'a', 'b']);
-    assert.deepEqual(cov.summary, { total: 3, handwritten: 3, generated: 0, en: 1, byScope: { handwritten: { en: 1 }, generated: { en: 0 } } });
+    assert.deepEqual(cov.summary, { total: 3, handwritten: 3, generated: 0, ...zeros({ en: 1 }), byScope: { handwritten: zeros({ en: 1 }), generated: zeros() } });
     assert.equal(cov.rows.find((r) => r.slug === 'a').translated.en, 'A');
     assert.equal(cov.rows.find((r) => r.slug === 'b').translated.en, undefined);
     assert.deepEqual(cov.orphans.map((o) => o.slug), ['orphan']);
@@ -91,7 +96,7 @@ test('红例 → 绿例:含 generated: true 页时,旧算法分母(全部根页)
     assert.notEqual(cov.summary.handwritten, cov.summary.total, '含生成页时两口径分母必然不同(修前红:summary 无 handwritten)');
     // 全部根页口径 en = 2(a + 生成页 x);手写页口径 en = 1(只 a);生成页口径 en = 1(x)
     assert.equal(cov.summary.en, 2);
-    assert.deepEqual(cov.summary.byScope, { handwritten: { en: 1 }, generated: { en: 1 } });
+    assert.deepEqual(cov.summary.byScope, { handwritten: zeros({ en: 1 }), generated: zeros({ en: 1 }) });
     const text = render(cov);
     // 主表以手写页为分母;生成页单独一行只报数量
     assert.match(text, /\| English\(`en`\) \| 1 \/ 3 \| 33\.3% \|/, '主表分母须为手写页数 3,而非 5');
@@ -109,7 +114,8 @@ test('红例 → 绿例:含 generated: true 页时,旧算法分母(全部根页)
     assert.match(text, /\| \[X\(生成页\)\]\(\/sdk\/api\/x\/\) `sdk\/api\/x` \| ✓ \| ✓ \[X EN\]\(\/en\/sdk\/api\/x\/\) \|/);
     assert.match(text, /\| \[错误码参考\(生成页\)\]\(\/errors\/codes\/\) `errors\/codes` \| ✓ \| 回落 \|/);
     // 折叠段内的表须在空行之后(CommonMark HTML 块结束后 Markdown 才生效)
-    assert.match(text, new RegExp(`${summaryLine.replace(/[()]/g, '\\$&')}\\n\\n\\| 页面 \\| zh-CN \\| \`en\` \\|\\n`));
+    const header = `| 页面 | zh-CN | ${LOCALES.map((l) => `\`${l}\``).join(' | ')} |`;
+    assert.match(text, new RegExp(`${summaryLine.replace(/[()]/g, '\\$&')}\\n\\n${header.replace(/[|]/g, '\\$&')}\\n`));
     assert.match(text, /\|\n\n<\/details>\n/);
     // 术语表在折叠段之后仍在场
     assert.ok(text.indexOf('## 术语表') > text.indexOf('</details>'));
@@ -160,7 +166,7 @@ test('本轮内存产物:新增页与翻译计数,覆盖旧标题日期,不把�
     ];
     const cov = buildCoverage(tmp, pending);
     // 内存产物都带 generated: true:a 被覆盖成生成页、sdk/api/new 为生成页 → 手写只剩 '' 与 b
-    assert.deepEqual(cov.summary, { total: 4, handwritten: 2, generated: 2, en: 2, byScope: { handwritten: { en: 0 }, generated: { en: 2 } } });
+    assert.deepEqual(cov.summary, { total: 4, handwritten: 2, generated: 2, ...zeros({ en: 2 }), byScope: { handwritten: zeros(), generated: zeros({ en: 2 }) } });
     assert.equal(cov.rows.find((r) => r.slug === 'a').title, 'Updated title');
     assert.equal(cov.rows.find((r) => r.slug === 'a').generated, true, '内存产物的 generated 须覆盖磁盘');
     assert.equal(cov.rows.find((r) => r.slug === 'sdk/api/new').translated.en, 'New export EN');

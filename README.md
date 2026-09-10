@@ -32,7 +32,7 @@ scripts/deploy/        rsync + 原子切换
 
 ## 部署
 
-GitHub Actions `deploy.yml`:main 推送 → `pnpm gate` → 构建 → `scripts/deploy/publish.sh dist docs-upload docs-switch <sha>`:以专用用户 `docsdeploy` 的两把受限键,`rsync` 到 ECS `/srv/tansr-docs/releases/<sha>/`(上传键只能做这一件事),再 `ssh docs-switch switch <sha>` 原子切 `current`(切换键只能做这一件事;零停机、零 reload;只留最近 3 份;回滚 = `switch <旧 sha>`)。secrets:`DOCS_DEPLOY_KEY`(上传键私钥)· `DOCS_SWITCH_KEY`(切换键私钥)· `DOCS_HOST`(`docsdeploy@api.tansr.com`)· `DOCS_HOST_KEY`(known_hosts 行,可选)。nginx 与两条强制命令在 `tansr-deploy` 仓(`nginx/conf.d/docs.conf` · `scripts/docs-rsync-only.sh` · `scripts/docs-switch.sh` · `scripts/docs-init.sh`)。
+GitHub Actions `deploy.yml`:main 推送 → `pnpm gate` → 构建 → `scripts/deploy/publish.sh dist docs-upload docs-switch <sha>`:以专用用户 `docsdeploy` 的两把受限键,`rsync` 到资料站主机 `/srv/tansr-docs/releases/<sha>/`(上传键只能做这一件事),再 `ssh docs-switch switch <sha>` 原子切 `current`(切换键只能做这一件事;零停机、零 reload;只留最近 3 份;回滚 = `switch <旧 sha>`)。secrets(仓级):`DOCS_DEPLOY_KEY`(上传键私钥)· `DOCS_SWITCH_KEY`(切换键私钥)· `DOCS_HOST`(`docsdeploy@120.26.186.214`)· `DOCS_HOST_KEY`(known_hosts 行,可选)。资料站自 2026-09-10 起在**独立主机** `120.26.186.214`(仅 nginx 容器 + 静态文件,无仓检出、无任何私钥),与 api / www 所在 ECS 分离;主机部署件、nginx 站点与两条强制命令在 `tansr-deploy` 仓 `docs-host/`(`docs-host/README.md` · `conf.d/docs.conf` · `scripts/docs-rsync-only.sh` · `scripts/docs-switch.sh` · `scripts/docs-init.sh`)。
 
 ### 上游接线
 

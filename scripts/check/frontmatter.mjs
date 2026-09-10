@@ -27,6 +27,7 @@ import {
   SOURCE_PATTERN,
   ZONE_VALUES,
 } from '../../src/lib/contract.mjs';
+import { EXTRA_LOCALES } from '../../src/lib/categories.mjs';
 
 export const DOCS_DIR = 'src/content/docs';
 
@@ -151,7 +152,8 @@ function localeOf(slug, extraLocales) {
   return undefined;
 }
 
-export function checkFrontmatter({ root, extraLocales = ['en'] }) {
+// extraLocales 缺省随 categories.mjs 的 EXTRA_LOCALES(en / ja / ko),ja / ko 页的 related 与 en 同等按同语言解析
+export function checkFrontmatter({ root, extraLocales = Object.keys(EXTRA_LOCALES) }) {
   const files = listDocs(root);
   const slugs = new Set(files.map(fileToSlug));
   const errors = [];
