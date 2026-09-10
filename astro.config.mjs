@@ -31,7 +31,12 @@ function sdkSidebarItems() {
   return [...guides, { slug: 'sdk/api', label: 'API 参考(总览)', translations: { en: 'API reference (overview)' } }];
 }
 
-/** 11 类侧栏组(zh-CN 根;en 标签走 translations),顺序即侧栏顺序 */
+/**
+ * 11 类侧栏组(zh-CN 根;en 标签走 translations),顺序即侧栏顺序。
+ * 「REST 参考」位放 starlight-openapi 的占位组:插件的路由中间件在 /api/** 页面把它换成完整操作树(总览 + 各 tag 组 + 170 个操作);
+ * 其余页面由 src/lib/rest-sidebar.mjs(下方 routeMiddleware,先于插件跑)换成「REST 参考 → 总览」一条——
+ * 否则 170 条操作链接(每页 ~78 KB)会渲进全站每一页(getting-started 曾 123 KB,其中六成是它)。
+ */
 const sidebar = CATEGORIES.flatMap((c) => {
   if (c.directory === 'api' && openApiPresent) return openAPISidebarGroups;
   return [
@@ -67,6 +72,13 @@ export default defineConfig({
         Footer: './src/components/Footer.astro',
         MarkdownContent: './src/components/MarkdownContent.astro',
       },
+      /**
+       * REST 参考侧栏瘦身(DS-30):插件 0.26 的 sidebar 配置(collapsed / label / group / operations.{badges,labels,sort} / tags.sort,
+       * 见 node_modules/starlight-openapi/libs/schemas/schema.ts)没有「不列操作」开关,collapsed 只改 <details> 的 open 属性、字节不变;
+       * 侧栏手写 link 项会被 Starlight 加 locale 前缀成 /en/api/(插件不产多语言路由,即死链)。故用路由中间件:
+       * /api/** 之外把占位组换成「总览」一条(href 恒 /api/),/api/** 内保留完整操作树与上下页。理由与实测见 src/lib/rest-sidebar.mjs。
+       */
+      routeMiddleware: openApiPresent ? ['./src/lib/rest-sidebar.mjs'] : [],
       plugins: openApiPresent
         ? [
             starlightOpenAPI([
