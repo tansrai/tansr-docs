@@ -4,6 +4,7 @@ description: Handle shutdown, timeouts and retries with closeAsync, drain and MC
 zone: docs
 category: sdk
 related:
+  - sdk/sessions-and-events
   - sdk/system-prompts
   - getting-started/sdk
 sources:
@@ -26,13 +27,13 @@ const session = await createSession({ token, baseUrl, store });
 const pump = (async () => {
   for await (const event of session.events) render(event);
 })();
-session.send('Summarize this work session.');
+session.send('整理这次工作记录');
 await session.idle();
 const result = await session.closeAsync({ timeoutMs: 30_000, flushStore: true });
 await pump;
 if (result.status !== 'completed') {
   showCleanupState(result.status, result.pending, result.failureCount);
-  // Keep the session. Later: await session.drain({ timeoutMs: 30_000 });
+  // 保留 session，稍后继续：await session.drain({ timeoutMs: 30_000 });
 }
 ```
 
@@ -52,7 +53,7 @@ Breaking from query still aborts the query and observes cleanup within `cleanupT
 
 ```ts
 let cleanup;
-for await (const event of query({ token, baseUrl, prompt: 'Summarize the directory.',
+for await (const event of query({ token, baseUrl, prompt: '总结目录',
   cleanupTimeoutMs: 30_000,
   onLifecycleError(error) { cleanup = error.cleanup; showFailure(error.code); },
 })) {

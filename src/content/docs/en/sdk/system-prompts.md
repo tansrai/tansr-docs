@@ -64,13 +64,13 @@ This order specifies request construction. **It does not guarantee how a model r
 Use an application manager's login access token for these management endpoints. An end user's `app_user` token or the application appkey is not a replacement for that management identity. Organization applications also require the target organization's `x-tansr-org` header; the API enforces write permissions.
 
 ```bash
-# ACCESS_TOKEN is a manager login access token; APP_ID identifies the application.
+# ACCESS_TOKEN 为应用管理者的登录访问令牌；APP_ID 为应用标识。
 curl --fail-with-body -X PUT "https://api.tansr.com/v1/apps/$APP_ID/config" \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"systemPrompt":"You are an order assistant. Be concise and never invent order status.","systemPromptPolicy":"prepend"}'
+  -d '{"systemPrompt":"你是订单助手。回答简洁，不编造订单状态。","systemPromptPolicy":"prepend"}'
 
-# Read the application detail; the fields are under config in its response.
+# 读取走应用详情，字段位于响应的 config 内。
 curl --fail-with-body "https://api.tansr.com/v1/apps/$APP_ID" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
@@ -97,8 +97,8 @@ if (!token) throw new Error('Missing short-lived app_user token');
 const run = query({
   token,
   baseUrl: 'https://api.tansr.com',
-  prompt: 'What information do you need before checking an order?',
-  systemAppend: [{ text: 'Use plain text; do not rely on interactive web controls.' }],
+  prompt: '查询订单前，需要我提供什么信息？',
+  systemAppend: [{ text: '输出纯文本，避免依赖网页交互控件。' }],
   tools: { builtin: [] },
 });
 let step = await run.next();
@@ -120,18 +120,18 @@ if (!token) throw new Error('Missing short-lived app_user token');
 const session = await createSession({
   token,
   baseUrl: 'https://api.tansr.com',
-  system: [{ text: 'This integration handles after-sales questions. Clarify the problem first.' }],
-  systemAppend: [{ text: 'The UI supports Markdown lists but not HTML.' }],
+  system: [{ text: '本次接入面向售后咨询，请先确认用户的问题。' }],
+  systemAppend: [{ text: '界面支持 Markdown 列表，不支持 HTML。' }],
   tools: { builtin: [] },
 });
-console.log(session.applicationPrompt); // source / policy only, no prompt body.
+console.log(session.applicationPrompt); // 只有 source / policy，没有提示词正文。
 const pump = (async () => {
   for await (const event of session.events) {
     if (event.type === 'msg.text.delta') process.stdout.write(event.text);
   }
 })();
 try {
-  session.send('What should I prepare before returning an item?');
+  session.send('退货前需要准备什么？');
   await session.idle();
 } finally {
   session.close();
@@ -167,7 +167,7 @@ export async function answer(
   sdkSystem?: IRSystemSegment[],
 ) {
   const selected = resolveApplicationSystem(platform, sdkSystem);
-  const hostGuide = [{ text: 'Keep the answer suitable for a plain-text interface.' }];
+  const hostGuide = [{ text: '回答须适合纯文本界面。' }];
   const run = runAgent({
     client,
     model,
@@ -179,7 +179,7 @@ export async function answer(
   for await (const event of run.events) {
     if (event.type === 'msg.text.delta') process.stdout.write(event.text);
   }
-  return selected.info; // Same shape as applicationPrompt; no prompt body.
+  return selected.info; // 与 applicationPrompt 同形，不含正文。
 }
 ```
 
@@ -203,16 +203,16 @@ const build = createAgentSessionFactory({
     apiBaseUrl: 'https://api.tansr.com',
     appId,
     appKey,
-    // Optional business role. Remove this property to use the platform role alone.
-    system: [{ text: 'Handle mobile after-sales questions; clarify the problem first.' }],
-    systemAppend: [{ text: 'Keep replies readable on a phone; use the wired interaction tools for confirmation.' }],
+    // 可选业务段；不需要宿主覆盖/拼接业务角色时删除这一项。
+    system: [{ text: '面向移动端售后咨询，先澄清问题再回答。' }],
+    systemAppend: [{ text: '回复适合手机屏幕；需用户确认时使用已接入的交互工具。' }],
   },
   store: createServeAgentSessionStore({ dir: './data/sessions' }),
   cwd: process.cwd(),
 });
 
-// Wire build.factory / build.storeReader into startServer's v2 configuration.
-// See the session-service quickstart for authentication and startup.
+// 将 build.factory / build.storeReader 接到 startServer 的 v2 配置。
+// 完整 authenticate 与启动示例见“会话服务 5 分钟跑通”。
 ```
 
 Continue with the [session-service quickstart](/en/getting-started/serve/) and [Android / iOS quickstart](/en/getting-started/android/). Appkeys and platform tokens remain in serve; the device uses your own application login state.
