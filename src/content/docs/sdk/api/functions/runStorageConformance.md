@@ -13,6 +13,8 @@ generated: true
 function runStorageConformance(store, options?): Promise<StorageConformanceReport>;
 ```
 
+对一个 SegmentBlobStore 跑完十类一致性用例并返回报告;全部对象落在隔离前缀下,结束时尽力清理。
+
 ## 参数
 
 ### store

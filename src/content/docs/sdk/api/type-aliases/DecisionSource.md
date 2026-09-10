@@ -12,3 +12,5 @@ generated: true
 ```ts
 type DecisionSource = "user" | "rule" | "mode" | "policy" | "hook" | "builtin" | "classifier";
 ```
+
+权限决策来源(DecisionSourceSchema 推导)。

@@ -16,6 +16,8 @@ type Integrity = {
 };
 ```
 
+记录完整性字段(IntegritySchema 推导)。
+
 ## 属性
 
 <a id="api-hash"></a>

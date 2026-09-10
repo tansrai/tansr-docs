@@ -51,3 +51,5 @@ const VideoGenDataSchema: z.ZodObject<{
   }, z.ZodTypeAny, "passthrough">>, "many">;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+VideoGenData 的 zod schema(passthrough 容未知键)。

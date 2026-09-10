@@ -36,3 +36,5 @@ const VideoGenArgsSchema: z.ZodObject<{
   seed?: number;
 }>;
 ```
+
+VideoGen 工具参数 schema:模型(可省)、正负提示词、时长、画幅比、种子与图生视频的首帧图。

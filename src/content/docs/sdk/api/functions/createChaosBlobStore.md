@@ -17,6 +17,8 @@ function createChaosBlobStore(
 ): ChaosBlobStore;
 ```
 
+把任一 SegmentBlobStore 包成按 faults 注入故障的存储;不改语义的调用原样透传,内层错误原样上抛。
+
 ## 参数
 
 ### inner

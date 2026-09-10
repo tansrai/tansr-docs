@@ -85,6 +85,8 @@ type IRRequest = {
 };
 ```
 
+模型调用请求(IRRequestSchema 推导)。
+
 ## 属性
 
 <a id="api-maxtokens"></a>

@@ -26,7 +26,7 @@ optional adjudication?: {
 };
 ```
 
-派生裁决链语境(T-DA3,doc/optimize/27 §3.5):子代理 ask 经父裁决后
+派生裁决链语境:子代理 ask 经父裁决后
 endorse/escalate 上升到用户终审时,执行器把逐级裁决留痕挂在此位——
 终审弹卡呈现完整责任链(「父 X 为子 Y 的操作 Z 担保,理由 W,责任人
 X」)。仅裁决链路径携带;主代理直接询问恒缺省。
@@ -37,7 +37,7 @@ X」)。仅裁决链路径携带;主代理直接询问恒缺省。
 chain: readonly AdjudicationChainEntry[];
 ```
 
-逐级裁决条目(P-D1 恒一级;T-DA8 递归后为多级)
+逐级裁决条目(单层派生恒一级;递归派生为多级)
 
 #### childAgentId
 
@@ -73,7 +73,7 @@ true = 父担保上报(endorse);false = 父不能决上升(escalate)
 optional classifierAdjudication?: AdjudicationChainEntry;
 ```
 
-分类器裁决意见段(CW19-U3a,RFC-U3 §十审计词表归一):引擎**真实模型
+分类器裁决意见段(审计词表归一):引擎**真实模型
 咨询**归一意见后经装配层网关透传至此(结构与 kernel permissions/
 types.ts 的 PermissionAdjudicationEntry 同构——本目录不 import
 permissions/,结构兼容由装配层保证,sourceLayer 同例)。执行器把本段
@@ -100,7 +100,7 @@ decision: PermissionDecision;
 optional matchedRule?: string;
 ```
 
-命中的规则原文(contract-v0.2,T-C3 RFC):引擎侧
+命中的规则原文(contract-v0.2):引擎侧
 PermissionDecisionResult.matchedRule 的透传位,调度器原样落进
 tool.permission.decided 事件体;无规则命中(模式短路/兜底 ask)时缺省。
 
@@ -115,10 +115,10 @@ optional reason?: string;
 ```
 
 裁决理由(自由文本;恒不进 tool.permission.decided 事件,契约零改动)。
-- **deny**(T-K1 deny-and-continue;source='classifier' 的收紧、hook 收紧、
+- **deny**(deny-and-continue;source='classifier' 的收紧、hook 收紧、
   hard-safety 等):调度器把理由并入 isError tool_result 文本回喂模型——
   模型据此调整路线继续本轮;
-- **ask**(doc/113 姿态 rejectEffect='ask';source='classifier'):裁决人
+- **ask**(姿态 rejectEffect='ask';source='classifier'):裁决人
   判为危险但升到询问面——调度器把本决策整体作 askUser 第三参
   `decision` 透传,询问面据 `reason` 呈现「裁决人判为危险:…」供用户
   终审;该 ask 终局为 deny(用户拒 / 无询问通道地板)时理由同样进
@@ -146,9 +146,9 @@ source: DecisionSource;
 optional sourceLayer?: "user" | "policy" | "projectLocal" | "projectShared";
 ```
 
-命中规则所在层(T-K0 归因;仅规则命中携带)。字面量联合与 kernel
+命中规则所在层(归因;仅规则命中携带)。字面量联合与 kernel
 permissions/types.ts 的 RuleLayerName 逐字对齐——本目录不 import
-permissions/(T-C2 并行开发铁律),结构兼容由装配层保证。询问面据此
+permissions/(分层铁律),结构兼容由装配层保证。询问面据此
 显示项目来源(仓库 deny/ask 即时生效,但用户须看见是谁在约束)。
 
 ***
@@ -161,6 +161,6 @@ permissions/(T-C2 并行开发铁律),结构兼容由装配层保证。询问面
 optional updatedArgs?: Record<string, unknown>;
 ```
 
-入参替换(T-G3 PreToolUse hooks 的 updatedInput,doc/07 §6.5):
+入参替换(PreToolUse hooks 的 updatedInput):
 存在时调度器以此覆盖 call.args 执行(询问对话框同样展示替换后入参,
 用户看到的即将执行的真实参数)。仅门面(L4 装配)可产出;引擎侧无此位。

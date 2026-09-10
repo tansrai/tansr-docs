@@ -36,9 +36,9 @@
     "vendoredAt": "2026-09-10"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@6c9c89432580:packages/sdk/dist/index.d.ts",
-    "revision": 6,
-    "sha256": "40660229048af9a771aa81604023b089b0073ea9805ac5b6ee2225938e3fcab5",
+    "source": "tansr-cli@b91277e5a056:packages/sdk/dist/index.d.ts",
+    "revision": 7,
+    "sha256": "6526dc231749eaa035b7b39083bf80facd804917dd14ce683f6da8c73996d703",
     "vendoredAt": "2026-09-10"
   }
 }

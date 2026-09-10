@@ -22,3 +22,5 @@ type CompactionFailureReason =
   | "summary_bloated"
   | "before_compact_failed";
 ```
+
+压缩失败的结构化原因词表(session.compaction_failed 事件与诊断消费)。

@@ -387,3 +387,5 @@ type EventBody =
   type: "plan.todo.updated";
 };
 ```
+
+事件负载联合(EventBodySchema 推导)。

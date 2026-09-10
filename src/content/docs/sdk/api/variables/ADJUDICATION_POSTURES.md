@@ -13,4 +13,4 @@ generated: true
 const ADJUDICATION_POSTURES: readonly ["human-in-loop", "headless"];
 ```
 
-裁决姿态词表(doc/113 §1.2)
+裁决姿态词表

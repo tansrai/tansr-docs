@@ -15,6 +15,8 @@ type SequentialToolHandler = (args, ctx) =>
 | Promise<SequentialToolResult>;
 ```
 
+顺序执行器的单工具处理函数:收参数与执行上下文,返回文本 / 错误 / 结构化数据结果。
+
 ## 参数
 
 ### args

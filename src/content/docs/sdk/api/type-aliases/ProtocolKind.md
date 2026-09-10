@@ -12,3 +12,5 @@ generated: true
 ```ts
 type ProtocolKind = "anthropic" | "openai" | "openai-responses" | "twp";
 ```
+
+provider 线协议种类(ProtocolKindSchema 推导)。

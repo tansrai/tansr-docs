@@ -18,6 +18,8 @@ type SpeechToTextArgs = {
 };
 ```
 
+SpeechToText 工具的已校验参数类型(SpeechToTextArgsSchema 推导)。
+
 ## 属性
 
 <a id="api-audio"></a>

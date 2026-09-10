@@ -42,6 +42,8 @@ type JournalRecord = {
 };
 ```
 
+日志记录(JournalRecordSchema 推导)。
+
 ## 属性
 
 <a id="api-branchid"></a>

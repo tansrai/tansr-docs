@@ -12,3 +12,5 @@ generated: true
 ```ts
 type TextToSpeechModelDescriptor = MediaModelDescriptor<AudioTtsConstraints>;
 ```
+
+文字转语音模型目录条目:通用描述符 + TTS 受理约束。

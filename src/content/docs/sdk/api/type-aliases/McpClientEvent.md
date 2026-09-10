@@ -95,7 +95,7 @@ type McpClientEvent =
 ```
 
 MCP 结构化观测事件(注入观察者形态——附着发生在装配期,先于会话事件包络)。
-contract-v0.4(T-D8 RFC)起其中五型已契约化为 KernelEvent mcp.* 事件族,
+contract-v0.4 起其中五型已契约化为 KernelEvent mcp.* 事件族,
 由表面层装配处映射进会话事件流(cli assembly/mcp-events.ts);log 与
 cancel_sent 刻意只走本回调不进契约。表面层按 type 映射 kernel.mcp.* i18n 键。
 
@@ -471,4 +471,4 @@ server: string;
 type: "mcp.reconnect_exhausted";
 ```
 
-SC-31:达到 reconnect.maxAttempts,该成员停止自动重连(手动重连可复位)
+达到 reconnect.maxAttempts,该成员停止自动重连(手动重连可复位)

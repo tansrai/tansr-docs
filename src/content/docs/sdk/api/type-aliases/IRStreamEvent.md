@@ -120,3 +120,5 @@ type IRStreamEvent =
   t: "error";
 };
 ```
+
+类型化流事件(IRStreamEventSchema 推导)。

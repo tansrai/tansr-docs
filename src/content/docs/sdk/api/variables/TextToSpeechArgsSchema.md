@@ -27,3 +27,5 @@ const TextToSpeechArgsSchema: z.ZodObject<{
   voice?: string;
 }>;
 ```
+
+TextToSpeech 工具参数 schema:模型(可省)、待朗读文本、音色 id 与输出格式。

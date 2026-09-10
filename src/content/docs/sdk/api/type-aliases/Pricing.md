@@ -24,6 +24,8 @@ type Pricing = {
 };
 ```
 
+单模型价格表(PricingSchema 推导)。
+
 ## 属性
 
 <a id="api-cachedinputpermillion"></a>

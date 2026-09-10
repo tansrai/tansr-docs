@@ -17,3 +17,5 @@ type ToolErrorType =
   | "aborted"
   | "execution_error";
 ```
+
+tool.failed 的错误分类(ToolErrorTypeSchema 推导)。

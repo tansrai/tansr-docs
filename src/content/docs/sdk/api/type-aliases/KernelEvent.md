@@ -395,6 +395,8 @@ type KernelEvent = {
 };
 ```
 
+完整内核事件:包络 + 负载(KernelEventSchema 推导)。
+
 ## 类型声明
 
 ### seq

@@ -13,4 +13,4 @@ generated: true
 const TEXT_TO_SPEECH_FORMATS: readonly ["wav", "mp3"];
 ```
 
-输出格式词表(doc/123 §3.2 format 位;家族不受理的格式按面档回落,如 dashscope 恒 wav)
+输出格式词表(家族不受理的格式按面档回落,如 dashscope 恒 wav)

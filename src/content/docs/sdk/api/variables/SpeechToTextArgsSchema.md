@@ -27,3 +27,5 @@ const SpeechToTextArgsSchema: z.ZodObject<{
   model?: string;
 }>;
 ```
+
+SpeechToText 工具参数 schema:模型(可省)、待转写音频(data URI 或 http(s) URL)、语言提示与说话人分离开关。

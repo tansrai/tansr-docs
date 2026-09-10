@@ -43,7 +43,7 @@ optional registerOperation?: (work) => void;
 optional registerResource?: (work) => void;
 ```
 
-子查询实际收尾回执；先登记占位，业务事件结束后再兑现。不会等待在逻辑工具结果中。
+子查询实际收尾结算；先登记占位，业务事件结束后再兑现。不会等待在逻辑工具结果中。
 
 #### 参数
 
@@ -99,7 +99,7 @@ toolRound: number;
 optional transcript?: () => readonly IRMessage[];
 ```
 
-当前查询消息的快照 getter(T-DA2,doc/optimize/27 §3.2):调用刻浅拷贝
+当前查询消息的快照 getter:调用刻浅拷贝
 ——元素(IRMessage)不可变引用,数组本体与查询环解耦,后续轮次的
 push 不进快照。Task 工具在派生时点经 ToolContext 冻结「父上下文快照」
 作裁决语境;嵌套派生天然各级自取(子查询环自己的消息)。可选——

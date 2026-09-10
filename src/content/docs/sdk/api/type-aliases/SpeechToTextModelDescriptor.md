@@ -12,3 +12,5 @@ generated: true
 ```ts
 type SpeechToTextModelDescriptor = MediaModelDescriptor<AudioAsrConstraints>;
 ```
+
+语音转文字模型目录条目:通用描述符 + ASR 受理约束。

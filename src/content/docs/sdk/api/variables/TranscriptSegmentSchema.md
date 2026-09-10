@@ -27,3 +27,5 @@ const TranscriptSegmentSchema: z.ZodObject<{
   text: z.ZodString;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+TranscriptSegment 的 zod schema(passthrough 容未知键)。

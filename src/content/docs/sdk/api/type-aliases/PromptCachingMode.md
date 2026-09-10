@@ -12,3 +12,5 @@ generated: true
 ```ts
 type PromptCachingMode = "explicit" | "implicit" | "ignored";
 ```
+
+提示缓存策略:explicit 显式断点 / implicit 服务端自动 / ignored 不支持(PromptCachingModeSchema 推导)。

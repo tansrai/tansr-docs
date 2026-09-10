@@ -12,3 +12,5 @@ generated: true
 ```ts
 type ImageModelDescriptor = MediaModelDescriptor<ImageModelConstraints>;
 ```
+
+图片模型目录条目:通用描述符 + 图片受理约束。

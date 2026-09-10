@@ -12,3 +12,5 @@ generated: true
 ```ts
 type VideoModelDescriptor = MediaModelDescriptor<VideoModelConstraints>;
 ```
+
+视频模型目录条目:通用描述符 + 视频受理约束。

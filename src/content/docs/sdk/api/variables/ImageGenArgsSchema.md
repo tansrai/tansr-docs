@@ -36,3 +36,5 @@ const ImageGenArgsSchema: z.ZodObject<{
   size?: string;
 }>;
 ```
+
+ImageGen 工具参数 schema:模型(可省,取授权集首项)、正负提示词、尺寸、张数、种子与可选输入图。

@@ -60,6 +60,8 @@ type IRMessage = {
 };
 ```
 
+IR 消息:角色 + 内容块数组 + 可选结构化元数据(IRMessageSchema 推导)。
+
 ## 属性
 
 <a id="api-blocks"></a>

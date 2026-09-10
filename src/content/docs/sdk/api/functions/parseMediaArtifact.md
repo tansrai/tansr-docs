@@ -13,26 +13,25 @@ generated: true
 function parseMediaArtifact(data): MediaArtifact | null;
 ```
 
-`tool.completed.data` / `ToolResult.data` → 媒体产物判别(doc/128 §3.1 规则;**规则与判序逐字对齐
-Android `toolCardArtifact` / iOS `toolCardArtifact` 现行实现**,A-12):
+`tool.completed.data` / `ToolResult.data` → 媒体产物判别(**规则与判序逐字对齐
+Android `toolCardArtifact` / iOS `toolCardArtifact` 现行实现**):
 
 - 非对象(含 null / 数组)→ null;
-- `errorCode` 为字符串 → 恒 null(错误回执不是产物,即使携空产物位);
+- `errorCode` 为字符串 → 恒 null(错误响应不是产物,即使携空产物位);
 - 判序 image → video → speech → transcript(端侧同序:URL 集形 → 音频 → 排他的裸文本形);
 - image:`model` 为字符串,且 `images` 为数组并至少一条目携字符串 `url`(空数组 / 全坏条目 = 零产物 → 不判);
 - video:`model` 为字符串,且 `videos` 同上;
 - speech:`model` 为字符串,`audio` 为对象、`audio.mime` 为字符串,且 `audio.url` / `audio.b64` 至少一者为
   非空字符串(皆缺 / 皆空 = 零产物 → 不判);
 - transcript:`text` 与 `model` 皆字符串,且无 `images` / `videos` / `results` / `audio` 键
-  (`results` 排 WebSearchData;三端同四键——tansr-android `fc9fbe8` 补 `audio` 后与 iOS / 本实现一致,
-  十王修案 FX-C-21 / E2-13 销注);
+  (`results` 排 WebSearchData;三端同四键——tansr-android 补 `audio` 后与 iOS / 本实现一致);
 - 其余 null。
 
-判序 image-first 以实现为准、三端一致(doc/89 契约段 / doc/128 §3.1 同文;FX-C-21 / Q-07)。
+判序 image-first 以实现为准、三端一致。
 只判形不校验(不经 zod 剥离未知键):返回的 data 是原对象的类型收窄视图,消费方按需再过
 对应 *DataSchema。端侧两卷(Android `ToolCardArtifactsTest` / iOS `ToolCardArtifactsTests`)**既有 17 例**
-在本函数上同判(protocol `media.test.ts` ⑤ 镜像收录);空串 / errorCode 判型两类异形**已于十王修案 FX-C-24
-以四金样三端同源镜像**(`test/fixtures/golden/tool-card-artifact-*.json`;三端共享谓词 [isRenderableArtifact])。
+在本函数上同判(protocol `media.test.ts` ⑤ 镜像收录);空串 / errorCode 判型两类异形**已以四金样
+三端同源镜像**(`test/fixtures/golden/tool-card-artifact-*.json`;三端共享谓词 [isRenderableArtifact])。
 
 ## 参数
 

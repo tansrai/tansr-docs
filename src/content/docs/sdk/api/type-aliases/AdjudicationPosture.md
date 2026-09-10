@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AdjudicationPosture = typeof ADJUDICATION_POSTURES[number];
 ```
+
+裁决姿态:'human-in-loop' 危险判定升到询问面由用户终审;'headless' 危险判定直接 deny 并回喂模型。

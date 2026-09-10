@@ -12,3 +12,5 @@ generated: true
 ```ts
 type IRRole = "user" | "assistant";
 ```
+
+消息角色(IRRoleSchema 推导)。

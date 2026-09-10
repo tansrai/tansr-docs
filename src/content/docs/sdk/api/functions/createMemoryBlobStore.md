@@ -16,6 +16,8 @@ function createMemoryBlobStore(options?): SegmentBlobStore & {
 };
 ```
 
+创建纯内存的 SegmentBlobStore;附 size / keys() 供测试直读。
+
 ## 参数
 
 ### options?

@@ -16,6 +16,8 @@ type ResolvedModel = {
 };
 ```
 
+已解析的模型定位(ResolvedModelSchema 推导)。
+
 ## 属性
 
 <a id="api-model"></a>

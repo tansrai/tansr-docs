@@ -13,12 +13,12 @@ import { fetch as fetch$1, Dispatcher } from 'undici';
 import { spawn } from 'node:child_process';
 
 /**
- * T-A1 — IR(Internal Representation)消息模型
+ * IR(Internal Representation)消息模型
  *
- * 双协议网关与内核共用的中间表示。设计依据:
- * - doc/06 §2.1(内容块 + 类型化流事件基底)
- * - doc/07 §3.6(opaque thinking 密文透传对策:reasoning 块保留 provider 原样载荷)
- * - doc/07 §4.1(visibility 显式化,不用难组合的布尔标志位)
+ * 双协议网关与内核共用的中间表示。设计要点:
+ * - 内容块 + 类型化流事件基底;
+ * - opaque thinking 密文透传对策:reasoning 块保留 provider 原样载荷;
+ * - visibility 显式化,不用难组合的布尔标志位。
  *
  * 铁律:providers 依赖本包类型,本包不得反向依赖 providers/kernel。
  */
@@ -46,11 +46,12 @@ declare const IRToolContentSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
     mime: string;
     data: string;
 }>]>;
+/** 工具结果内容项:文本或图片(IRToolContentSchema 推导)。 */
 type IRToolContent = z.infer<typeof IRToolContentSchema>;
 /**
  * 内容块。`thinking` 携带可选 `signature`(Anthropic 多轮需原样回传);
  * `opaque` 用于无法明文还原、必须整体透传的推理载荷(OpenAI Responses reasoning item、
- * DeepSeek/Kimi 的 provider 私有块)——见 doc/10 §4.2「必须原样回传 thinking 块否则 400」。
+ * DeepSeek/Kimi 的 provider 私有块)——部分厂商要求原样回传 thinking 块,否则 400。
  */
 declare const IRBlockSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
     t: z.ZodLiteral<"text">;
@@ -165,8 +166,11 @@ declare const IRBlockSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
     mime: string;
     data: string;
 }>]>;
+/** 消息内容块:text / thinking / opaque / tool_call / tool_result / image(IRBlockSchema 推导)。 */
 type IRBlock = z.infer<typeof IRBlockSchema>;
+/** 消息角色词表:user / assistant(system 走 IRRequest.system 分段,不是消息角色)。 */
 declare const IRRoleSchema: z.ZodEnum<["user", "assistant"]>;
+/** 消息角色(IRRoleSchema 推导)。 */
 type IRRole = z.infer<typeof IRRoleSchema>;
 declare const IRMessageSchema: z.ZodObject<{
     role: z.ZodEnum<["user", "assistant"]>;
@@ -286,9 +290,9 @@ declare const IRMessageSchema: z.ZodObject<{
     /** 结构化元数据(contract-v0.15,RFC-CTX12-4;语义见 IRMessageMetaSchema) */
     meta: z.ZodOptional<z.ZodObject<{
         /**
-         * 消息种类标记。首值 'compaction_summary' = 压缩摘要消息(T-CTX22
-         * 防碰撞文本哨兵的结构化替代);候选扩值 'pinned'/'synthetic' 随
-         * 对应消费卡另行 RFC(先冻结已验证形态,v0.14 RFC-B2-3 缓议同哲学)。
+         * 消息种类标记。首值 'compaction_summary' = 压缩摘要消息(防碰撞
+         * 文本哨兵的结构化替代);候选扩值 'pinned'/'synthetic' 随
+         * 对应消费方另行契约评审(先冻结已验证形态)。
          */
         kind: z.ZodOptional<z.ZodEnum<["compaction_summary"]>>;
         /** 产生本消息的压缩执行 id(RFC-CTX12-2 compactionId 同源;审计链互指) */
@@ -379,15 +383,16 @@ declare const IRMessageSchema: z.ZodObject<{
         compactionId?: string | undefined;
     } | undefined;
 }>;
+/** IR 消息:角色 + 内容块数组 + 可选结构化元数据(IRMessageSchema 推导)。 */
 type IRMessage = z.infer<typeof IRMessageSchema>;
-/** 系统提示分段:稳定前缀在前,便于两家 provider 的缓存机制利用(doc/06 §2.1) */
+/** 系统提示分段:稳定前缀在前,便于两家 provider 的缓存机制利用 */
 declare const IRSystemSegmentSchema: z.ZodObject<{
     text: z.ZodString;
-    /** 缓存断点提示——忽略方无害(doc/10 §4.3 透传项) */
+    /** 缓存断点提示——忽略方无害 */
     cacheable: z.ZodOptional<z.ZodBoolean>;
     /**
-     * 段语义标签(contract-v0.1,T-C4 RFC):'base'/'tools'/'env'/'memory' 等,
-     * 供上下文压缩(T-C5)按语义识别可替换段;消费方忽略无害。
+     * 段语义标签(contract-v0.1):'base'/'tools'/'env'/'memory' 等,
+     * 供上下文压缩按语义识别可替换段;消费方忽略无害。
      */
     label: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
@@ -399,6 +404,7 @@ declare const IRSystemSegmentSchema: z.ZodObject<{
     cacheable?: boolean | undefined;
     label?: string | undefined;
 }>;
+/** 系统提示分段(IRSystemSegmentSchema 推导)。 */
 type IRSystemSegment = z.infer<typeof IRSystemSegmentSchema>;
 /** 工具定义:内部统一 JSON Schema(各协议在适配器内映射到各自字段) */
 declare const IRToolDefSchema: z.ZodObject<{
@@ -414,7 +420,9 @@ declare const IRToolDefSchema: z.ZodObject<{
     description: string;
     inputSchema: Record<string, unknown>;
 }>;
+/** 工具定义(IRToolDefSchema 推导)。 */
 type IRToolDef = z.infer<typeof IRToolDefSchema>;
+/** 已解析的模型定位:provider id + 该 provider 下的具体模型名(别名已解析)。 */
 declare const ResolvedModelSchema: z.ZodObject<{
     /** provider registry 内的 id,如 "anthropic" / "aliyun-maas" */
     provider: z.ZodString;
@@ -427,15 +435,17 @@ declare const ResolvedModelSchema: z.ZodObject<{
     provider: string;
     model: string;
 }>;
+/** 已解析的模型定位(ResolvedModelSchema 推导)。 */
 type ResolvedModel = z.infer<typeof ResolvedModelSchema>;
+/** 一次模型调用的完整请求:系统分段、消息、工具定义、目标模型与采样 / 思考 / 缓存控制位。 */
 declare const IRRequestSchema: z.ZodObject<{
     system: z.ZodArray<z.ZodObject<{
         text: z.ZodString;
-        /** 缓存断点提示——忽略方无害(doc/10 §4.3 透传项) */
+        /** 缓存断点提示——忽略方无害 */
         cacheable: z.ZodOptional<z.ZodBoolean>;
         /**
-         * 段语义标签(contract-v0.1,T-C4 RFC):'base'/'tools'/'env'/'memory' 等,
-         * 供上下文压缩(T-C5)按语义识别可替换段;消费方忽略无害。
+         * 段语义标签(contract-v0.1):'base'/'tools'/'env'/'memory' 等,
+         * 供上下文压缩按语义识别可替换段;消费方忽略无害。
          */
         label: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
@@ -565,9 +575,9 @@ declare const IRRequestSchema: z.ZodObject<{
         /** 结构化元数据(contract-v0.15,RFC-CTX12-4;语义见 IRMessageMetaSchema) */
         meta: z.ZodOptional<z.ZodObject<{
             /**
-             * 消息种类标记。首值 'compaction_summary' = 压缩摘要消息(T-CTX22
-             * 防碰撞文本哨兵的结构化替代);候选扩值 'pinned'/'synthetic' 随
-             * 对应消费卡另行 RFC(先冻结已验证形态,v0.14 RFC-B2-3 缓议同哲学)。
+             * 消息种类标记。首值 'compaction_summary' = 压缩摘要消息(防碰撞
+             * 文本哨兵的结构化替代);候选扩值 'pinned'/'synthetic' 随
+             * 对应消费方另行契约评审(先冻结已验证形态)。
              */
             kind: z.ZodOptional<z.ZodEnum<["compaction_summary"]>>;
             /** 产生本消息的压缩执行 id(RFC-CTX12-2 compactionId 同源;审计链互指) */
@@ -686,8 +696,8 @@ declare const IRRequestSchema: z.ZodObject<{
     maxTokens: z.ZodNumber;
     temperature: z.ZodOptional<z.ZodNumber>;
     /**
-     * thinking 能力位控制;适配器按 provider capability 改写(doc/10 §4.3)。
-     * RFC-M3 B2(2026-08-25):增 `off` 位 = 显式思考关断(fast 形态载体)——
+     * thinking 能力位控制;适配器按 provider capability 改写。
+     * `off` 位 = 显式思考关断(fast 形态载体)——
      * 与「缺席」语义不同:缺席 = 上游缺省(openai 兼容面思考模型缺省仍开思考,
      * UCloud 实证),off = 适配器按方言显式关(twp → params.reasoning='off';
      * openai 直连 → enable_thinking:false;anthropic → 不发 thinking 参数)。
@@ -705,14 +715,14 @@ declare const IRRequestSchema: z.ZodObject<{
     }>>;
     stopSequences: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     /**
-     * 请求级缓存写抑制(contract-v0.8,RFC-OPT14-1):true 时显式缓存适配器
+     * 请求级缓存写抑制(contract-v0.8):true 时显式缓存适配器
      * 不在消息尾落 cache_control 断点(system/工具面断点不受影响)。签发方为
-     * 一次性辅助请求(上下文压缩/标题生成,OPT-10/14)——其消息尾不会被复读,
+     * 一次性辅助请求(上下文压缩/标题生成)——其消息尾不会被复读,
      * 写缓存纯付费无收益。implicit/ignored 缓存模式的适配器忽略本键。
      */
     skipCacheWrite: z.ZodOptional<z.ZodBoolean>;
     /**
-     * 端侧预估的 prompt 侧 token 总量(G-A5a 贴窗防御,P-CTX2;加法可选)。
+     * 端侧预估的 prompt 侧 token 总量(贴窗防御;加法可选)。
      * 语义:请求面(system+messages+tools)装配定格后、发出前的估算值,
      * 整数 ≥1(向上取整;api TwpParamsSchema.promptTokensEstimate 同下限)。
      * 消费方 = twp 适配器(落 params.promptTokensEstimate,网关侧贴窗拦截,
@@ -849,8 +859,9 @@ declare const IRRequestSchema: z.ZodObject<{
     skipCacheWrite?: boolean | undefined;
     promptTokensEstimate?: number | undefined;
 }>;
+/** 模型调用请求(IRRequestSchema 推导)。 */
 type IRRequest = z.infer<typeof IRRequestSchema>;
-/** 五路用量归一化(doc/06 §2.2:input/output + 缓存读/写细分 + 推理输出)。
+/** 五路用量归一化(input/output + 缓存读/写细分 + 推理输出)。
  *  inputTokens 为 exclusive 口径(规范语义,见字段注释)。 */
 declare const IRUsageSchema: z.ZodObject<{
     /**
@@ -858,7 +869,7 @@ declare const IRUsageSchema: z.ZodObject<{
      * 会签):不含 cacheReadInputTokens 与 cacheCreationInputTokens——三路
      * 相加 = 请求输入总量。适配器出口恒为本口径:inclusive 端点(OpenAI 系
      * prompt_tokens,cached ⊆ prompt)在适配器内减法归一,包含关系以 compat
-     * 实录核证(T-CTX05,见 providers openai/wire.ts exclusiveInputTokens
+     * 实录核证(见 providers openai/wire.ts exclusiveInputTokens
      * 注释)。消费方(上下文账本/CostTracker/状态栏)三路直加,不得再做
      * inclusive 换算(防双重矫正)。限界注记:端点的缓存写入量不可见时
      * (如 OpenAI Chat 协议无 cache_write 字段),写入量仍含在本键内
@@ -870,7 +881,7 @@ declare const IRUsageSchema: z.ZodObject<{
     cacheCreationInputTokens: z.ZodOptional<z.ZodNumber>;
     reasoningOutputTokens: z.ZodOptional<z.ZodNumber>;
     /**
-     * 缓存删除量(contract-v0.4,T-C8 RFC;doc/07 §3.2 cached microcompact):
+     * 缓存删除量(contract-v0.4;cached microcompact):
      * provider 报告的 cache_deleted_input_tokens——服务端缓存段被逐出/失效的
      * 通知量,**非计费维度**(cost-tracker 不入账),上下文账本(context
      * ledger)以此校正窗口水位。观测到该字段的适配器填入;缺省不落键。
@@ -916,14 +927,15 @@ declare const IRUsageSchema: z.ZodObject<{
     dims?: Record<string, number> | undefined;
     saved?: string | undefined;
 }>;
+/** 归一化用量(IRUsageSchema 推导)。 */
 type IRUsage = z.infer<typeof IRUsageSchema>;
 /**
- * 归一化错误类别(doc/06 §2.2 错误归一)。
- * policy_denied(P-CTX2 K7,G-A5b):平台策略/账务拒绝(余额/配额/内容
+ * 归一化错误类别。
+ * policy_denied:平台策略/账务拒绝(余额/配额/内容
  * 安全/出网/许可证/围栏/价格护栏等用户可行动族)——fail-fast 零重试,
  * 与 invalid_request(请求本身不合法)语义分离;原始码与 detail 经错误
- * 文案(`code: message`)与 twp onPlatformError 旁路直达渲染层(K10 归因)。
- * R-1(doc/77 §五 R 组,contract 加法演进):
+ * 文案(`code: message`)与 twp onPlatformError 旁路直达渲染层。
+ * 后增两类(contract 加法演进):
  * - connect:连接建立失败/连接超时(本端建连闸、网关 upstream_connect/
  *   ttfb 归一码)——与 network(本地毫秒级失败)同路由「耐心档」重试,
  *   分列是为观测与文案区分「等墙」与「本机网络故障」两种病灶;
@@ -932,9 +944,10 @@ type IRUsage = z.infer<typeof IRUsageSchema>;
  * 消费方(重试路由/呈现)对枚举外值须按 recoverable 兜底,不做穷举断言。
  */
 declare const IRErrorKindSchema: z.ZodEnum<["rate_limited", "context_overflow", "auth", "server", "network", "connect", "stream_interrupted", "invalid_request", "policy_denied"]>;
+/** 归一化错误类别(IRErrorKindSchema 推导)。 */
 type IRErrorKind = z.infer<typeof IRErrorKindSchema>;
 /**
- * 模型侧流事件,与内核 msg.* 事件同构(doc/06 §2.1 末行)。
+ * 模型侧流事件,与内核 msg.* 事件同构。
  * 适配器把各协议 SSE/delta 解析为本联合;内核只消费本联合。
  */
 declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
@@ -1210,7 +1223,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
          * 会签):不含 cacheReadInputTokens 与 cacheCreationInputTokens——三路
          * 相加 = 请求输入总量。适配器出口恒为本口径:inclusive 端点(OpenAI 系
          * prompt_tokens,cached ⊆ prompt)在适配器内减法归一,包含关系以 compat
-         * 实录核证(T-CTX05,见 providers openai/wire.ts exclusiveInputTokens
+         * 实录核证(见 providers openai/wire.ts exclusiveInputTokens
          * 注释)。消费方(上下文账本/CostTracker/状态栏)三路直加,不得再做
          * inclusive 换算(防双重矫正)。限界注记:端点的缓存写入量不可见时
          * (如 OpenAI Chat 协议无 cache_write 字段),写入量仍含在本键内
@@ -1222,7 +1235,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         cacheCreationInputTokens: z.ZodOptional<z.ZodNumber>;
         reasoningOutputTokens: z.ZodOptional<z.ZodNumber>;
         /**
-         * 缓存删除量(contract-v0.4,T-C8 RFC;doc/07 §3.2 cached microcompact):
+         * 缓存删除量(contract-v0.4;cached microcompact):
          * provider 报告的 cache_deleted_input_tokens——服务端缓存段被逐出/失效的
          * 通知量,**非计费维度**(cost-tracker 不入账),上下文账本(context
          * ledger)以此校正窗口水位。观测到该字段的适配器填入;缺省不落键。
@@ -1320,12 +1333,12 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         elapsedMs: number;
     }>>;
     /**
-     * 结构化事实位(contract-v0.26,十王修案 FX-B-20 / M-03;加法可选):适配器把服务端
+     * 结构化事实位(contract-v0.26;加法可选):适配器把服务端
      * 信封 `error.detail` 中**机器可判、不含身份 / 内部 id** 的事实原样带到归一错误上,
      * kernel 透传进 `turn.error.detail`。首个签发方 = providers twp 归一层对平台套餐码
      * (`plan_concurrency_exceeded` / `plan_end_users_exceeded` / `plan_required` /
      * `plan_tier_insufficient`)落 `{ scope: 'plan' }`——端侧据此把「开发者套餐配额」与
-     * 「模型限流」区分(HTTP 面 doc/98 §七 同键同值;事件流面此前分叉)。缺席 = 无附加事实。
+     * 「模型限流」区分(HTTP 面同键同值;事件流面此前分叉)。缺席 = 无附加事实。
      */
     detail: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     /**
@@ -1361,15 +1374,16 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
     detail?: Record<string, unknown> | undefined;
     idempotencyConsumed?: boolean | undefined;
 }>]>;
+/** 类型化流事件(IRStreamEventSchema 推导)。 */
 type IRStreamEvent = z.infer<typeof IRStreamEventSchema>;
 
 /**
- * T-A2 — 内核事件协议(一份数据三用:UI 渲染 / 审计 / 编排)
+ * 内核事件协议(一份数据三用:UI 渲染 / 审计 / 编排)
  *
- * 设计依据:
- * - doc/06 §1.3(事件族与包络)
- * - doc/07 §2.1(教训:补一等 error 事件、tombstone→message.retracted)
- * - doc/10 §3.3(审计 schema 的关联链字段:trace/span/prompt/agent)
+ * 设计要点:
+ * - 事件族与包络分离;
+ * - 一等 error 事件、tombstone→message.retracted;
+ * - 审计 schema 的关联链字段:trace/span/prompt/agent。
  *
  * 兼容规则:消费端必须容忍未知事件 type(向前兼容),据包络 `v` 字段判断。
  */
@@ -1401,37 +1415,45 @@ declare const EventEnvelopeSchema: z.ZodObject<{
     source: string;
     turnId?: string | undefined;
 }>;
+/** 事件包络(EventEnvelopeSchema 推导)。 */
 type EventEnvelope = z.infer<typeof EventEnvelopeSchema>;
+/** 一轮查询的终止原因词表:正常完成、各类上限触顶、模型错误、中断 / 超时 / 关停、hook 阻断等。 */
 declare const TerminalReasonSchema: z.ZodEnum<["completed", "blocking_limit", "aborted_streaming", "aborted_tools", "model_error", "prompt_too_long", "max_turns", "max_tool_rounds", "injection_limit", "hook_stopped", "structured_output", "timeout", "shutdown", "budget_exceeded", "stop_hook_limit", "internal_error", "client_gone"]>;
+/** 一轮查询的终止原因(TerminalReasonSchema 推导)。 */
 type TerminalReason = z.infer<typeof TerminalReasonSchema>;
 /**
- * tool.failed 的错误分类(contract-v0.2,T-C2 RFC:由宽 string 收窄)。
+ * tool.failed 的错误分类(contract-v0.2:由宽 string 收窄)。
  * 取值集合 = kernel 调度器(DispatchingToolExecutor/SequentialToolExecutor)
  * 实际签发全集:参数解析失败 / 未注册工具 / 硬超时 / 外部中断 / 执行抛错。
  */
 declare const ToolErrorTypeSchema: z.ZodEnum<["invalid_args", "unknown_tool", "timeout", "aborted", "execution_error"]>;
+/** tool.failed 的错误分类(ToolErrorTypeSchema 推导)。 */
 type ToolErrorType = z.infer<typeof ToolErrorTypeSchema>;
+/** 权限决策三值:allow 放行 / deny 拒绝 / ask 交用户终审。 */
 declare const PermissionDecisionSchema: z.ZodEnum<["allow", "deny", "ask"]>;
+/** 权限决策(PermissionDecisionSchema 推导)。 */
 type PermissionDecision = z.infer<typeof PermissionDecisionSchema>;
 /**
- * 决策来源——全部落审计(doc/07 §5 决策链;doc/10 §3.3 decision_source)。
- * contract-v0.3(T-G3 RFC):增 'hook'——PreToolUse hook 收紧(deny/升格 ask)
+ * 决策来源——全部落审计。
+ * contract-v0.3:增 'hook'——PreToolUse hook 收紧(deny/升格 ask)
  * 的专属归因;此前临时借记 'policy' 会损失「引擎策略 vs 外部执行体」的审计粒度。
- * contract-v0.7(RFC-OPT4-1):增 'builtin'——内置安全基线(OPT-04,权限管线
+ * contract-v0.7:增 'builtin'——内置安全基线(权限管线
  * 4.5 段)命中的专属归因;此前临时借记 'rule' 会与用户/企业配置规则混淆审计来源。
- * contract-v0.8(RFC-OPT18-3):增 'classifier'——LLM 权限分类器(OPT-18)
+ * contract-v0.8:增 'classifier'——LLM 权限分类器
  * 裁决的专属归因(auto 模式放行/收紧,或 ask 决策的分类器收紧);借记
  * 'policy'/'mode' 都会损失「机器裁决」这一审计维度。
  */
 declare const DecisionSourceSchema: z.ZodEnum<["rule", "user", "mode", "policy", "hook", "builtin", "classifier"]>;
+/** 权限决策来源(DecisionSourceSchema 推导)。 */
 type DecisionSource = z.infer<typeof DecisionSourceSchema>;
 /**
- * hook 执行终态(contract-v0.3,T-G3 RFC):hook.completed 的可选 status 取值。
+ * hook 执行终态(contract-v0.3):hook.completed 的可选 status 取值。
  * 'blocked' 不在此集合——阻断走独立的 hook.blocked 事件(互斥拆分)。
  */
 declare const HookOutcomeStatusSchema: z.ZodEnum<["ok", "error", "timeout", "aborted"]>;
+/** hook 执行终态(HookOutcomeStatusSchema 推导)。 */
 type HookOutcomeStatus = z.infer<typeof HookOutcomeStatusSchema>;
-/** 事件负载联合(不含包络)。命名对齐 doc/06 §1.3 的 session/turn/msg/tool/agent/hook/cost/plan。 */
+/** 事件负载联合(不含包络)。命名按 session/turn/msg/tool/agent/hook/cost/plan 分族。 */
 declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     type: z.ZodLiteral<"session.created">;
     cwd: z.ZodString;
@@ -1455,7 +1477,7 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     /** 被移除消息的 index 闭区间 [first, last](原数组坐标) */
     removedRange: z.ZodTuple<[z.ZodNumber, z.ZodNumber], null>;
     /**
-     * 被移除消息的精确 index 清单(contract-v0.4,T-C8/C10 RFC):pinned
+     * 被移除消息的精确 index 清单(contract-v0.4):pinned
      * 挖洞时 removedRange 是外包络,重放/审计按本清单才能精确复原折叠面;
      * 表面层折叠计数也应优先取本清单长度。升序;缺省时按 removedRange 连续。
      */
@@ -1679,9 +1701,9 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
      */
     errorKind: z.ZodOptional<z.ZodString>;
     /**
-     * 结构化事实位(contract-v0.26,十王修案 FX-B-20 / M-03;加法可选键):scope='model' 时
+     * 结构化事实位(contract-v0.26;加法可选键):scope='model' 时
      * = IR error 事件 `detail` 透传(providers 自服务端信封带出的机器可判事实;首个取值
-     * `{ scope: 'plan' }` = 平台套餐配额拒绝,与 HTTP 面 doc/98 §七 `error.detail.scope`
+     * `{ scope: 'plan' }` = 平台套餐配额拒绝,与 HTTP 面 `error.detail.scope`
      * 同键同值)。三端 reducer 归约:`recoverable:true` → `SessionNotice.detail`,失败形 →
      * `ErrorView.detail`;端侧 `ErrorEnvelope.scope` 取值器同一读法。缺席 = 无附加事实
      * (既有事件体字节零变)。值恒不含 endUser 身份 / 令牌 / 内部 id。
@@ -1788,7 +1810,7 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     decision: z.ZodEnum<["allow", "deny", "ask"]>;
     decisionSource: z.ZodEnum<["rule", "user", "mode", "policy", "hook", "builtin", "classifier"]>;
     /**
-     * 命中的规则原文(如 `Shell(git *)`;contract-v0.2,T-C3 RFC)。
+     * 命中的规则原文(如 `Shell(git *)`;contract-v0.2)。
      * 审计链由此可答"哪条规则拒的";模式短路/兜底 ask 等无规则命中时不落键。
      */
     matchedRule: z.ZodOptional<z.ZodString>;
@@ -1842,25 +1864,25 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     toolCallId: z.ZodString;
     durationMs: z.ZodNumber;
     /**
-     * ToolResult.data 透传位(contract-v0.3,T-E3 RFC):工具产出的结构化
+     * ToolResult.data 透传位(contract-v0.3):工具产出的结构化
      * 渲染数据(AGENTS.md「工具只产出结构化数据」铁律的事件流出口)。
      * 表面层按工具名注册渲染器消费;无 data 的工具不落键,消费方忽略无害。
      */
     data: z.ZodOptional<z.ZodUnknown>;
     /**
-     * 模型可见文本投影(contract-v0.8,RFC-OPT8-1):喂回模型的 tool_result
+     * 模型可见文本投影(contract-v0.8):喂回模型的 tool_result
      * 文本(截断后形态)。cc-compat stream-json 包络与 SDK 消费方由此拿到
      * 与模型一致的结果文本,不必反推 data;与 data 正交(结构化渲染 vs
-     * 模型文本)。大结果按 OPT-05 预算截断后的文本为准,不另存全量。
+     * 模型文本)。大结果按工具结果预算截断后的文本为准,不另存全量。
      */
     content: z.ZodOptional<z.ZodString>;
     /**
-     * 工具结构化失败位(contract-v0.25,十王修案 FX-B-25 / 候拍 ⑭):`ToolResult.isError`
+     * 工具结构化失败位(contract-v0.25):`ToolResult.isError`
      * 透传。工具以 **return isError** 表达的业务级失败(非零退出 / 用户中断 / SSRF 拒 /
      * 媒体错误形)与 throw 径的 `tool.failed` 在表面层归约为同一 failed 态——此前 TUI /
-     * sdk / 端侧对这类回执一律 ✓(T2-05)。缺席 = 旧签发方或成功完成(completed 语义不变);
+     * sdk / 端侧对这类结果一律 ✓。缺席 = 旧签发方或成功完成(completed 语义不变);
      * 消费方(TUI / sdk / Android / iOS reducer)只判 `isError === true → failed`。
-     * 纯可选加法,包络 `v` 不 bump;端侧 vendored 同步归 C 路(分册 B §六 D-C2)。
+     * 纯可选加法,包络 `v` 不 bump;端侧 vendored 同步另行跟进。
      */
     isError: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
@@ -2057,7 +2079,7 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     }>;
     costUsd: z.ZodOptional<z.ZodNumber>;
     /**
-     * 上下文窗口分母(contract-v0.3,T-E3 RFC):签发方(查询环)从装配层
+     * 上下文窗口分母(contract-v0.3):签发方(查询环)从装配层
      * 注入的 provider capability.maxContext 透传。状态栏水位 = 最近 prompt
      * 规模 / 本值;缺省时表面层隐藏水位段(或回退装配注入的静态值)。
      * 随 usage 更新携带——/model 热切换后分母随下一轮事件自动矫正。
@@ -2071,19 +2093,19 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     toolUseId: z.ZodOptional<z.ZodString>;
     /**
      * 用量目的:非对话主流的模型调用标注来源。词表:'compaction'(上下文
-     * 压缩轮,T-C10)/ 'title'(会话标题生成,contract-v0.8 随 RFC-OPT10-1
-     * 扩容;OPT-10 辅助任务降档的归因面)/ 'permission_classifier'(LLM 权限
-     * 分类器调用,OPT-18)/ 'memory'(记忆四面 fork:提取/固化/晋升/召回
-     * 选择,TMEM/1;C3/R1-P1-3 随本地记账闭环扩词)。新目的先扩词表再签发
+     * 压缩轮)/ 'title'(会话标题生成,contract-v0.8
+     * 扩容;辅助任务降档的归因面)/ 'permission_classifier'(LLM 权限
+     * 分类器调用)/ 'memory'(记忆四面 fork:提取/固化/晋升/召回
+     * 选择;随本地记账闭环扩词)。新目的先扩词表再签发
      * (自由文本仅兜底);缺省即对话主流。
      *
-     * 词表分叉登记(R8 核实,2026-08-26):同一分类器子系统在 request-
+     * 词表分叉注记:同一分类器子系统在 request-
      * measurement 观测面与 TWP 出线面用词 'classifier'(kernel context/
      * request-measurement.ts RequestPurpose、providers twp/contract.ts
-     * TWP_PURPOSE_VALUES——批ι 起扁平单表,分版常量已退役),与本词表
+     * TWP_PURPOSE_VALUES——现为扁平单表,分版常量已退役),与本词表
      * 'permission_classifier' 属两套近义词并存;且本词当前全仓零签发方
      * (分类器 usage 走遥测与测量面,不落本地 cost 事件)。统一到单一词属
-     * 契约面决策,候拍板;届时 kernel cost/tracker.ts KNOWN_COST_PURPOSES
+     * 契约面决策,待定;届时 kernel cost/tracker.ts KNOWN_COST_PURPOSES
      * 须同步,勿单侧改词。
      */
     purpose: z.ZodOptional<z.ZodString>;
@@ -2414,6 +2436,7 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
         content: string;
     }[];
 }>]>;
+/** 事件负载联合(EventBodySchema 推导)。 */
 type EventBody = z.infer<typeof EventBodySchema>;
 /** 完整事件 = 包络 + 负载 */
 declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
@@ -2464,7 +2487,7 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     /** 被移除消息的 index 闭区间 [first, last](原数组坐标) */
     removedRange: z.ZodTuple<[z.ZodNumber, z.ZodNumber], null>;
     /**
-     * 被移除消息的精确 index 清单(contract-v0.4,T-C8/C10 RFC):pinned
+     * 被移除消息的精确 index 清单(contract-v0.4):pinned
      * 挖洞时 removedRange 是外包络,重放/审计按本清单才能精确复原折叠面;
      * 表面层折叠计数也应优先取本清单长度。升序;缺省时按 removedRange 连续。
      */
@@ -2688,9 +2711,9 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
      */
     errorKind: z.ZodOptional<z.ZodString>;
     /**
-     * 结构化事实位(contract-v0.26,十王修案 FX-B-20 / M-03;加法可选键):scope='model' 时
+     * 结构化事实位(contract-v0.26;加法可选键):scope='model' 时
      * = IR error 事件 `detail` 透传(providers 自服务端信封带出的机器可判事实;首个取值
-     * `{ scope: 'plan' }` = 平台套餐配额拒绝,与 HTTP 面 doc/98 §七 `error.detail.scope`
+     * `{ scope: 'plan' }` = 平台套餐配额拒绝,与 HTTP 面 `error.detail.scope`
      * 同键同值)。三端 reducer 归约:`recoverable:true` → `SessionNotice.detail`,失败形 →
      * `ErrorView.detail`;端侧 `ErrorEnvelope.scope` 取值器同一读法。缺席 = 无附加事实
      * (既有事件体字节零变)。值恒不含 endUser 身份 / 令牌 / 内部 id。
@@ -2797,7 +2820,7 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     decision: z.ZodEnum<["allow", "deny", "ask"]>;
     decisionSource: z.ZodEnum<["rule", "user", "mode", "policy", "hook", "builtin", "classifier"]>;
     /**
-     * 命中的规则原文(如 `Shell(git *)`;contract-v0.2,T-C3 RFC)。
+     * 命中的规则原文(如 `Shell(git *)`;contract-v0.2)。
      * 审计链由此可答"哪条规则拒的";模式短路/兜底 ask 等无规则命中时不落键。
      */
     matchedRule: z.ZodOptional<z.ZodString>;
@@ -2851,25 +2874,25 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     toolCallId: z.ZodString;
     durationMs: z.ZodNumber;
     /**
-     * ToolResult.data 透传位(contract-v0.3,T-E3 RFC):工具产出的结构化
+     * ToolResult.data 透传位(contract-v0.3):工具产出的结构化
      * 渲染数据(AGENTS.md「工具只产出结构化数据」铁律的事件流出口)。
      * 表面层按工具名注册渲染器消费;无 data 的工具不落键,消费方忽略无害。
      */
     data: z.ZodOptional<z.ZodUnknown>;
     /**
-     * 模型可见文本投影(contract-v0.8,RFC-OPT8-1):喂回模型的 tool_result
+     * 模型可见文本投影(contract-v0.8):喂回模型的 tool_result
      * 文本(截断后形态)。cc-compat stream-json 包络与 SDK 消费方由此拿到
      * 与模型一致的结果文本,不必反推 data;与 data 正交(结构化渲染 vs
-     * 模型文本)。大结果按 OPT-05 预算截断后的文本为准,不另存全量。
+     * 模型文本)。大结果按工具结果预算截断后的文本为准,不另存全量。
      */
     content: z.ZodOptional<z.ZodString>;
     /**
-     * 工具结构化失败位(contract-v0.25,十王修案 FX-B-25 / 候拍 ⑭):`ToolResult.isError`
+     * 工具结构化失败位(contract-v0.25):`ToolResult.isError`
      * 透传。工具以 **return isError** 表达的业务级失败(非零退出 / 用户中断 / SSRF 拒 /
      * 媒体错误形)与 throw 径的 `tool.failed` 在表面层归约为同一 failed 态——此前 TUI /
-     * sdk / 端侧对这类回执一律 ✓(T2-05)。缺席 = 旧签发方或成功完成(completed 语义不变);
+     * sdk / 端侧对这类结果一律 ✓。缺席 = 旧签发方或成功完成(completed 语义不变);
      * 消费方(TUI / sdk / Android / iOS reducer)只判 `isError === true → failed`。
-     * 纯可选加法,包络 `v` 不 bump;端侧 vendored 同步归 C 路(分册 B §六 D-C2)。
+     * 纯可选加法,包络 `v` 不 bump;端侧 vendored 同步另行跟进。
      */
     isError: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
@@ -3066,7 +3089,7 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     }>;
     costUsd: z.ZodOptional<z.ZodNumber>;
     /**
-     * 上下文窗口分母(contract-v0.3,T-E3 RFC):签发方(查询环)从装配层
+     * 上下文窗口分母(contract-v0.3):签发方(查询环)从装配层
      * 注入的 provider capability.maxContext 透传。状态栏水位 = 最近 prompt
      * 规模 / 本值;缺省时表面层隐藏水位段(或回退装配注入的静态值)。
      * 随 usage 更新携带——/model 热切换后分母随下一轮事件自动矫正。
@@ -3080,19 +3103,19 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     toolUseId: z.ZodOptional<z.ZodString>;
     /**
      * 用量目的:非对话主流的模型调用标注来源。词表:'compaction'(上下文
-     * 压缩轮,T-C10)/ 'title'(会话标题生成,contract-v0.8 随 RFC-OPT10-1
-     * 扩容;OPT-10 辅助任务降档的归因面)/ 'permission_classifier'(LLM 权限
-     * 分类器调用,OPT-18)/ 'memory'(记忆四面 fork:提取/固化/晋升/召回
-     * 选择,TMEM/1;C3/R1-P1-3 随本地记账闭环扩词)。新目的先扩词表再签发
+     * 压缩轮)/ 'title'(会话标题生成,contract-v0.8
+     * 扩容;辅助任务降档的归因面)/ 'permission_classifier'(LLM 权限
+     * 分类器调用)/ 'memory'(记忆四面 fork:提取/固化/晋升/召回
+     * 选择;随本地记账闭环扩词)。新目的先扩词表再签发
      * (自由文本仅兜底);缺省即对话主流。
      *
-     * 词表分叉登记(R8 核实,2026-08-26):同一分类器子系统在 request-
+     * 词表分叉注记:同一分类器子系统在 request-
      * measurement 观测面与 TWP 出线面用词 'classifier'(kernel context/
      * request-measurement.ts RequestPurpose、providers twp/contract.ts
-     * TWP_PURPOSE_VALUES——批ι 起扁平单表,分版常量已退役),与本词表
+     * TWP_PURPOSE_VALUES——现为扁平单表,分版常量已退役),与本词表
      * 'permission_classifier' 属两套近义词并存;且本词当前全仓零签发方
      * (分类器 usage 走遥测与测量面,不落本地 cost 事件)。统一到单一词属
-     * 契约面决策,候拍板;届时 kernel cost/tracker.ts KNOWN_COST_PURPOSES
+     * 契约面决策,待定;届时 kernel cost/tracker.ts KNOWN_COST_PURPOSES
      * 须同步,勿单侧改词。
      */
     purpose: z.ZodOptional<z.ZodString>;
@@ -3423,19 +3446,20 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
         content: string;
     }[];
 }>]>>;
+/** 完整内核事件:包络 + 负载(KernelEventSchema 推导)。 */
 type KernelEvent = z.infer<typeof KernelEventSchema>;
 
 /**
- * T-A3(其一)— JournalRecord 存储包络
+ * JournalRecord 存储包络
  *
- * 设计依据 doc/07 §4.8:
+ * 设计要点:
  * ①统一包络取代多形态裸 JSONL;②显式 visibility 四位取代 isMeta/isVirtual 布尔组合;
  * ③Branch/Fork 一等;④completeness 标记支持启动时半行截断检测;
- * ⑤integrity 前哈希链(doc/10 §3.3 审计防篡改)。
+ * ⑤integrity 前哈希链(审计防篡改)。
  */
 
 /**
- * 显式可见性四位(doc/07 §4.1):分别控制是否进模型上下文 / 默认转录 /
+ * 显式可见性四位:分别控制是否进模型上下文 / 默认转录 /
  * 展开转录 / SDK 输出。取代难组合的 isMeta/isVisibleInTranscriptOnly/isVirtual。
  */
 declare const VisibilitySchema: z.ZodObject<{
@@ -3454,7 +3478,9 @@ declare const VisibilitySchema: z.ZodObject<{
     expandedTranscript: boolean;
     sdk: boolean;
 }>;
+/** 记录可见性四位(VisibilitySchema 推导)。 */
 type Visibility = z.infer<typeof VisibilitySchema>;
+/** 记录完整性:前哈希链(previousHash)+ 本条规范化 SHA-256(hash)。 */
 declare const IntegritySchema: z.ZodObject<{
     /** 前一条记录的 hash,构成链;首条为 null */
     previousHash: z.ZodNullable<z.ZodString>;
@@ -3467,9 +3493,13 @@ declare const IntegritySchema: z.ZodObject<{
     previousHash: string | null;
     hash: string;
 }>;
+/** 记录完整性字段(IntegritySchema 推导)。 */
 type Integrity = z.infer<typeof IntegritySchema>;
+/** 日志记录种类词表:用户输入、助手消息、工具结果、事件、队列入 / 确认、压缩边界、分叉、文件检查点。 */
 declare const JournalKindSchema: z.ZodEnum<["user_prompt", "assistant_message", "tool_result", "event", "queue_enqueue", "queue_ack", "compact_boundary", "fork", "file_checkpoint"]>;
+/** 日志记录种类(JournalKindSchema 推导)。 */
 type JournalKind = z.infer<typeof JournalKindSchema>;
+/** 日志记录统一包络:会话 / 分支 / 序号 / 种类 / 载荷 / 可见性 / 完整性链 / 尾行完整性标记。 */
 declare const JournalRecordSchema: z.ZodObject<{
     schemaVersion: z.ZodLiteral<1>;
     eventId: z.ZodString;
@@ -3512,7 +3542,7 @@ declare const JournalRecordSchema: z.ZodObject<{
     /**
      * 尾行完整性(contract-v0.1 修订语义):写入端 v1 恒写 'complete',
      * 半行截断检测依靠 Reader 的 JSON 解析失败判定;'partial' 保留给未来
-     * 两阶段写入端,Reader 对尾条 'partial' 同样按崩溃残留截断(doc/07 §4.8⑦)。
+     * 两阶段写入端,Reader 对尾条 'partial' 同样按崩溃残留截断。
      */
     completeness: z.ZodEnum<["partial", "complete"]>;
 }, "strip", z.ZodTypeAny, {
@@ -3558,31 +3588,34 @@ declare const JournalRecordSchema: z.ZodObject<{
     completeness: "partial" | "complete";
     payload?: unknown;
 }>;
+/** 日志记录(JournalRecordSchema 推导)。 */
 type JournalRecord = z.infer<typeof JournalRecordSchema>;
 
 /**
- * T-A3(其二)— 配置 schema(五层合并的目标结构)
+ * 配置 schema(五层合并的目标结构)
  *
- * 设计依据:
- * - doc/06 §2.2/§2.3(Provider Profile + capability + 别名三档 + fallback)
- * - doc/10 §4.3(国内厂商 capability 增补:缓存三态 / thinking 改写器 / must_echo_back / modelModifiers / 峰谷计价)
+ * 设计要点:
+ * - Provider Profile + capability + 别名三档 + fallback;
+ * - 国内厂商 capability 增补:缓存三态 / thinking 改写器 / must_echo_back / modelModifiers / 峰谷计价。
  *
- * 五层合并顺序(doc/09 T-G1):managed > 项目 local > 项目 shared > 用户 > 内置。
+ * 五层合并顺序:managed > 项目 local > 项目 shared > 用户 > 内置。
  */
 
 /**
- * contract-v0.4(RFC-B7-1):增 'openai-responses'——OpenAI Responses API
+ * contract-v0.4:增 'openai-responses'——OpenAI Responses API
  * 与 Chat Completions 是不同线协议(item 流 / reasoning 透传 / hosted tools),
  * 配置文件自此可直接声明;providers registry 的类型加宽过渡随本修订退役。
  *
- * T-C6(doc/28 §4):增 'twp'——TANSR 自有线协议 twp/1(/t1/exchange 的
+ * 增 'twp'——TANSR 自有线协议 twp/1(/t1/exchange 的
  * SSE t.* 事件语法);平台模型末端消费自此不再内嵌 openai/anthropic 方言,
  * 上游方言转换收敛在 api 服务器网关层。
  */
 declare const ProtocolKindSchema: z.ZodEnum<["anthropic", "openai", "openai-responses", "twp"]>;
+/** provider 线协议种类(ProtocolKindSchema 推导)。 */
 type ProtocolKind = z.infer<typeof ProtocolKindSchema>;
-/** 缓存策略三态——非布尔(doc/10 §4.3) */
+/** 缓存策略三态——非布尔 */
 declare const PromptCachingModeSchema: z.ZodEnum<["explicit", "implicit", "ignored"]>;
+/** 提示缓存策略:explicit 显式断点 / implicit 服务端自动 / ignored 不支持(PromptCachingModeSchema 推导)。 */
 type PromptCachingMode = z.infer<typeof PromptCachingModeSchema>;
 /**
  * contract-v0.5(RFC-B3-1):输入形态三态——supported(声明可用)/ rejected
@@ -3597,8 +3630,7 @@ type InputModalityMode = z.infer<typeof InputModalityModeSchema>;
 declare const CapabilitySchema: z.ZodObject<{
     maxContext: z.ZodNumber;
     /**
-     * 实测质量拐点窗口(tokens;TMEM/2 CB-1,doc/40 §2.5;RFC 收编候选,
-     * maxOutput/RFC-CTX12-3 同律形态)。可选且**无默认值**——undefined =
+     * 实测质量拐点窗口(tokens;与 maxOutput 同律形态)。可选且**无默认值**——undefined =
      * 未实证,消费方沿标称 maxContext(行为零变);声明时装配层窗口合成
      * 取 min(maxContext, effectiveContext)(合成恒在装配层单点,kernel
      * 冻结面不开位)。数据纪律与 maxOutput 同:手工回填须带公开评测出处,
@@ -3607,11 +3639,11 @@ declare const CapabilitySchema: z.ZodObject<{
     effectiveContext: z.ZodOptional<z.ZodNumber>;
     /**
      * 单次响应输出上限(tokens;厂商 max_tokens / max_completion_tokens
-     * 限额)。contract-v0.15(RFC-CTX12-3):可选且**无默认值**——
-     * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K,
-     * T-CTX01),与显式数值(官方文档实证)区分,杜绝编造(RFC-B7-2
-     * hostedTools / RFC-B3-4 quirks 新键同先例)。数据纪律:内置表回填
-     * 必须带官方出处与查证日期(围栏 6),拿不准的模型宁可不录。
+     * 限额)。contract-v0.15:可选且**无默认值**——
+     * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K),
+     * 与显式数值(官方文档实证)区分,杜绝编造(hostedTools / quirks
+     * 新键同先例)。数据纪律:内置表回填
+     * 必须带官方出处与查证日期,拿不准的模型宁可不录。
      */
     maxOutput: z.ZodOptional<z.ZodNumber>;
     /**
@@ -3803,7 +3835,7 @@ declare const CapabilitySchema: z.ZodObject<{
         /** 思考首 token 显著慢的建议超时下限(ms;适配器/重试 watchdog 消费) */
         minTimeoutMs: z.ZodOptional<z.ZodNumber>;
         /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
-         *  相反实证;T-C8 成本预估与 T-B4 截断防御的消费点) */
+         *  相反实证;成本预估与截断防御的消费点) */
         maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
         unknownModelFallback: boolean;
@@ -3834,7 +3866,7 @@ declare const CapabilitySchema: z.ZodObject<{
      */
     hostedTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     /**
-     * contract-v0.4(RFC-B7-2):Responses `background:true` 异步任务能力位。
+     * contract-v0.4:Responses `background:true` 异步任务能力位。
      * 同上,可选且无默认值。
      */
     background: z.ZodOptional<z.ZodBoolean>;
@@ -3945,7 +3977,9 @@ declare const CapabilitySchema: z.ZodObject<{
     hostedTools?: string[] | undefined;
     background?: boolean | undefined;
 }>;
+/** 模型能力位(CapabilitySchema 推导;经 schema parse 后默认值已填充)。 */
 type Capability = z.infer<typeof CapabilitySchema>;
+/** 单模型价格表:每百万 token 的输入 / 缓存输入 / 输出价,可选峰谷倍率与阶梯计价。 */
 declare const PricingSchema: z.ZodObject<{
     /** ¥ 或 $ 每百万 token */
     inputPerMillion: z.ZodNumber;
@@ -3954,7 +3988,7 @@ declare const PricingSchema: z.ZodObject<{
     /** 峰谷时段倍率(DeepSeek 高峰翻倍) */
     peakMultiplier: z.ZodOptional<z.ZodNumber>;
     /**
-     * contract-v0.5(RFC-B3-3):阶梯计价。缺省 undefined = 扁平计价(现状零
+     * contract-v0.5:阶梯计价。缺省 undefined = 扁平计价(现状零
      * 迁移);声明 tiers 时顶层三价约定为**首档镜像**(文档约定不强 refine)——
      * 向前兼容降级语义:无 tiers 感知的旧消费端仍按顶层价近似计费,不炸不偏零。
      */
@@ -3998,7 +4032,9 @@ declare const PricingSchema: z.ZodObject<{
         cachedInputPerMillion?: number | undefined;
     }[] | undefined;
 }>;
+/** 单模型价格表(PricingSchema 推导)。 */
 type Pricing = z.infer<typeof PricingSchema>;
+/** provider 档案:线协议、baseUrl、鉴权 env 变量名、角色别名表、能力位与逐模型价格表。 */
 declare const ProviderProfileSchema: z.ZodObject<{
     protocol: z.ZodEnum<["anthropic", "openai", "openai-responses", "twp"]>;
     baseUrl: z.ZodString;
@@ -4014,8 +4050,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
     capability: z.ZodOptional<z.ZodObject<{
         maxContext: z.ZodNumber;
         /**
-         * 实测质量拐点窗口(tokens;TMEM/2 CB-1,doc/40 §2.5;RFC 收编候选,
-         * maxOutput/RFC-CTX12-3 同律形态)。可选且**无默认值**——undefined =
+         * 实测质量拐点窗口(tokens;与 maxOutput 同律形态)。可选且**无默认值**——undefined =
          * 未实证,消费方沿标称 maxContext(行为零变);声明时装配层窗口合成
          * 取 min(maxContext, effectiveContext)(合成恒在装配层单点,kernel
          * 冻结面不开位)。数据纪律与 maxOutput 同:手工回填须带公开评测出处,
@@ -4024,11 +4059,11 @@ declare const ProviderProfileSchema: z.ZodObject<{
         effectiveContext: z.ZodOptional<z.ZodNumber>;
         /**
          * 单次响应输出上限(tokens;厂商 max_tokens / max_completion_tokens
-         * 限额)。contract-v0.15(RFC-CTX12-3):可选且**无默认值**——
-         * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K,
-         * T-CTX01),与显式数值(官方文档实证)区分,杜绝编造(RFC-B7-2
-         * hostedTools / RFC-B3-4 quirks 新键同先例)。数据纪律:内置表回填
-         * 必须带官方出处与查证日期(围栏 6),拿不准的模型宁可不录。
+         * 限额)。contract-v0.15:可选且**无默认值**——
+         * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K),
+         * 与显式数值(官方文档实证)区分,杜绝编造(hostedTools / quirks
+         * 新键同先例)。数据纪律:内置表回填
+         * 必须带官方出处与查证日期,拿不准的模型宁可不录。
          */
         maxOutput: z.ZodOptional<z.ZodNumber>;
         /**
@@ -4220,7 +4255,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             /** 思考首 token 显著慢的建议超时下限(ms;适配器/重试 watchdog 消费) */
             minTimeoutMs: z.ZodOptional<z.ZodNumber>;
             /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
-             *  相反实证;T-C8 成本预估与 T-B4 截断防御的消费点) */
+             *  相反实证;成本预估与截断防御的消费点) */
             maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
             unknownModelFallback: boolean;
@@ -4251,7 +4286,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
          */
         hostedTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
         /**
-         * contract-v0.4(RFC-B7-2):Responses `background:true` 异步任务能力位。
+         * contract-v0.4:Responses `background:true` 异步任务能力位。
          * 同上,可选且无默认值。
          */
         background: z.ZodOptional<z.ZodBoolean>;
@@ -4370,7 +4405,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
         /** 峰谷时段倍率(DeepSeek 高峰翻倍) */
         peakMultiplier: z.ZodOptional<z.ZodNumber>;
         /**
-         * contract-v0.5(RFC-B3-3):阶梯计价。缺省 undefined = 扁平计价(现状零
+         * contract-v0.5:阶梯计价。缺省 undefined = 扁平计价(现状零
          * 迁移);声明 tiers 时顶层三价约定为**首档镜像**(文档约定不强 refine)——
          * 向前兼容降级语义:无 tiers 感知的旧消费端仍按顶层价近似计费,不炸不偏零。
          */
@@ -4561,6 +4596,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
         }[] | undefined;
     }> | undefined;
 }>;
+/** provider 档案(ProviderProfileSchema 推导)。 */
 type ProviderProfile = z.infer<typeof ProviderProfileSchema>;
 /**
  * MCP 逐台连接治理键(contract-v0.21,RFC-SC-2;两 transport 共用,与
@@ -4627,8 +4663,7 @@ declare const TansrConfigSchema: z.ZodObject<{
         capability: z.ZodOptional<z.ZodObject<{
             maxContext: z.ZodNumber;
             /**
-             * 实测质量拐点窗口(tokens;TMEM/2 CB-1,doc/40 §2.5;RFC 收编候选,
-             * maxOutput/RFC-CTX12-3 同律形态)。可选且**无默认值**——undefined =
+             * 实测质量拐点窗口(tokens;与 maxOutput 同律形态)。可选且**无默认值**——undefined =
              * 未实证,消费方沿标称 maxContext(行为零变);声明时装配层窗口合成
              * 取 min(maxContext, effectiveContext)(合成恒在装配层单点,kernel
              * 冻结面不开位)。数据纪律与 maxOutput 同:手工回填须带公开评测出处,
@@ -4637,11 +4672,11 @@ declare const TansrConfigSchema: z.ZodObject<{
             effectiveContext: z.ZodOptional<z.ZodNumber>;
             /**
              * 单次响应输出上限(tokens;厂商 max_tokens / max_completion_tokens
-             * 限额)。contract-v0.15(RFC-CTX12-3):可选且**无默认值**——
-             * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K,
-             * T-CTX01),与显式数值(官方文档实证)区分,杜绝编造(RFC-B7-2
-             * hostedTools / RFC-B3-4 quirks 新键同先例)。数据纪律:内置表回填
-             * 必须带官方出处与查证日期(围栏 6),拿不准的模型宁可不录。
+             * 限额)。contract-v0.15:可选且**无默认值**——
+             * undefined = 未知/未实证,消费方自选保守值(压缩输出预算径回退 20K),
+             * 与显式数值(官方文档实证)区分,杜绝编造(hostedTools / quirks
+             * 新键同先例)。数据纪律:内置表回填
+             * 必须带官方出处与查证日期,拿不准的模型宁可不录。
              */
             maxOutput: z.ZodOptional<z.ZodNumber>;
             /**
@@ -4833,7 +4868,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 /** 思考首 token 显著慢的建议超时下限(ms;适配器/重试 watchdog 消费) */
                 minTimeoutMs: z.ZodOptional<z.ZodNumber>;
                 /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
-                 *  相反实证;T-C8 成本预估与 T-B4 截断防御的消费点) */
+                 *  相反实证;成本预估与截断防御的消费点) */
                 maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
             }, "strip", z.ZodTypeAny, {
                 unknownModelFallback: boolean;
@@ -4864,7 +4899,7 @@ declare const TansrConfigSchema: z.ZodObject<{
              */
             hostedTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
             /**
-             * contract-v0.4(RFC-B7-2):Responses `background:true` 异步任务能力位。
+             * contract-v0.4:Responses `background:true` 异步任务能力位。
              * 同上,可选且无默认值。
              */
             background: z.ZodOptional<z.ZodBoolean>;
@@ -4983,7 +5018,7 @@ declare const TansrConfigSchema: z.ZodObject<{
             /** 峰谷时段倍率(DeepSeek 高峰翻倍) */
             peakMultiplier: z.ZodOptional<z.ZodNumber>;
             /**
-             * contract-v0.5(RFC-B3-3):阶梯计价。缺省 undefined = 扁平计价(现状零
+             * contract-v0.5:阶梯计价。缺省 undefined = 扁平计价(现状零
              * 迁移);声明 tiers 时顶层三价约定为**首档镜像**(文档约定不强 refine)——
              * 向前兼容降级语义:无 tiers 感知的旧消费端仍按顶层价近似计费,不炸不偏零。
              */
@@ -5191,7 +5226,7 @@ declare const TansrConfigSchema: z.ZodObject<{
     fallbacks: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodArray<z.ZodString, "many">>>;
     locale: z.ZodOptional<z.ZodString>;
     /**
-     * 生命周期 hooks(contract-v0.3,T-G3 RFC)。分层合并语义特殊:不走深合并,
+     * 生命周期 hooks(contract-v0.3)。分层合并语义特殊:不走深合并,
      * 由 kernel 逐层抽取(条目按层优先级稳定排序、跨层同构去重、managed 控制
      * 位治理),详见 kernel hooks/config.ts。
      */
@@ -5557,11 +5592,11 @@ declare const TansrConfigSchema: z.ZodObject<{
             })[] | undefined;
         }>, "many">>;
         /**
-         * 权限扩展点两事件(contract-v0.13,RFC-WE-3 清 RFC-K19d 契约残项;
-         * 运行期 kernel HOOK_EVENTS 自 2026-07-30 起已八事件,此处规范性描述
+         * 权限扩展点两事件(contract-v0.13;
+         * 运行期 kernel HOOK_EVENTS 已为八事件,此处规范性描述
          * 补齐;词表一致性由 schema × HOOK_EVENTS 锁测试把守):
          * - PermissionRequest:ask 终局呈现前的最后收紧缝(只收紧,allow 忽略+告警);
-         * - PermissionDenied:deny 终局后的纯通知缝(回执不消费)。
+         * - PermissionDenied:deny 终局后的纯通知缝(结构化响应不消费)。
          */
         PermissionRequest: z.ZodOptional<z.ZodArray<z.ZodObject<{
             /** 触发过滤器(PreToolUse/PostToolUse 比对 tool 名等);缺省全匹配 */
@@ -5903,7 +5938,7 @@ declare const TansrConfigSchema: z.ZodObject<{
         allowManagedHooksOnly?: boolean | undefined;
     }>>;
     /**
-     * MCP 服务器清单(contract-v0.4,T-D8 RFC)。分层合并语义特殊:不走深合并,
+     * MCP 服务器清单(contract-v0.4)。分层合并语义特殊:不走深合并,
      * 由 kernel 逐层抽取(跨层同名高层胜 + 信任门分层归因),详见 kernel
      * tools/mcp/config.ts 与 cli assembly/mcp-trust.ts。
      */
@@ -6083,19 +6118,18 @@ declare const TansrConfigSchema: z.ZodObject<{
          */
         disableBaselineProtection: z.ZodOptional<z.ZodBoolean>;
         /**
-         * LLM 权限分类器治理位(contract-v0.8 增 enabled,RFC-OPT18-2;
-         * contract-v0.13 增 tightenOutsideAuto/callBudget 并放宽 enabled 为可选,
-         * RFC-WE-2)。环境变量 TANSR_PERMISSION_CLASSIFIER /
+         * LLM 权限分类器治理位(contract-v0.8 增 enabled;
+         * contract-v0.13 增 tightenOutsideAuto/callBudget 并放宽 enabled 为可选)。
+         * 环境变量 TANSR_PERMISSION_CLASSIFIER /
          * TANSR_CLASSIFIER_TIGHTEN_OUTSIDE_AUTO / TANSR_CLASSIFIER_BUDGET 保留为
-         * 最高优先覆盖(逐键接管)。仅 user/managed 层被尊重(T-K0:分类器属
+         * 最高优先覆盖(逐键接管)。仅 user/managed 层被尊重(分类器属
          * 用户/企业的信任与成本决策,项目层声明整段忽略+示警)。
          * 史注:TANSR_CLASSIFIER_ALLOW_UNQUALIFIED(资格越过)曾刻意不进配置
-         * (break-glass 性质恒 env-only),已随 UAA P4-C2 整体退役(2026-08-30,
-         * 任命即授照后无「未达资格」可越)。
+         * (break-glass 性质恒 env-only),已整体退役(任命即授照后无「未达资格」可越)。
          */
         classifier: z.ZodOptional<z.ZodObject<{
             enabled: z.ZodOptional<z.ZodBoolean>;
-            /** 非 auto 模式也咨询分类器(只收紧:unsafe→deny,safe 恒维持 ask;T-K6) */
+            /** 非 auto 模式也咨询分类器(只收紧:unsafe→deny,safe 恒维持 ask) */
             tightenOutsideAuto: z.ZodOptional<z.ZodBoolean>;
             /** 每会话咨询预算:≥1 改上限 / 'off' 不限;缺席用内核缺省 */
             callBudget: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodLiteral<"off">]>>;
@@ -6109,14 +6143,14 @@ declare const TansrConfigSchema: z.ZodObject<{
             callBudget?: number | "off" | undefined;
         }>>;
         /**
-         * 出厂规则包装载开关(contract-v0.13,RFC-WE-2;T-K15 出厂包的契约形态)。
+         * 出厂规则包装载开关(contract-v0.13;出厂包的契约形态)。
          * 缺省 true(装载);false = 卸载。env TANSR_RECOMMENDED_RULES 保留为最高
          * 优先覆盖(精确 '0' 卸载)。仅 user/managed 层被尊重(卸出厂 ask 包属
          * 扩权向,项目层声明忽略+示警)。
          */
         recommendedRules: z.ZodOptional<z.ZodBoolean>;
         /**
-         * 项目 ask 注意力预算(contract-v0.13,RFC-WE-2;T-K16 的契约形态)。
+         * 项目 ask 注意力预算(contract-v0.13;kernel ask 预算的契约形态)。
          * ≥1 = 每会话项目来源询问上限(缺省 10);'off' = 关闭(回到逐条询问)。
          * env TANSR_PROJECT_ASK_BUDGET 保留为最高优先覆盖。仅 user/managed 层被
          * 尊重(预算防的就是项目层提示风暴,项目自调即越界)。
@@ -6245,7 +6279,7 @@ declare const TansrConfigSchema: z.ZodObject<{
             unsignedPolicy?: "accept" | "reject" | undefined;
         } | undefined;
     }>>;
-    /** Shell 沙箱(contract-v0.8,RFC-OPT19-1);FX-B-01 起 kernel 合并前抽取:user / managed 被尊重,项目层忽略,env 对 managed 只收紧 */
+    /** Shell 沙箱(contract-v0.8);kernel 合并前抽取:user / managed 被尊重,项目层忽略,env 对 managed 只收紧 */
     sandbox: z.ZodOptional<z.ZodObject<{
         /**
          * 生效模式(词表对齐 kernel SandboxMode):off=不碰沙箱(缺省);
@@ -6887,40 +6921,43 @@ declare const TansrConfigSchema: z.ZodObject<{
         enabled?: boolean | undefined;
     } | undefined;
 }>;
+/** 五层合并后的完整配置(TansrConfigSchema 推导)。 */
 type TansrConfig = z.infer<typeof TansrConfigSchema>;
 
 /**
- * ModelClient — 模型客户端接口(依赖倒置的关键缝,《06》§1.1)。
+ * ModelClient — 模型客户端接口(依赖倒置的关键缝)。
  * providers 包实现本接口;kernel 只依赖本接口,经构造注入,绝不 import 具体适配器。
  */
 
+/** 单次模型调用的选项:取消信号与分层超时(总闸 / 建连闸 / 空闲闸)。 */
 interface ModelCallOptions {
     signal?: AbortSignal;
     /**
-     * 单次尝试总闸(毫秒)。G-A3 分层超时落地后语义收敛为「总闸兼容位」:
+     * 单次尝试总闸(毫秒)。分层超时落地后语义收敛为「总闸兼容位」:
      * 消费分层超时的适配器(openai/openai-responses)把本值并入总闸
      * (totalTimeoutMs 优先);未跟进的适配器沿用「单闸覆盖整次尝试」旧语义。
      * 压缩路径恒传本位(90s 总闸,kernel context/compaction.ts)。
      */
     timeoutMs?: number;
     /**
-     * G-A3:建连/响应头到达闸(毫秒)。覆盖「发出请求 → 响应头到达」区间;
+     * 建连/响应头到达闸(毫秒)。覆盖「发出请求 → 响应头到达」区间;
      * 响应头到达后退场,交棒 idle 闸。缺席时消费方适配器用内建缺省
      * (openai 系 15_000)。
      */
     connectTimeoutMs?: number;
     /**
-     * G-A3:流式分片间空闲闸(毫秒)。响应头到达后启用,每到一段字节重臂;
+     * 流式分片间空闲闸(毫秒)。响应头到达后启用,每到一段字节重臂;
      * 分片持续到达的健康慢长流恒不误杀。缺席时消费方适配器用内建缺省
      * (openai 系 90_000)。
      */
     idleTimeoutMs?: number;
     /**
-     * G-A3:可选总闸(毫秒)。整次尝试(建连 + 流式读取)的绝对上限;
+     * 可选总闸(毫秒)。整次尝试(建连 + 流式读取)的绝对上限;
      * 缺省关闭(与 timeoutMs 同给时本位优先)。
      */
     totalTimeoutMs?: number;
 }
+/** 模型客户端:把一次 IRRequest 变成 IRStreamEvent 流;providers 实现,kernel 经注入消费。 */
 interface ModelClient {
     /**
      * 流式调用。实现必须把 wire 协议(SSE/delta)解析为 IRStreamEvent 序列;
@@ -7507,13 +7544,17 @@ interface AudioTtsConstraints {
     formats: string[];
     maxChars: number;
 }
+/** 图片模型目录条目:通用描述符 + 图片受理约束。 */
 type ImageModelDescriptor = MediaModelDescriptor<ImageModelConstraints>;
+/** 视频模型目录条目:通用描述符 + 视频受理约束。 */
 type VideoModelDescriptor = MediaModelDescriptor<VideoModelConstraints>;
+/** 语音转文字模型目录条目:通用描述符 + ASR 受理约束。 */
 type SpeechToTextModelDescriptor = MediaModelDescriptor<AudioAsrConstraints>;
+/** 文字转语音模型目录条目:通用描述符 + TTS 受理约束。 */
 type TextToSpeechModelDescriptor = MediaModelDescriptor<AudioTtsConstraints>;
 /**
  * ImageGen 产物(表面层渲染用结构化数据;错误时携错误码、`images` 为空数组、`imageCount` 0)。
- * 端侧按形状识别:`images` 数组 → Images 型产物(doc/123 §3.7)。
+ * 端侧按形状识别:`images` 数组 → Images 型产物。
  */
 interface ImageGenData {
     model: string;
@@ -7529,6 +7570,7 @@ interface ImageGenData {
      */
     taskId?: string;
 }
+/** ImageGenData 的 zod schema(passthrough 容未知键;消费方按需校验 ToolResult.data)。 */
 declare const ImageGenDataSchema: z.ZodObject<{
     model: z.ZodString;
     images: z.ZodArray<z.ZodObject<{
@@ -7583,6 +7625,7 @@ interface VideoGenData {
     /** 异步任务号(平台任务径在场时恒携;GET /t1/videogen/tasks/{taskId} 可找回)。 */
     taskId?: string;
 }
+/** VideoGenData 的 zod schema(passthrough 容未知键)。 */
 declare const VideoGenDataSchema: z.ZodObject<{
     model: z.ZodString;
     videos: z.ZodArray<z.ZodObject<{
@@ -7623,13 +7666,14 @@ declare const VideoGenDataSchema: z.ZodObject<{
     errorCode: z.ZodOptional<z.ZodString>;
     taskId: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
-/** 转写分段(doc/123 §3.1 segments 行;speaker 仅说话人分离家族在场) */
+/** 转写分段(speaker 仅说话人分离家族在场) */
 interface TranscriptSegment {
     start: number;
     end: number;
     text: string;
     speaker?: string;
 }
+/** TranscriptSegment 的 zod schema(passthrough 容未知键)。 */
 declare const TranscriptSegmentSchema: z.ZodObject<{
     start: z.ZodNumber;
     end: z.ZodNumber;
@@ -7647,8 +7691,8 @@ declare const TranscriptSegmentSchema: z.ZodObject<{
     speaker: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 /**
- * SpeechToText 产物(doc/123 §3.5 TranscriptData;错误时携错误码、`text` 为空串)。端侧按形状
- * 识别:`text` + `model` 且无 images/videos/results/audio → Transcript 型产物(doc/123 §3.7)。
+ * SpeechToText 产物(错误时携错误码、`text` 为空串)。端侧按形状
+ * 识别:`text` + `model` 且无 images/videos/results/audio → Transcript 型产物。
  * 空串 `text` 本身是合法转写(静音输入),不是零产物。
  */
 interface TranscriptData {
@@ -7662,6 +7706,7 @@ interface TranscriptData {
     /** 异步任务号(平台任务径在场时恒携;GET /t1/asr/tasks/{taskId} 可找回)。 */
     taskId?: string;
 }
+/** TranscriptData 的 zod schema(passthrough 容未知键)。 */
 declare const TranscriptDataSchema: z.ZodObject<{
     model: z.ZodString;
     text: z.ZodString;
@@ -7733,8 +7778,8 @@ declare const TranscriptDataSchema: z.ZodObject<{
     taskId: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 /**
- * 合成产物(doc/123 D-A5 / §3.5 SpeechData.audio;`url` 与 `b64` 恒至少一个在场)。
- * `path` 为 D-M12 加法可选键:cli 内联产物落盘后的本地路径(kernel 工具 `artifactSink` 在场且
+ * 合成产物(SpeechData.audio;`url` 与 `b64` 恒至少一个在场)。
+ * `path` 为加法可选键:cli 内联产物落盘后的本地路径(kernel 工具 `artifactSink` 在场且
  * `b64` 在场时写入);sdk / serve 恒不接 sink,径上恒缺席——端侧形状识别不受影响。
  */
 interface SpeechAudio {
@@ -7746,9 +7791,10 @@ interface SpeechAudio {
     format: string;
     durationMs?: number;
     sampleRate?: number;
-    /** 本地落盘路径(D-M12;仅 cli artifactSink 径出现) */
+    /** 本地落盘路径(仅 cli artifactSink 径出现) */
     path?: string;
 }
+/** SpeechAudio 的 zod schema(passthrough 容未知键)。 */
 declare const SpeechAudioSchema: z.ZodObject<{
     url: z.ZodOptional<z.ZodString>;
     b64: z.ZodOptional<z.ZodString>;
@@ -7775,8 +7821,8 @@ declare const SpeechAudioSchema: z.ZodObject<{
     path: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 /**
- * TextToSpeech 产物(doc/123 §3.5 SpeechData)。端侧按形状识别:`audio.mime` 在场 → Speech 型
- * 产物(doc/123 §3.7)。**错误形 `audio` 缺席**(恒不伪造音频对象),`billedChars` 为 0。
+ * TextToSpeech 产物。端侧按形状识别:`audio.mime` 在场 → Speech 型
+ * 产物。**错误形 `audio` 缺席**(恒不伪造音频对象),`billedChars` 为 0。
  */
 interface SpeechData {
     model: string;
@@ -7788,6 +7834,7 @@ interface SpeechData {
     /** 异步任务号(平台任务径在场时恒携;GET /t1/tts/tasks/{taskId} 可找回)。 */
     taskId?: string;
 }
+/** SpeechData 的 zod schema(passthrough 容未知键)。 */
 declare const SpeechDataSchema: z.ZodObject<{
     model: z.ZodString;
     audio: z.ZodOptional<z.ZodObject<{
@@ -7894,13 +7941,13 @@ type MediaArtifact = {
     data: SpeechData;
 };
 /**
- * 三端共享谓词(十王修案 FX-C-24 / doc/130 FX-C-S6-3;复审 E-03 / E-06 / M-04 / M2-06;审计 09 D-1):
+ * 三端共享谓词:
  * 「产物可渲染为成功」的**单一判定**——Kotlin `isRenderableArtifact` / Swift `isRenderableArtifact` 同名同语义,
  * 四金样 `test/fixtures/golden/tool-card-artifact-{speech-empty,image-errorcode,video-errorcode,errorcode-null}.json`
  * 三端逐字 `[false, false, false, true]`。语义逐字:
  *
- * - `errorCode == null`(键缺席 / 值 `null` / 空串皆视为**无错**;任何其它值 = 错误回执,不论产物位是否非空——
- *   此前两端 image / video 分支**不查** `errorCode`,携 url 的错误回执被渲染为成功;Android 用 `containsKey`,
+ * - `errorCode == null`(键缺席 / 值 `null` / 空串皆视为**无错**;任何其它值 = 错误响应,不论产物位是否非空——
+ *   此前两端 image / video 分支**不查** `errorCode`,携 url 的错误响应被渲染为成功;Android 用 `containsKey`,
  *   `errorCode: null` 被当失败)
  * - 且 `kind ∉ {image, video} || url/path 非空`(`images` / `videos` 键在场即按该形判;空数组 / 全坏 / 全空串 = 不可渲染)
  * - 且 `kind ≠ speech || url/b64 至少一非空`(`audio` 键在场即按 speech 判;此前 iOS 对 `url: ""` 放行为 Speech)
@@ -7910,26 +7957,25 @@ type MediaArtifact = {
  */
 declare function isRenderableArtifact(data: unknown): boolean;
 /**
- * `tool.completed.data` / `ToolResult.data` → 媒体产物判别(doc/128 §3.1 规则;**规则与判序逐字对齐
- * Android `toolCardArtifact` / iOS `toolCardArtifact` 现行实现**,A-12):
+ * `tool.completed.data` / `ToolResult.data` → 媒体产物判别(**规则与判序逐字对齐
+ * Android `toolCardArtifact` / iOS `toolCardArtifact` 现行实现**):
  *
  * - 非对象(含 null / 数组)→ null;
- * - `errorCode` 为字符串 → 恒 null(错误回执不是产物,即使携空产物位);
+ * - `errorCode` 为字符串 → 恒 null(错误响应不是产物,即使携空产物位);
  * - 判序 image → video → speech → transcript(端侧同序:URL 集形 → 音频 → 排他的裸文本形);
  * - image:`model` 为字符串,且 `images` 为数组并至少一条目携字符串 `url`(空数组 / 全坏条目 = 零产物 → 不判);
  * - video:`model` 为字符串,且 `videos` 同上;
  * - speech:`model` 为字符串,`audio` 为对象、`audio.mime` 为字符串,且 `audio.url` / `audio.b64` 至少一者为
  *   非空字符串(皆缺 / 皆空 = 零产物 → 不判);
  * - transcript:`text` 与 `model` 皆字符串,且无 `images` / `videos` / `results` / `audio` 键
- *   (`results` 排 WebSearchData;三端同四键——tansr-android `fc9fbe8` 补 `audio` 后与 iOS / 本实现一致,
- *   十王修案 FX-C-21 / E2-13 销注);
+ *   (`results` 排 WebSearchData;三端同四键——tansr-android 补 `audio` 后与 iOS / 本实现一致);
  * - 其余 null。
  *
- * 判序 image-first 以实现为准、三端一致(doc/89 契约段 / doc/128 §3.1 同文;FX-C-21 / Q-07)。
+ * 判序 image-first 以实现为准、三端一致。
  * 只判形不校验(不经 zod 剥离未知键):返回的 data 是原对象的类型收窄视图,消费方按需再过
  * 对应 *DataSchema。端侧两卷(Android `ToolCardArtifactsTest` / iOS `ToolCardArtifactsTests`)**既有 17 例**
- * 在本函数上同判(protocol `media.test.ts` ⑤ 镜像收录);空串 / errorCode 判型两类异形**已于十王修案 FX-C-24
- * 以四金样三端同源镜像**(`test/fixtures/golden/tool-card-artifact-*.json`;三端共享谓词 [isRenderableArtifact])。
+ * 在本函数上同判(protocol `media.test.ts` ⑤ 镜像收录);空串 / errorCode 判型两类异形**已以四金样
+ * 三端同源镜像**(`test/fixtures/golden/tool-card-artifact-*.json`;三端共享谓词 [isRenderableArtifact])。
  */
 declare function parseMediaArtifact(data: unknown): MediaArtifact | null;
 
@@ -7984,14 +8030,14 @@ interface FsLike {
     /** 读文件前 bytes 字节(BOM 探测;返回实际读到的字节,可短于请求) */
     readFilePrefix(path: string, bytes: number): Promise<Buffer>;
     /**
-     * FX-B-20 / T-14(可选加法):读 [start, start+length) 区间字节(返回实际读到的
+     * 可选加法:读 [start, start+length) 区间字节(返回实际读到的
      * 字节,EOF 时可短于请求;短于请求即 EOF)。Read 工具对超整读帽的分页读取据此
      * 按块流式扫描,不把整文件装入内存。实现方缺席 → Read 回落整读(旧行为)。
      */
     readFileRange?(path: string, start: number, length: number): Promise<Buffer>;
     /**
-     * 写全文。缺省世界(default-fs)为**同目录临时文件 + rename** 原子替换(FX-B-20 /
-     * T-13:半写不落到目标路径;rename 不可用时回落直写)——实现方语义要求只是
+     * 写全文。缺省世界(default-fs)为**同目录临时文件 + rename** 原子替换
+     * (半写不落到目标路径;rename 不可用时回落直写)——实现方语义要求只是
      * 「完成后目标路径内容 = data」,原子性是缺省世界的强化承诺。
      */
     writeFile(path: string, data: Buffer): Promise<void>;
@@ -8200,14 +8246,14 @@ interface HardSafetyConfig {
 }
 
 /**
- * T-C3 — 权限引擎类型契约(纯类型,零运行时逻辑)。
+ * 权限引擎类型契约(纯类型,零运行时逻辑)。
  *
- * 设计依据:
- * - doc/06 §3.3:判定管线与规则层;
- * - doc/07 §5.4/§5.6:决策链顺序与四模式语义;
- * - doc/08 §A.3:多规则冲突时最严格者胜(deny > ask > allow)。
+ * 设计要点:
+ * - 判定管线与规则层;
+ * - 决策链顺序与四模式语义;
+ * - 多规则冲突时最严格者胜(deny > ask > allow)。
  *
- * 引擎只产出结构化决策,不含任何 UI/询问逻辑;询问由调度器(T-C2)执行,
+ * 引擎只产出结构化决策,不含任何 UI/询问逻辑;询问由调度器执行,
  * 结果经 recordUserDecision() 回写会话缓存。
  */
 
@@ -8272,28 +8318,28 @@ interface PermissionEngineConfig {
         caseInsensitivePaths?: boolean;
     };
     /**
-     * 家目录注入(T-K2 protected paths 的 shell rc 保护面锚点;缺省
+     * 家目录注入(protected paths 的 shell rc 保护面锚点;缺省
      * os.homedir())。仅测试与特殊装配需要注入;与基线同开关。
      */
     homedir?: string;
     /**
-     * hard-safety 层追加面(T-K3a,R4-D:INV-2/§8.3)。内置子集恒启用、
-     * **不受 baseline.enabled 与 disableBaselineProtection 影响**(R4-D 绝对
-     * 禁止);本配置只允许 managed/装配层**追加**(egress 命令、审计目录),
+     * hard-safety 层追加面(INV-2)。内置子集恒启用、
+     * **不受 baseline.enabled 与 disableBaselineProtection 影响**(绝对
+     * 禁止面);本配置只允许 managed/装配层**追加**(egress 命令、审计目录),
      * 项目层永不可触(INV-4,由 config 抽取层保证)。缺省仅内置子集。
      */
     hardSafety?: HardSafetyConfig;
 }
-/** 判定输入(供 T-C2 调度器消费;isReadOnly 取自工具静态声明) */
+/** 判定输入(供调度器消费;isReadOnly 取自工具静态声明) */
 interface DecideInput {
     toolName: string;
     args: unknown;
     isReadOnly: boolean;
     cwd: string;
     /**
-     * 分类器软化抑制位(T-DA7,doc/optimize/27 §3.3):auto 下子代理调用的
+     * 分类器软化抑制位:auto 下子代理调用的
      * `safe→allow` 裁决位让位派生裁决链的父终审——置位时 consultClassifier
-     * 的软化面关闭(收紧方向 unsafe→deny **不受影响**,T-INV-B 收紧不设门
+     * 的软化面关闭(收紧方向 unsafe→deny **不受影响**,收紧不设门
      * 槛)。仅子代理执行器在「auto × 裁决链 × 父终审开」形态下经门 hints
      * 置位;缺省 = 现状(分类器全权)。**纯收紧方向**:置位只可能把 allow
      * 变 ask,永不反向。
@@ -8336,17 +8382,17 @@ interface PermissionDecisionResult {
     /** 命中的规则原文(模式短路 / 最终兜底 ask 无此字段) */
     matchedRule?: string;
     /**
-     * 命中规则所在层(T-K0 归因;仅配置规则命中出口携带——模式短路/基线/
+     * 命中规则所在层(归因;仅配置规则命中出口携带——模式短路/基线/
      * protected-path/会话缓存/分类器出口缺省)。契约事件不携带本位(源扁平化
-     * 的完整解法在 T-K10a DecisionRecord);当前消费方:询问面的项目来源展示。
+     * 的完整解法在 DecisionRecord);当前消费方:询问面的项目来源展示。
      */
     sourceLayer?: RuleLayerName;
     /**
      * 裁决理由(自由文本;不进 tool.permission.decided 事件,契约零改动)。
      * 携带出口:
-     * - source='classifier' 的 **deny**(T-K1 deny-and-continue):调度器把理由
+     * - source='classifier' 的 **deny**(deny-and-continue):调度器把理由
      *   并入 isError tool_result 文本回喂模型,模型据此调整路线继续本轮;
-     * - source='classifier' 的 **ask**(doc/113 姿态 rejectEffect='ask'):
+     * - source='classifier' 的 **ask**(姿态 rejectEffect='ask'):
      *   裁决人判为危险但升到询问面——理由经 GateDecision.reason 透传到
      *   askUser 第三参,询问面据此呈现「裁决人判为危险:…」供用户终审;
      * - source='classifier' 的 allow(safe 放行)同携理由(审计/日志消费);
@@ -8436,9 +8482,9 @@ interface ClassifierTargetFacts {
 }
 
 /**
- * OPT-18 + T-K1/T-K2 — LLM 权限分类器注入缝(机制层;doc/07 §5.6/§5.10)。
+ * LLM 权限分类器注入缝(机制层)。
  *
- * 接缝风格照 T-C11 BundleSignatureVerifier:内核只定义接口与消费语义,
+ * 接缝风格照 BundleSignatureVerifier:内核只定义接口与消费语义,
  * 实现体(LLM 调用、prompt、模型选择)由装配层注入——内核零模型依赖。
  * 姿态(block-list,「该不该拦」)与两阶段裁决(stage1 偏拦 → stage2 复审)
  * 属实现体职责(装配层 permission-classifier.ts);内核消费的三值词表不变:
@@ -8446,7 +8492,7 @@ interface ClassifierTargetFacts {
  *
  * 消费语义(engine.consultClassifier;contract-v0.8 起含 auto 模式):
  * - **仅当引擎裁决为 ask 时才咨询**;allow/deny 路径零开销直通,不咨询;
- * - **auto-only 缺省**(T-K6):仅 auto 模式咨询;其余模式同步直通 ask
+ * - **auto-only 缺省**:仅 auto 模式咨询;其余模式同步直通 ask
  *   (询问面本就有人裁,不花模型钱)。`tightenOutsideAuto=true` 时其余
  *   模式也咨询,但**只收紧**(unsafe→deny),safe 恒维持 ask;
  * - 分类器 `unsafe` → 收紧(归因 'classifier',RFC-OPT18-3),在咨询发生的
@@ -8459,13 +8505,13 @@ interface ClassifierTargetFacts {
  *   且须过引擎的资格守卫——可解析/非 UNC/基线复查,见 engine 注释);
  *   其余模式 safe 恒维持 ask(**分类器绝不放行**的既有铁律);
  * - `unsure`/超时/抛错 → 维持 ask;
- * - **熔断**(T-K1,doc/07 §5.6):分类器 reject(unsafe)连续 3 次 → 熔断
+ * - **熔断**:分类器 reject(unsafe)连续 3 次 → 熔断
  *   30 分钟(冷却期满自动复位);会话累计 20 次 → 本会话停用。记账**按
  *   裁决人 reject 计**,与 rejectEffect 落地形无关(doc/113:熔断保护的是
  *   裁决人质量——'ask' 姿态下连续判危险同样跳闸)。熔断期间
  *   consultClassifier 同步原样返回 ask(交回询问面,headless 按既有语义降
  *   deny);跳闸经 onBreakerTrip 回调上报(装配层负责通知面,内核零 IO);
- *   人工恢复口 engine.resetClassifierBreaker(T-K19a 批准即恢复:两档皆
+ *   人工恢复口 engine.resetClassifierBreaker(批准即恢复:两档皆
  *   复位、计数归零;仅交互面在用户显式批准后可调,无人值守入口无通道);
  * - deny 规则与内置基线永不受分类器软化(deny 路径不进咨询口);
  * - 机制默认关闭(不注入即无分类器路径;auto 未注入时 = 快路径 + 残余 ask)。
@@ -8484,7 +8530,7 @@ interface ClassifierTargetFacts {
  */
 type ClassifierVerdict = 'safe' | 'unsafe' | 'unsure';
 /**
- * 单阶段观测终态(T-K17 A1 遥测:命名记「观测到什么」,不猜原因——
+ * 单阶段观测终态(遥测命名记「观测到什么」,不猜原因——
  * 「无事件」不得直称网络故障,「见 thinking」不证明 thinking 是唯一瓶颈):
  * - completed:流正常收到 message_stop(产出是否可解析另由 reason 表达);
  * - deadline_before_any_event:中止时未收到任何载荷事件(排队/连接/首推理均可能);
@@ -8493,19 +8539,19 @@ type ClassifierVerdict = 'safe' | 'unsafe' | 'unsure';
  * - stream_ended_without_stop:流自然耗尽但无 message_stop(截断);
  * - stream_error(<kind>):流内结构化 error 事件(kind 为 IR 归一化错误类)
  *   或本地异常(kind=exception);
- * - completed_reason_truncated(协议 v4 判词先结,doc/optimize/36 A-2):截止
+ * - completed_reason_truncated(协议 v4 判词先结):截止
  *   到来时判词 `<block>…</block>` 已可解析、理由未收口——判词有效交付,
  *   **不是可用性损耗**(不以 `deadline_` 开头,G5 谓词不计),单列以便统计
  *   「理由被截」占比。
  */
 type ClassifierStageOutcome = 'completed' | 'completed_reason_truncated' | 'deadline_before_any_event' | 'deadline_after_thinking_before_text' | 'deadline_after_text_before_stop' | 'stream_ended_without_stop' | `stream_error(${string})`;
 /**
- * 单阶段遥测(T-K17 A1):**只记计时/枚举/用量计数,不落 thinking 正文或
+ * 单阶段遥测:**只记计时/枚举/用量计数,不落 thinking 正文或
  * prompt 内容**(脱敏纪律 INV-10 同向)。评估 harness 与装配层日志消费;
  * 引擎不读取。
  */
 interface ClassifierStageTelemetry {
-    /** 两阶段协议的 stage1/stage2;'single' = 单阶段对照协议(T-K17 续轮 B3,eval-only) */
+    /** 两阶段协议的 stage1/stage2;'single' = 单阶段对照协议(eval-only) */
     stage: 'stage1' | 'stage2' | 'single';
     outcome: ClassifierStageOutcome;
     /** 阶段耗时(ms,本地时钟) */
@@ -8566,13 +8612,13 @@ interface ClassifierResult {
      */
     escalatedByModel?: true;
     /**
-     * 逐阶段观测遥测(T-K17 A1,可选):装配层实现按实际执行的阶段附带;
+     * 逐阶段观测遥测(可选):装配层实现按实际执行的阶段附带;
      * 引擎裁决不消费本字段(纯观测面),评估 harness 落盘作续轮证据。
      */
     telemetry?: readonly ClassifierStageTelemetry[];
 }
 /**
- * transcript 切片(T-K2):**仅用户 prompt 文本**——助手文本与工具结果刻意
+ * transcript 切片:**仅用户 prompt 文本**——助手文本与工具结果刻意
  * 排除在外(注入防御:被污染的工具产出不得成为分类器的指令面);截断与
  * 条数上限由装配层记录器负责。
  */
@@ -8580,16 +8626,16 @@ interface ClassifierTranscript {
     userPrompts: readonly string[];
 }
 /**
- * 权限策略语境(协议 v2,doc/optimize/18):引擎在咨询时把「模型据以裁决
- * 的治理事实」随载荷注入——V1–V5b 五轮漏放归因实证:考官(引擎)拿规则
+ * 权限策略语境(协议 v2):引擎在咨询时把「模型据以裁决
+ * 的治理事实」随载荷注入——多轮漏放归因实证:考官(引擎)拿规则
  * 算期望、考生(分类器)没拿到规则,deny 混淆变体/越界读/隐私面被模型按
- * 「通用危险性」世界观放行(CC 把 policy spec 喂进裁决 prompt,15 号对照
- * 采纳)。字段全部来自引擎已有状态,零新 IO:
+ * 「通用危险性」世界观放行(对照 CC 把 policy spec 喂进裁决 prompt 的
+ * 做法采纳)。字段全部来自引擎已有状态,零新 IO:
  * - 规则列表 = **与本工具相关**(ruleMatchesTool)的生效规则原文,按层序;
  *   allow 取 auto 求值视图(宽 allow 丢弃后)——语境必须与判定语义一致;
  * - 会话层授权缓存刻意不注入(其命中早于咨询口,到分类器的调用必然未中);
  * - 每类条数截断(rulesTruncated 如实标注,渲染侧提示列表不全;不禁 safe
- *   ——规则超界是配置形态而非载荷截断,T-K6 截断禁 safe 语义不扩权)。
+ *   ——规则超界是配置形态而非载荷截断,「截断禁 safe」语义不扩权)。
  */
 interface ClassifierPolicyContext {
     /** 咨询发生时的权限模式(引擎定格值;auto 之外 = tightenOutsideAuto 面) */
@@ -8634,7 +8680,7 @@ interface ClassifierInput {
     args: unknown;
     /** Shell 工具的命令结构树(逐段实体 + 注入痕迹);其余工具缺席 */
     commandStructure?: CommandStructure;
-    /** 当前轮用户请求切片(T-K2;注入了 transcript 提供器且非空时附带) */
+    /** 当前轮用户请求切片(注入了 transcript 提供器且非空时附带) */
     transcript?: ClassifierTranscript;
     /** 权限策略语境(协议 v2;引擎注入,harness 从语料同形构造) */
     policyContext?: ClassifierPolicyContext;
@@ -8661,7 +8707,7 @@ interface ClassifierBreakerState {
     totalDenies: number;
     consecutiveDenies: number;
     tripped: 'none' | 'cooldown' | 'session';
-    /** 本会话累计跳闸次数(K19f 指标口;人工复位不清零) */
+    /** 本会话累计跳闸次数(指标口;人工复位不清零) */
     trips: number;
 }
 interface PermissionClassifierConfig {
@@ -8669,28 +8715,28 @@ interface PermissionClassifierConfig {
     /** 咨询超时(毫秒),缺省 DEFAULT_CLASSIFIER_TIMEOUT_MS;超时维持 ask */
     timeoutMs?: number;
     /**
-     * 三级资格档动态解析闭包(T-K23c,16 §4.5):返回当前生效档
+     * 三级资格档动态解析闭包:返回当前生效档
      * (= min(授格档, 天花板, 会话覆盖),合成在装配层)。引擎**每次咨询
      * 现算**(含窄缓存命中路径)——validUntil 会话中越期、天花板/覆盖变更
-     * 均即刻生效,无缓存陈旧窗口(09 §10.2 登记缺口的收口)。软化谓词 =
+     * 均即刻生效,无缓存陈旧窗口。软化谓词 =
      * `mode==='auto' ∧ SOFTEN_RADIUS[resolveTier()][face] ∧ ¬explicitConfigAsk`
      * + 既有 taint 豁免与 classifierAllowEligible 守卫。闭包抛错/返回词表外
-     * 值按 'none' 处理(T-INV-B fail-closed);unsafe→deny 与 unsure→ask
+     * 值按 'none' 处理(fail-closed);unsafe→deny 与 unsure→ask
      * 不经本位,收紧方向不设资格门槛。
      */
     resolveQualificationTier?: () => EffectiveQualificationTier;
     /**
-     * transcript 提供器(T-K2):每次咨询时取当前轮用户 prompt 切片附进
+     * transcript 提供器:每次咨询时取当前轮用户 prompt 切片附进
      * ClassifierInput;缺省或返回 undefined/空集不附。装配层典型实现为
      * createClassifierTranscriptRecorder(入口在轮起跑时回填)。
      */
     transcript?: () => ClassifierTranscript | undefined;
-    /** 熔断跳闸回调(T-K1):装配层接通知面;内核零 IO,不注入即静默 */
+    /** 熔断跳闸回调:装配层接通知面;内核零 IO,不注入即静默 */
     onBreakerTrip?: (trip: ClassifierBreakerTrip) => void;
     /** 时钟注入(熔断冷却窗口计时;缺省 Date.now。测试用) */
     now?: () => number;
     /**
-     * 非 auto 模式收紧开关(T-K6):缺省 false = auto-only(其余模式不咨询,
+     * 非 auto 模式收紧开关:缺省 false = auto-only(其余模式不咨询,
      * 询问面有人裁不花模型钱)。true 时其余模式的 ask 也咨询,但只允许
      * unsafe 收紧(落地形按 rejectEffect:'deny' 收紧为 deny;'ask' 落为携
      * 裁决理由的 ask——本就是 ask,等价于维持,只多了 source='classifier'
@@ -8713,7 +8759,7 @@ interface PermissionClassifierConfig {
      */
     rejectEffect?: 'deny' | 'ask';
     /**
-     * 每会话咨询调用预算(T-K6 成本控制):计**实际发起的模型咨询**
+     * 每会话咨询调用预算(成本控制):计**实际发起的模型咨询**
      * (缓存命中与各类直通不计)。耗尽后咨询口同步直通 ask(超限改询问,
      * 方向安全);缺省 DEFAULT_CLASSIFIER_CALL_BUDGET,非有限值 = 不限。
      */
@@ -8721,9 +8767,9 @@ interface PermissionClassifierConfig {
     /** 预算耗尽单次回调(装配层接通知面;内核零 IO) */
     onBudgetExhausted?: () => void;
     /**
-     * 缓存版本标签(T-K6 窄缓存,05 §10.3「策略与模型/提示词版本」键分量):
+     * 缓存版本标签(窄缓存「策略与模型/提示词版本」键分量):
      * 装配层以协议指纹+stage 模型对构造;缺省空串。变更即全部缓存键失配。
-     * 批 ξ(2026-08-28):扩函数形——/model 切换后 stage 模型对活值贯通时,
+     * 另接受函数形——/model 切换后 stage 模型对活值贯通时,
      * 标签必须随现值换代(否则旧模型时代的 safe 裁定会以同键命中回放到新
      * 模型时代)。引擎每次构键现算;静态装配仍传字符串(零漂移)。
      */
@@ -8790,7 +8836,7 @@ interface AdjudicationOpinion {
  * 契约:三个方法都返回非负整数;estimateMessage ≥ Σ estimateBlock(消息定额
  * 不为负)——账本按块分路时用两者之差归入 overhead 路。
  * profileId(可选):估算配置指纹(系数集哈希)——测量结果与埋点携带,
- * 系数漂移可观测(T-CTX06);自定义实现可缺省。
+ * 系数漂移可观测;自定义实现可缺省。
  */
 interface TokenEstimator {
     /** 估算配置指纹(可选;createDefaultEstimator 恒携带) */
@@ -8811,22 +8857,25 @@ interface RequestBasis {
     readonly toolTokens: number;
 }
 
+/** 等待资源收尾的选项:超时上限与只取消本次等待的信号。 */
 interface ResourceSettleOptions {
     /** 缺省30秒；0只观察，Infinity须显式给。超时不取消底层清理。 */
     timeoutMs?: number;
     /** 只取消此次等待，不abort查询、不影响其他等待者。 */
     signal?: AbortSignal;
 }
+/** 单条资源收尾失败:来源令牌、作用域、操作号、阶段与原抛值。 */
 interface ResourceSettlementFailure {
     /** 进程内稳定来源令牌；空对象只用于身份比较，不写协议/日志。 */
     sourceId?: object;
-    /** 合并查询/压缩回执时标明局部operationId的来源；单scope回执可缺省。 */
+    /** 合并查询/压缩结算结果时标明局部operationId的来源；单scope结算可缺省。 */
     scope?: 'query' | 'compaction';
     operationId: number;
     phase: 'model_stream' | 'tool_executor';
     /** 原抛值（包括undefined）；调用方不得未经处理序列化到日志。 */
     cause: unknown;
 }
+/** 资源收尾结算结果:终态、仍在途的计数、失败窗口与累计失败数。 */
 interface ResourceSettlementResult {
     status: 'completed' | 'failed' | 'timeout' | 'cancelled';
     pending: {
@@ -8838,7 +8887,7 @@ interface ResourceSettlementResult {
     failures: readonly ResourceSettlementFailure[];
     failureCount: number;
     omittedFailures: number;
-    /** 每个真实scope的累计失败；旧第三方回执可缺席，由消费者提供稳定owner。 */
+    /** 每个真实scope的累计失败；旧第三方结算结果可缺席，由消费者提供稳定owner。 */
     sources?: readonly ResourceSettlementSource[];
 }
 interface ResourceSettlementSource {
@@ -8920,13 +8969,13 @@ interface AttachmentRegistryOptions {
     /** session 注入字节预算;默认 256 KiB */
     sessionBudgetBytes?: number;
     /**
-     * T-CTX19 — 注入内容的 tokens 估算缝(观测口径,不参与三态裁决)。
+     * 注入内容的 tokens 估算缝(观测口径,不参与三态裁决)。
      * manager 构造注册表时以自身估算器填充;缺席时快照不产 tokens 字段
      * (不虚构数字)。
      */
     estimateTokens?: (content: string) => number;
 }
-/** T-CTX19 — 快照中的在场附件条目(TTL 内;/context 逐条行数据源) */
+/** 快照中的在场附件条目(TTL 内;/context 逐条行数据源) */
 interface AttachmentActiveEntry {
     type: string;
     sourceIdentity: string;
@@ -8939,7 +8988,7 @@ interface AttachmentActiveEntry {
     estimatedTokens?: number;
 }
 /**
- * T-CTX19 — 注册表只读快照(/context 附件行真实化的数据源)。
+ * 注册表只读快照(/context 附件行真实化的数据源)。
  * 语义注记:entries 只含 TTL 内在场者;injectedBytes 是 session 累计
  * (含已过 TTL/已被压缩失效的历史注入,预算口径);estimatedTokens 为
  * 在场条目合计,压缩成功清签名后归零(引用目标已被摘要替换,如实)。
@@ -8981,7 +9030,7 @@ interface BucketCalibrationState {
  * tokenizer 词元密度的观测,换模型即失效)。
  */
 interface CalibrationSnapshot {
-    /** 门关(标量)路径的 EWMA 因子(T-CTX06 现状态) */
+    /** 门关(标量)路径的 EWMA 因子(单标量校准现状态) */
     factor: number;
     /** 门开(分桶)路径的桶态(仅有观测的桶入快照) */
     buckets: BucketCalibrationState[];
@@ -9005,19 +9054,19 @@ interface CompactionCalibrationDetail {
 }
 
 /**
- * T-C5 — token 六路账本(doc/07 §3.6①)
+ * token 六路账本
  *
- * 分路规格(doc/07 §3.6①):uncached / cacheRead / cacheWrite(cacheCreation)/
+ * 分路规格:uncached / cacheRead / cacheWrite(cacheCreation)/
  * cacheDeleted / output / 本地估算尾部,六路分列不得合并。
  *
- * 「当前上下文占用」口径(doc/07 §3.1):取最近 assistant round 的
+ * 「当前上下文占用」口径:取最近 assistant round 的
  * `input + cache_creation + cache_read`(provider 权威计量,**不含 output**)
  * + 上次实发输入结束后消息的本地估算尾部（含上一 assistant）。无有效锚点
  * (会话开头/锚点失效/刚压缩完)
  * 时退化为全量本地估算,整体记入 estimatedTail 路。
  *
- * cacheDeleted 路说明:contract-v0.4(T-C8 RFC)起 IRUsage 原生携带可选
- * cacheDeletedInputTokens(cached microcompact,doc/07 §3.2),缺席恒 0。
+ * cacheDeleted 路说明:contract-v0.4 起 IRUsage 原生携带可选
+ * cacheDeletedInputTokens(cached microcompact),缺席恒 0。
  * 语义验证(哪些 provider 真报该字段)未完成前,contextTokens 不做
  * cacheDeleted 扣减(避免对未验证语义提前建模)。
  *
@@ -9088,13 +9137,13 @@ interface ContextView {
 interface TailDetail {
     /** tool_result 块(工具结果路) */
     toolResults: number;
-    /** `<system-reminder>` 包裹的注入文本(系统注入路;T-C4 makeReminder 形态) */
+    /** `<system-reminder>` 包裹的注入文本(系统注入路;makeReminder 形态) */
     systemInjected: number;
     /** 其余块(用户输入文本/图片/锚点后 assistant 输出等) */
     other: number;
     /** system 段估算(仅无锚点全量估算时非零;有锚点时 system 已含在权威 input 内) */
     systemSegments: number;
-    /** CM14：固定工具定义估算（有相容authority时为0）。 */
+    /** 固定工具定义估算（有相容authority时为0）。 */
     toolDefinitions?: number;
     /** 消息定额合计(estimateMessage 与 Σ estimateBlock 之差,按契约非负) */
     overhead: number;
@@ -9114,11 +9163,11 @@ interface ContextMeasurement {
     /** 会话累计六路(压缩不清零——成本视角是会话生命周期累计) */
     cumulative: CumulativeUsage;
     /**
-     * T-CTX06:产出本测量的估算器配置指纹(TokenEstimator.profileId 透传;
-     * 估算器未携带指纹时缺席)。埋点(T-CTX14a)与阈值漂移归因消费。
+     * 产出本测量的估算器配置指纹(TokenEstimator.profileId 透传;
+     * 估算器未携带指纹时缺席)。压缩埋点与阈值漂移归因消费。
      */
     estimatorProfileId?: string;
-    /** CM14：仅消息尾部的基础估算，不含system/tools或校准因子。 */
+    /** 仅消息尾部的基础估算，不含system/tools或校准因子。 */
     rawMessageTailTokens?: number;
     /** CM14：固定面；供同屏障复用，不是已发送证据。 */
     basis?: RequestBasis;
@@ -9252,10 +9301,10 @@ interface RequestMeasuredEvent {
     durationMs: number;
     /** provider 上报的首 token 延迟(message_stop.ttftMs 透传;在场才落) */
     ttftMs?: number;
-    /** terminal usage 五路原样(provider 上报才在场;T-CTX05 后恒 exclusive 语义) */
+    /** terminal usage 五路原样(provider 上报才在场;恒 exclusive 语义) */
     usage?: IRUsage;
     /**
-     * T-C5 — 输出侧本地估算(tokens;estimator 与输入侧特征同源):调用方在
+     * 输出侧本地估算(tokens;estimator 与输入侧特征同源):调用方在
      * terminal 随 responseBlocks 提供响应材料时计算。上游缺报 usage 的请求
      * (D4 客户端计量)以「features.estimatedTokens(输入)+ 本值(输出)」
      * 构成估算对;terminal 无响应材料(error/aborted)时缺席。零原文不变量
@@ -9265,7 +9314,7 @@ interface RequestMeasuredEvent {
     /** purpose='compaction' 时关联压缩生命周期事件(started/finished 同 id) */
     compactionId?: string;
     /**
-     * T-CTX18 — 子代理归因标识(与 CompactionStartedEvent.agentId 同语义):
+     * 子代理归因标识(与 CompactionStartedEvent.agentId 同语义):
      * kernel 签发方恒不落本键;子代理运行器包装 compaction.observer 时对
      * onRequestMeasured 一并注入(子代理压缩 fork 的配对行可与父会话区分)。
      */
@@ -9322,34 +9371,35 @@ interface CompactionSegmentSpillDetail {
     chars: number;
     deduplicated: boolean;
 }
+/** 压缩失败的结构化原因词表(session.compaction_failed 事件与诊断消费)。 */
 type CompactionFailureReason = 'nothing_to_compact' | 'model_error' | 'aborted' | 'empty_summary' | 'unexpected_tool_use'
 /**
- * T-CTX01(CTX-P01):模型以 stopReason='max_tokens' 收尾 = 摘要被输出
+ * 模型以 stopReason='max_tokens' 收尾 = 摘要被输出
  * 预算截断。九段模板的尾部锚点段(用户原话/未竟事项/当前工作/下一步)
  * 恰在末尾最先被切,截断摘要不得用于替换历史(静默截断即记忆损坏)。
  */
  | 'summary_truncated'
 /**
- * T-CTX02(CTX-P02):压缩调用独立超时(缺省 90s)触发。与 model_error
+ * 压缩调用独立超时(缺省 90s)触发。与 model_error
  * 分立——超时是资源隔离守门的主动放弃,归因可分辨(表面层文案/熔断
  * 遥测按此区分网络故障与压缩超时)。
  */
  | 'timeout'
 /**
- * T-CTX09(CTX-P12):摘要结构校验不达标(九段标题命中 < 阈值,或长度
+ * 摘要结构校验不达标(九段标题命中 < 阈值,或长度
  * 低于下限)。结构崩坏的摘要(模型退化输出/答非所问)替换历史 = 记忆
- * 损坏,拒绝进入替换链路。阈值出处 doc/optimize/21 §4 W2-3(弱校验
- * ≥6/9 段 + 500 字符起步,误杀率随 C4 遥测再收紧)。
+ * 损坏,拒绝进入替换链路。阈值取弱校验起步值
+ * (≥6/9 段 + 500 字符,误杀率随遥测再收紧)。
  */
  | 'summary_malformed'
 /**
- * T-CTX09(CTX-P12):estimator(摘要消息) ≥ estimator(被移除区)——压缩
+ * estimator(摘要消息) ≥ estimator(被移除区)——压缩
  * 不减反增,替换只会劣化(占用不降 + 细节全丢),宁可不压(Gemini
- * 门禁先例,doc/optimize/21 §4 W2-3)。
+ * 门禁先例)。
  */
  | 'summary_bloated'
 /**
- * K-5(doc/116 §4.2 / doc/117 K-5):CompactRequest.beforeCompact 钩子
+ * CompactRequest.beforeCompact 钩子
  * (装配层注入的压缩前快照落盘等)抛错——压缩尚未发出请求即放弃,历史
  * 不变(快照写失败时不得让「无可恢复拷贝」的压缩继续)。manager 只调用
  * 不知快照语义;归因可分辨(表面层文案/遥测与模型故障分立)。
@@ -9434,9 +9484,9 @@ interface CompactionRoundFailure {
     rescue?: CompactionInputRescue;
 }
 /**
- * T-CTX09 — 摘要质量校验配置(压缩成功前的替换门禁)。
- * 缺省阈值出处:doc/optimize/21 §4 W2-3——九段标题命中 ≥6(弱校验起步,
- * 容忍模型措辞漂移,误杀率进 C4 遥测后再收紧)+ 长度下限 500 字符(防
+ * 摘要质量校验配置(压缩成功前的替换门禁)。
+ * 缺省阈值:九段标题命中 ≥6(弱校验起步,
+ * 容忍模型措辞漂移,误杀率进遥测后再收紧)+ 长度下限 500 字符(防
  * 退化输出);膨胀拒绝(rejectBloat)与模板结构无关,缺省恒开。
  */
 interface SummaryValidationOptions {
@@ -9548,7 +9598,7 @@ interface ToolResultBudgetOptions {
  * 存根——「换 content,不动结构」:消息数与块序完全不变,tool_use/tool_result
  * 配对不变量天然保持。淘汰自旧向新,直到估算水位降回停止线或候选耗尽;
  * 最近 keepRecent 条结果与小结果(< minChars)不参与(近场上下文是模型的
- * 工作记忆,淘汰它们得不偿失);pinned 消息豁免(T-ADV1,见
+ * 工作记忆,淘汰它们得不偿失);pinned 消息豁免(见
  * MicrocompactPlanOptions.isPinned 注释)。
  *
  * 与整体 compact 的分工(doc/07 §3.2 流水线序):result budget(入史 clamp)
@@ -9620,7 +9670,7 @@ interface ToolResultPruneOptions {
     tailChars?: number;
     /** 可再生工具白名单;默认 DEFAULT_PRUNABLE_TOOL_NAMES */
     prunableToolNames?: ReadonlySet<string>;
-    /** pinned 消息豁免(T-ADV1 同款:pin 承诺完整保留,剪枝掏空即违约) */
+    /** pinned 消息豁免(与 microcompact 同款:pin 承诺完整保留,剪枝掏空即违约) */
     isPinned?: (message: IRMessage) => boolean;
     /**
      * CW13-N4 — 剪枝原文落盘(spill store 的 prune 命名空间)。在场时每条
@@ -9729,13 +9779,13 @@ interface ThresholdConfig {
     blockingMargin?: number;
     /**
      * microcompact 触发余量(OPT-05);默认 40_000。
-     * 不变量(T-CTX22 ①,审计 T-12):必须 > autoCompactMargin——否则
+     * 不变量:必须 > autoCompactMargin——否则
      * 「原位淘汰先于整体 compact」的分层失效,resolveThresholds 违约 throw
      * (此前静默失效:两档在同一屏障点相继触发,低成本先行档形同虚设)。
      */
     microcompactMargin?: number;
     /**
-     * 自动压缩比例触发线(T-CTX22 ②,相对 effectiveWindow 的占比,取值域
+     * 自动压缩比例触发线(相对 effectiveWindow 的占比,取值域
      * (0, 1]);默认 DEFAULT_AUTO_COMPACT_RATIO(0.93,出处见该常量)。
      * autoCompactAt = min(绝对余量线, ⌊effectiveWindow × ratio⌋) 取更早者;
      * 传 1 即比例线恒不早于 effectiveWindow,等效关闭比例触发。
@@ -9864,10 +9914,10 @@ interface CompactionAnchorsDetail {
     digestTokens: number;
 }
 /**
- * T-CTX14b — 单次压缩尝试的观测材料(manager.compact 恒产出,随 CompactOutcome
- * 返回)。成功结局的 started/finished 事件由统一应用器据此签发(观测缝迁挂,
- * 见 CompactionObserver 注释);compactionId 与摘要哨兵 uuid 同源(T-CTX22 ④
- * 审计链互指,迁挂不断链)。
+ * 单次压缩尝试的观测材料(manager.compact 恒产出,随 CompactOutcome
+ * 返回)。成功结局的 started/finished 事件由统一应用器据此签发(签发权分布
+ * 见 CompactionObserver 注释);compactionId 与摘要哨兵 uuid 同源,审计链
+ * 可互相定位。
  */
 interface CompactionObservation {
     /** 单次压缩执行的关联 id(started/finished 配对;= 摘要哨兵 uuid) */
@@ -9877,22 +9927,21 @@ interface CompactionObservation {
     /** 墙钟时长(ms;compact 入口到结局返回,观测口径不参与决策) */
     durationMs: number;
     /**
-     * 重试链(⑤ P0-1 retryOf/C5):上一次**失败**压缩(非 no-op)的
-     * compactionId。任意压缩成功后链清空;nothing_to_compact 计划性 no-op
-     * 不推进也不打断(与熔断链同语义,T-CTX03)。manager 生命周期内有效
-     * (跨 runQuery 存续依赖会话级 manager 注入,⑤ §1.3C 已知限界)。
+     * 重试链:上一次**失败**压缩(非 no-op)的 compactionId。任意压缩成功后
+     * 链清空;nothing_to_compact 计划性 no-op 不推进也不打断(与熔断链同语义)。
+     * manager 生命周期内有效(跨 runQuery 存续依赖会话级 manager 注入)。
      */
     retryOf?: string;
-    /** 会话级屏障单调序号(noteBarrier 计数;C5「3 个屏障内」重试窗口判定) */
+    /** 会话级屏障单调序号(noteBarrier 计数;「3 个屏障内」重试窗口判定) */
     barrierSeq: number;
-    /** 压缩 fork 模型标识(OPT-10 降档后如实归因) */
+    /** 压缩 fork 模型标识(降档后如实归因) */
     provider: string;
     model: string;
     /** 阈值快照(见 CompactionThresholdsDetail) */
     thresholds: CompactionThresholdsDetail;
     /** 计划明细(nothing_to_compact 时缺席) */
     plan?: CompactionPlanDetail;
-    /** P-CTX4 K15:锚点层明细(方案门启用且计划落定时在场;基线恒缺席) */
+    /** 锚点层明细(anchorLayer 门启用且计划落定时在场;缺省缺席) */
     anchors?: CompactionAnchorsDetail;
     /**
      * P-CTX4 K16:压缩时刻的分桶校准态(方案门 bucketedCalibration 启用时
@@ -9990,29 +10039,28 @@ interface CompactionDeferredEvent {
     samples?: number;
     /** K21:签发时刻的缓存命中率 EWMA(reason='cache_hot' 恒在场) */
     cacheHitRatio?: number;
-    /** T-CTX18 — 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
+    /** 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
     agentId?: string;
 }
 /**
- * G-A7(P-CTX2 K9)— 折叠机制标记:'breaker_fallback' = blocking×熔断保底
+ * 折叠机制标记:'breaker_fallback' = blocking×熔断保底
  * 硬截断(无模型、无网络;GovernanceTransform.mechanism 经应用器透传)。
  * 缺席 = 常规模型压缩。观测口径,不参与决策。
  */
 type CompactionFoldMechanism = 'breaker_fallback';
-/** T-CTX14b — started 事件载荷(14a 三字段之上按 ⑤ P0-1 扩;非 manager 机制的最小面只有前两项) */
+/** 压缩 started 事件载荷(非 manager 机制的最小面只有 compactionId / trigger 两项) */
 interface CompactionStartedEvent {
     compactionId: string;
     trigger: CompactionTrigger;
-    /** G-A7:折叠机制标记(缺席 = 常规模型压缩) */
+    /** 折叠机制标记(缺席 = 常规模型压缩) */
     mechanism?: CompactionFoldMechanism;
     /** 压缩前估算占用(tokens;manager 机制在场) */
     beforeTokens?: number;
-    /** 压缩前六路分解(doc/07 §3.6①) */
+    /** 压缩前六路分解 */
     beforeBreakdown?: LedgerBreakdown;
     /**
-     * 测量口径注记(⑤ §1.3B 口径地雷):true = 锚点权威 usage + 尾部估算,
-     * false = 全量本地估算。同口径压缩比只能取 anchored=false 样本;
-     * 正式 localBefore/localAfter(同 estimator 含 tools)随 T-CTX15/16b。
+     * 测量口径注记:true = 锚点权威 usage + 尾部估算,false = 全量本地估算。
+     * 同口径压缩比只能取 anchored=false 样本。
      */
     beforeAnchored?: boolean;
     estimatorProfileId?: string;
@@ -10020,44 +10068,44 @@ interface CompactionStartedEvent {
     startedAtMs?: number;
     thresholds?: CompactionThresholdsDetail;
     plan?: CompactionPlanDetail;
-    /** P-CTX4 K15:锚点层明细(方案门启用时在场;语义见 CompactionAnchorsDetail) */
+    /** 锚点层明细(anchorLayer 门启用时在场;语义见 CompactionAnchorsDetail) */
     anchors?: CompactionAnchorsDetail;
-    /** P-CTX4 K16:分桶校准明细(方案门启用时在场;语义见 CompactionCalibrationDetail) */
+    /** 分桶校准明细(bucketedCalibration 门启用时在场;语义见 CompactionCalibrationDetail) */
     calibration?: CompactionCalibrationDetail;
     provider?: string;
     model?: string;
     retryOf?: string;
     barrierSeq?: number;
     /**
-     * T-CTX18 — 子代理归因标识(agent:<agentId> 的 id 半边)。kernel 签发方
+     * 子代理归因标识(agent:<agentId> 的 id 半边)。kernel 签发方
      * 恒不落本键;子代理运行器以包装 observer 注入(与父会话事件区分),
      * 缺席 = 父会话事件。四事件载荷同语义(下同)。
      */
     agentId?: string;
 }
-/** T-CTX14b — finished 事件载荷(outcome 缺席 = 非 manager 折叠机制的最小面) */
+/** 压缩 finished 事件载荷(outcome 缺席 = 非 manager 折叠机制的最小面) */
 interface CompactionFinishedEvent {
     compactionId: string;
     trigger: CompactionTrigger;
-    /** G-A7:折叠机制标记(缺席 = 常规模型压缩) */
+    /** 折叠机制标记(缺席 = 常规模型压缩) */
     mechanism?: CompactionFoldMechanism;
-    /** 结局明细(manager 机制在场;T-CTX14b 起含 observation/atRisk 扩字段) */
+    /** 结局明细(manager 机制在场;含 observation / atRisk 扩字段) */
     outcome?: CompactOutcome;
     /** 压缩 round 墙钟时长(ms;观测口径,不参与任何决策) */
     durationMs?: number;
     /** 非 manager 折叠机制(应用器最小观测面)的移除消息数 */
     foldedRemovedCount?: number;
-    /** T-CTX18 — 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
+    /** 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
     agentId?: string;
 }
-/** T-CTX14b — microcompact 应用事件载荷(cachePrefixInvalidated 恒 true:改写历史必然重建缓存前缀,K2 cache epoch 边界) */
+/** microcompact 应用事件载荷(cachePrefixInvalidated 恒 true:改写历史必然重建缓存前缀,即 cache epoch 边界) */
 interface MicrocompactAppliedEvent extends MicrocompactObservation {
     trigger: CompactionTrigger;
     cachePrefixInvalidated: true;
-    /** T-CTX18 — 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
+    /** 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
     agentId?: string;
 }
-/** T-CTX14b — 工具结果入史 clamp 事件载荷(OPT-05 50K 统一预算;批级聚合) */
+/** 工具结果入史 clamp 事件载荷(50K 统一预算;批级聚合) */
 interface ToolResultsClampedEvent {
     /** 本批被收束的 tool_result 块数 */
     clampedCount: number;
@@ -10069,13 +10117,13 @@ interface ToolResultsClampedEvent {
     persistedCount: number;
     /** 生效的单块内联预算(字符) */
     budgetChars: number;
-    /** T-CTX18 — 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
+    /** 子代理归因标识(语义见 CompactionStartedEvent.agentId) */
     agentId?: string;
 }
 /**
- * T-CTX14a/14b — 压缩生命周期只读观测缝(kernel 公共 API,非 protocol 事件)。
+ * 压缩生命周期只读观测缝(kernel 公共 API,非 protocol 事件)。
  *
- * 签发权分布(T-CTX14b 观测缝迁挂,批头 T-CTX04a 交接三点):
+ * 签发权分布:
  * - **成功结局**:统一应用器(governance-applier)在折叠变换应用后签发
  *   started/finished——应用器是所有方案效果的必经之门,任何策略机制的
  *   折叠都被同一观测面覆盖;manager.compact 直调方自行消费
@@ -10092,18 +10140,18 @@ interface ToolResultsClampedEvent {
 interface CompactionObserver {
     onCompactionStarted?(event: CompactionStartedEvent): void;
     onCompactionFinished?(event: CompactionFinishedEvent): void;
-    /** T-CTX14b(⑤ P0-3):microcompact 存根化应用观测 */
+    /** microcompact 存根化应用观测 */
     onMicrocompactApplied?(event: MicrocompactAppliedEvent): void;
-    /** T-CTX14b(⑤ P0-3):工具结果入史 clamp 计数观测 */
+    /** 工具结果入史 clamp 计数观测 */
     onToolResultsClamped?(event: ToolResultsClampedEvent): void;
     /**
-     * P-CTX4 K14(机制 3,纯追加可选回调):压缩延迟观测(端点劣化时
-     * baseline 策略跳过本屏障模型压缩)。签发方 = 策略 assess(同步);
-     * 回调异常由签发方吞掉(fail-open 同全家纪律)。
+     * 压缩延迟观测(纯追加可选回调):端点劣化时 baseline 策略跳过本屏障的
+     * 模型压缩。签发方 = 策略 assess(同步);回调异常由签发方吞掉
+     * (fail-open 同全家纪律)。
      */
     onCompactionDeferred?(event: CompactionDeferredEvent): void;
     /**
-     * T-CTX15(⑤ P0-2):压缩 fork 请求的估算配对观测(purpose='compaction',
+     * 压缩 fork 请求的估算配对观测(purpose='compaction',
      * compactionId 与本观测缝生命周期事件同 id 关联)。manager 经
      * CompactionRoundRequest.requestMeasurement 包装透传执行器,fork 请求
      * 构造后提取特征、terminal 后合并 usage 回调一次。
@@ -10116,10 +10164,9 @@ interface ContextManagerCompactionOptions {
     /** 摘要消息前导句(注入缝);默认 DEFAULT_SUMMARY_PREAMBLE */
     summaryPreamble?: string;
     /**
-     * T-CTX02(接口冻结):压缩 round 模型调用超时(ms)。缺省 90_000(待校准
-     * 初始值,随 C3 KPI 校准);独立于主查询超时——压缩是可失败的辅助调用,
-     * 不得吃满主查询预算。
-     * 语义(2026-08-13 进展感知修正):空闲闸——流无进展 timeoutMs 才判死;
+     * 压缩 round 模型调用超时(ms)。缺省 90_000;独立于主查询超时——压缩是
+     * 可失败的辅助调用,不得吃满主查询预算。
+     * 语义(进展感知):空闲闸——流无进展 timeoutMs 才判死;
      * 生成推进中受 × COMPACTION_PROGRESS_HARD_CAP_FACTOR 硬上限封顶,不再
      * 以总时长误杀(出处见 DEFAULT_COMPACTION_TIMEOUT_MS 注释)。
      */
@@ -10127,23 +10174,23 @@ interface ContextManagerCompactionOptions {
     /** 保留最近完整 round 数;默认 2 */
     keepRecentRounds?: number;
     /**
-     * 首条用户消息(任务锚点)恒保留不参与折叠(T-C10 保留策略)。
-     * 默认 false 与 T-C5 行为一致;查询环自建的 manager 默认开启。
+     * 首条用户消息(任务锚点)恒保留不参与折叠。
+     * 默认 false(直接构造的 manager 沿历史行为);查询环自建的 manager 默认开启。
      */
     keepFirstUserMessage?: boolean;
     /**
-     * T-CTX14a:压缩生命周期观测缝(装配层注入,消费写 context-events.jsonl)。
+     * 压缩生命周期观测缝(装配层注入,消费写 context-events.jsonl)。
      * 缺省不观测,行为与未接缝逐字节一致。
      */
     observer?: CompactionObserver;
     /**
-     * T-CTX09:摘要质量校验(结构 + 膨胀;透传执行器)。缺省启用 v2 九段
+     * 摘要质量校验(结构 + 膨胀;透传执行器)。缺省启用 v2 九段
      * 规格;`false` 全关——注入自定义 instructionTemplate(非九段结构)时
      * 的逃生门,默认模板下不应关闭。
      */
     summaryValidation?: SummaryValidationOptions | false;
     /**
-     * T-CTX08(CTX-P13):转录回查路径提示——装配层传会话 journal 的磁盘
+     * 转录回查路径提示——装配层传会话 journal 的磁盘
      * 路径(字符串,或求值闭包:纪元轮换后 journal 目录随 sink.currentSessionId
      * 变化,闭包形态使摘要恒指向压缩时刻的**当前**转录文件)。在场时摘要
      * 消息尾部追加回查段(compaction.buildTranscriptLookbackSection);缺省/
@@ -10154,15 +10201,15 @@ interface ContextManagerCompactionOptions {
      */
     transcriptHint?: string | (() => string | undefined);
     /**
-     * P-CTX3(L3 分级衰减,doc/34 §3.4 机制 2):microcompact 选量策略升级
-     * 的灰度门。缺席/enabled=false = 现状自旧向新选量,逐字节零漂移
+     * microcompact 选量策略(分级衰减)的灰度门。缺席/enabled=false =
+     * 现状自旧向新选量,逐字节零漂移
      * (baseline 方案恒缺席);启用后按三维衰减分(龄×体积×被取代)选序,
      * 并以 hysteresisTokens 下探停止水位(摊薄缓存前缀重建频次)。
      * 取值链:MicrocompactRequest.decay(请求级)> 本构造级配置。
      */
     toolResultDecay?: ToolResultDecayConfig;
     /**
-     * P-CTX4 K14(机制 4 半开半边)— 熔断半开探测指数退避门。缺席/false =
+     * 熔断半开探测指数退避门。缺席/false =
      * 现状固定间隔(AUTO_COMPACT_HALF_OPEN_BARRIERS,基线恒缺席零漂移);
      * true 时探测间隔 = HALF_OPEN × 2^min(熔断后连败数, 指数硬帽)
      * (3→6→12→24 屏障),防劣化端点每 3 屏障固定烧一次探测超时;探测
@@ -10170,7 +10217,7 @@ interface ContextManagerCompactionOptions {
      */
     halfOpenBackoff?: boolean;
     /**
-     * P-CTX4 K15(doc/34 §3.4 机制 1)— 锚点层 L1 灰度门。缺席/enabled=false
+     * 锚点层灰度门。缺席/enabled=false
      * = 现状(压缩请求不拼锚点摘要,逐字节零漂移;/pin 管理面在 manager API
      * 上恒可用,但无消费)。启用后压缩计划落定时对将折叠区抽取锚点、拼
      * digest 追加进摘要附加指令(锚点是摘要的「不得稀释」清单),预算超限
@@ -10181,13 +10228,13 @@ interface ContextManagerCompactionOptions {
         budgetTokens?: number;
     };
     /**
-     * P-CTX4 K16(doc/34 §3.4 机制 5 / G-A9)— 估算-校准闭环灰度门。缺席/
-     * enabled=false = 现状 T-CTX06 单标量 EWMA(压缩后重置,逐字节零漂移)。
+     * 估算-校准闭环灰度门。缺席/
+     * enabled=false = 现状单标量 EWMA(压缩后重置,逐字节零漂移)。
      * 启用后三件事(细节见 calibration.ts 模块头):校准因子按尾部内容特征
      * 分桶(CJK/JSON/混排/纯文本)、校准态跨压缩持久(压缩成功仅失效配对
      * 基线)、水位评估按桶置信度加安全边际(低置信宁可早压;
      * confidenceMarginRatio 缺省 DEFAULT_CONFIDENCE_MARGIN_RATIO=0.1)。
-     * CM14：门开/关均仅训练固定面相容的相邻实发输入差分；首轮或固定面
+     * 门开/关均仅训练固定面相容的相邻实发输入差分；首轮或固定面
      * 变化后的全量估算不能把 system/tools 的误差训练成消息密度。
      */
     bucketedCalibration?: {
@@ -10195,16 +10242,16 @@ interface ContextManagerCompactionOptions {
         confidenceMarginRatio?: number;
     };
     /**
-     * CW14-N5 — 压缩段回查节门(fold 迁移证据保全的**模型可见半边**;新
+     * 压缩段回查节门(fold 迁移证据保全的**模型可见半边**;新
      * 行为开关化)。缺席/false = 摘要字节现状零漂移;true 且请求携 spill 且
      * 段落盘成功时,摘要尾部追加回查节(buildSegmentLookbackSection,指向
      * 被折叠段的落盘投影)。段落盘本身(非模型可见)不受本门控制——spill
-     * 在场即执行(N4 既定接线,证据保全恒不挑时机)。
+     * 在场即执行(证据保全恒不挑时机)。
      */
     segmentLookback?: boolean;
 }
 /**
- * T-CTX22 ⑥(CC M-20)— 压缩后派生态失效清单条目。压缩改变「模型已经看过
+ * 压缩后派生态失效清单条目。压缩改变「模型已经看过
  * 什么」这一全局事实,一切以此为前提的派生态(差分基线/校准态/签名缓存)
  * 必须在压缩成功后同步失效,否则出现「模型引用它已看不见的内容」类幽灵
  * bug。集中一份清单统一执行(而非散落各处),失效点可枚举、可锁测。
@@ -10251,48 +10298,48 @@ interface ContextAssessment {
 /** manager 层压缩请求(round 粒度计划与执行参数由本类代算) */
 interface CompactRequest {
     view: ContextView;
-    /** CM-02：已报摘要用量入辅助账后同步通知；取消等待方可保留已知费用。 */
+    /** 已报摘要用量入辅助账后同步通知；取消等待方可保留已知费用。 */
     onUsage?: (usage: IRUsage) => void;
-    /** 压缩 fork 同模型(doc/07 §3.2);调用方可显式降档 */
+    /** 压缩 fork 缺省同模型;调用方可显式降档 */
     model: ResolvedModel;
     trigger: CompactionTrigger;
     signal?: AbortSignal;
     temperature?: number;
-    /** fork 采样参数;与 IR 同形含 off 位(C2/R1-P1-2:显式思考关断须原样穿透) */
+    /** fork 采样参数;与 IR 同形含 off 位(显式思考关断须原样穿透) */
     thinking?: {
         budget?: number;
         off?: boolean;
     };
     /**
      * 覆盖压缩输出预算。缺省 = thresholds.compactOutputBudget;调用方应传
-     * min(模型 maxOutput, compactOutputBudget)(doc/07 §3.1 summaryReserve
-     * 语义——模型能力位在装配层,本类不感知 provider capability)。
+     * min(模型 maxOutput, compactOutputBudget)(summaryReserve 语义——模型
+     * 能力位在装配层,本类不感知 provider capability)。
      */
     maxTokens?: number;
     /** 用户附加摘要指令(/compact [instructions]);追加在模板后,只调焦点 */
     instructions?: string;
-    /** T-CTX02(接口冻结):本次压缩调用超时(ms);覆盖 compaction.timeoutMs 配置 */
+    /** 本次压缩调用超时(ms);覆盖 compaction.timeoutMs 配置 */
     timeoutMs?: number;
     /**
-     * T-CTX08:本次压缩的转录回查路径提示;覆盖 compaction.transcriptHint
-     * 构造级配置(取值链与 timeoutMs 同构)。T-CTX04a 起装配层经
-     * QueryCompactionOptions.transcriptHint 直达构造级配置(此前的
-     * compact 包装缝已退役),本请求级位保留给调用方显式覆盖。
+     * 本次压缩的转录回查路径提示;覆盖 compaction.transcriptHint
+     * 构造级配置(取值链与 timeoutMs 同构)。装配层通常经
+     * QueryCompactionOptions.transcriptHint 直达构造级配置,本请求级位
+     * 保留给调用方显式覆盖。
      */
     transcriptHint?: string | (() => string | undefined);
     /**
-     * CW14-N5 — fold 迁移证据保全存储(spill kind='compaction-segment'
+     * fold 迁移证据保全存储(spill kind='compaction-segment'
      * 接线):在场时被折叠段的确定性渲染落 spill content 空间(microcompact
-     * 请求的 spill 同源同store,baseline 会话透传)。缺席 = 不落盘(N4 前
-     * 现状)。模型可见回查节另由构造级 segmentLookback 门控制。
+     * 请求的 spill 同源同store,baseline 会话透传)。缺席 = 不落盘。
+     * 模型可见回查节另由构造级 segmentLookback 门控制。
      */
     spill?: SpillStore;
     /**
-     * K-5(doc/116 §4.2 / doc/117 K-5)— 压缩前钩子(装配层注入;典型 = 落
-     * pre_compaction 上下文快照)。时机:计划落定(有可压内容)之后、压缩
+     * 压缩前钩子(装配层注入;典型 = 落 pre_compaction 上下文快照)。
+     * 时机:计划落定(有可压内容)之后、压缩
      * fork 请求发出之前——no-op 结局不调用(无可压不白落快照),PreCompact
      * hook 阻断径亦不达此处。manager 只调用不知快照:返回值的 checkpointId
-     * 原样冒泡到结局(成功/失败两形皆携,D-11 A 失败快照保留);钩子抛错 →
+     * 原样冒泡到结局(成功/失败两形皆携,失败时已落快照保留);钩子抛错 →
      * 失败结局 reason='before_compact_failed',请求不发出,历史不变。
      */
     beforeCompact?: (view: ContextView) => Promise<{
@@ -10305,23 +10352,23 @@ interface CompactOutcomeSuccess extends CompactionRoundSuccess {
     measurementBefore: ContextMeasurement;
     measurementAfter: ContextMeasurement;
     /**
-     * K-5:beforeCompact 钩子返回的快照 id(压缩前完整上下文的可恢复拷贝);
+     * beforeCompact 钩子返回的快照 id(压缩前完整上下文的可恢复拷贝);
      * 钩子缺席/未返回 id 时缺席。session.compacted 事件与 journal
-     * compact_boundary 记录据此携 checkpointId(contract-v0.22)。
+     * compact_boundary 记录据此携 checkpointId。
      */
     checkpointId?: string;
     /**
-     * 压缩执行 id 冒泡(contract-v0.15,RFC-CTX12-2):与观测材料
+     * 压缩执行 id 冒泡:与观测材料
      * observation.compactionId、摘要哨兵 uuid、meta.compactionId 同源——
      * `session.compacted` 事件与 journal `compact_boundary` 记录的关联键由此
-     * 冒给签发/写入方。类型层可选防破字面量构造方(observation 同款纪律);
-     * manager.compact 与 hardTrim(G-A7)运行时恒产出。
+     * 冒给签发/写入方。类型层可选,防破字面量构造方(observation 同款纪律);
+     * manager.compact 与 hardTrim 运行时恒产出。
      */
     compactionId?: string;
     /**
-     * T-CTX14b 观测材料(类型层可选防破字面量构造方;manager.compact 运行时
+     * 观测材料(类型层可选,防破字面量构造方;manager.compact 运行时
      * 恒产出——CostBucketSnapshot.cacheMetrics 同款纪律)。成功结局的
-     * started/finished 事件由统一应用器据此签发。G-A7 例外:hardTrim 结局
+     * started/finished 事件由统一应用器据此签发。例外:hardTrim 结局
      * **恒缺席**本字段(零模型投入,无 provider/model/durationMs 可归因),
      * 观测走应用器最小面 + mechanism 标记。
      */
@@ -10332,13 +10379,13 @@ interface CompactOutcomeFailure extends CompactionRoundFailure {
     measurementBefore: ContextMeasurement;
     /**
      * 本次失败后的连续自动失败计数。manual 失败不计入;nothing_to_compact
-     * 是计划性 no-op(T-CTX03),既不推进也不打断连续失败链。
+     * 是计划性 no-op,既不推进也不打断连续失败链。
      */
     consecutiveAutoCompactFailures: number;
-    /** T-CTX14b 观测材料(可选性理由同 CompactOutcomeSuccess.observation) */
+    /** 观测材料(可选性理由同 CompactOutcomeSuccess.observation) */
     observation?: CompactionObservation;
     /**
-     * K-5(D-11 A):beforeCompact 已落的快照 id——压缩失败不回滚已落的盘,
+     * beforeCompact 已落的快照 id——压缩失败不回滚已落的盘,
      * 结局携 id 供调用方决定(before_compact_failed 时恒缺席:钩子未成功)。
      */
     checkpointId?: string;
@@ -10440,51 +10487,51 @@ declare class ContextManager {
     /** 解析后的阈值(只读;供状态栏/斜杠命令展示) */
     get thresholds(): ResolvedThresholds;
     /**
-     * 附件注册表观测快照(只读;/context 展示与 T-C10 诊断,不属于七接口)。
-     * T-CTX19 起为完整快照(在场附件数/逐条 TTL 剩余/估算 tokens/预算),
+     * 附件注册表观测快照(只读;/context 展示与压缩诊断,不属于七接口)。
+     * 完整快照(在场附件数/逐条 TTL 剩余/估算 tokens/预算),
      * 旧形态 {round, injectedBytes} 是其结构子集,消费方零迁移。
      */
     get attachmentStats(): AttachmentStats;
-    /** T-CTX03:nothing_to_compact no-op 累计(只读观测;T-CTX14a 埋点消费) */
+    /** nothing_to_compact no-op 累计(只读观测;压缩生命周期埋点消费) */
     get noopCompactCount(): number;
     /**
-     * T-CTX06:EWMA 校准因子(只读观测;1 = 未校准或刚重置)。
-     * P-CTX4 K16 门开时标量路径不更新(恒 1),分桶态看 calibrationState()。
+     * EWMA 校准因子(只读观测;1 = 未校准或刚重置)。
+     * bucketedCalibration 门开时标量路径不更新(恒 1),分桶态看 calibrationState()。
      */
     get calibrationFactor(): number;
     /**
-     * P-CTX4 K16 — 校准态快照(只读观测;/context 展示与锁测消费)。
-     * 门关:buckets 恒空数组 + factor = 标量因子(T-CTX06 现状态)。
+     * 校准态快照(只读观测;/context 展示与锁测消费)。
+     * 门关:buckets 恒空数组 + factor = 标量因子(单标量 EWMA 现状态)。
      */
     calibrationState(): CalibrationSnapshot;
-    /** P-CTX4 K16 — 跨 manager 重建搬运出口(driver 切方案携带;切模不携带) */
+    /** 跨 manager 重建搬运出口(driver 切方案携带;切模不携带) */
     exportCalibration(): CalibrationSnapshot;
     /**
-     * P-CTX4 K16 — 搬运入口:**仅门开时生效**(门关 no-op——基线标量路径的
-     * 重建归零语义是 T-CTX04b 锁定行为,导入会构成漂移)。因子按钳制域收
+     * 搬运入口:**仅门开时生效**(门关 no-op——基线标量路径的
+     * 重建归零语义是既定行为,导入会构成漂移)。因子按钳制域收
      * 口、观测数取非负整数(防手工快照越界);配对基线不搬(旧测量对旧
      * 历史,新实例首次 measure 自然重建)。
      */
     importCalibration(snapshot: CalibrationSnapshot): void;
     /**
-     * T-CTX22 ⑥ — 登记压缩后必须失效/重置的外部派生态(装配层调用;如
+     * 登记压缩后必须失效/重置的外部派生态(装配层调用;如
      * reminder 首屏差分基线)。压缩成功后按「内置清单 → 登记序」统一执行;
      * run 抛错被吞(fail-open),不影响压缩收尾与其余清单项。
      */
     registerPostCompactInvalidation(entry: PostCompactInvalidation): void;
-    /** T-CTX22 ⑥ — 失效清单登记名快照(观测/锁测断言;含内置三件) */
+    /** 失效清单登记名快照(观测/锁测断言;含内置三件) */
     get postCompactInvalidationIds(): readonly string[];
     /**
-     * T-CTX04a — 派生态失效清单的公开执行入口(统一应用器消费:非 baseline
+     * 派生态失效清单的公开执行入口(统一应用器消费:非 baseline
      * 策略的历史折叠变换应用后,由应用器调用本方法统一失效锚点/附件签名/
      * 校准态与外部登记项)。baseline 的 compact/microcompact 路径**不经**
      * 本入口——manager 内建执行时序在 measurementAfter 之前(压缩后测量
      * 必须基于失效后的干净状态),应用器侧重复执行会清空刚建立的校准配对
-     * 基线(T-CTX06 校准链漂移),故 baseline 变换标记 invalidations='strategy'。
+     * 基线(校准链漂移),故 baseline 变换标记 invalidations='strategy'。
      */
     runPostCompactInvalidations(): void;
     /**
-     * T-CTX03 — 屏障点计时(半开熔断的时基):查询环每个压缩屏障点调用一次。
+     * 屏障点计时(半开熔断的时基):查询环每个压缩屏障点调用一次。
      * 熔断压制期间每计满 AUTO_COMPACT_HALF_OPEN_BARRIERS 个屏障,assess 放行
      * 一次探测压缩(成功清零熔断计数恢复正常,失败继续压制);任何 auto 压缩
      * 尝试(含探测与 no-op)都会清零本计时,压制期的失败信息因此有界
@@ -10492,7 +10539,7 @@ declare class ContextManager {
      */
     noteBarrier(): void;
     /**
-     * T-CTX14b — 观测缝只读出口:查询环/空闲直压据此把 observer 交给统一
+     * 观测缝只读出口:查询环/空闲直压据此把 observer 交给统一
      * 应用器(成功结局签发)与工具结果收束缝(clamp 计数)。外部注入 manager
      * 形态下构造方持有的观测缝经此对查询环可达。
      */
@@ -10503,9 +10550,9 @@ declare class ContextManager {
      * 校准读取 receipt 冻结的旧 authority，后来的测量/新锚点不会串用。
      */
     recordUsage(entry: RoundUsageInput): void;
-    /** CM14：请求观测与固定面使用同一基础估算器，尤其外部注入manager时。 */
+    /** 请求观测与固定面使用同一基础估算器，尤其外部注入manager时。 */
     get requestEstimator(): TokenEstimator;
-    /** CM14：主模型/客户端绑定改变时旧tokenizer观测不能沿用。 */
+    /** 主模型/客户端绑定改变时旧tokenizer观测不能沿用。 */
     bindRequestModel(model: ResolvedModel, client: ModelClient): void;
     /** 在治理前捕获固定输入，后续压缩/输出预算/实际发送均使用同一副本。 */
     prepareRequestBasis(view: ContextView): RequestBasis;
@@ -10520,7 +10567,7 @@ declare class ContextManager {
     }): SentRequestReceipt;
     discardSentRequest(receipt: SentRequestReceipt): void;
     /**
-     * AP-SP:请求固定输入（如 system 段）变化后，旧权威 usage 不再代表当前前缀。
+     * 请求固定输入（如 system 段）变化后，旧权威 usage 不再代表当前前缀。
      * 只失效测量锚点和待配对校准基线，使下一次 measure 全量计入新 system；
      * 已学习密度因子、累计用量、附件/TTL、历史 pin、压缩熔断均保留。
      * 不等同历史压缩，不能运行 postCompact 失效清单；调用方须先判断实际输入已变化，
@@ -10528,21 +10575,21 @@ declare class ContextManager {
      */
     invalidateRequestBasis(): void;
     /**
-     * K21 — 当前缓存命中率 EWMA 只读出口(null = 尚无观测)。消费方:
+     * 当前缓存命中率 EWMA 只读出口(null = 尚无观测)。消费方:
      * baseline 策略缓存感知门 + microcompact 观测材料。
      */
     cacheHitRatio(): number | null;
     /**
-     * 测量当前上下文占用:锚点权威计量 + 本地估算尾部,六路分解(doc/07 §3.1)。
-     * T-CTX06:消息尾部经校准因子微调，system/tools 保持基础估算。
+     * 测量当前上下文占用:锚点权威计量 + 本地估算尾部,六路分解。
+     * 消息尾部经校准因子微调，system/tools 保持基础估算。
      * 本次测量独立留基线，实际发送方 prepareSentRequest 后才可配对 usage。
-     * P-CTX4 K16(门开):估算前按 ledger 同一锚点判定取尾部范围并归桶
+     * bucketedCalibration 门开:估算前按 ledger 同一锚点判定取尾部范围并归桶
      * (classifyTailBucket),应用缝随之切到该桶因子;基线记录归桶与锚点
      * 口径供观测入账。门关零触碰(#lastBucket 不更新,分桶 Map 恒空)。
      */
     measure(view: ContextView): ContextMeasurement;
     /**
-     * CM-18：请求装配后新增尾材料的只读计额。只比较受影响尾消息，
+     * 请求装配后新增尾材料的只读计额。只比较受影响尾消息，
      * 使用当前测量已选定的校准因子；不刷新桶/配对基线/锚点，也不全量 measure。
      * before 缺席表示新增一条消息，按账本同口径包含消息定额。
      */
@@ -10553,19 +10600,19 @@ declare class ContextManager {
     estimateRequestTailDelta(before: IRMessage | undefined, after: IRMessage, measurement?: ContextMeasurement): number;
     /**
      * 水位评估:测量 → 阈值代数 → 区带/触发建议;熔断中压制自动压缩建议。
-     * T-CTX03 半开:压制期间每隔 AUTO_COMPACT_HALF_OPEN_BARRIERS 个屏障点
+     * 半开探测:压制期间每隔 AUTO_COMPACT_HALF_OPEN_BARRIERS 个屏障点
      * (noteBarrier 计时)放行一次探测压缩——探测成功由 compact 清零计数
      * 恢复正常,失败继续压制。本方法只读(计时推进在 noteBarrier/compact)。
      */
     assess(view: ContextView): ContextAssessment;
     /**
-     * T-CTX13-②(CTX-P10)— 以既有测量做阈值评估(不重新 measure):同一
+     * 以既有测量做阈值评估(不重新 measure):同一
      * 屏障内 microcompact 之后的 compact 判定复用其 measurementAfter,消除
      * 「同屏障二次全量估算」——第二次估算与淘汰选量投影可能相互矛盾,
      * 淘汰刚回收完又立刻整体压缩的同屏障双压由此根治。熔断/半开语义与
      * assess 完全一致(同为只读;计时推进在 noteBarrier/compact)。
-     * P-CTX4 K16(门开):水位判定按 contextTokens + 置信度安全边际(机制 5
-     * 「低置信留更大边际」——桶内观测不足时尾部估算加临时边际,宁可早压
+     * bucketedCalibration 门开:水位判定按 contextTokens + 置信度安全边际
+     * (「低置信留更大边际」——桶内观测不足时尾部估算加临时边际,宁可早压
      * 不越界;观测饱和边际归零)。边际只进决策,measurement 如实不动;
      * 明细随 assessment.calibration 在场。门关零漂移(边际恒缺席)。
      */
@@ -10613,16 +10660,15 @@ declare class ContextManager {
      * 预算语义,恒不提醒;autoCompactAt < 启用下限(20K)同样恒不提醒——
      * 提醒自身 ~100 tokens,极小预算下注入本身即可观挤兑(玩具窗实测把
      * 水位推回压缩线引发压缩连锁),成本占比论证见 entry-budgets 常量注释。
-     * 占用入参由查询环钳制点透传(同屏障同一测量,不新增 measure 调用,
-     * T-CTX13-② 口径纪律)。
+     * 占用入参由查询环钳制点透传(同屏障同一测量,不新增 measure 调用)。
      */
     takeContextBudgetReminder(contextTokens: number): ContextBudgetPayload | undefined;
     /**
      * 标记消息为 pinned:压缩时其所在完整 round 整体保留(round 粒度,保配对)。
      *
-     * **对象身份契约(X3-2a K-5 登记)**:pin 按消息对象引用标记(WeakSet),
-     * 换新对象即丢标——microcompact 存根替换径已明文豁免 pinned(T-ADV1,
-     * 见 #microcompact planOptions);但查询环 meta 合并径(run-query 末条
+     * **对象身份契约**:pin 按消息对象引用标记(WeakSet),
+     * 换新对象即丢标——microcompact 存根替换径已明文豁免 pinned(pin 承诺完整
+     * 保留,见 #microcompact planOptions);但查询环 meta 合并径(run-query 末条
      * user 消息整体换新对象)未防,**末条 user 消息的 pin 可能因 meta 合并
      * 静默失效**。现状 pin()/unpin() 无生产调用方(全仓仅测试),按设计债
      * 登记不改行为;若未来接线生产消费方,改法二选一:meta 合并改就地追加
@@ -10634,7 +10680,7 @@ declare class ContextManager {
     /**
      * 手动锚点登记(/pin <text>):过短/空文本返回 null;重复登记升级为
      * 手动源(用户显式确认抽取锚点)并回报 duplicate=true。新鲜度取当前
-     * 会话 round;估算用 base 估算器(登记时一次性,T-CTX19 附件同纪律)。
+     * 会话 round;估算用 base 估算器(登记时一次性,与附件注册表同纪律)。
      */
     pinAnchor(text: string): {
         entry: AnchorEntry;
@@ -10694,15 +10740,15 @@ declare class ContextManager {
      * 执行一次压缩:制定 round 粒度计划 → 注入的 ModelClient 打一轮完整
      * API round → 产出摘要消息、压缩后消息数组与 session.compacted 所需数据。
      * 成功后:测量锚点重置(旧 anchorIndex 失效)、附件签名清空(引用目标
-     * 已被摘要替换)、自动熔断计数清零、校准态重置(T-CTX06)。失败(含无
+     * 已被摘要替换)、自动熔断计数清零、校准态重置。失败(含无
      * 可压缩)不改动任何输入。
-     * T-CTX14b 观测缝迁挂:观测材料(CompactionObservation)恒随 outcome
+     * 观测缝:观测材料(CompactionObservation)恒随 outcome
      * 返回;**成功结局的 started/finished 由统一应用器签发**(折叠效果的
      * 必经之门),失败/no-op 结局不经应用器、保留本方法返回面签发(回调
      * 异常吞掉,fail-open 不影响压缩主链)。直调本方法的消费方(不经应用器)
      * 对成功结局自行消费 outcome.observation。
      *
-     * **非重入契约(X3-2a K-9 登记)**:compact/microcompact 的 await 窗口
+     * **非重入契约**:compact/microcompact 的 await 窗口
      * 无重入护栏——并发调用会交错破坏账本/校准基线/派生态失效清单的时序。
      * 互斥责任在装配层:查询环屏障点单点调用、空闲直压与查询环互斥(driver
      * 纪律),现状全部调用面守住。第三方直调本 API 须自行保证同一实例上
@@ -10771,16 +10817,16 @@ type EndpointHealthProbe = () => EndpointHealthSnapshot | undefined;
  *   策略不直接持有消息数组可变引用,只产出变换数据;任何方案的效果必经
  *   应用器落地(围栏 1「出口不可绕过」)。
  *
- * TransformOp 封闭集定形记录(24 号 §2.2 初稿 → W2 需求暴露后定稿):
+ * TransformOp 封闭集定形记录:
  * - `replaceWithSummary`:压缩折叠(消费方 = baseline compact);
  * - `stubToolResult`:tool_result 原位存根化(消费方 = baseline microcompact);
  * - `insertSyntheticPair`:合成 tool 对注入(消费方 = baseline 压缩后文件
- *   重建,T-CTX10);
+ *   重建);
  * - `removeRange`:整消息区间移除(消费方 = trivial-trim 玩具策略;也是
  *   时间型 microcompact/trim 类研究项机制的基础操作)。
  * 初稿成员 `insertReminder` 裁掉:无真实消费方——reminder 注入走查询环
- * OPT-01 屏障缝(非治理变换);hook(T-CTX23)的指令注入走 directive 输入
- * 面(GovernanceDirective.instructions,24 号 §2.2 明文),不是消息变换。
+ * 屏障缝(非治理变换);PreCompact hook 的指令注入走 directive 输入
+ * 面(GovernanceDirective.instructions),不是消息变换。
  * 枚举以 TRANSFORM_OP_KINDS 快照锁测封口,扩值走 kernel API 评审。
  */
 
@@ -10812,7 +10858,7 @@ interface ReplaceWithSummaryOp {
     cutIndex: number;
     /** 移除的消息 index(升序;非空) */
     removedIndices: readonly number[];
-    /** 单独保留前移的任务锚点 index(T-C10 保留策略;缺席 = 无锚点提取) */
+    /** 单独保留前移的任务锚点 index(首条用户消息保留策略;缺席 = 无锚点提取) */
     keptAnchorIndex?: number;
     /** 整体保留前移的 pinned 消息 index(升序;可为空) */
     keptPinnedIndices: readonly number[];
@@ -10824,7 +10870,7 @@ interface ReplaceWithSummaryOp {
  * 结构」——replacement 必须与原块同 callId(配对不变量),消息数与块序
  * 不变。被触碰的消息以新对象落位(copy-on-write),未触碰消息保持原引用。
  *
- * pin 契约注意(T-ADV1,doc/review/41 §1 E1):应用器没有 pin 视图(pin
+ * pin 契约注意:应用器没有 pin 视图(pin
  * WeakSet 所有权在 ContextManager),不校验目标消息是否 pinned——copy-on-write
  * 换新对象会使按旧引用登记的 pin 标记静默失效(压缩「整 round 保留」承诺
  * 随之丢失)。策略产出本 op 前应自行豁免 pinned 消息(baseline 经
@@ -10838,7 +10884,7 @@ interface StubToolResultOp {
     replacement: ToolResultBlock;
 }
 /**
- * 合成 tool 对注入(T-CTX10 压缩后文件重建):在 index 处插入
+ * 合成 tool 对注入(压缩后文件重建):在 index 处插入
  * [call(assistant tool_call), result(user tool_result)] 两条消息。call 的
  * tool_call id 序列必须与 result 的 tool_result callId 序列一致(对内自闭
  * 配对,插入任何位置不破坏外部配对)。
@@ -10856,7 +10902,7 @@ interface InsertSyntheticPairOp {
  */
 type TransformOp = RemoveRangeOp | ReplaceWithSummaryOp | StubToolResultOp | InsertSyntheticPairOp;
 /**
- * 统一失败形态(24 号 §2.2:沿 W1-1 扩后的 CompactionFailureReason 枚举;
+ * 统一失败形态(沿 CompactionFailureReason 枚举;
  * auto 计熔断/manual 报错的归类由策略引擎内部完成,查询环只消费 message)。
  */
 interface GovernanceFailure {
@@ -10868,7 +10914,7 @@ interface GovernanceFailure {
  * ——以 `turn.error`(scope/message,recoverable=false)前置
  * `turn.aborted`(reason)收口。现状词表:scope ∈ {'compaction',
  * blockingFailFastScope('no_progress')},reason 恒 'prompt_too_long'
- * (T-CTX03 无进展保护 / T-CTX11 blocking 失败分型)。
+ * (无进展保护 / blocking 失败分型)。
  */
 interface GovernanceVerdict {
     scope: string;
@@ -10876,7 +10922,7 @@ interface GovernanceVerdict {
     reason: TerminalReason;
 }
 /**
- * 治理变换(execute 产物;24 号 §2.2 定稿形态)。@experimental
+ * 治理变换(execute 产物)。@experimental
  *
  * 失败(failure 在场)时 ops 必须为空(应用器拒绝混载);no-op(如
  * microcompact 无候选)= ops 为空且无 failure。
@@ -10898,17 +10944,17 @@ interface GovernanceTransform {
     /** 执行后处置建议(fail-fast;缺席 = 继续本轮) */
     verdict?: GovernanceVerdict;
     /**
-     * 派生态失效清单(T-CTX22 ⑥ PostCompactInvalidation)的执行方:
+     * 派生态失效清单(PostCompactInvalidation)的执行方:
      * - 'applier'(缺省):统一应用器在 ops 应用后执行注入的失效闭包
      *   (查询环注入 manager.runPostCompactInvalidations);
      * - 'strategy':策略引擎已在 execute 内部完成——baseline 经
      *   ContextManager.compact/microcompact 的内建清单执行(时序在
      *   measurementAfter 之前,应用器不得重复执行,否则校准配对基线被
-     *   二次清空,T-CTX06 校准链漂移)。
+     *   二次清空,校准链漂移)。
      */
     invalidations?: 'applier' | 'strategy';
     /**
-     * T-CTX14b(⑤ P0-3):microcompact 观测材料——产出 stubToolResult 变换
+     * microcompact 观测材料——产出 stubToolResult 变换
      * 的策略随变换携带(baseline 自 MicrocompactOutcome 投影),统一应用器
      * 在 stub 变换应用后据此签发 `onMicrocompactApplied`。缺席 = 不签发
      * (非 microcompact 语义的 stub 机制不被冒名观测,如实)。
@@ -10931,10 +10977,10 @@ interface GovernanceSnapshot {
     reactive: boolean;
 }
 /**
- * 治理指令(assess 产物;24 号 §2.1 词表 nothing | microcompact | compact
+ * 治理指令(assess 产物;词表 nothing | microcompact | compact
  * | block)。compact 指令的 instructions 由查询环在 PreCompact hook 分发后
- * 注入(manual 用户指令在前、hook additionalContext 在后,T-CTX23 合并次序
- * ——hook 指令注入位在 directive 输入面,24 号 §2.2)。
+ * 注入(manual 用户指令在前、hook additionalContext 在后
+ * ——hook 指令注入位在 directive 输入面)。
  */
 type GovernanceDirective = {
     kind: 'nothing';
@@ -10944,17 +10990,17 @@ type GovernanceDirective = {
     kind: 'compact';
     trigger: CompactionTrigger;
     /**
-     * T-CTX11 blocking 末段闸门语境(auto 径已越阻塞线的强制压缩):
+     * blocking 末段闸门语境(auto 径已越阻塞线的强制压缩):
      * execute 据此产出「成功但无进展 → fail-fast」verdict。
      */
     blockingGate?: boolean;
     /**
-     * G-A7(P-CTX2 K9,C-07 修复)— 熔断保底标记:压缩熔断压制中由
+     * 熔断保底标记:压缩熔断压制中由
      * assess 置位,execute 据此**跳过模型压缩**、走无模型硬截断保底
      * (manager.hardTrim)——不再每屏障硬等压缩超时。覆盖两径:
-     * blockingGate 命中(K9 本体)与 reactive 真溢出自救(实施审计
-     * KA-02 补完——压制期 fork 注定打向劣化端点,保底后主查询重试
-     * 照常)。熔断闭合时恒缺席(行为与现状逐字节一致)。
+     * blockingGate 命中与 reactive 真溢出自救(压制期 fork 注定打向
+     * 劣化端点,保底后主查询重试照常)。熔断闭合时恒缺席
+     * (行为与现状逐字节一致)。
      */
     breakerFallback?: boolean;
     /**
@@ -10966,7 +11012,7 @@ type GovernanceDirective = {
     /** 摘要附加指令(查询环合并 manual 用户指令与 PreCompact hook 注入后填充) */
     instructions?: string;
     /**
-     * K-5:压缩前钩子(查询环自 QueryCompactionOptions.beforeCompact 组装
+     * 压缩前钩子(查询环自 QueryCompactionOptions.beforeCompact 组装
      * 后经本输入面注入,与 instructions 同位;baseline 原样透传
      * CompactRequest.beforeCompact,语义见彼处)。
      */
@@ -10978,10 +11024,10 @@ type GovernanceDirective = {
     verdict: GovernanceVerdict;
 };
 /**
- * 生命周期事件(24 号 §2.1 生命周期行 + 屏障计时):
+ * 生命周期事件(生命周期行 + 屏障计时):
  * - 'barrier':查询环每个压缩屏障点恰发一次(baseline 据此推进半开熔断
  *   计时 noteBarrier,并失效同屏障 microcompact 复用缓存);
- * - setModel/preloadHistory/resetHistory/switchScheme:T-CTX04b 生命周期
+ * - setModel/preloadHistory/resetHistory/switchScheme:生命周期
  *   事件表词表预留——现行装配层对这四径一律整实例重建 manager 与会话,
  *   事件不经此面分发;跨会话存续型策略进场时启用。
  */
@@ -11002,9 +11048,9 @@ interface GovernanceTouchedFileEntry {
     paths: readonly string[];
 }
 /**
- * 工具结果落地视图(§2.1 表「工具结果落地」点位):一批 tool_result 回填
- * 进消息序列前(已过 OPT-05 预算收束的入史形态)。baseline 消费
- * touchedFiles 维护文件触达台账(T-CTX10);results 供未来工具结果治理类
+ * 工具结果落地视图(「工具结果落地」点位):一批 tool_result 回填
+ * 进消息序列前(已过预算收束的入史形态)。baseline 消费
+ * touchedFiles 维护文件触达台账;results 供未来工具结果治理类
  * 机制观察,当前无消费方。
  */
 interface GovernanceToolResultView {
@@ -11015,7 +11061,7 @@ interface GovernanceToolResultView {
 interface GovernanceExecuteContext {
     view: ContextView;
     signal?: AbortSignal;
-    /** CM-02：终帧已报的摘要费用；查询取消可先于 execute 返回，不得丢弃已知用量。 */
+    /** 终帧已报的摘要费用；查询取消可先于 execute 返回，不得丢弃已知用量。 */
     onUsage?: (usage: IRUsage) => void;
 }
 /**
@@ -11026,7 +11072,7 @@ interface GovernanceExecuteContext {
  * 2. assess(snapshot) 第一问;
  * 3. 得 microcompact 指令 → execute → 应用器落地 → assess **复问一次**
  *    (每屏障至多一次 microcompact;复问不得再产 microcompact——baseline
- *    以同屏障复用 measurementAfter 实现,T-CTX13-②);
+ *    以同屏障复用 measurementAfter 实现);
  * 4. 得 compact 指令 → PreCompact hook(查询环)→ execute → 应用器落地
  *    → 事件/悬诺/PostCompact hook → verdict 消费;
  * 5. 得 block 指令 → 查询环 fail-fast。
@@ -11041,10 +11087,10 @@ interface GovernanceSession {
     /** 执行指令产出变换(只接受 microcompact/compact 指令) */
     execute(directive: GovernanceDirective, context: GovernanceExecuteContext): Promise<GovernanceTransform>;
     /**
-     * T-C12 — 本屏障内对**当前历史形态**的最近一次水位评估(可选)。
+     * 本屏障内对**当前历史形态**的最近一次水位评估(可选)。
      * 查询环输出预算钳制点(IR 构造前)复用其 measurement 计算窗口余量,
-     * 避免同屏障多余的全量估算遍(T-CTX13-② 三遍结构锁的口径延伸)与
-     * 校准配对基线被重复刷新(T-CTX06)。
+     * 避免同屏障多余的全量估算遍(三遍结构锁的口径延伸)与
+     * 校准配对基线被重复刷新。
      * 契约:返回的评估必须对应 assess/execute 协议走完后的消息数组现状
      * (microcompact 后 = measurementAfter 口径;compact 成功后 = 压缩后
      * measurementAfter 口径);无该屏障评估(manual/reactive 语境零测量、
@@ -11226,24 +11272,25 @@ interface MetricsRegistry {
 }
 
 /**
- * T-C1 — 查询环显式状态机(《07》§1.6 ①:显式状态 + while(true),非递归)。
+ * 查询环显式状态机(显式状态 + while(true),非递归)。
  *
  * 七态语义:
  * - idle:               runQuery 已创建、事件流尚未开始消费;
  * - assembling:         组装下一次模型请求(唯一注入屏障点:排队输入与上一轮
- *                       tool_result 都只在进入本态时消费,见《07》§1.6 ⑨);
+ *                       tool_result 都只在进入本态时消费);
  * - streaming:          模型流式调用进行中;
  * - awaiting_permission:工具执行被权限询问挂起(由 ToolExecutor 信号驱动,
- *                       permission 决策本身是 T-C2/T-C3 的职责);
+ *                       permission 决策本身是调度器/权限引擎的职责);
  * - executing_tools:    工具批执行中;
- * - compacting:         上下文压缩(T-C10 已接线:轮间屏障点的阈值自动触发/
+ * - compacting:         上下文压缩(轮间屏障点的阈值自动触发/
  *                       compactNow 手动/真溢出 reactive 三路都经本态);
  * - terminated:         终态,任何再迁移都是编程错误。
  */
 declare const KERNEL_STATES: readonly ["idle", "assembling", "streaming", "awaiting_permission", "executing_tools", "compacting", "terminated"];
+/** 查询环状态机的状态取值(KERNEL_STATES 成员)。 */
 type KernelState = (typeof KERNEL_STATES)[number];
 
-/** INJ-00: 目标绑定当前句柄；session/租户/historyEpoch 由宿主校验。 */
+/** 预约式输入目标:绑定当前句柄；session/租户/historyEpoch 由宿主校验。 */
 interface QueryInputTarget {
     readonly turnId: string;
 }
@@ -11270,7 +11317,7 @@ interface QueryInputReservation {
     commit(): QueryInputReceipt;
     /** 只取消尚未 commit 的 reservation；已接纳输入由本轮正常消费/终止裁定。 */
     cancel(): QueryInputReceipt;
-    /** consumed/closed/cancelled 的最终回执；不是整个查询的真实资源完成屏障。 */
+    /** consumed/closed/cancelled 的最终凭据；不是整个查询的真实资源完成屏障。 */
     readonly completion: Promise<QueryInputReceipt>;
 }
 type QueryInputReservationResult = {
@@ -11289,11 +11336,11 @@ type QueryInputReservationResult = {
 };
 
 /**
- * T-C1 — 查询环对外类型:runQuery 选项/句柄、四计数、ToolExecutor 执行缝。
+ * 查询环对外类型:runQuery 选项/句柄、四计数、ToolExecutor 执行缝。
  *
- * 设计原则(《07》§1.6 ②):client 与 executor 都是注入接口——查询环只负责
+ * 设计原则:client 与 executor 都是注入接口——查询环只负责
  * "收集 tool_call 块 → 交给 executor → 拿回 tool_result 回填下一轮 messages";
- * 权限、并发、实际执行全部是 executor(T-C2 调度器)的职责。
+ * 权限、并发、实际执行全部是 executor(调度器)的职责。
  */
 
 /** tool_result 块的窄化别名(executor 回填结果的元素类型) */
@@ -11318,7 +11365,7 @@ interface ProposedToolCall {
 }
 /** 执行器上下文:查询环传给 executor 的最小集合 */
 interface ToolExecutionContext {
-    /** 子查询实际收尾回执；先登记占位，业务事件结束后再兑现。不会等待在逻辑工具结果中。 */
+    /** 子查询实际收尾结算；先登记占位，业务事件结束后再兑现。不会等待在逻辑工具结果中。 */
     registerResource?: (work: Promise<ResourceSettlementResult>) => void;
     /** 工具/调度真实Promise；硬超时仅结束业务观察，不能摘除尚在飞的底层操作。 */
     registerOperation?: (work: Promise<unknown>) => void;
@@ -11329,7 +11376,7 @@ interface ToolExecutionContext {
     /** 当前工具轮次(1 起) */
     toolRound: number;
     /**
-     * 当前查询消息的快照 getter(T-DA2,doc/optimize/27 §3.2):调用刻浅拷贝
+     * 当前查询消息的快照 getter:调用刻浅拷贝
      * ——元素(IRMessage)不可变引用,数组本体与查询环解耦,后续轮次的
      * push 不进快照。Task 工具在派生时点经 ToolContext 冻结「父上下文快照」
      * 作裁决语境;嵌套派生天然各级自取(子查询环自己的消息)。可选——
@@ -11353,7 +11400,7 @@ type ToolExecutorYield = {
     state: 'awaiting_permission' | 'executing_tools';
 };
 /**
- * 单次成功调用的文件触达清单(T-CTX10;调度器按 Tool.touchedPathsOf /
+ * 单次成功调用的文件触达清单(调度器按 Tool.touchedPathsOf /
  * mutatedPathsOf 声明位采集,仅对非 isError 结果产出)。
  */
 interface TouchedFileEntry {
@@ -11372,14 +11419,14 @@ interface ToolExecutionOutcome {
     /** 执行器因 signal 主动提前收尾(查询环据此以 aborted_tools 终止) */
     aborted?: boolean;
     /**
-     * T-CTX10:本批**成功**调用的文件触达清单(查询环压缩后文件重建的台账
+     * 本批**成功**调用的文件触达清单(查询环压缩后文件重建的台账
      * 数据源)。可选能力位——第三方最小实现可缺省,查询环按台账为空处理
      * (重建功能静默无候选,行为不变)。
      */
     touchedFiles?: readonly TouchedFileEntry[];
 }
 /**
- * 工具执行缝(T-C2 调度器落地本接口;本卡提供测试用 SequentialToolExecutor)。
+ * 工具执行缝(调度器落地本接口;另有测试用 SequentialToolExecutor)。
  * 契约:execute 对一批 calls 负责到底——permission 询问、并发调度、超时、
  * discard 都在实现内;查询环只消费 yield 的事件/状态信号并等待最终 outcome。
  */
@@ -11387,7 +11434,7 @@ interface ToolExecutor {
     execute(calls: ProposedToolCall[], ctx: ToolExecutionContext): AsyncGenerator<ToolExecutorYield, ToolExecutionOutcome, undefined>;
 }
 /**
- * T-C10 — 查询环压缩接线选项(RunQueryOptions.compaction;提供即启用)。
+ * 查询环压缩接线选项(RunQueryOptions.compaction;提供即启用)。
  *
  * 两种注入形态:
  * - `manager`:装配层持有的跨轮 ContextManager(账本锚点/附件签名/熔断计数
@@ -11420,7 +11467,7 @@ interface QueryCompactionOptions {
     model?: ResolvedModel;
     /**
      * 自建路径:token 估算器注入缝。
-     * T-CTX10 例外注记:压缩后文件重建的预算估算(run-query 注入点)也消费
+     * 例外注记:压缩后文件重建的预算估算(run-query 注入点)也消费
      * 本字段,且**不受**「manager 在场忽略自建字段」通则约束——manager 内部
      * 估算器为私有不可达,重建预算独立取本字段(缺省回退默认估算器);两者
      * 口径偏差由 H2 帽(min(20K, 压缩回收量-1))兜底,方向安全。
@@ -11428,7 +11475,7 @@ interface QueryCompactionOptions {
     estimator?: TokenEstimator;
     /** 自建路径:保留最近 N 轮(round 粒度;单 round 超长时退化为折叠单元粒度);默认 2 */
     keepRecentRounds?: number;
-    /** 自建路径:首条用户消息(任务锚点)恒保留;默认 true(T-C10 保留策略) */
+    /** 自建路径:首条用户消息(任务锚点)恒保留;默认 true */
     keepFirstUserMessage?: boolean;
     /** 自建路径:摘要指令模板/前导句注入缝 */
     instructionTemplate?: string;
@@ -11439,22 +11486,22 @@ interface QueryCompactionOptions {
      */
     auto?: boolean;
     /**
-     * T-CTX01(接口冻结):装配层注入的当前压缩模型 maxOutput 上限(来源 =
-     * cli 侧静态侧表,官方值带出处;CapabilitySchema.maxOutput RFC 通过后回迁)。
+     * 装配层注入的当前压缩模型 maxOutput 上限(来源 =
+     * cli 侧静态侧表,官方值带出处)。
      * 压缩输出预算 = min(maxOutputTokens ?? 20_000, thresholds.compactOutputBudget);
-     * 不得再与会话 options.maxTokens 钳制(P01 静默截断根因)。
+     * 不得再与会话 options.maxTokens 钳制(否则摘要会被静默截断)。
      */
     maxOutputTokens?: number;
     /**
-     * T-CTX14a/14b:上下文治理只读观测缝(压缩生命周期 + microcompact 应用 +
+     * 上下文治理只读观测缝(压缩生命周期 + microcompact 应用 +
      * 入史 clamp 计数)。kernel 公共 API(非 protocol);装配层消费写
-     * context-events.jsonl。T-CTX14b 签发权分布见 CompactionObserver 注释
+     * context-events.jsonl。签发权分布见 CompactionObserver 注释
      * (成功结局经统一应用器;失败/no-op 在 manager 返回面)。回调异常不得
      * 影响压缩主链(fail-open,由消费侧自行捕获)。
      */
     observer?: CompactionObserver;
     /**
-     * K-5(doc/117 K-5「compactNow 把选项传下」的注入面):压缩前钩子(装配层
+     * 压缩前钩子(「compactNow 把选项传下」的注入面;装配层
      * 落 pre_compaction 快照)。查询环在压缩屏障点组装为 CompactRequest.
      * beforeCompact(经 GovernanceDirective 输入面,与 instructions 同位)交
      * manager 调用;compactNow({ checkpoint }) 的选项经 context.checkpoint 抵达
@@ -11466,7 +11513,7 @@ interface QueryCompactionOptions {
      */
     beforeCompact?: QueryBeforeCompactHook;
     /**
-     * T-CTX10(CTX-P09):压缩后文件重建的读文件闭包(kernel 零文件 IO,
+     * 压缩后文件重建的读文件闭包(kernel 零文件 IO,
      * 装配层注入,与 toolResultBudget.persist 先例同构)。在场时查询环维护
      * Read/Edit/Write 触达台账,压缩成功后把最近触达 top-3 文件以合成 tool
      * 对 + `<system-reminder>` 注入摘要之后、保留尾段之前(预算:单文件 5K /
@@ -11474,20 +11521,20 @@ interface QueryCompactionOptions {
      * 缺席 = 功能静默关闭(不记台账、不注入),行为与现状逐字节一致。
      * 注意:本字段由查询环消费(非 manager 构造集)——`manager` 注入形态下
      * 与自建形态同样生效,不受「manager 在场忽略自建字段」语义约束。
-     * T-CTX04a 起本闭包移交内置 baseline 治理会话(台账与注入随策略),
+     * 本闭包由内置 baseline 治理会话消费(台账与注入随策略),
      * 注入语义与生命周期不变。
      */
     restoreFileReader?: RestoreFileReader;
     /**
-     * T-CTX02 / T-CTX04a:自建路径的压缩 round 模型调用超时(ms)。映射为
+     * 自建路径的压缩 round 模型调用超时(ms)。映射为
      * manager 构造级 timeoutMs(取值链:CompactRequest 请求级 > 本构造级 >
-     * kernel 90s 缺省)——装配层方案 manager 级参数(T-CTX25)自此不再需要
+     * kernel 90s 缺省)——装配层方案 manager 级参数自此不再需要
      * compact 包装缝。quirk 下限换算(max(90s, minTimeoutMs))仍是装配层
      * 注入前的责任。`manager` 注入形态下忽略(与其余自建字段同语义)。
      */
     timeoutMs?: number;
     /**
-     * T-CTX08 / T-CTX04a:自建路径的转录回查路径提示(字符串或求值闭包;
+     * 自建路径的转录回查路径提示(字符串或求值闭包;
      * 语义见 ContextManagerCompactionOptions.transcriptHint)。映射为 manager
      * 构造级配置(请求级覆盖仍胜出)。`manager` 注入形态下忽略。
      */
@@ -11517,11 +11564,11 @@ interface QueryCompactionOptions {
      * Codex compact_model_reasoning_effort 同哲学——降配不换模);缺席/
      * 'inherit' = 继承主请求 thinking(现状零漂移)。门判在查询环
      * governance 组装点(run-query):'off' 的落线形态取决于下方
-     * thinkingOffSupported 能力位(C2/R1-P1-2)。
+     * thinkingOffSupported 能力位。
      */
     thinkingMode?: 'inherit' | 'off';
     /**
-     * C2(R1-P1-2)— 压缩模型「思考可关」实证能力位(装配层随 maxOutputTokens
+     * 压缩模型「思考可关」实证能力位(装配层随 maxOutputTokens
      * 同通道穿入:压缩模型解析后 capability.reasoning===true 且
      * thinkingOptional===true 的白名单实证,RFC-M3 B2 词表)。消费点 =
      * thinkingMode='off' 的落线分派:
@@ -11578,7 +11625,7 @@ interface QueryCompactionOptions {
      * P-CTX4 K16:估算-校准闭环门(doc/34 §3.4 机制 5;方案参数
      * bucketedCalibration/confidenceMarginRatio 经策略展开落此位)。映射为
      * manager 构造级配置(语义见 ContextManagerCompactionOptions.
-     * bucketedCalibration)。缺席 = 关(T-CTX06 标量语义零漂移);`manager`
+     * bucketedCalibration)。缺席 = 关(单标量校准语义零漂移);`manager`
      * 注入形态下忽略(校准配置随外部 manager 构造)。
      */
     bucketedCalibration?: {
@@ -11595,15 +11642,15 @@ interface QueryCompactionOptions {
         enabled: boolean;
     };
     /**
-     * T-CTX04a(@experimental):治理策略会话注入缝。缺省 = 内置 baseline
+     * 治理策略会话注入缝(@experimental)。缺省 = 内置 baseline
      * 策略包装本查询解析出的 ContextManager(行为与策略化前逐字节一致)。
-     * 注入时查询环五点位(24 号 §2.1)改经注入会话,ContextManager 仍作
+     * 注入时查询环五点位改经注入会话,ContextManager 仍作
      * 账本/测量引擎由查询环持有(recordUsage/compactNow 守卫不变)。
      * 注入面限装配层(围栏 3);会话生命周期由注入方管理。
      */
     session?: GovernanceSession;
     /**
-     * T-CTX19(CTX-P08):自建路径的附件注册表参数(TTL 轮数/session 字节
+     * 自建路径的附件注册表参数(TTL 轮数/session 字节
      * 预算)。附件三态裁决(注入/引用化/预算拒绝)的调用方:TUI @file 引用
      * (装配层 session-driver)与查询环诊断类元注入(reminder 径)。
      * `manager` 注入形态下忽略(与其余自建字段同语义——注册表随 manager
@@ -11659,7 +11706,7 @@ type CompactNowRejectReason =
  */
  | 'empty_history'
 /**
- * T-CTX23:PreCompact hook 阻断本次压缩(exit 2 / decision=deny|block)。
+ * PreCompact hook 阻断本次压缩(exit 2 / decision=deny|block)。
  * 显式协议行为而非故障——hook 作者对压缩行使否决权,历史未改动。
  */
  | 'hook_blocked';
@@ -11687,7 +11734,7 @@ interface QueryCounters {
     toolRounds: number;
     /** 连续可恢复错误数(任何一次成功流式响应清零) */
     consecutiveErrors: number;
-    /** 注入屏障已消费的旧 enqueue 输入条数；strict input 按回执独立核对，避免宿主 slice 错位。 */
+    /** 注入屏障已消费的旧 enqueue 输入条数；strict input 按凭据独立核对，避免宿主 slice 错位。 */
     queueInjections: number;
     /**
      * CW11-W3(doc/58 W3 #7)— 触帽升档重试次数(遥测:每次废弃截断响应并
@@ -11701,7 +11748,7 @@ interface QueryHandle {
     /** 事件流:protocol 完整事件(包络+负载),seq 单调 */
     events: AsyncGenerator<KernelEvent, void, undefined>;
     /**
-     * CM-13：等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
+     * 等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
      * 终态事件仅代表逻辑结束；timeout/cancelled保留实际在飞工作，可再次等待。
      * runQuery恒提供；第三方旧句柄可缺席，此时调用方只能证明其既有迭代器合同。
      */
@@ -11711,7 +11758,7 @@ interface QueryHandle {
      * 的屏障点消费;终态后调用为无害空操作(运行时竞态,非编程错误)。
      */
     enqueueUserInput(text: string): void;
-    /** INJ-00 加法能力；旧句柄可缺席。目标为本轮，不隐式创建后续轮。 */
+    /** 预约式输入(加法能力)；旧句柄可缺席。目标为本轮，不隐式创建后续轮。 */
     reserveUserInput?(input: QueryInputSubmission): QueryInputReservationResult;
     inputReceipts?(): readonly QueryInputReceipt[];
     inputTarget?(): QueryInputTarget & {
@@ -11736,7 +11783,7 @@ interface QueryHandle {
      */
     messages(): IRMessage[];
     /**
-     * 手动压缩(/compact 接线语义,T-C10):请求排队到下一个轮间屏障点执行
+     * 手动压缩(/compact 接线语义):请求排队到下一个轮间屏障点执行
      * (运行中轮不可就地压缩——流式/工具期间历史正在生长,折叠边界无从落定),
      * 返回的 promise 在屏障点执行后兑现;并发调用合流到同一次执行。
      * 未接压缩缝立即拒绝 not_configured;已终态(或排队后直到终态未再经过
@@ -11751,10 +11798,10 @@ interface QueryHandle {
 }
 
 /**
- * T-C2 — 权限缝最小接口。
+ * 权限缝最小接口。
  *
- * T-C3 权限引擎并行开发中,本目录不得 import permissions/;这里只定义调度器
- * 需要的最小决策接口,集成适配由主会话完成。语义:
+ * 权限引擎与调度器分层开发,本目录不得 import permissions/;这里只定义调度器
+ * 需要的最小决策接口,集成适配由装配层完成。语义:
  * - decide 返回 allow → 直接执行;deny → 签发 tool.permission.decided 并产出
  *   isError tool_result;ask → 经 awaiting_permission 状态往返询问 askUser;
  * - 未注入 askUser 时 ask 降级为 deny(headless 场景,source 记为 'policy');
@@ -11770,23 +11817,23 @@ interface GateDecision {
     decision: PermissionDecision;
     source: DecisionSource;
     /**
-     * 命中的规则原文(contract-v0.2,T-C3 RFC):引擎侧
+     * 命中的规则原文(contract-v0.2):引擎侧
      * PermissionDecisionResult.matchedRule 的透传位,调度器原样落进
      * tool.permission.decided 事件体;无规则命中(模式短路/兜底 ask)时缺省。
      */
     matchedRule?: string;
     /**
-     * 入参替换(T-G3 PreToolUse hooks 的 updatedInput,doc/07 §6.5):
+     * 入参替换(PreToolUse hooks 的 updatedInput):
      * 存在时调度器以此覆盖 call.args 执行(询问对话框同样展示替换后入参,
      * 用户看到的即将执行的真实参数)。仅门面(L4 装配)可产出;引擎侧无此位。
      */
     updatedArgs?: Record<string, unknown>;
     /**
      * 裁决理由(自由文本;恒不进 tool.permission.decided 事件,契约零改动)。
-     * - **deny**(T-K1 deny-and-continue;source='classifier' 的收紧、hook 收紧、
+     * - **deny**(deny-and-continue;source='classifier' 的收紧、hook 收紧、
      *   hard-safety 等):调度器把理由并入 isError tool_result 文本回喂模型——
      *   模型据此调整路线继续本轮;
-     * - **ask**(doc/113 姿态 rejectEffect='ask';source='classifier'):裁决人
+     * - **ask**(姿态 rejectEffect='ask';source='classifier'):裁决人
      *   判为危险但升到询问面——调度器把本决策整体作 askUser 第三参
      *   `decision` 透传,询问面据 `reason` 呈现「裁决人判为危险:…」供用户
      *   终审;该 ask 终局为 deny(用户拒 / 无询问通道地板)时理由同样进
@@ -11796,20 +11843,20 @@ interface GateDecision {
      */
     reason?: string;
     /**
-     * 命中规则所在层(T-K0 归因;仅规则命中携带)。字面量联合与 kernel
+     * 命中规则所在层(归因;仅规则命中携带)。字面量联合与 kernel
      * permissions/types.ts 的 RuleLayerName 逐字对齐——本目录不 import
-     * permissions/(T-C2 并行开发铁律),结构兼容由装配层保证。询问面据此
+     * permissions/(分层铁律),结构兼容由装配层保证。询问面据此
      * 显示项目来源(仓库 deny/ask 即时生效,但用户须看见是谁在约束)。
      */
     sourceLayer?: 'policy' | 'projectLocal' | 'projectShared' | 'user';
     /**
-     * 派生裁决链语境(T-DA3,doc/optimize/27 §3.5):子代理 ask 经父裁决后
+     * 派生裁决链语境:子代理 ask 经父裁决后
      * endorse/escalate 上升到用户终审时,执行器把逐级裁决留痕挂在此位——
      * 终审弹卡呈现完整责任链(「父 X 为子 Y 的操作 Z 担保,理由 W,责任人
      * X」)。仅裁决链路径携带;主代理直接询问恒缺省。
      */
     adjudication?: {
-        /** 逐级裁决条目(P-D1 恒一级;T-DA8 递归后为多级) */
+        /** 逐级裁决条目(单层派生恒一级;递归派生为多级) */
         chain: readonly AdjudicationChainEntry[];
         /** true = 父担保上报(endorse);false = 父不能决上升(escalate) */
         endorsed: boolean;
@@ -11819,7 +11866,7 @@ interface GateDecision {
         childDescription: string;
     };
     /**
-     * 分类器裁决意见段(CW19-U3a,RFC-U3 §十审计词表归一):引擎**真实模型
+     * 分类器裁决意见段(审计词表归一):引擎**真实模型
      * 咨询**归一意见后经装配层网关透传至此(结构与 kernel permissions/
      * types.ts 的 PermissionAdjudicationEntry 同构——本目录不 import
      * permissions/,结构兼容由装配层保证,sourceLayer 同例)。执行器把本段
@@ -11829,7 +11876,7 @@ interface GateDecision {
     classifierAdjudication?: AdjudicationChainEntry;
 }
 /**
- * 门判定提示位(T-DA7):执行器按会话形态附带的判定语境——分类器软化
+ * 门判定提示位:执行器按会话形态附带的判定语境——分类器软化
  * 抑制(auto × 裁决链 × 父终审开时,子代理调用的 safe→allow 让位父终审;
  * 方向纯收紧)。适配器(cli permission-gate)透传给引擎 DecideInput;
  * 旧实现忽略第二参数即向后兼容(hints 只收紧不放宽,忽略 = 维持现状
@@ -11838,7 +11885,7 @@ interface GateDecision {
 interface GateDecideHints {
     suppressClassifierSoften?: boolean;
     /**
-     * T-DA7 回退重判位(2026-08-25 UAA 审计 C 路 P1-① 整改):执行器在
+     * 回退重判位:执行器在
      * 裁决链全员结构性失败时对**同一 tool_use_id** 发起分类器回退重判——
      * 首判已跑过完整门(PreToolUse hooks / PermissionRequest 收紧缝 / 会话
      * 事件记账),重判置此位令门跳过全部副作用面,只走 engine.decide +
@@ -11849,7 +11896,7 @@ interface GateDecideHints {
      */
     fallbackRedecide?: boolean;
     /**
-     * K11 审批桥执行前重判位(R2-P1 整改,2026-08-26):人批(异步审批
+     * 审批桥执行前重判位:人批(异步审批
      * 挑战获批)后的重判只为捕捉**等待期策略漂移**——引擎管线重跑,副作用
      * 面跳过与 fallbackRedecide 同律,且**分类器咨询恒跳过**:首判已真实
      * 咨询过一次(意见段随首判 GateDecision 入审计),人批权级高于分类器
@@ -11859,6 +11906,7 @@ interface GateDecideHints {
      */
     approvalRedecide?: boolean;
 }
+/** 权限门:调度器在每次工具执行前调用 decide,取 allow / deny / ask 结构化决策。 */
 interface PermissionGate {
     decide(call: ProposedToolCall, hints?: GateDecideHints): GateDecision | Promise<GateDecision>;
 }
@@ -11866,24 +11914,24 @@ interface PermissionGate {
  * 询问回调:表面层(TUI/headless 编排)注入;resolve 为用户的最终选择。
  * signal:调用方(调度器)的中断信号——回合 Esc/中止时表面层据此撤回
  * 询问对话框(不撤回则残留幽灵对话框,堵塞后续对话框队列)。
- * decision:触发本次询问的门面决策(T-K0 归因展示;matchedRule/sourceLayer
- * 供对话框呈现「哪条规则、来自哪层」;doc/113 姿态下 source='classifier' +
+ * decision:触发本次询问的门面决策(归因展示;matchedRule/sourceLayer
+ * 供对话框呈现「哪条规则、来自哪层」;'ask' 姿态下 source='classifier' +
  * reason 供呈现「裁决人判为危险:…」)。旧实现忽略第三参数即向后兼容。
  */
 type AskUserCallback = (call: ProposedToolCall, signal?: AbortSignal, decision?: GateDecision) => Promise<'allow' | 'deny'>;
 
 /**
- * T-DA1 — 裁决路由器(AskRouter):ask 终局出口的单一路由策略。
+ * 裁决路由器(AskRouter):ask 终局出口的单一路由策略。
  *
- * 背景(doc/optimize/27 §3.1 流转总图):权限引擎产出 ask 终局后,出路
+ * 背景:权限引擎产出 ask 终局后,出路
  * 此前散落三处——主代理经 askUser 弹卡(TUI/K11 远程审批同为 askUser 的
  * 装配变体)、子代理无通道降 deny、headless 无通道降 deny。本文件把
  * 「往哪去」收敛为一个纯函数,调度器按目标执行:
- * - `parent-adjudication`:派生裁决链(T-DA2,子代理执行器专属)——ask
+ * - `parent-adjudication`:派生裁决链(子代理执行器专属)——ask
  *   先由「派生时点上下文中的父代理」裁决(reject/endorse/escalate);
  * - `user-dialog`:本级询问通道(askUser 回调:TUI 弹卡 / K11 挑战投递 /
  *   ACP requestPermission);
- * - `floor-deny`:fail-closed 地板(B-3)——链的尽头无人时恒 deny,
+ * - `floor-deny`:fail-closed 地板——链的尽头无人时恒 deny,
  *   永不 fail-open。
  *
  * 优先序即安全序:裁决器在场必先走链(链顶仍可能是 user-dialog 或地板);
@@ -11930,7 +11978,7 @@ interface AdjudicationRequest {
  */
 type ParentAdjudicator = (request: AdjudicationRequest, signal?: AbortSignal) => Promise<AdjudicationVerdict>;
 /**
- * 远程裁决人档预算超限处置指令(T-C7,《29》§2.6 budgets 机制位):gate
+ * 远程裁决人档预算超限处置指令(budgets 机制位):gate
  * 产出的结构化超限出口——装配层按生效档 escalation.mode 定向('parent'
  * → escalate 上交链顶、'reject' → reject 拒绝该派生请求),reason 为审计
  * 留痕(裁决器原样落链条目,via='budget_exhausted' 归因)。
@@ -11940,7 +11988,7 @@ interface AdjudicationBudgetDirective {
     reason: string;
 }
 /**
- * 共享咨询预算 gate(B-2 + T-C7 远程档预算):装配层组合权限引擎公共口
+ * 共享咨询预算 gate(分类器同池 + 远程档预算):装配层组合权限引擎公共口
  * (分类器同池预算 + 熔断状态)与远程裁决人档 budgets(maxRounds/maxUsd)。
  * `ok` 才起裁决查询;'budget_exhausted'/'breaker_open' = 结构性 escalate
  * (via 同名);结构化指令 = 远程档预算超限,按 outcome 落 verdict
@@ -11989,7 +12037,7 @@ interface MemoryWriteContext {
 }
 
 /**
- * T-D2 残项 — grep 轮次聚合埋点(《10》§6.3:一期统计 agent 单任务 grep
+ * grep 轮次聚合埋点(一期统计 agent 单任务 grep
  * 轮次,为二期「语义索引开启信号」提供数据支撑——开启信号词表:仓库
  * >1000 文件 / 跨仓检索 / 概念性查询占比高 / grep 往返超阈值)。
  *
@@ -12049,15 +12097,15 @@ declare class GrepRoundAggregator {
 
 /**
  * 工具运行时契约(kernel 内部,预先冻结供并行任务面向接口编程)。
- * 设计依据《06》§1.1:工具只产出结构化数据,渲染由表面层按事件类型注册;
- * 《07》§1.4:isReadOnly/isConcurrencySafe 强制静态声明,供调度器(T-C2)与
- * 权限引擎(T-C3)使用,不允许运行期才暴露。
+ * 设计要点:工具只产出结构化数据,渲染由表面层按事件类型注册;
+ * isReadOnly/isConcurrencySafe 强制静态声明,供调度器与
+ * 权限引擎使用,不允许运行期才暴露。
  */
 
 /**
- * CW11-W2 Read 去重窗口:最近一次成功文本读取的请求与规模快照。
+ * Read 去重窗口:最近一次成功文本读取的请求与规模快照。
  * 同键(offset/limit 归一后)+ mtime 未变的重复读 → 一句桩文本替代全文
- * 重发(doc/58 W2 #1;CC 实测 18% 的 Read 是重复读)。一次性语义:命中
+ * 重发(CC 实测 18% 的 Read 是重复读)。一次性语义:命中
  * 即清除本窗口,紧接着的再次同读放行全文——防「早前结果已被 microcompact
  * 淘汰时模型无路取回」死角(桩绝不连发)。
  */
@@ -12071,11 +12119,11 @@ interface ReadDedupWindow {
     /** 实际返回的行区间(1 起含端点);未返回任何行时为 null */
     returnedRange: [number, number] | null;
 }
-/** Read 工具记录、Edit/Write 校验的跨调用文件状态(mtime 失效检测,T-D1) */
+/** Read 工具记录、Edit/Write 校验的跨调用文件状态(mtime 失效检测) */
 interface FileReadState {
     mtimeMs: number;
     /**
-     * 读取 / 写入时的内容快照哈希(sha256 hex;FX-B-20 / T-13 起有写入点:Read 整读
+     * 读取 / 写入时的内容快照哈希(sha256 hex;写入点:Read 整读
      * 与流式分页全流、Write / Edit 写后皆登记)。Write / Edit 写前在 mtime 律之外
      * 再以全文哈希比对——mtime 未变而内容已变亦拒。缺席 = 该登记无全文可计(旧
      * 登记 / 图片读),守卫只按 mtime。
@@ -12084,6 +12132,10 @@ interface FileReadState {
     /** 最近一次成功文本读取的去重窗口(Write/Edit 登记与图片读取不携带) */
     lastRead?: ReadDedupWindow;
 }
+/**
+ * 工具执行上下文:由调度器在每次 execute 前注入——工作目录、取消信号、事件发射口、
+ * 会话级文件读取状态,以及若干可选的注入缝(fs 世界、检索聚合器、裁决语境、记忆写回)。
+ */
 interface ToolContext {
     /** Retain a nested query's actual cleanup; this does not delay its business result or cancel it. */
     registerResource?: (work: Promise<ResourceSettlementResult>) => void;
@@ -12094,43 +12146,44 @@ interface ToolContext {
     /** 会话级共享:path → 读取状态 */
     fileReadState: Map<string, FileReadState>;
     /**
-     * Q4-6(EW-1)执行世界 fs 缝:工具的一切文件系统副作用经此面(缺省
+     * 执行世界 fs 缝:工具的一切文件系统副作用经此面(缺省
      * defaultFs = node:fs/promises 直通薄壳,行为与直用逐字节一致)。可选——
      * 直调/最小执行器缺省时工具以 fsOf(ctx) 落缺省世界;调度器恒注入。
      * 权限判定不经此面(gate.decide 恒先于工具 execute,红线 3)。
      */
     fs?: FsLike;
     /**
-     * 本次调用的 toolCallId(contract-v0.1 增补):由调度器(T-C2)注入,
+     * 本次调用的 toolCallId(contract-v0.1 增补):由调度器注入,
      * 工具据此构造 tool.progress / tool.output.delta 负载。可选——直调场景可缺省。
      */
     toolCallId?: string;
     /**
-     * 检索轮次聚合器(T-D2 残项):调度器(T-C2)会话级注入,Grep 工具
+     * 检索轮次聚合器:调度器会话级注入,Grep 工具
      * 逐调用记样本;可选——直调场景可缺省,埋点静默不记。
      */
     searchAggregator?: GrepRoundAggregator;
     /**
-     * 当前查询消息的快照 getter(T-DA2):调度器从 ToolExecutionContext
+     * 当前查询消息的快照 getter:调度器从 ToolExecutionContext
      * 透传;Task 工具在派生时点调用一次,冻结「父上下文快照」作派生裁决链
-     * 的裁决语境(doc/optimize/27 §3.2)。可选——直调/最小执行器缺省时
+     * 的裁决语境。可选——直调/最小执行器缺省时
      * 裁决链静默不可用(escalate 语义不受影响,只是无从起裁决查询)。
      */
     transcript?: () => readonly IRMessage[];
     /**
-     * 本执行器的裁决人链(T-DA8 递归上升,27 号 §3.4):子代理执行器在场时
+     * 本执行器的裁决人链(递归上升):子代理执行器在场时
      * 由调度器注入([直接父, 祖父, …] 由近及远,各级持自己的派生时点快照)。
      * Task 工具派生下一级时以 [本级新裁决器, ...本链] 延长——孙的 ask 经
      * 子→主逐级上升。主执行器恒缺省(子链即单级)。
      */
     adjudicationAncestors?: readonly ParentAdjudicator[];
     /**
-     * TMEM/1 记忆写上下文(TM-2/TM-3;doc/38 §4.2 写回):门开时调度器自
+     * 记忆写上下文:门开时调度器自
      * 执行器选项透传——Write/Edit 据此触发真实目标含入复核、写前秘密扫描
      * 与索引写后体检。缺省 = 门关,工具行为与现状逐字节一致。
      */
     memoryWrite?: MemoryWriteContext;
 }
+/** 工具结果的单个内容块:文本,或 base64 编码的图片。 */
 type ToolResultContent = {
     t: 'text';
     text: string;
@@ -12139,6 +12192,7 @@ type ToolResultContent = {
     mime: string;
     data: string;
 };
+/** 工具执行结果:回给模型的内容块、业务级失败标记与给表面层渲染器的结构化数据。 */
 interface ToolResult {
     /** 回给模型的内容 */
     content: ToolResultContent[];
@@ -12149,13 +12203,17 @@ interface ToolResult {
 /** 工具效应词表(应用协议 v1;冻结四值——「批量」是调用属性由参数判,不入表) */
 declare const TOOL_EFFECTS: readonly ["irreversible", "financial", "external", "affects-others"];
 type ToolEffect = (typeof TOOL_EFFECTS)[number];
+/**
+ * 工具定义:名称、模型可见描述、zod 参数 schema、只读 / 并发安全等静态声明与 execute 实现。
+ * 工具只产出结构化数据,渲染归表面层;权限判定由调度器在 execute 之前完成。
+ */
 interface Tool<Args = unknown> {
     /** 唯一名(进模型 prompt 与权限规则,如 "Read"/"Shell") */
     name: string;
     /** 模型可见描述(英文) */
     description: string;
     /**
-     * TCB/1 CB-3 — 模型可见短态描述(英文;一句话 + 参数签名要点)。可选
+     * 模型可见短态描述(英文;一句话 + 参数签名要点)。可选
      * 资产位:装配层分段预算分配器(cli assembly/section-budget.ts)在工具
      * 段预算压力下以短态替换 description 进请求;缺席/门关恒用 description
      * (请求字节与现状逐字节一致)。执行语义与本字段无关。
@@ -12166,7 +12224,7 @@ interface Tool<Args = unknown> {
     /** 只读工具可并发、可在 plan 模式放行(声明即契约,调度器强制) */
     isReadOnly: boolean;
     /**
-     * 效应声明(应用协议 v1,doc/optimize/37 §5):开发者对本工具副作用性质的
+     * 效应声明(应用协议 v1):开发者对本工具副作用性质的
      * 自述——`irreversible`(不可逆)/ `financial`(资金流动)/ `external`
      * (触达外部系统或第三方)/ `affects-others`(影响其他用户或租户)。
      * **信号不是闸门**:只进裁决人语境(`<tool>` 段)与遥测标签,不参与任何
@@ -12211,7 +12269,7 @@ interface Tool<Args = unknown> {
      */
     mutatedPathsOf?(args: unknown): string[];
     /**
-     * 文件读取触达声明位(T-CTX10,与 mutatedPathsOf 同构的只读侧):返回
+     * 文件读取触达声明位(与 mutatedPathsOf 同构的只读侧):返回
      * 本次调用将读取的文件绝对路径集。调度器在调用**成功**后采集(与
      * mutatedPathsOf 合并)进 ToolExecutionOutcome.touchedFiles,作查询环
      * 压缩后文件重建的触达台账数据源。约定同 mutatedPathsOf:args 畸形或
@@ -12223,7 +12281,7 @@ interface Tool<Args = unknown> {
 }
 
 /**
- * T-D6 — 会话待办台账(内存态,不做持久化)。
+ * 会话待办台账(内存态,不做持久化)。
  *
  * 设计要点:
  * - `TodoItem` 形状与 protocol `plan.todo.updated` 事件的 items 对齐
@@ -12266,10 +12324,12 @@ declare class TodoStore {
     merge(patches: readonly TodoPatch[]): TodoItem[];
 }
 
+/** 会话级输入的目标绑定:历史纪元 + 当前轮句柄,二者皆须与宿主现状一致。 */
 interface SessionInputTarget {
     readonly historyEpoch: string;
     readonly turnId: string;
 }
+/** 会话级输入内容:纯文本,或仅含 text 块的块数组(图片等不受理)。 */
 type SessionInputContent = {
     readonly text: string;
 } | {
@@ -12278,18 +12338,22 @@ type SessionInputContent = {
         readonly text: string;
     }[];
 };
+/** 一次会话级输入提交:幂等 inputId、目标绑定、内容与期望的确认级别。 */
 interface SessionInputSubmission {
     readonly inputId: string;
     readonly target: SessionInputTarget;
     readonly content: SessionInputContent;
     readonly ack?: 'memory' | 'durable';
 }
+/** 会话级输入凭据:在查询输入凭据之上附会话 id、历史纪元与耐久性级别(仅 memory)。 */
 interface SessionInputReceipt extends QueryInputReceipt {
     readonly sessionId: string;
     readonly historyEpoch: string;
     readonly durability: 'memory';
 }
+/** 会话级输入的拒绝码:查询层拒绝码之外增纪元不符、不支持的确认级别 / 内容 / 输入形态。 */
 type SessionInputRejectCode = QueryInputRejectCode | 'epoch_mismatch' | 'durable_unsupported' | 'content_unsupported' | 'input_unsupported';
+/** 会话级输入提交的结果:accepted 携凭据;closed / rejected 携拒绝码。 */
 type SessionInputResult = {
     readonly outcome: 'accepted';
     readonly receipt: SessionInputReceipt;
@@ -12297,6 +12361,7 @@ type SessionInputResult = {
     readonly outcome: 'closed' | 'rejected';
     readonly code: SessionInputRejectCode;
 };
+/** 会话级输入能力声明:宿主据此得知受理的内容形态、确认级别、凭据保留窗口与当前目标。 */
 interface SessionInputCapabilities {
     readonly version: 1;
     readonly text: boolean;
@@ -12309,10 +12374,10 @@ interface SessionInputCapabilities {
 }
 
 /**
- * T-C1 — 测试用顺序工具执行器(ToolExecutor 的最小实现)。
+ * 测试用顺序工具执行器(ToolExecutor 的最小实现)。
  *
  * 定位:给查询环测试与早期集成提供确定性执行器;不做并发/权限/超时,
- * 那些是 T-C2 调度器的职责。按输入序逐个执行,产出 tool.started /
+ * 那些是调度器的职责。按输入序逐个执行,产出 tool.started /
  * tool.completed / tool.failed 事件,并以严格输入序回填 tool_result。
  */
 
@@ -12322,7 +12387,9 @@ interface SequentialToolResult {
     /** 结构化渲染数据(contract-v0.3:随 tool.completed 透传;可缺省) */
     data?: unknown;
 }
+/** 顺序执行器的单工具处理函数:收参数与执行上下文,返回文本 / 错误 / 结构化数据结果。 */
 type SequentialToolHandler = (args: unknown, ctx: ToolExecutionContext) => SequentialToolResult | Promise<SequentialToolResult>;
+/** 测试与早期集成用的确定性工具执行器:按输入序逐个执行,不做并发 / 权限 / 超时。 */
 declare class SequentialToolExecutor implements ToolExecutor {
     #private;
     constructor(handlers: Map<string, SequentialToolHandler> | Record<string, SequentialToolHandler>);
@@ -12330,7 +12397,7 @@ declare class SequentialToolExecutor implements ToolExecutor {
 }
 
 /**
- * T-C11 — PolicyBundle 数据结构与解析(二期接缝③:集中策略分发)。
+ * PolicyBundle 数据结构与解析(集中策略分发接缝)。
  *
  * 设计依据:
  * - doc/06 §5 接缝③:权限引擎的 policy 规则源与 PolicyBundle 数据结构
@@ -12476,7 +12543,7 @@ declare const PolicyBundleSchema: z.ZodObject<{
 type PolicyBundle = z.infer<typeof PolicyBundleSchema>;
 
 /**
- * T-C11 — PolicyBundle 签名验证接缝(桩语义;接口形状按真实验签设计)。
+ * PolicyBundle 签名验证接缝(桩语义;接口形状按真实验签设计)。
  *
  * 语义(doc/06 §5 接缝③;OPT-11 起验签接通):
  * - 无签名:默认 unverified 直通;unsignedPolicy='reject' 时拒绝
@@ -12533,35 +12600,35 @@ interface VerifyBundleOptions {
 }
 
 /**
- * T-C3 — 权限引擎:判定管线 + 会话决策缓存 + 审计事件体构造。
+ * 权限引擎:判定管线 + 会话决策缓存 + 审计事件体构造。
  *
- * 判定管线(严格度降序,doc/06 §3.3 + doc/08 §A.3 最严格者胜):
- *   0. hard-safety 层(T-K3a,R4-D 绝对禁止,hard-safety.ts):秘密外发组合
+ * 判定管线(严格度降序,最严格者胜):
+ *   0. hard-safety 层(绝对禁止面,hard-safety.ts):秘密外发组合
  *      谓词(secret.access + network.egress 同调用)与审计篡改/删除——先于
  *      deny 规则与 bypass,任何 allow/auto/bypass/分类器 safe/审批凭证不可
  *      中和(INV-2,§8.5 优先级格最高位);内置子集恒启用(不随基线开关);
  *   1. deny 规则(含用户会话缓存的 deny)——永远最高;
  *   2. plan 模式对非只读工具 deny(模式 deny 强于 ask 规则);
- *   2.5 受信层 ask 规则(policy/user;T-K3c 前移至 bypass 之前,§8.5「显式 ask
+ *   2.5 受信层 ask 规则(policy/user;位于 bypass 之前,「显式 ask
  *      bypass 不可越」,INV-3):显式审批义务在 bypass 下照常询问(无人入口
  *      下游降 deny);auto 下分类器对显式配置 ask 只可收紧不可软化;**项目层
  *      ask 延后至 §4.9**(INV-4:仓库字节 ask 收紧向,不得遮蔽基线 deny);
  *   3. bypassPermissions 放行(仅当目标可安全解析;不可解析时 deny 规则
- *      无从验证,保守降级为 ask);T-K3b:R4-BG 灾难基线(rm -rf / 族、
+ *      无从验证,保守降级为 ask);灾难基线(rm -rf / 族、
  *      mkfs、dd 直写设备)不随 bypass 直通——转 ask(TUI 确认;无人入口由
  *      下游降 deny),归因 'builtin' + 灾难规则 raw,配置 allow 不可中和;
- *      随基线开关解除(R4-BG 有 break-glass,与 R4-D 恒 deny 分级);
+ *      随基线开关解除(灾难基线有 break-glass,与 hard-safety 恒 deny 分级);
  *   4.5 内置安全基线 deny(OPT-04,baseline.ts):压过其后一切放行,但让位于
  *      配置 deny/ask 与 bypass;任一配置层显式 allow 命中即跳过(会话缓存
  *      allow 不算);基线例外命中只中和 deny,继续走后续管线;
- *   4.7 protected paths 强制 ask(T-K2,protected-paths.ts):Write/Edit 落
+ *   4.7 protected paths 强制 ask(protected-paths.ts):Write/Edit 落
  *      `.git`/`.tansr` 任一路径段或家目录 shell rc / git 配置 → ask
  *      (source='builtin',matchedRule=`protected-path(...)`)——快路径、
  *      allow 规则、会话缓存全部压不过;auto 下该 ask 照常进分类器终裁;
  *      与基线同开关;
- *   4.8 会话污点收紧(T-K3a §9 跨调用窄实现):同会话读过秘密面后,
+ *   4.8 会话污点收紧(跨调用窄实现):同会话读过秘密面后,
  *      egress/publish 动作恒 ask(压过快路径/allow/缓存,分类器不软化);
- *   4.9 项目层 ask 收紧叠加(T-K0/INV-4):projectLocal/projectShared 的 ask
+ *   4.9 项目层 ask 收紧叠加(INV-4):projectLocal/projectShared 的 ask
  *      在基线/deny/保护面/污点之后求值——只把本应放行降为 ask,绝不遮蔽
  *      deny(仓库字节永不把基线 deny 松成可批准 ask);bypass 下不生效;
  *   4.93 TMEM/3 批β P2-5 治理簿记内栅(doc/79 §二 M1-8):carve-out 目录
@@ -12579,11 +12646,11 @@ interface VerifyBundleOptions {
  *      workspace-fast-path.ts):工作区内 Write/Edit 与文件系统命令自动放行,
  *      auto 另放行工作区内只读路径工具;不命中快路径落后续管线,绝不产 deny;
  *   6. allow 规则(保守匹配;Shell 要求每一段至少被某条 allow 覆盖);
- *      **auto 模式丢弃宽 allow 规则**(T-K1,broad-allow.ts):授予任意代码
+ *      **auto 模式丢弃宽 allow 规则**(broad-allow.ts):授予任意代码
  *      执行的规则(`Shell`/`Shell(*)`/`Shell(bash *)` 类)求值期过滤,
  *      窄规则保留;基线 4.5 段的配置 allow 中和与第 7 段会话缓存同口径;
  *   7. 用户会话缓存 allow(auto 下同样过滤宽规则);
- *   7.5 R0 内建只读放行(T-K4,read-only-commands.ts):模式无关的结构
+ *   7.5 R0 内建只读放行(read-only-commands.ts):模式无关的结构
  *      放行,替代原兜底 ask——①Shell 只读命令集(git status/rg/ls 类,
  *      全套守卫 + 秘密探针:内容读取实参命中基线秘密面产 deny,与
  *      Read .env 同权;搜索实参命中/探针候选不可解析则回落 ask);
@@ -12607,7 +12674,7 @@ interface VerifyBundleOptions {
  *      触达)。归因 source='mode',matchedRule 保留(命中的 ask 规则是本次
  *      拒绝的诱因);deny/allow 出口原样,基线与 deny 规则语义不变。
  *
- * auto 模式(contract-v0.8 RFC-OPT18-1 + T-K1/T-K2 演进):= default
+ * auto 模式(contract-v0.8 起):= default
  * + 管线第 5 段工作区快路径 + 第 6/7 段宽 allow 丢弃 + would-ask 的分类器
  * 终裁(consultClassifier 异步缝,块单姿态 + 熔断语义见该方法注释)。
  * 分类器未注入时残余 would-ask 维持 ask(交询问面)。
@@ -12616,7 +12683,7 @@ interface VerifyBundleOptions {
  * (所有层的 deny → 所有层的 ask → 所有层的 allow),天然等价于最严格者胜;
  * 层优先级只决定命中归因顺序(policy 层命中 source='policy',余 'rule')。
  *
- * 引擎零 IO、无 UI:询问由调度器(T-C2)执行,用户选择"本会话总是允许"后
+ * 引擎零 IO、无 UI:询问由调度器执行,用户选择"本会话总是允许"后
  * 经 recordUserDecision() 回写缓存,后续命中 source='user'。
  */
 
@@ -12663,35 +12730,35 @@ declare class PermissionEngine {
     /** 规则编译结果按 cwd 缓存(路径模式的相对锚定依赖 cwd) */
     private readonly compiledByCwd;
     private readonly sessionCache;
-    /** 已装载 PolicyBundle 清单(T-C11;装载可观测性的事实源) */
+    /** 已装载 PolicyBundle 清单(装载可观测性的事实源) */
     private readonly loadedBundles;
     /** 内置安全基线(OPT-04;关闭时两组皆空,判定段整体短路) */
     private readonly baselineDeny;
     private readonly baselineExceptions;
-    /** R4-BG 灾难基线(T-K3b;与基线同开关):bypass 分支单独匹配,命中转 ask */
+    /** 灾难基线(与基线同开关):bypass 分支单独匹配,命中转 ask */
     private readonly disasterBaselineDeny;
-    /** protected paths(T-K2;与基线同开关;家目录不可规范解析时仅剩段保护) */
+    /** protected paths(与基线同开关;家目录不可规范解析时仅剩段保护) */
     private readonly protectedPathsEnabled;
     private readonly homeCanonical;
     /** TMEM/1 carve-out(4.95 段):canonical + 大小写折叠后的记忆目录集;空集 = 缝不在场 */
     private readonly memoryCarveOutDirs;
     private readonly memoryCarveOutCaseInsensitive;
-    /** hard-safety 追加面(T-K3a;内置子集恒启用,本配置只追加 egress/审计目录) */
+    /** hard-safety 追加面(内置子集恒启用,本配置只追加 egress/审计目录) */
     private readonly hardSafetyConfig;
-    /** 会话污点(T-K3a §9 跨调用窄实现):秘密面被读取后置真,egress/publish 恒 ask */
+    /** 会话污点(跨调用窄实现):秘密面被读取后置真,egress/publish 恒 ask */
     private secretTainted;
     /** LLM 权限分类器(OPT-18;缺省不注入 = 无分类器路径) */
     private readonly classifierConfig;
-    /** 分类器熔断状态(T-K1:3 连拒 30min 冷却 / 会话累计 20 拒停用) */
+    /** 分类器熔断状态(3 连拒 30min 冷却 / 会话累计 20 拒停用) */
     private classifierDenyTotal;
     private classifierDenyStreak;
     private classifierBreakerUntil;
     /** 累计跳闸次数(K19f 指标口;人工复位不清零——历史是历史) */
     private classifierTripCount;
-    /** 分类器咨询预算记账(T-K6:计实际模型咨询;耗尽后直通 ask) */
+    /** 分类器咨询预算记账(计实际模型咨询;耗尽后直通 ask) */
     private classifierConsultCount;
     private classifierBudgetNotified;
-    /** 分类器窄缓存(T-K6,05 §10.3:仅只读输入的 safe 裁定;键全字段) */
+    /** 分类器窄缓存(仅只读输入的 safe 裁定;键全字段) */
     private readonly classifierCache;
     private classifierCacheHits;
     private classifierCacheMisses;
@@ -12711,7 +12778,7 @@ declare class PermissionEngine {
      */
     revokeUserDecision(rule: string): number;
     /**
-     * 装载 PolicyBundle 规则集为 policy 层规则(T-C11,doc/06 §5 接缝③)。
+     * 装载 PolicyBundle 规则集为 policy 层规则(集中策略分发接缝)。
      *
      * - 验证不通过(rejected/unsupported)或 meta.id 已装载过的 bundle
      *   整体跳过,返回值携带原因(装载可观测性);
@@ -12731,7 +12798,7 @@ declare class PermissionEngine {
     /** 管线 1–8 段(第 0 段 hard-safety 由 decideBase 包裹) */
     private decideStages;
     /**
-     * R0 Shell 只读判定(T-K4;管线 7.5 段与 plan 豁免共用)。返回:
+     * R0 Shell 只读判定(管线 7.5 段与 plan 豁免共用)。返回:
      * - allow(source='builtin',matchedRule=`read-only(<段标签>)`):结构
      *   入围且探针全过;
      * - deny(source='builtin',matchedRule=`read-only-probe(<实参>)`):结构
@@ -12757,25 +12824,25 @@ declare class PermissionEngine {
     /** 工作区根的规范形(R0 包含判定用;cwd 不可规范解析时返回 null = 不放行) */
     private workspaceRoot;
     /**
-     * LLM 分类器终裁口(OPT-18 机制 + contract-v0.8 auto 模式 + T-K1/T-K6 演进):
+     * LLM 分类器终裁口(contract-v0.8 auto 模式起):
      * - base 非 ask 或未注入分类器 → **同步**原样返回(零开销直通,调用方的
      *   同步快路径不受影响;auto 未注入分类器时,快路径外的输入与 default
      *   逐字节一致——工作区快路径本身在 decide 内,不依赖分类器);
-     * - **auto-only 缺省**(T-K6):非 auto 模式同步直通 ask——询问面本就有
+     * - **auto-only 缺省**:非 auto 模式同步直通 ask——询问面本就有
      *   人裁,不花模型钱;`tightenOutsideAuto=true` 才咨询,且只收紧
      *   (softenToAllow 非 auto 恒 false,safe 维持 ask);
-     * - **窄缓存**(T-K6,05 §10.3):只读输入的 safe 裁定按全字段键复用
+     * - **窄缓存**:只读输入的 safe 裁定按全字段键复用
      *   (免咨询;资格守卫仍每次现算);写改类输入不查不存;
-     * - **调用预算**(T-K6):实际模型咨询计数达 callBudget(缺省 200)后
+     * - **调用预算**:实际模型咨询计数达 callBudget(缺省 200)后
      *   同步直通 ask(超限改询问;onBudgetExhausted 单次上报);
-     * - **熔断先行**(T-K1,doc/07 §5.6):分类器 reject 连续 3 次 → 30min
+     * - **熔断先行**:分类器 reject 连续 3 次 → 30min
      *   冷却(期满自动复位,连拒计数清零);会话累计 20 次 → 本会话停用。
      *   记账按裁决人 reject 计,与 rejectEffect 落地形无关(doc/113)。熔断
      *   期间同步原样返回 ask(交回询问面;headless 按既有语义降 deny)。
      *   跳闸时经 config.onBreakerTrip 单次上报(内核零 IO);任何非 reject 的
      *   咨询终局(safe/unsure/超时/抛错)都会清零连拒计数——期间用户注意力
-     *   已经或即将介入;人工恢复口见 resetClassifierBreaker(T-K19a
-     *   「批准即恢复」:两档皆复位,仅交互面用户显式批准后可调);
+     *   已经或即将介入;人工恢复口见 resetClassifierBreaker
+     *   (「批准即恢复」:两档皆复位,仅交互面用户显式批准后可调);
      * - base 为 ask 且注入了分类器 → 异步咨询:
      *   · `unsafe` → 收紧,source 记 'classifier'(RFC-OPT18-3 专属审计归因),
      *     matchedRule 保留,**reason 携带分类器理由**;落地形按
@@ -12784,7 +12851,7 @@ declare class PermissionEngine {
      *     终审(询问面缺席由调度器地板降 deny)——收紧在**一切模式**下生效
      *     (OPT-18 既有机制语义不变);
      *   · `safe` → 仅 auto 模式(RFC-OPT18-1)且**生效资格档半径覆盖该调用
-     *     面**时(T-K23c,16 §4.2:SOFTEN_RADIUS[resolveTier()][face],档位
+     *     面**时(SOFTEN_RADIUS[resolveTier()][face],档位
      *     解析闭包每次咨询现算)放行为 allow,source 记 'classifier',reason
      *     同携带;且须通过与模式放行同级的资格守卫(目标可解析、路径非
      *     UNC、内置基线复查不命中——ask 规则命中时管线 4.5 段未评估,
@@ -12793,12 +12860,12 @@ declare class PermissionEngine {
      *     松动,且 deny 规则/基线永不受软化——deny 路径根本不进本方法);
      *   · `unsure`/超时/抛错 → 维持 ask 原样(fail-degrade,不改变既有语义)。
      * - Shell 工具附命令结构树(command-structure.ts);注入了 transcript
-     *   提供器且切片非空时附当前轮用户请求(T-K2,注入防御语义见 classifier.ts)。
+     *   提供器且切片非空时附当前轮用户请求(注入防御语义见 classifier.ts)。
      * - 模式在咨询发起时定格(异步窗口内 setMode 不追溯本次终裁)。
      */
     consultClassifier(input: DecideInput, base: PermissionDecisionResult): PermissionDecisionResult | Promise<PermissionDecisionResult>;
     /**
-     * 共享咨询预算消耗口(T-DA5,27 号 B-2):权限分类器与派生裁决查询
+     * 共享咨询预算消耗口:权限分类器与派生裁决查询
      * **共用同一预算池**(callBudget 上限 + 同一计数器)——两类模型咨询
      * 合计不超预算,避免两个口子各自失控。false = 预算耗尽(调用方按各自
      * 方向安全语义降级:分类器直通 ask,裁决查询结构性 escalate);耗尽
@@ -12807,32 +12874,31 @@ declare class PermissionEngine {
      */
     tryConsumeSharedConsult(): boolean;
     /**
-     * 生效资格档解析(T-K23c,16 §4.5):解析闭包在场即**现算**(装配层合成
+     * 生效资格档解析:解析闭包在场即**现算**(装配层合成
      * min(entry, ceiling, override);闭包抛错 → 'none',词表外脏值由
-     * softenRadiusAllows 安全查表兜底——T-INV-B 一切异常朝严);闭包缺席
-     * 恒 'none'(无任命即无软化面;@deprecated 布尔位 qualifiedForAllow
-     * 已随 P4-C3 拆除,2026-08-30)。
+     * softenRadiusAllows 安全查表兜底——一切异常朝严);闭包缺席
+     * 恒 'none'(无任命即无软化面;早先的布尔位 qualifiedForAllow 已拆除)。
      */
     private resolveClassifierTier;
     /**
-     * 生效资格档公共查询口(T-DA7,27 号 §3.3):派生裁决链的 auto 父终审
-     * 半径与分类器软化共用**同一资格链事实源**(16 §4.5「换裁决人不换半径」)
+     * 生效资格档公共查询口:派生裁决链的 auto 父终审
+     * 半径与分类器软化共用**同一资格链事实源**(「换裁决人不换半径」)
      * ——装配层经此口取生效档喂执行器的 endorseFinalizeTier。未注入分类器
      * 配置 = 'none'(无在册资格即无自动化裁决面,半径 0);解析异常朝严
      * (resolveClassifierTier 已兜 'none')。每次调用现算(validUntil 越期/
      * 天花板/会话覆盖变更即刻生效,与咨询路径同谓词)。
      */
     getEffectiveQualificationTier(): EffectiveQualificationTier;
-    /** 窄缓存统计快照(T-K6;命中率数据 = DoD 证据,自检面消费) */
+    /** 窄缓存统计快照(命中率数据;自检面消费) */
     getClassifierCacheStats(): ClassifierCacheStats;
     /**
-     * 咨询用量快照(T-K19b;/permissions 状态面板消费,零 IO):budget =
+     * 咨询用量快照(/permissions 状态面板消费,零 IO):budget =
      * 生效预算(与 consultClassifier 记账同一裁决:config.callBudget ??
      * 缺省;非有限值 = 不限)。未注入分类器时如实返回零咨询 + 缺省预算。
      */
     getClassifierUsage(): ClassifierUsage;
     /**
-     * 窄缓存键(T-K6,05 §10.3 键全字段):**仅只读输入**入围(写入/删除/
+     * 窄缓存键(键全字段):**仅只读输入**入围(写入/删除/
      * 发布/权限修改不得复用 safe 缓存——isReadOnly 非 true 一律返回 null,
      * 即不查不存);键 = 工具 + 规范化参数 + cwd + 模式 + 版本标签(装配层
      * 以协议指纹+stage 模型对构造)+ 策略束集(id+version)+ transcript
@@ -12882,14 +12948,14 @@ declare class PermissionEngine {
      */
     classifierAllowEligible(input: DecideInput): boolean;
     /**
-     * allow 侧有效规则集(T-K1):auto 模式丢弃授予任意代码执行的宽规则
+     * allow 侧有效规则集:auto 模式丢弃授予任意代码执行的宽规则
      * (broad-allow.ts 谓词),窄规则保留;其余模式原集直通。求值期过滤,
      * 不改写配置——退出 auto 即恢复。管线第 6 段与基线 4.5 段的配置 allow
      * 中和统一走本口(第 7 段会话缓存在 matchCache 内同口径过滤)。
      */
     private effectiveAllowRules;
     /**
-     * auto 模式下被丢弃的宽 allow 规则清单(层归因 + 原文;K19b 可见性口)。
+     * auto 模式下被丢弃的宽 allow 规则清单(层归因 + 原文;可见性口)。
      * 丢弃是求值期行为(effectiveAllowRules 过滤,配置不改写),此前对用户
      * 完全静默——「规则写了却不生效」必须可见,否则用户会误判配置生效面。
      * 非 auto 模式恒空:只报告实际发生的丢弃,不报告假设。
@@ -12906,7 +12972,7 @@ declare class PermissionEngine {
      */
     private insertPolicyRule;
     /**
-     * ask 规则按信任层分位视图(T-K0/INV-4):受信层(policy/user)在 §2.5 先于
+     * ask 规则按信任层分位视图(INV-4):受信层(policy/user)在 §2.5 先于
      * bypass/基线求值(显式审批义务,INV-3);项目层(projectLocal/projectShared)
      * 在 §4.9 后于基线/保护面/污点求值——只收紧不遮蔽 deny。按需过滤而非
      * 构造期快照:loadPolicyBundles 运行期注入 policy ask(insertPolicyRule),
@@ -12939,7 +13005,7 @@ declare class PermissionEngine {
      */
     private matchBaseline;
     /**
-     * R4-BG 灾难基线匹配(T-K3b;bypass 分支专用)。命中返回灾难规则 raw,否则
+     * 灾难基线匹配(bypass 分支专用)。命中返回灾难规则 raw,否则
      * null。与 matchBaseline 的区别:①只扫灾难子集(不含秘密面);②**不做
      * 配置 allow 中和**——bypass 本身即宽放行意图,灾难地板不容 allow 抵消
      * (否则 `allow:['Shell']` + bypass 又放走 rm -rf /);③无例外面。
@@ -12948,14 +13014,14 @@ declare class PermissionEngine {
     private compiled;
     /**
      * deny/ask 侧扫描:按层优先级顺序,首个命中即返回(归因到最高层)。
-     * 工具名判定统一走 ruleMatchesTool(T-K8:精确相等 + MCP 服务器级通配;
+     * 工具名判定统一走 ruleMatchesTool(精确相等 + MCP 服务器级通配;
      * 匹配语义全部落在 rules.ts,引擎只做接线)。
      */
     private matchRestrict;
     /**
      * allow 侧扫描:Shell 目标要求每一段至少被某条 allow 规则(保守匹配)覆盖,
      * 归因取覆盖第一段的规则;其余目标任一规则命中即放行。
-     * 工具名判定统一走 ruleMatchesTool(T-K8):`mcp__srv__*` 在 allow 侧
+     * 工具名判定统一走 ruleMatchesTool:`mcp__srv__*` 在 allow 侧
      * 命中该服务器全部工具——是工具级规则语义(命中全部调用),与 deny/ask
      * 侧工具名判定相同;不对称公理只作用于 specifier 内容匹配(通配规则
      * 恒无 specifier,不触及)。
@@ -12966,43 +13032,44 @@ declare class PermissionEngine {
 }
 
 /**
- * FX-B-04(十王修案 B 分册 §三 S2;doc/113 §1.4)— 裁决姿态推导的**唯一**实现。
+ * 裁决姿态推导的**唯一**实现。
  *
- * 不变量(doc/130 §二 L3「单点收敛」):「裁决人判危险的落地形(rejectEffect)」只有
+ * 不变量(「单点收敛」):「裁决人判危险的落地形(rejectEffect)」只有
  * 一个推导函数,住 kernel;cli 四入口 / 两会话工厂、sdk 令牌档、serve /v2 平台内置形
  * 三形只传**事实**(询问通道在场性、显式覆盖),不再各写字面表。此前三份副本:
  * sdk `adjudication/assemble.ts` 与 server `v2/adjudication.ts` 逐字相同的三元式,
  * cli 却按「入口表面」查静态表(TUI ask / headless·acp·serve deny)——而 askUser
  * 在场性对 serve(/v2 权限桥 / K11 审批)与 acp(requestPermission)是**逐会话**事实,
- * 静态表把「接了通道的 serve 会话」一律判 deny(J-01)。
+ * 静态表把「接了通道的 serve 会话」一律判 deny。
  *
- * 姿态词表(doc/113 §1.2;表面属性,不是应用属性):
+ * 姿态词表(表面属性,不是应用属性):
  * - `human-in-loop`(A 人在环):裁决人判危险 → 升到询问面(rejectEffect 'ask',携理由
  *   交用户终审;用户拒即 deny;机器恒不代批);
  * - `headless`(B 无人环):判危险 → deny(deny-and-continue,理由回喂模型)。
  *
  * 本文件零 IO、零副作用(只引类型);显式 A × 无通道的 fail-fast 由调用方按各自文案裁
- * (sdk 既有 invalid_options 文案不变),推导函数不抛。FX-B-05 追加
+ * (sdk 既有 invalid_options 文案不变),推导函数不抛。另提供
  * `modeUnderAdjudicator({ posture, tier })`——裁决人在场时的权限模式的**唯一**推导
- * (sdk `assembleTooling` / serve `platform-session-factory` 同源;J-03 / 候拍 ③ (a)+(c))。
+ * (sdk `assembleTooling` / serve `platform-session-factory` 同源)。
  */
 
-/** 裁决姿态词表(doc/113 §1.2) */
+/** 裁决姿态词表 */
 declare const ADJUDICATION_POSTURES: readonly ["human-in-loop", "headless"];
+/** 裁决姿态:'human-in-loop' 危险判定升到询问面由用户终审;'headless' 危险判定直接 deny 并回喂模型。 */
 type AdjudicationPosture = (typeof ADJUDICATION_POSTURES)[number];
 
 /**
- * T-D5 — Http 工具 URL 安全边线:协议白名单 + 私网/保留地址字面量拒绝 +
- * 解析后 IP 复核(R7-P2 SSRF DNS 重绑定缓解)+ socket 级 pin 终局闸
+ * Http 工具 URL 安全边线:协议白名单 + 私网/保留地址字面量拒绝 +
+ * 解析后 IP 复核(SSRF DNS 重绑定缓解)+ socket 级 pin 终局闸
  * (dispatcher.ts)。
  *
  * 三层分工:
  * - **字面量层**(validateHttpUrl,零网络):WHATWG URL 解析器已把十进制/
  *   十六进制/八进制 IPv4 简写归一为点分十进制(如 http://2130706433/ →
- *   127.0.0.1),混淆形态天然被覆盖;判定 `isPrivateHostLiteral` **FX-B-12 起单源**
+ *   127.0.0.1),混淆形态天然被覆盖;判定 `isPrivateHostLiteral` **单源**
  *   于 `net/egress-guard.ts`(表 `net/egress-literals.ts`;与 WebFetch url-guard 同一份,
- *   此前本文件子集表缺 192.0.0/24、198.18/15、fec0::/10、NAT64,02 O-4 漂移自此闭合);
- * - **解析层**(checkResolvedAddresses,R7-P2 2026-08-26):域名主机在
+ *   此前本文件子集表缺 192.0.0/24、198.18/15、fec0::/10、NAT64,该漂移自此闭合);
+ * - **解析层**(checkResolvedAddresses):域名主机在
  *   连接前经 dns.lookup 解析,任一解析地址落私网/保留段即拒(fail-closed;
  *   attacker 域指向 127.0.0.1/169.254.169.254 的经典 SSRF 自此被拦)——
  *   早拦层,连接前确定性拒绝且错误归因明确;
@@ -13012,7 +13079,7 @@ type AdjudicationPosture = (typeof ADJUDICATION_POSTURES)[number];
  *   的产物,作为终局闸。
  *
  * 三层 × 代理决策的复合工厂 = `net/egress-dispatcher.ts` `createEgressDispatcher`
- * (FX-B-12;Http / hooks / WebFetch / ASR 下载六消费点同一实例)。
+ * (Http / hooks / WebFetch / ASR 下载六消费点同一实例)。
  *
  * **竞态登记更新(2026-08-26,socket pin 落地)**:上一批登记的残余——
  * 「复核解析与 fetch 内部解析是两次独立 lookup,TTL=0 逐查翻转应答的
@@ -13074,7 +13141,7 @@ interface EgressClient {
 }
 
 /**
- * T-C2 — 工具注册表:name → Tool 的注册与查找。
+ * 工具注册表:name → Tool 的注册与查找。
  *
  * 未知工具名的处理不在这里 throw:调度器据查找结果直接产出 isError
  * tool_result(信息给模型,英文),保证查询环不因模型幻觉工具名而崩溃。
@@ -13086,7 +13153,7 @@ declare class ToolRegistry {
     /** 注册工具;同名重复注册直接 throw(装配期编程错误) */
     register<Args>(tool: Tool<Args>): void;
     /**
-     * 移除工具(T-D9:MCP 单服务器重连需先摘旧桥接工具)。不存在返回 false
+     * 移除工具(MCP 单服务器重连需先摘旧桥接工具)。不存在返回 false
      * 不 throw——清理路径对「已不在」宽容幂等(与 register 的装配期严苛相对)。
      */
     unregister(name: string): boolean;
@@ -13098,12 +13165,12 @@ declare class ToolRegistry {
 }
 
 /**
- * T-K16 — 项目 ask 注意力预算(doc/optimize/05 §10.4,A6 推论四)。
+ * 项目 ask 注意力预算。
  *
- * 动机:项目层(projectLocal/projectShared)可写 ask 规则且即时生效(A3),
- * 恶意/失控仓库可用海量 ask 淹没用户注意力(提示风暴)。A6 推论四:「收紧
+ * 动机:项目层(projectLocal/projectShared)可写 ask 规则且即时生效,
+ * 恶意/失控仓库可用海量 ask 淹没用户注意力(提示风暴)。「收紧
  * 即时生效」不豁免注意力预算——低可信来源可制造的询问量必须有界,否则
- * 「收紧」本身成为注意力耗竭攻击面。「显示来源」(T-K0)只解决归因,不解决
+ * 「收紧」本身成为注意力耗竭攻击面。「显示来源」只解决归因,不解决
  * 疲劳——预算才是结构性回应。
  *
  * 辖域:**仅项目来源 ask**(GateDecision.sourceLayer === 'projectLocal' |
@@ -13187,17 +13254,17 @@ declare class ProjectAskAttentionBudget {
 }
 
 /**
- * T-K10a — 决策归因记录(INV-8):每个经权限门**终局解决**的工具调用产出
+ * 决策归因记录(INV-8):每个经权限门**终局解决**的工具调用产出
  * 一条内部 DecisionRecord——含 allow(此前 allow 无事件不可见,是归因链的
  * 主缺口);deny/ask 路径与既有 tool.permission.decided 事件并行产记录,
- * 事件面零改动(不动 protocol 词表;source 细化的事件流版本走 RFC §6-1)。
+ * 事件面零改动(不动 protocol 词表;source 细化的事件流版本另走协议评审)。
  *
- * 分层定位:本文件属 dispatch 目录,遵守 T-C2 铁律不 import permissions/;
+ * 分层定位:本文件属 dispatch 目录,遵守分层铁律不 import permissions/;
  * 记录携带的是门面(GateDecision)已有信息 + 调用身份 + 目标摘要投影。
  * 落盘、脱敏(INV-10)、策略快照标识与模式富化由装配层写入器负责
  * (cli/assembly/decision-records.ts)——内核只产结构,不做 IO。
  *
- * 完整率口径(05 §16「归因完整率」):分母 = 经门判定且**终局解决**
+ * 完整率口径(「归因完整率」):分母 = 经门判定且**终局解决**
  * (allow/deny 落定)的调用;询问期间被中断(Esc/abort)的调用无终局,
  * 不产记录、不进分母。gateDecision 与 decision 两字段并存可答「门面初判
  * 是什么、最终谁拍板」:如 gateDecision='ask' + decision='allow' +
@@ -13219,16 +13286,16 @@ interface ToolDecisionRecord {
     source: DecisionSource;
     /** 门面初判(三态;与 decision 并存供归因分辨,见文件头) */
     gateDecision: 'allow' | 'deny' | 'ask';
-    /** 命中规则所在真实层(T-K0 透传;规则命中才有) */
+    /** 命中规则所在真实层(透传;规则命中才有) */
     sourceLayer?: 'policy' | 'projectLocal' | 'projectShared' | 'user';
     /** 命中规则原文(含 baseline/protected-path/hard-safety 伪规则) */
     matchedRule?: string;
-    /** 分类器/门面理由(T-K1 deny-and-continue 的 reason 透传) */
+    /** 分类器/门面理由(deny-and-continue 的 reason 透传) */
     reason?: string;
     /** 目标摘要(参数投影原文;**未脱敏**,写入器落盘前过 redactDeep) */
     targetSummary?: string;
     /**
-     * 派生裁决链留痕(T-DA4,INV-D4):子代理 ask 经裁决链时逐级
+     * 派生裁决链留痕(INV-D4):子代理 ask 经裁决链时逐级
      * {adjudicator, verdict, reason, via, elapsedMs};reason **未脱敏**,
      * 写入器落盘前过 redactDeep(同 targetSummary 纪律)。旧记录无此字段,
      * 读侧(/explain、doctor)按缺省空态兼容。仅裁决链路径落键。
@@ -13259,14 +13326,14 @@ interface ToolTouchObservation {
 }
 type OnFilesTouched = (entries: readonly ToolTouchObservation[]) => void;
 /**
- * 派生裁决链接线(T-DA2/T-DA3/T-DA7/T-DA8,doc/optimize/27):子代理执行器
+ * 派生裁决链接线:子代理执行器
  * 专属——ask 终局路由到父裁决链(reject/endorse/escalate 逐级)而非静默降
  * deny。主代理执行器恒不注入(routeAsk 自然走 user-dialog/floor-deny 现状
  * 路径)。
  */
 interface ExecutorAdjudicationOptions {
     /**
-     * 裁决人链(T-DA8 递归上升,27 号 §3.4)——由近及远:[直接父, 祖父, …]。
+     * 裁决人链(递归上升)——由近及远:[直接父, 祖父, …]。
      * 每级持**自己的**派生时点快照(agents/adjudication.ts);escalate 逐级
      * 上升,任何级 reject 即终局,endorse 直达链顶(default 上报终审 / auto
      * 半径内就地生效);链尽 = 链顶通道(topAskUser)或地板。
@@ -13275,12 +13342,12 @@ interface ExecutorAdjudicationOptions {
     /**
      * 链顶终审通道:装配层询问回调**同一实例**(TUI 弹卡 / K11 挑战投递)。
      * endorse/escalate 经此上升用户终审(弹卡呈现责任链);缺席 = 链顶无人,
-     * 落 fail-closed 地板(B-3)。dontAsk「不上升到用户」语义由装配层以
+     * 落 fail-closed 地板。dontAsk「不上升到用户」语义由装配层以
      * 不注入本位表达(kernel 零模式感知)。
      */
     topAskUser?: AskUserCallback;
     /**
-     * T-DA7 auto 半径内父终审(发布门 T-DA9 硬前置,27 号 §3.3/B-1):
+     * auto 半径内父终审:
      * **endorse 出口时点**求值(运行时,会话中切模式即时生效)。null = 无
      * 终审权(default/dontAsk:endorse 恒上报链顶);档位值 = auto 形态,
      * endorse 仅在该档软化半径内就地生效(半径事实源 = 资格链 SOFTEN_RADIUS,
@@ -13290,7 +13357,7 @@ interface ExecutorAdjudicationOptions {
      */
     endorseFinalizeTier?: () => EffectiveQualificationTier | null;
     /**
-     * T-DA7 分类器软化抑制谓词(裁决位切换的另半场):真值时子代理调用经门
+     * 分类器软化抑制谓词(裁决位切换的另半场):真值时子代理调用经门
      * hints 关闭分类器 safe→allow(收紧方向保留)——auto 下自动化裁决位由
      * 分类器让位父终审,不出现双放行位。装配层以「auto × 门开」表达;缺省 =
      * 分类器全权(链不可用形态的回退)。
@@ -13310,7 +13377,7 @@ interface DispatchingToolExecutorOptions {
     /** 每调用统一硬超时(毫秒);默认 120_000。测试可注入短超时 */
     defaultTimeoutMs?: number;
     /**
-     * FX-B-20 / T-08:硬超时后独占槽(inFlight)的释放宽限(毫秒)。超时即刻回喂
+     * 硬超时后独占槽(inFlight)的释放宽限(毫秒)。超时即刻回喂
      * 模型 / 签发 tool.failed(模型面不等),但**槽位**待工具 promise settle 或宽限
      * 到期二者先至才释放——此前超时即释放,不接 signal 的工具仍在写盘时下一独占
      * 写工具已启动(交叠写)。宽限到期仍未结束的操作可能与后续读写交叠；本机制不持有
@@ -13318,7 +13385,7 @@ interface DispatchingToolExecutorOptions {
      */
     timeoutReleaseGraceMs?: number;
     /**
-     * 权限缝(T-K13/INV-12 起构造期强制):一切工具执行必须过门。直接构造
+     * 权限缝(INV-12,构造期强制):一切工具执行必须过门。直接构造
      * 缺门抛错;明知无门的场景(纯调度/超时语义等不含权限断言的测试)用
      * createUnsafeExecutorWithoutGate() 显式绕过。
      */
@@ -13326,20 +13393,20 @@ interface DispatchingToolExecutorOptions {
     /** 权限询问回调;缺省时 ask 降级为 deny(headless 场景) */
     askUser?: AskUserCallback;
     /**
-     * 派生裁决链(T-DA1/T-DA2):注入即 ask 终局优先路由父裁决(routeAsk
+     * 派生裁决链:注入即 ask 终局优先路由父裁决(routeAsk
      * 优先序);缺省 = 现状(askUser 有无二分)。仅子代理执行器(subagent-
      * runner)在特性开启时注入。
      */
     adjudication?: ExecutorAdjudicationOptions;
     /**
-     * 项目 ask 注意力预算(T-K16,doc/optimize/05 §10.4):仅辖项目来源
+     * 项目 ask 注意力预算:仅辖项目来源
      * (sourceLayer=projectLocal/projectShared)的 ask——同规则同工具聚合去重、
      * 会话预算超限转 deny-and-continue。缺省 undefined = 特性关闭,行为与既有
      * 完全一致。仅在 askUser 在场时参与(headless 降级路径不适用)。
      */
     projectAskBudget?: ProjectAskAttentionBudget;
     /**
-     * 决策归因记录缝(T-K10a,INV-8):每个经门**终局解决**(allow/deny 落定)
+     * 决策归因记录缝(INV-8):每个经门**终局解决**(allow/deny 落定)
      * 的调用恰回调一次——含 allow(此前 allow 无事件不可见);询问期间被中断
      * 的调用无终局,不回调。回调抛错被吞(记录失败由写入器自身计数上报)。
      * 缺省 undefined = 不记录;无门执行器(测试)自然无记录。
@@ -13353,7 +13420,7 @@ interface DispatchingToolExecutorOptions {
     /** 时钟注入(durationMs 计算);默认 Date.now */
     now?: () => number;
     /**
-     * grep 轮次聚合器(T-D2 残项);缺省自建(会话级)。持有方 turn 结束经
+     * grep 轮次聚合器;缺省自建(会话级)。持有方 turn 结束经
      * executor.searchAggregator.snapshot()/drain() 导出(不新增契约事件)。
      */
     searchAggregator?: GrepRoundAggregator;
@@ -13400,7 +13467,7 @@ declare class DispatchingToolExecutor implements ToolExecutor {
      *   searchAggregator(会话级 grep 轮次聚合)以及其余全部构造选项(askUser /
      *   onDecision / captureFileCheckpoints / memoryWrite / fs / metrics …);
      * - 按新 cwd 重算:ToolContext.cwd、pre-image 采集前的真实目标守卫(checkRealTarget
-     *   工作区双锚)、T-DA7 半径判定 classifySoftenFace——三处皆按调用期以 `#cwd` 计算,
+     *   工作区双锚)、软化半径判定 classifySoftenFace——三处皆按调用期以 `#cwd` 计算,
      *   无跨调用缓存,新实例即新锚;
      * - 权限门:**缺省沿用**同一 gate 对象。sdk / cli 网关皆以构造期 cwd 锚定规则路径与
      *   工作区快路径(permission.ts「必须与 executor 的 cwd 一致」),装配层须以
@@ -13467,10 +13534,10 @@ interface SessionStoreCoreWarning {
 }
 
 /**
- * 会话历史分层存储 · 调用契约(doc/120 §3;doc/119 IO-02「接口先冻」)。
+ * 会话历史分层存储 · 调用契约(接口先冻)。
  *
  * 这里只有**运行时接口**;持久化数据契约(段条目 / 清单)在 protocol `storage.ts`
- * (contract-v0.22,RFC-SC-4)。分层核接在既有段层之上(journal/{writer,reader,manifest}.ts:
+ * (contract-v0.22)。分层核接在既有段层之上(journal/{writer,reader,manifest}.ts:
  * 写侧 `onSegmentSealed` 钩子 → 上传不可变段;读侧 `segmentSource` 钩子 → 本地段缺席时回源),
  * 热层本地盘恒为耐久性地板,冷层只承接封存后不可变的段 / 快照 / 附件。
  *
@@ -13484,6 +13551,7 @@ interface SessionStoreCoreWarning {
  */
 
 type StoreErrorKind = 'transient' | 'permanent' | 'not_found' | 'precondition_failed';
+/** 构造 StoreError 时的附加信息:原始异常与 transient 类的重试建议。 */
 interface StoreErrorOptions {
     cause?: unknown;
     /** transient 时的重试建议(如 429 Retry-After 换算 ms) */
@@ -13502,6 +13570,7 @@ declare class StoreError extends Error {
 }
 /** 任意异常 → StoreError(非 StoreError 一律 transient) */
 declare function toStoreError(error: unknown): StoreError;
+/** 字节对象的元数据:体积、内容类型、sha256 内容寻址与可选的生命周期 / 标签 / CAS 令牌。 */
 interface BlobMeta {
     bytes: number;
     /** 'application/x-ndjson' | 'application/gzip' | 'application/zstd' | 'application/json' */
@@ -13513,7 +13582,7 @@ interface BlobMeta {
     /** 如 { tenant, sessionId, kind:'segment'|'manifest'|'checkpoint'|'attachment' };引擎只写不读 */
     tags?: Record<string, string>;
     /**
-     * IO-12:条件写 CAS 令牌(与 PutResult.etag 同一口径,不透明)。`capabilities.conditionalPut:true`
+     * 条件写 CAS 令牌(与 PutResult.etag 同一口径,不透明)。`capabilities.conditionalPut:true`
      * 的适配器须在 head / list 返回(引擎据此对既有清单 ifMatch);其他适配器可缺席。
      */
     etag?: string;
@@ -13523,6 +13592,7 @@ interface ByteRange {
     start: number;
     end?: number;
 }
+/** SegmentBlobStore.put 的选项:取消信号与条件写(ifNoneMatch / ifMatch)令牌。 */
 interface PutOptions {
     signal?: AbortSignal;
     /** 仅 capabilities.conditionalPut 时引擎会传 */
@@ -13530,13 +13600,16 @@ interface PutOptions {
     /** etag CAS(清单重写);仅 capabilities.conditionalPut 时引擎会传 */
     ifMatch?: string;
 }
+/** SegmentBlobStore.put 的结果;支持条件写的适配器回传新 etag。 */
 interface PutResult {
     etag?: string;
 }
+/** SegmentBlobStore.list 的单条结果:键与元数据。 */
 interface BlobListEntry {
     key: string;
     meta: BlobMeta;
 }
+/** 字节对象存储适配器的能力声明;引擎据此决定一致性等待、条件写、分段阈值与批量删除。 */
 interface BlobStoreCapabilities {
     /** 写后立即 head/get/list 是否保证可见 */
     consistency: 'strong' | 'eventual';
@@ -13549,6 +13622,11 @@ interface BlobStoreCapabilities {
     /** 一次 delete 可接受的键数;缺省 1 */
     batchDelete?: number;
 }
+/**
+ * 一级存储接口:字节对象的 put / get / head / list / delete。
+ * S3 / OSS / COS / MinIO / GCS / Azure / GridFS / 文件系统皆此级;分段、编码、清单提交、
+ * 热盘 LRU 与重试由引擎内置分层核完成,适配器只需守 StoreError 四类错误约定。
+ */
 interface SegmentBlobStore {
     readonly capabilities: BlobStoreCapabilities;
     /** 至少一次、按 meta.sha256 幂等(同键同哈希重复 put 必须成功且无副作用) */
@@ -13562,6 +13640,7 @@ interface SegmentBlobStore {
     /** 不存在不算错 */
     delete(keys: readonly string[], signal?: AbortSignal): Promise<void>;
 }
+/** 二级存储中一条会话的元数据(列表 / 索引条目)。 */
 interface StoredSessionMeta {
     sessionId: string;
     endUserKey: string;
@@ -13573,11 +13652,12 @@ interface StoredSessionMeta {
     title?: string;
     platformSessionId?: string;
     /**
-     * IO-12:一级冷层经 `SessionIndexStore` 提交时,现行冷清单对象的规范键(每次提交写唯一、
+     * 一级冷层经 `SessionIndexStore` 提交时,现行冷清单对象的规范键(每次提交写唯一、
      * 不可变的新对象,index 的 CAS 即提交点)。条件写路径 / 二级冷层缺席。实现方按不透明串存取。
      */
     manifestKey?: string;
 }
+/** SessionHistoryStore.store 的入参:新封存段(可空)与含本段后的新清单,附代际 CAS 期望值。 */
 interface StoreInput {
     sessionId: string;
     endUserKey: string;
@@ -13593,6 +13673,7 @@ interface StoreInput {
     expectedGeneration: number;
     signal?: AbortSignal;
 }
+/** SessionHistoryStore.load 的查询:会话定位与可选的 seq 区间。 */
 interface LoadQuery {
     sessionId: string;
     endUserKey: string;
@@ -13600,6 +13681,7 @@ interface LoadQuery {
     toSeq?: number;
     signal?: AbortSignal;
 }
+/** SessionHistoryStore.load 的结果:清单 + 惰性的段体迭代器。 */
 interface LoadResult {
     manifest: SegmentManifest;
     /**
@@ -13611,6 +13693,10 @@ interface LoadResult {
         body: ReadableStream<Uint8Array>;
     }>;
 }
+/**
+ * 二级存储接口:自管布局(KV / 关系库)的会话历史存取。
+ * 引擎只调 store / load / listSessions / remove,分段与清单由实现方自行落位。
+ */
 interface SessionHistoryStore {
     store(input: StoreInput): Promise<void>;
     /** null = 不存在 */
@@ -13618,6 +13704,7 @@ interface SessionHistoryStore {
     listSessions(endUserKey: string, cursor?: string, signal?: AbortSignal): AsyncIterable<StoredSessionMeta>;
     remove(sessionId: string, endUserKey: string, signal?: AbortSignal): Promise<void>;
 }
+/** 可选的会话索引存储:为多副本共享元数据,或为不支持条件写的对象存储提供 CAS 提交点。 */
 interface SessionIndexStore {
     /** expectedGeneration 不匹配须抛 precondition_failed */
     upsert(meta: StoredSessionMeta, expectedGeneration?: number): Promise<void>;
@@ -13625,11 +13712,13 @@ interface SessionIndexStore {
     list(endUserKey: string, cursor?: string): AsyncIterable<StoredSessionMeta>;
     remove(endUserKey: string, sessionId: string): Promise<void>;
 }
+/** 段体上传 / 下载前后的字节流变换挂点(加密、脱敏等由开发者自带)。 */
 interface StreamTransform {
     /** 开发者自带加密 / 脱敏;引擎不做密码学 */
     encode(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array>;
     decode(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array>;
 }
+/** 分层存储策略:冷层编码、热盘保留、上传并发 / 重试预算、载入预取与流变换。 */
 interface SegmentedStorePolicy {
     /** 冷层封存段编码;缺省 'jsonl+gzip'(zstd 仅 Node ≥ 22.15 可用) */
     codec?: SegmentCodec;
@@ -13676,24 +13765,29 @@ declare const SEGMENTED_STORE_DEFAULTS: {
 /** 一级 / 二级判别(二级以 store/load 方法为准) */
 declare function isSessionHistoryStore(cold: SegmentBlobStore | SessionHistoryStore): cold is SessionHistoryStore;
 
+/** 内存存储的构造选项:可选的能力自述覆写。 */
 interface MemoryBlobStoreOptions {
     /** 覆写能力自述(测试用,如模拟无条件写后端) */
     capabilities?: Partial<BlobStoreCapabilities>;
 }
+/** 创建纯内存的 SegmentBlobStore;附 size / keys() 供测试直读。 */
 declare function createMemoryBlobStore(options?: MemoryBlobStoreOptions): SegmentBlobStore & {
     /** 测试直读 */
     readonly size: number;
     keys(): string[];
 };
 
+/** 文件系统冷层存储的构造选项:根目录与可选的能力自述覆写。 */
 interface FsBlobStoreOptions {
     /** 根目录(不存在则首次操作创建);只作冷层 */
     dir: string;
     /** 覆写能力自述(测试用,如模拟无条件写后端;行为不随之变——一致性测试套据此揭示「自述不实」) */
     capabilities?: Partial<BlobStoreCapabilities>;
 }
+/** 创建以本地目录为后端的 SegmentBlobStore(双树布局、原子条件写、原生 Range 读);只作冷层。 */
 declare function createFsBlobStore(options: FsBlobStoreOptions): SegmentBlobStore;
 
+/** 一致性测试套的运行选项:体量 / 内存预算 / 最终一致窗口 / 隔离前缀 / 并发数 / 清理与取消。 */
 interface StorageConformanceOptions {
     /** 大对象体量;缺省 16 MiB(正式认证建议 1 GiB) */
     largeObjectBytes?: number;
@@ -13709,6 +13803,7 @@ interface StorageConformanceOptions {
     keepObjects?: boolean;
     signal?: AbortSignal;
 }
+/** 单个一致性用例的结果:id、是否通过、说明文本、是否因能力不适用而跳过、耗时。 */
 interface StorageConformanceCase {
     id: string;
     passed: boolean;
@@ -13717,6 +13812,7 @@ interface StorageConformanceCase {
     skipped?: boolean;
     durationMs: number;
 }
+/** 一致性测试套的整体报告:逐用例结果、总判定、被测存储的能力自述与起止信息。 */
 interface StorageConformanceReport {
     cases: StorageConformanceCase[];
     /** 全部用例 passed */
@@ -13725,26 +13821,29 @@ interface StorageConformanceReport {
     startedAt: string;
     durationMs: number;
 }
+/** 对一个 SegmentBlobStore 跑完十类一致性用例并返回报告;全部对象落在隔离前缀下,结束时尽力清理。 */
 declare function runStorageConformance(store: SegmentBlobStore, options?: StorageConformanceOptions): Promise<StorageConformanceReport>;
 
 /**
- * 混沌包装器 `createChaosBlobStore(inner, faults)`(doc/119 IO-14)——把任一 `SegmentBlobStore` 包成
- * 会出故障的后端,供一致性测试套 / 对抗验收(doc/119 §1.2 A1–A14)注入:
+ * 混沌包装器 `createChaosBlobStore(inner, faults)`——把任一 `SegmentBlobStore` 包成
+ * 会出故障的后端,供一致性测试套 / 对抗验收注入:
  *
  *   failPut              put 立即失败(true / 按键谓词 / 前 N 次),kind = putErrorKind(缺省 transient)
  *   failPutAfterBytes    put 消费体到 N 字节后失败(连接中断;体已部分读出,不得留半对象)
  *   putErrorKind         注入的 put 失败分类(transient | permanent | not_found | precondition_failed)
  *   eventualListLagMs    list 对「最近 lag 毫秒内 put 的键」不可见(最终一致);capabilities.consistency 报 eventual
  *   dropListEntries      list 丢项(按键谓词 / 概率 0–1)
- *   corruptSegmentKeys   get 对匹配键返回翻转首字节的体(篡改;A4)
- *   abortMidStream       get 的流在首块之后以 transient 出错(下载中断;A7)
+ *   corruptSegmentKeys   get 对匹配键返回翻转首字节的体(篡改)
+ *   abortMidStream       get 的流在首块之后以 transient 出错(下载中断)
  *   latencyMs            每次调用前延迟(定值 / [min,max] 均匀)
  *
  * `faults` 对象**按引用持有**,测试可运行时翻转(如愈合 failPut 观察追平);`stats` 记各类注入次数。
  * 不改语义的调用原样透传;内层错误原样上抛(不二次包装)。
  */
 
+/** 按键选择注入目标:布尔整体开关,或对键求值的谓词。 */
 type KeyPredicate = boolean | ((key: string) => boolean);
+/** 混沌故障配置;对象按引用持有,测试可在运行时翻转各项。 */
 interface ChaosFaults {
     /** put 立即失败:true / 按键谓词 / 数字 = 前 N 次 put 失败 */
     failPut?: KeyPredicate | number;
@@ -13768,6 +13867,7 @@ interface ChaosFaults {
         max: number;
     };
 }
+/** 混沌包装器的注入计数与各操作调用次数。 */
 interface ChaosStats {
     putFailures: number;
     putTruncated: number;
@@ -13777,11 +13877,13 @@ interface ChaosStats {
     abortedGets: number;
     calls: Record<'put' | 'get' | 'head' | 'list' | 'delete', number>;
 }
+/** 被混沌包装后的存储:暴露故障配置、注入统计与内层存储。 */
 interface ChaosBlobStore extends SegmentBlobStore {
     readonly faults: ChaosFaults;
     readonly stats: ChaosStats;
     readonly inner: SegmentBlobStore;
 }
+/** 把任一 SegmentBlobStore 包成按 faults 注入故障的存储;不改语义的调用原样透传,内层错误原样上抛。 */
 declare function createChaosBlobStore(inner: SegmentBlobStore, faults?: ChaosFaults, now?: () => number): ChaosBlobStore;
 
 /** 会话身份(冷层键形 `<tenant>/<endUserKey>/<sessionId>/<volumeId>/…` 与清单分域所需)+ 热层目录 */
@@ -13794,6 +13896,7 @@ interface ColdSessionRef {
 }
 /** 会话身份(不含热层目录;remove / gc 用) */
 type ColdSessionId = Pick<ColdSessionRef, 'sessionId' | 'endUserKey'>;
+/** 冷层运行统计:上传积压、热盘占用、累计提交数与就绪位。 */
 interface ColdTierStats {
     /** 待上传 / 待提交段数与字节(积压;两条告警线之一) */
     backlogSegments: number;
@@ -13806,7 +13909,7 @@ interface ColdTierStats {
     ready: boolean;
 }
 /**
- * 结构化事件(doc/120 §8;S7 映射为 serve 日志事件 / onStoreError):
+ * 结构化事件(可映射为 serve 日志事件 / onStoreError):
  * - `store.segment_sealed`:收到封段通知,已入队(热层事实);
  * - `store.segment_committed`:段 put 成功且冷清单 CAS 已提交(冷层事实;可逐出);
  * - `store.commit_failed`:一次上传 / 提交失败(`gaveUp` = 重试预算耗尽或 permanent /
@@ -13851,6 +13954,7 @@ type ColdTierEvent = {
     session: ColdSessionId;
     deleted: string[];
 };
+/** 冷层结构化事件的 type 取值集合。 */
 type ColdTierEventType = ColdTierEvent['type'];
 
 declare const ContextCheckpointTriggerSchema: z.ZodEnum<["manual", "pre_compaction", "pre_clear", "pre_restore"]>;
@@ -14303,10 +14407,10 @@ interface CheckpointRetention {
 declare const CHECKPOINT_EXPORT_FORMAT: "tansr-checkpoint/1";
 
 /**
- * T-D6 — 交互通道抽象:AskUser 工具与表面层之间的依赖注入缝。
+ * 交互通道抽象:AskUser 工具与表面层之间的依赖注入缝。
  *
  * 设计要点:
- * - kernel 不知道"怎么问用户":TUI(T-E3)注册对话框实现,headless(T-E1)
+ * - kernel 不知道"怎么问用户":TUI 注册对话框实现,headless
  *   缺省注入 UnavailableChannel(工具据此产出"自行决策并继续"的降级文案);
  * - `ask` 必须尊重 AbortSignal;即使实现忽略 signal,AskUser 工具侧也会兜底
  *   竞争 abort(见 ask-tool.ts),保证取消链贯穿;
@@ -14317,6 +14421,7 @@ interface QuestionOption {
     id: string;
     label: string;
 }
+/** AskUser 工具向用户提出的单个问题:提示语、至少两个可选项、是否允许多选。 */
 interface Question {
     id: string;
     prompt: string;
@@ -14325,6 +14430,7 @@ interface Question {
     /** true 允许多选;缺省单选 */
     allowMultiple?: boolean;
 }
+/** 用户对单个问题的回答:选中的选项 id 集合与可选的自由文本。 */
 interface Answer {
     questionId: string;
     /** 选中的 option id 集合(单选题至多 1 个;可为空但需伴随 freeText) */
@@ -14332,6 +14438,7 @@ interface Answer {
     /** 用户补充的自由文本(可与选项并存) */
     freeText?: string;
 }
+/** 交互通道:表面层实现「怎么问用户」,AskUser 工具经此提问;headless 场景注入不可用通道即降级。 */
 interface PromptChannel {
     /**
      * 向用户提出一批问题,resolve 为对应答案。
@@ -14359,11 +14466,11 @@ declare class UnavailableChannel implements PromptChannel {
 }
 
 /**
- * T-D4 — Web 搜索后端接口(可插拔)。
+ * Web 搜索后端接口(可插拔)。
  *
- * 命名为 WebSearchProvider(而非任务卡字面的 SearchProvider)以避开
- * 《09》§8 前置项 4 预留给代码检索(T-D2 语义索引)的 SearchProvider
- * 名字空间——kernel 顶层出口是 `export *`,同名必撞。偏差已记入任务报告。
+ * 命名为 WebSearchProvider(而非 SearchProvider)以避开
+ * 预留给代码检索(语义索引)的 SearchProvider
+ * 名字空间——kernel 顶层出口是 `export *`,同名必撞。
  */
 /** 单条搜索结果(结构化;渲染归表面层) */
 interface WebSearchResultItem {
@@ -14394,16 +14501,16 @@ interface WebSearchProvider {
 }
 
 /**
- * T-D7 — 子代理定义(命名专家代理):公共类型与常量。
+ * 子代理定义(命名专家代理):公共类型与常量。
  *
- * 设计事实源:
- * - doc/05 §3.2 F4:`.tansr/agents/*.md` 自定义子代理 + 命名专家模板
- *   (数字员工心智,doc/01 §2.9 Amp 启示);
- * - doc/02 §7.5:`.claude/agents/*.md` 兼容形态(frontmatter name/description
+ * 设计要点:
+ * - `.tansr/agents/*.md` 自定义子代理 + 命名专家模板
+ *   (数字员工心智,Amp 启示);
+ * - `.claude/agents/*.md` 兼容形态(frontmatter name/description
  *   必填 + tools/model 等),覆盖顺序「越近越强」;
- * - doc/06 §3.4 同范式:发现顺序 内置 → 用户(~/.tansr)→ 项目(.tansr),
+ * - 发现顺序 内置 → 用户(~/.tansr)→ 项目(.tansr),
  *   同名覆盖越近越强(与 skills/commands 一致);
- * - T-C7 安全铁律:定义中的 tools 白名单只在父 toolset 上做收窄,绝不引入
+ * - 安全铁律:定义中的 tools 白名单只在父 toolset 上做收窄,绝不引入
  *   父集合没有的工具(权限单调收缩)。
  *
  * 容错铁律(与 skills 同款):坏 frontmatter 单文件降级跳过 + 结构化诊断,
@@ -14432,11 +14539,11 @@ interface AgentDefinition {
     /** 模型别名覆写(可选):经 TaskToolConfig.resolveModel 通路解析(三档 tier 或装配层注册的别名) */
     model?: string;
     /**
-     * 权限档声明(可选,T-R3):**仅 serve 会话档案(SessionInit.profile)消费**
+     * 权限档声明(可选):**仅 serve 会话档案(SessionInit.profile)消费**
      * ——serve 工厂按 managed 上界裁决后注入逐会话引擎;Task 子代理恒继承父
      * PermissionGate(INV-6),不读本位。词表 = protocol PERMISSION_MODES;
      * 项目来源定义声明扩权档(auto/acceptEdits/bypassPermissions)在解析期
-     * 忽略 + 诊断(T-K0/INV-4:仓库字节面不得扩权,收紧档照常生效)。
+     * 忽略 + 诊断(INV-4:仓库字节面不得扩权,收紧档照常生效)。
      */
     permissionMode?: PermissionMode;
     source: AgentSourceName;
@@ -14445,13 +14552,13 @@ interface AgentDefinition {
 }
 
 /**
- * T-C7 — 子代理机制公共类型与常量。
+ * 子代理机制公共类型与常量。
  *
- * 设计依据:
- * - doc/02 §3.2/§7.5:子代理 = 同一查询环的隔离实例(createSubagentContext 范式)——
+ * 设计要点:
+ * - 子代理 = 同一查询环的隔离实例(createSubagentContext 范式)——
  *   隔离消息历史、独立 agentId、父 abort 传播到同步子代理、非交互(不向用户提问);
- * - doc/01 §2.9(Amp):命名式专家子代理的分工心智,一期先交付通用 Task 工具,
- *   T-D7 再叠加 `.tansr/agents/*.md` 自定义定义;
+ * - Amp 式命名专家子代理的分工心智:通用 Task 工具之上
+ *   叠加 `.tansr/agents/*.md` 自定义定义;
  * - protocol 冻结:事件走既有 agent.spawned/progress/completed;agentId 注入
  *   事件包络的落点是自由字符串字段 `source`(形如 `agent:<agentId>`,对齐
  *   Claude Code `querySource: 'agent:...'`),不改包络 schema。
@@ -14464,12 +14571,12 @@ interface AgentDefinition {
  * 模型降档/覆写注入缝:kernel 不依赖 providers registry,由装配层(cli
  * assembly)传入 别名 → ResolvedModel 的映射。别名可为三档 tier(Task 参数
  * 面仍锁 SUBAGENT_MODEL_TIERS 枚举),也可为自定义代理定义声明的任意模型
- * 别名(T-D7,别名合法性由装配层解析器裁决)。未注入时别名请求被忽略
+ * 别名(别名合法性由装配层解析器裁决)。未注入时别名请求被忽略
  * (沿用父模型,结果 data 里以 modelTierIgnored 标注,不静默)。
  */
 type SubagentModelResolver = (alias: string, parentModel: ResolvedModel) => ResolvedModel;
 /**
- * T-CTX18 — 子模型上下文窗口解析缝:kernel 不依赖 providers registry,由
+ * 子模型上下文窗口解析缝:kernel 不依赖 providers registry,由
  * 装配层以 `registry.resolveAlias('<provider>/<model>').capability.maxContext`
  * 类闭包实现。入参是**已解析的子模型**(可能经 tier 降档,与父不同);返回
  * undefined = 窗口未知(运行器据此静默禁用子代理压缩装配,与四入口驱动
@@ -14607,7 +14714,7 @@ declare class TaskBackgroundRunner {
 }
 
 /**
- * CW13-N6 — 成本感知子代理分派策略(doc/61 L6 N6;doc/62 §二泳道卡)。
+ * 成本感知子代理分派策略。
  *
  * 职责:Task 子代理**无显式模型请求**时的档位路由——「实时价 × 能力档」,
  * 对标差异化:五家硬编码降档(CC→Haiku),tansr 按平台实时价目取经济档。
@@ -14620,7 +14727,7 @@ declare class TaskBackgroundRunner {
  *   父会话模型;
  * - **新增/未知类型缺省 'inherit'(fail-safe)**:映射表查无此名恒不降档;
  * - 分类/裁决类辅助任务(权限分类器/裁决人/压缩/标题/记忆抽取)的 fast
- *   纪律是**既有旁路装配**(OPT-10/OPT-18/T-C4),不经本模块,恒不动。
+ *   纪律是**既有旁路装配**,不经本模块,恒不动。
  *
  * 优先级铁律(恒不覆写显式指定):
  * 1. 调用参数 `model`(用户/父模型显式请求)——策略恒不适用;
@@ -14681,14 +14788,14 @@ interface SubagentDispatchPolicy {
 }
 
 /**
- * 派生裁决链装配段(T-DA2/T-DA3/T-DA5,doc/optimize/27):装配层按会话
+ * 派生裁决链装配段:装配层按会话
  * 形态与权限模式注入;缺席 = 现状(子代理 ask 落 fail-closed 地板)。
  */
 interface TaskAdjudicationConfig {
     /**
      * 动态启用谓词——**派生时点**求值(会话中切模式即时生效):装配层绑
-     * 权限模式(P-D1 仅 default 走链;27 号 §3.3 模式矩阵)与 env 逃生口
-     * (TANSR_DELEGATION_ADJUDICATION=0 关闭,T-DA5)。false = 本次派生
+     * 权限模式(仅 default 走链)与 env 逃生口
+     * (TANSR_DELEGATION_ADJUDICATION=0 关闭)。false = 本次派生
      * 不建链(子代理 ask 回地板)。
      */
     enabled: () => boolean;
@@ -14698,26 +14805,26 @@ interface TaskAdjudicationConfig {
      * endorse/escalate 落地板,净效果 = 现状,只多父裁决理由留痕。
      */
     askUser?: AskUserCallback;
-    /** 共享咨询预算/熔断 gate(B-2:与权限分类器同池;装配层组合引擎公共口) */
+    /** 共享咨询预算/熔断 gate(与权限分类器同池;装配层组合引擎公共口) */
     budget?: AdjudicationBudgetGate;
     /**
-     * T-DA7 auto 半径内父终审档(发布门 T-DA9 硬前置):endorse 出口时点
+     * auto 半径内父终审档:endorse 出口时点
      * 求值;null = 无终审权(default/dontAsk),档位 = auto 且门开(半径 =
      * 资格链 SOFTEN_RADIUS,'none' 档半径恒空)。装配层以「模式 × 门开 ×
-     * 引擎生效档」组合;缺省恒 null(P-D1 形态)。
+     * 引擎生效档」组合;缺省恒 null(无父终审形态)。
      */
     endorseFinalizeTier?: () => EffectiveQualificationTier | null;
     /**
-     * T-DA7 分类器软化抑制谓词:真值时子代理调用的 safe→allow 让位父终审
+     * 分类器软化抑制谓词:真值时子代理调用的 safe→allow 让位父终审
      * (经门 hints 收紧;unsafe→deny 保留)。装配层以「auto × 门开」表达;
      * 缺省 = 分类器全权(回退形态)。
      */
     suppressClassifierSoften?: () => boolean;
     /**
-     * T-C4 裁决模型覆写(远程治理档):client 与 model **成对**注入——换档
+     * 裁决模型覆写(远程治理档):client 与 model **成对**注入——换档
      * 可能换适配器/鉴权面,分层铁律下 kernel 不解析别名,由装配层从 bundle
      * adjudicator.modelHandle 经 registry 解析后成对交付。缺省 = 父查询环
-     * client + parentModel(27 号 §3.2 缓存热前缀形态);覆写档的裁决查询
+     * client + parentModel(缓存热前缀形态);覆写档的裁决查询
      * 前缀不再与父主会话共缓存——治理档语义(平台指定裁决人)优先于该优化。
      */
     model?: {
@@ -14725,7 +14832,7 @@ interface TaskAdjudicationConfig {
         model: ResolvedModel;
     };
     /**
-     * T-C7 裁决查询 usage 回报缝(《29》§2.6 budgets.maxUsd 计量半边):
+     * 裁决查询 usage 回报缝(budgets.maxUsd 计量半边):
      * 每次真实裁决查询的 provider usage 回调一次,装配层累计会话内裁决
      * 成本估算(与 budget gate 的远程档预算检查组成消费闭环)。嵌套派生
      * 经 config 展开继承同一回调——各级裁决查询同入会话账。缺省零开销。
@@ -14804,28 +14911,28 @@ interface TaskToolConfig {
     /** 时钟注入;缺省 Date.now */
     now?: () => number;
     /**
-     * T-CTX18 — 子代理压缩装配(注入纪律与守卫语义见
+     * 子代理压缩装配(注入纪律与守卫语义见
      * SubagentRunOptions.compaction):装配层传父方案展开产物同款的查询级
      * 字段(不得含 manager/session);observer 由运行器按派生期 agentId
      * 包装注入。嵌套派生经 config 展开自动继承(孙代理同组参数、各自
      * agentId 标识)。缺省 = 现状(子代理无压缩)。
      */
     compaction?: QueryCompactionOptions;
-    /** T-CTX18 — 子模型窗口解析缝(嵌套派生自动继承) */
+    /** 子模型窗口解析缝(嵌套派生自动继承) */
     resolveContextWindow?: SubagentContextWindowResolver;
     /**
-     * T-CTX18 — 工具结果预算透传:persist 应与父会话同一闭包实例(落同一
+     * 工具结果预算透传:persist 应与父会话同一闭包实例(落同一
      * 会话 tool-results 目录,子代理大结果父会话可回查);嵌套派生自动继承。
      */
     toolResultBudget?: ToolResultBudgetOptions;
     /**
-     * 可用命名专家目录(T-D7):内置模板 + 已发现自定义,装配层经
+     * 可用命名专家目录:内置模板 + 已发现自定义,装配层经
      * discoverAgents 合并注入(项目层同名优先)。缺省 = 无命名代理
      * (subagent_type 一律未知名错误,工具描述不列清单)。
      */
     agents?: readonly AgentDefinition[];
     /**
-     * 派生裁决链(T-DA2):注入即子代理 ask 经父裁决链(派生时点快照 +
+     * 派生裁决链:注入即子代理 ask 经父裁决链(派生时点快照 +
      * 三出口 + 终审弹卡);缺省 = 现状地板。嵌套派生经 config 展开自动
      * 继承——孙代理的裁决人是子代理(其 Task 实例在子查询环内执行,快照
      * 取子查询环消息,各级天然自取)。
@@ -14866,10 +14973,10 @@ interface TaskBackgroundConfig {
 }
 
 /**
- * SpeechToText(ASR)环2 内置工具骨架(doc/128 §3.2,K-2;自 sdk platform/speech-to-text-tool.ts
- * 收编——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入;doc/123 D-A1/D-A3/§3.5)。
+ * SpeechToText(ASR)内置工具骨架(自 sdk platform/speech-to-text-tool.ts
+ * 迁入——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入)。
  *
- * 音频上行**不入 IR 块**(doc/123 D-A4,协议冻结面零触碰):`audio` 位携 data:audio/*;base64 URI
+ * 音频上行**不入 IR 块**(协议冻结面零触碰):`audio` 位携 data:audio/*;base64 URI
  * 或 http(s) URL,由提供方取字节上行;产物是文本,天然回到 IR 文本世界。
  */
 
@@ -14879,6 +14986,7 @@ interface TaskBackgroundConfig {
  * 与 kernel 120s 统一档同值,显式声明只为口径可见可覆盖。
  */
 declare const SPEECH_TO_TEXT_TOOL_TIMEOUT_MS = 120000;
+/** SpeechToText 工具参数 schema:模型(可省)、待转写音频(data URI 或 http(s) URL)、语言提示与说话人分离开关。 */
 declare const SpeechToTextArgsSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     audio: z.ZodString;
@@ -14895,17 +15003,18 @@ declare const SpeechToTextArgsSchema: z.ZodObject<{
     language?: string | undefined;
     diarize?: boolean | undefined;
 }>;
+/** SpeechToText 工具的已校验参数类型(SpeechToTextArgsSchema 推导)。 */
 type SpeechToTextArgs = z.infer<typeof SpeechToTextArgsSchema>;
 
 /**
- * TextToSpeech(TTS)环2 内置工具骨架(doc/128 §3.2,K-2;自 sdk platform/text-to-speech-tool.ts
- * 收编——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入;doc/123 D-A1/D-A3/D-A5/§3.5)。
+ * TextToSpeech(TTS)内置工具骨架(自 sdk platform/text-to-speech-tool.ts
+ * 迁入——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入)。
  *
- * 产物形(D-A5):`audio: { url? | b64?, mime, format, durationMs?, sampleRate? }`——URL 托管形原样
- * 透出、内联形以 b64 透出;消费方按 `url ?? b64` 取用。本骨架加 D-M12 落盘缝:`audio.b64` 在场且
+ * 产物形:`audio: { url? | b64?, mime, format, durationMs?, sampleRate? }`——URL 托管形原样
+ * 透出、内联形以 b64 透出;消费方按 `url ?? b64` 取用。本骨架加落盘缝:`audio.b64` 在场且
  * `artifactSink` 在场 → 落盘并写 `audio.path` 加法键(sdk 恒不接 sink,data 逐字不变;serve 接
- * `exposePath:false` 的 sink——落盘但空串返回,path 不出线,FX-B-27;描述落盘句随 `sinkExposesPath`
- * 三态,FX-B-26/收官)。
+ * `exposePath:false` 的 sink——落盘但空串返回,path 不出线;描述落盘句随 `sinkExposesPath`
+ * 三态)。
  */
 
 /**
@@ -14916,8 +15025,9 @@ type SpeechToTextArgs = z.infer<typeof SpeechToTextArgsSchema>;
 declare const TEXT_TO_SPEECH_TOOL_TIMEOUT_MS = 60000;
 /** 平台缺省字数帽(doc/123 §3.2「≤ maxChars,缺省帽 2000」;约束缺席时描述用) */
 declare const TEXT_TO_SPEECH_DEFAULT_MAX_CHARS = 2000;
-/** 输出格式词表(doc/123 §3.2 format 位;家族不受理的格式按面档回落,如 dashscope 恒 wav) */
+/** 输出格式词表(家族不受理的格式按面档回落,如 dashscope 恒 wav) */
 declare const TEXT_TO_SPEECH_FORMATS: readonly ["wav", "mp3"];
+/** TextToSpeech 工具参数 schema:模型(可省)、待朗读文本、音色 id 与输出格式。 */
 declare const TextToSpeechArgsSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     input: z.ZodEffects<z.ZodString, string, string>;
@@ -14934,12 +15044,13 @@ declare const TextToSpeechArgsSchema: z.ZodObject<{
     format?: "wav" | "mp3" | undefined;
     voice?: string | undefined;
 }>;
+/** TextToSpeech 工具的已校验参数类型(TextToSpeechArgsSchema 推导)。 */
 type TextToSpeechArgs = z.infer<typeof TextToSpeechArgsSchema>;
 
 /**
- * VideoGen 环2 内置工具骨架(doc/128 §3.2,K-2;imagegen.ts 同构镜像,自 sdk
- * platform/videogen-tool.ts 收编——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入)。
- * 视频无业界标准 BYO wire(D-M7),提供方仅平台径(sdk)或自定义注入。
+ * VideoGen 内置工具骨架(imagegen.ts 同构镜像,自 sdk
+ * platform/videogen-tool.ts 迁入——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入)。
+ * 视频无业界标准 BYO wire,提供方仅平台径(sdk)或自定义注入。
  */
 
 /** 时长 wire 帽(秒;与网关 TwpVideogenRequestSchema 同值;超模型帽由后端再钳)。 */
@@ -14954,6 +15065,7 @@ declare const VIDEOGEN_TOOL_MAX_DURATION = 30;
  * 三笔 ¥2.40 计 ¥7.20 有扣无产)。
  */
 declare const VIDEOGEN_TOOL_TIMEOUT_MS = 660000;
+/** VideoGen 工具参数 schema:模型(可省)、正负提示词、时长、画幅比、种子与图生视频的首帧图。 */
 declare const VideoGenArgsSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     prompt: z.ZodEffects<z.ZodString, string, string>;
@@ -14979,16 +15091,17 @@ declare const VideoGenArgsSchema: z.ZodObject<{
     ratio?: string | undefined;
     imageUrls?: string[] | undefined;
 }>;
+/** VideoGen 工具的已校验参数类型(VideoGenArgsSchema 推导)。 */
 type VideoGenArgs = z.infer<typeof VideoGenArgsSchema>;
 
 /**
- * 媒体工具族提供方缝与工具选项(媒体能力内核化 doc/128 §3.2,K-2)。
+ * 媒体工具族提供方缝与工具选项(媒体能力内核化)。
  *
- * 四工具(ImageGen / VideoGen / SpeechToText / TextToSpeech)自 sdk 环3 平台工具收编为 kernel
- * 环2 内置工具(先例 S-WS2:WebSearch + WebSearchProvider 缝)。切法:**工具骨架进 kernel**
+ * 四工具(ImageGen / VideoGen / SpeechToText / TextToSpeech)自 sdk 平台工具迁入为 kernel
+ * 内置工具(先例:WebSearch + WebSearchProvider 缝)。切法:**工具骨架进 kernel**
  * (参数 schema / 描述装配 / 超时 / 错误纪律 / data 组装 / 产物落盘缝),**执行后端是缝**——
  * sdk 供平台提供方(令牌闭包 / 任务径轮询 / 网关错误信封 → MediaProviderError + hint 表),
- * kernel 自带 openai-compatible BYO 三件(K-3),cli 按 env / 平台段择一注入。
+ * kernel 自带 openai-compatible BYO 三件,cli 按 env / 平台段择一注入。
  *
  * 提供方契约(四件同律):
  * - `name` 进审计与描述装配,**恒不进 ToolResult.data**(产物形逐字 = protocol media.ts,不加键);
@@ -15055,8 +15168,8 @@ interface TextToSpeechProvider {
 }
 
 /**
- * ImageGen 环2 内置工具骨架(媒体能力内核化 doc/128 §3.2,K-2;自 sdk platform/imagegen-tool.ts
- * 收编——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入,网关径(令牌头 / 任务径轮询 /
+ * ImageGen 内置工具骨架(媒体能力内核化;自 sdk platform/imagegen-tool.ts
+ * 迁入——参数 schema / 常量 / 描述正文 / 文本投影逐字迁入,网关径(令牌头 / 任务径轮询 /
  * 错误信封 / hint 表)留在 sdk 平台提供方)。
  *
  * 工具骨架职责(四件同律):① provider null → 结构化 `imagegen_not_configured`;② 描述 = 固定
@@ -15078,6 +15191,7 @@ declare const IMAGEGEN_TOOL_MAX_N = 4;
  * 显式声明盖过。
  */
 declare const IMAGEGEN_TOOL_TIMEOUT_MS = 180000;
+/** ImageGen 工具参数 schema:模型(可省,取授权集首项)、正负提示词、尺寸、张数、种子与可选输入图。 */
 declare const ImageGenArgsSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     prompt: z.ZodEffects<z.ZodString, string, string>;
@@ -15103,10 +15217,11 @@ declare const ImageGenArgsSchema: z.ZodObject<{
     negativePrompt?: string | undefined;
     imageUrls?: string[] | undefined;
 }>;
+/** ImageGen 工具的已校验参数类型(ImageGenArgsSchema 推导)。 */
 type ImageGenArgs = z.infer<typeof ImageGenArgsSchema>;
 
 /**
- * T-D8 — MCP 结构化错误。
+ * MCP 结构化错误。
  *
  * 所有 transport/桥接失败都收敛为 McpError:code 供程序分支与审计,
  * message 为英文(可能进 tool_result 回给模型,仓库约定模型可见文案英文),
@@ -15140,9 +15255,9 @@ type McpErrorCode =
  | 'overloaded';
 
 /**
- * T-D8 — MCP 双端公共类型与协议常量。
+ * MCP 双端公共类型与协议常量。
  *
- * 设计依据 doc/10 §2.2:
+ * 设计要点:
  * - 版本策略:客户端声明 2025-11-25,降级链覆盖 2025-06-18/2025-03-26
  *   (SUPPORTED 集即降级链——服务端回什么版本,在集合内就接受,否则断开);
  * - session 与 initialize/initialized 握手全部封装在 transport 内部,上层
@@ -15165,12 +15280,13 @@ interface McpRequestOptions {
     /** 覆盖连接级默认请求超时(毫秒) */
     timeoutMs?: number;
 }
+/** 连接关闭完成的证据级别:传输层真实完成,或仅依据连接器的 close promise。 */
+type McpCloseEvidenceLevel = 'transport-completion' | 'connector-close-promise';
 /**
  * MCP 连接(transport 层对上唯一面孔)。
  * 握手(initialize/initialized)、版本协商、session 头都发生在 connect 工厂
  * 内部;返回的连接恒处 ready 态,closed 后一切请求以结构化 McpError 拒绝。
  */
-type McpCloseEvidenceLevel = 'transport-completion' | 'connector-close-promise';
 interface McpConnection {
     readonly serverName: string;
     readonly transport: McpTransportKind;
@@ -15192,7 +15308,7 @@ interface McpConnection {
     notify(method: string, params?: Record<string, unknown>): Promise<void>;
     /** 幂等关闭:失败所有 in-flight、释放底层资源(stdio 杀进程 / http 发 DELETE) */
     close(): Promise<void>;
-    /** ARC-02:加法完成层;只等待本地传输资源,不承诺远端服务终止。 */
+    /** 加法完成层;只等待本地传输资源,不承诺远端服务终止。 */
     settleClose?(): Promise<void>;
 }
 /**
@@ -15207,7 +15323,7 @@ interface McpToolset {
 }
 /**
  * MCP 结构化观测事件(注入观察者形态——附着发生在装配期,先于会话事件包络)。
- * contract-v0.4(T-D8 RFC)起其中五型已契约化为 KernelEvent mcp.* 事件族,
+ * contract-v0.4 起其中五型已契约化为 KernelEvent mcp.* 事件族,
  * 由表面层装配处映射进会话事件流(cli assembly/mcp-events.ts);log 与
  * cancel_sent 刻意只走本回调不进契约。表面层按 type 映射 kernel.mcp.* i18n 键。
  *
@@ -15301,12 +15417,13 @@ type McpClientEvent = {
     attempt: number;
     downtimeMs: number;
 } | {
-    /** SC-31:达到 reconnect.maxAttempts,该成员停止自动重连(手动重连可复位) */
+    /** 达到 reconnect.maxAttempts,该成员停止自动重连(手动重连可复位) */
     type: 'mcp.reconnect_exhausted';
     server: string;
     connection: number;
     attempts: number;
 };
+/** MCP 客户端事件观察者:接收连接 / 重连 / 发现等结构化事件(表面层日志与状态面消费)。 */
 type McpEventObserver = (event: McpClientEvent) => void;
 
 /** stdio 服务器配置(mcpServers 段的 stdio 形态,已经 config.ts 校验) */
@@ -15349,36 +15466,36 @@ interface McpReconnectStatus {
 }
 
 /**
- * T-G3 — Hooks 引擎类型契约。
+ * Hooks 引擎类型契约。
  *
- * 设计依据:
- * - doc/05 P0:权威事件名单(SessionStart/UserPromptSubmit/PreToolUse/
- *   PostToolUse/Stop/SessionEnd 六事件起步;RFC-K19d 会签后 +2 权限专属
+ * 设计要点:
+ * - 权威事件名单(SessionStart/UserPromptSubmit/PreToolUse/
+ *   PostToolUse/Stop/SessionEnd 六事件起步;后增 2 个权限专属
  *   事件 PermissionRequest/PermissionDenied,共八),command 与 http 两种
  *   执行体;
- * - doc/06 §3.4:command 为子进程 exec-form(argv 数组,不走 shell),
+ * - command 为子进程 exec-form(argv 数组,不走 shell),
  *   stdin JSON / exit code / stdout JSON 协议,默认 60s 超时;http 为
  *   POST JSON、禁重定向 + URL policy + header secret allowlist;PreToolUse
  *   可返回 {decision: allow|deny|ask, updatedInput} 参与权限管线;每个 hook
  *   有稳定 ID(source+event+matcher+configHash);并行执行、结果按配置优先级
  *   稳定排序应用;
- * - doc/07 §6.2:stdin 公共字段 snake_case(session_id/cwd/hook_event_name +
- *   事件特有字段);doc/02 §7.4:exit 0=成功(stdout 作回执)、2=阻断
+ * - stdin 公共字段 snake_case(session_id/cwd/hook_event_name +
+ *   事件特有字段);exit 0=成功(stdout 作结构化响应)、2=阻断
  *   (stderr 作原因)、其他非零=非阻断错误(fail-open,单 hook 失败不拦路)。
  *
  * 本模块零运行时逻辑(除 zod schema 常量);执行体与引擎见同目录其余文件。
  */
 
 /**
- * 十个生命周期事件(doc/05 权威名单 + 增补;顺序即文档口径,无运行时含义)。
- * PermissionRequest/PermissionDenied 为 RFC-K19d 增补的权限专属事件
+ * 十个生命周期事件(权威名单 + 增补;顺序即文档口径,无运行时含义)。
+ * PermissionRequest/PermissionDenied 为后增的权限专属事件
  * (事件名沿 CC 词汇,生态迁移零歧义;语义与 CC 分岔——hook 只能收紧,
- * 永不放行/代批,见 RFC §2.1/§2.2 与 cli 装配层接线)。
- * PreCompact/PostCompact 为 T-CTX23(CC M-16)增补的压缩生命周期事件——
+ * 永不放行/代批,见 cli 装配层接线)。
+ * PreCompact/PostCompact 为后增的压缩生命周期事件——
  * 事件词表在 kernel,零契约变更;protocol `HooksSectionSchema`(契约的
  * 规范性描述)仍为八键,配置抽取走**原始层对象**(extractHooksSection 先
  * 于 schema 消费,KNOWN_KEYS 由本词表派生),两新事件的配置即刻可达;
- * schema 键补齐待 RFC(会签后回迁,见 T-CTX23 报告注记)。
+ * schema 键补齐待协议评审后回迁。
  * 本常量同时是 hooks 配置段的事件键白名单(config.ts KNOWN_KEYS 遍历
  * 同一词表)。
  */
@@ -15423,7 +15540,7 @@ interface LoadedHooks {
     /** managed 层声明的「仅 managed 层 hooks 生效」 */
     allowManagedHooksOnly: boolean;
 }
-/** 权限终局归因所在层(T-K0 词表;线上 snake_case 键名见事件分支) */
+/** 权限终局归因所在层(线上 snake_case 键名见事件分支) */
 type HookPermissionSourceLayer = 'policy' | 'projectLocal' | 'projectShared' | 'user';
 /** 事件输入(业务字段;公共字段与 hook_event_name 由引擎组装) */
 type HookEventInput = {
@@ -15439,16 +15556,16 @@ type HookEventInput = {
     tool_use_id: string;
 } | {
     /**
-     * RFC-K19d §2.1:权限门完整判定产出 ask 终局后、询问面呈现前恰一次。
+     * 权限门完整判定产出 ask 终局后、询问面呈现前恰一次。
      * tool_input 由装配层过 redactDeep(INV-10,秘密不进 hook 入参);
-     * 回执仅 deny|block 被消费(收紧为 deny-and-continue),allow 忽略 +
+     * 结构化响应仅 deny|block 被消费(收紧为 deny-and-continue),allow 忽略 +
      * 告警、updatedInput 不消费(INV-11:hook 永不放行/代批)。
      */
     event: 'PermissionRequest';
     tool_name: string;
     tool_input: unknown;
     tool_use_id: string;
-    /** ask 终局归因四元组(与 T-K0/挑战载荷同粒度) */
+    /** ask 终局归因四元组(与挑战载荷同粒度) */
     gate: {
         decision: 'ask';
         source: string;
@@ -15457,9 +15574,9 @@ type HookEventInput = {
     };
 } | {
     /**
-     * RFC-K19d §2.2:deny 终局落定后 fire-and-forget 纯通知(覆盖引擎
+     * deny 终局落定后 fire-and-forget 纯通知(覆盖引擎
      * deny/hook 收紧/分类器 unsafe/降级/预算耗尽/审批拒绝超时/用户手拒
-     * ——与 decisions.jsonl 同源同覆盖面)。回执不消费;字段已脱敏。
+     * ——与 decisions.jsonl 同源同覆盖面)。响应不消费;字段已脱敏。
      */
     event: 'PermissionDenied';
     tool_name: string;
@@ -15481,10 +15598,10 @@ type HookEventInput = {
     stop_reason?: string;
 } | {
     /**
-     * T-CTX23(CC M-16):压缩计划落定、历史替换前恰一次。trigger 沿 CC
+     * 压缩计划落定、历史替换前恰一次。trigger 沿 CC
      * 双值词表(auto/manual;kernel 内部 reactive 对 hook 呈现为 auto,
      * 生态脚本零改动可复用);matcher 以 trigger 为比较对象(SessionStart
-     * 按 source 同法)。回执消费:exit 2 / decision=deny|block 阻断本次
+     * 按 source 同法)。响应消费:exit 2 / decision=deny|block 阻断本次
      * 压缩(显式协议行为,非故障——auto 径跳过压缩照发请求,manual 悬诺
      * hook_blocked 兑现,reactive 径按压缩失败同径终局);additionalContext
      * → 摘要附加指令(与 manual 用户指令的合并次序:用户在前 hook 在后,
@@ -15496,7 +15613,7 @@ type HookEventInput = {
     custom_instructions?: string;
 } | {
     /**
-     * T-CTX23(CC M-16):历史替换成功后恰一次的纯通知(回执不消费;
+     * 历史替换成功后恰一次的纯通知(响应不消费;
      * fail-open,失败/超时不影响已完成的压缩)。载荷给足外部审计/联动:
      * 摘要全文 + 被折叠移除的消息数。
      */
@@ -15509,14 +15626,14 @@ type HookEventInput = {
     reason: string;
 };
 /**
- * 结构化回执 schema。
- * - decision:PreToolUse 消费 allow/deny/ask(参与权限管线,doc/06 §3.4);
+ * 结构化响应 schema(stdout JSON / http 响应 JSON)。
+ * - decision:PreToolUse 消费 allow/deny/ask(参与权限管线);
  *   `block` 为通用阻断(等价 deny;其余事件仅认 block/deny 为阻断);
  * - updatedInput:PreToolUse 专用,替换工具入参(经权限管线透传);
  * - additionalContext:注入下一轮上下文的附加文本(调用方接线为 attachment);
  * - continue:false 表达「阻止继续」(Stop hook 语义;调用方消费);
  * - reason / stopReason:阻断/停止原因(用户与审计可见,注意脱敏)。
- * 未知键剥离(strip),回执坏形不阻断(fail-open,见 runner)。
+ * 未知键剥离(strip),响应坏形不阻断(fail-open,见 runner)。
  */
 declare const HookOutputSchema: z.ZodObject<{
     decision: z.ZodOptional<z.ZodEnum<["allow", "deny", "ask", "block"]>>;
@@ -15543,10 +15660,10 @@ declare const HookOutputSchema: z.ZodObject<{
 type HookOutput = z.infer<typeof HookOutputSchema>;
 /**
  * 单 hook 终态五分类:
- * - ok:exit 0 / HTTP 2xx,回执(若有)已解析;
- * - blocked:exit 2(stderr 为 reason)或回执 decision=deny|block;
+ * - ok:exit 0 / HTTP 2xx,结构化响应(若有)已解析;
+ * - blocked:exit 2(stderr 为 reason)或响应 decision=deny|block;
  * - error:非阻断失败(其他非零 exit / spawn 失败 / 网络失败 / 非 2xx /
- *   重定向 / header 解析失败)——fail-open,不拦断主流程(doc/02 §7.4);
+ *   重定向 / header 解析失败)——fail-open,不拦断主流程;
  * - timeout:60s(或覆盖值)内未完成,进程已杀/请求已断——fail-open;
  * - aborted:外部 AbortSignal 取消(整批取消场景)。
  */
@@ -15554,9 +15671,9 @@ type HookExecutionStatus = 'ok' | 'blocked' | 'error' | 'timeout' | 'aborted';
 /** 执行体产物(runner 返回;engine 补 hookId 后进 HookExecution) */
 interface RunnerOutcome {
     status: HookExecutionStatus;
-    /** 结构化回执(校验通过时;文本已脱敏) */
+    /** 结构化响应(校验通过时;文本已脱敏) */
     output?: HookOutput;
-    /** blocked 时的原因(exit 2 的 stderr / 回执 reason;已脱敏) */
+    /** blocked 时的原因(exit 2 的 stderr / 响应 reason;已脱敏) */
     reason?: string;
     /** error/timeout 的诊断文本(已脱敏;永不含凭据值) */
     detail?: string;
@@ -15606,7 +15723,7 @@ interface HookRunResult {
 }
 
 /**
- * T-G1 — kernel 侧配置 schema(合并后的整体校验)。
+ * kernel 侧配置 schema(合并后的整体校验)。
  *
  * 以冻结的 protocol TansrConfigSchema(contract-v0)为基底组合而来,仅放宽
  * 一处、扩充零处——protocol 本身不动:
@@ -17152,7 +17269,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
         /**
          * manifest 数据源地址(企业内网/自托管;`{channel}` 占位替换)。在场即
          * 优先于 npm registry;形态 = scripts/release/pack-sea.mjs 产物。
-         * FX-B-02(W-05 kernel 半边):须为 `https://` 绝对 URL——`http:` / `file:` / 相对形
+         * 须为 `https://` 绝对 URL——`http:` / `file:` / 相对形
          * 在 schema 层即拒(抽取器 `invalid_value` 剥离回退低层 / 缺席;远程 org 下发经同一
          * schema 收口),与 cli 发布 URL 门(release-trust.ts `insecure_scheme`)双闸同向。
          */
@@ -17913,16 +18030,16 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
 type MergedTansrConfig = z.infer<typeof MergedTansrConfigSchema>;
 
 /**
- * T-G1 — 配置五层合并:公共类型与常量。
+ * 配置五层合并:公共类型与常量。
  *
- * 五层优先级(高 → 低,doc/09 T-G1 / doc/02 §7.6):
+ * 五层优先级(高 → 低):
  *   managed(企业托管,本期占位)
  *   > projectLocal(<项目>/.tansr/settings.local.json)
  *   > projectShared(<项目>/.tansr/settings.json)
  *   > user(~/.tansr/settings.json,可被 TANSR_CONFIG_DIR 改目录)
  *   > builtin(内置默认,全部来自 schema 默认值)。
  *
- * 密钥铁律(doc/09 T-G1 DoD):配置只携带 auth.env(环境变量名)。本子系统的
+ * 密钥铁律:配置只携带 auth.env(环境变量名)。本子系统的
  * 任何输出——config 对象、diagnostics、sources——都不得包含配置文件中字段的
  * 「值」:诊断只描述键路径与值的 JSON 类型;JSONC 解析错误只携带行列号,
  * 不携带 V8 错误消息(其中可能内嵌原文片段)。
@@ -17957,21 +18074,21 @@ type ConfigDiagnosticCode =
  | 'permission_rule_invalid'
 /** permissions.defaultMode 非法,忽略该层的 defaultMode */
  | 'permission_mode_invalid'
-/** permissions.defaultMode 声明的模式不被该配置层尊重(扩权模式 auto/acceptEdits/bypassPermissions 仅 user/managed 可声明,T-K0;忽略该层声明) */
+/** permissions.defaultMode 声明的模式不被该配置层尊重(扩权模式 auto/acceptEdits/bypassPermissions 仅 user/managed 可声明;忽略该层声明) */
  | 'permission_mode_layer_ignored'
-/** permissions 段的扩权键(disableBaselineProtection=true / classifier.*)出现在项目层,忽略该层声明(T-K0) */
+/** permissions 段的扩权键(disableBaselineProtection=true / classifier.*)出现在项目层,忽略该层声明 */
  | 'permission_setting_layer_ignored'
-/** 项目层 allow 规则冻结不进引擎(T-K0:项目字节面不得扩权;deny/ask 照常),params.count 为冻结条数 */
+/** 项目层 allow 规则冻结不进引擎(项目字节面不得扩权;deny/ask 照常),params.count 为冻结条数 */
  | 'permission_project_allow_frozen'
 /** 仅 managed 层被尊重的段(policy/workspaceTrust)出现在下层,忽略(contract-v0.8) */
  | 'managed_section_ignored'
 /** 仅 user/managed 层被尊重的 memory 段出现在项目层,忽略(TMEM/1 防克隆即提权) */
  | 'memory_section_layer_ignored'
-/** 仅 user/managed 层被尊重的 http 段(凭据出线名单)出现在项目层,忽略(FX-B-15 防克隆即放宽名单) */
+/** 仅 user/managed 层被尊重的 http 段(凭据出线名单)出现在项目层,忽略(防克隆即放宽名单) */
  | 'http_section_layer_ignored'
-/** 仅 user/managed 层被尊重的 sandbox 段出现在项目层,忽略(FX-B-01 段策略表 user-managed 律;项目层 allowWrite / network 皆为加宽方向) */
+/** 仅 user/managed 层被尊重的 sandbox 段出现在项目层,忽略(段策略表 user-managed 律;项目层 allowWrite / network 皆为加宽方向) */
  | 'sandbox_section_layer_ignored'
-/** 仅 user/managed 层被尊重的 update 段出现在项目层,忽略(FX-B-01;项目层 manifestUrl / channel:none / pinnedVersion 皆可劫持更新链,W-05) */
+/** 仅 user/managed 层被尊重的 update 段出现在项目层,忽略(项目层 manifestUrl / channel:none / pinnedVersion 皆可劫持更新链) */
  | 'update_section_layer_ignored'
 /** 键属已退役词表,兼容窗内照常生效(info 级劝导;RFC-U4 迁移单——现仅 permissions.classifier,新词表键随拍板引入后升 warning 携指引) */
  | 'key_deprecated'
@@ -17997,10 +18114,11 @@ type ConfigDiagnosticCode =
  | 'mcp_server_invalid'
 /** 跨层同名被高层覆盖(信息级) */
  | 'mcp_server_shadowed'
-/** SC-44:pool/reconnect 子键类型错或越界,子键剔除(条目其余部分照常生效) */
+/** pool/reconnect 子键类型错或越界,子键剔除(条目其余部分照常生效) */
  | 'mcp_governance_invalid'
-/** SC-44:pool.connections 超上限钳到上限(params.max) */
+/** pool.connections 超上限钳到上限(params.max) */
  | 'mcp_governance_clamped';
+/** 配置加载诊断条目:严重级别、诊断码、归因层与键路径;只含键名与类型信息,永不含配置值。 */
 interface ConfigDiagnostic {
     severity: ConfigDiagnosticSeverity;
     code: ConfigDiagnosticCode;
@@ -18023,6 +18141,7 @@ interface ConfigFileSystem {
     /** 目录存在性探测(项目根 .tansr 发现用) */
     directoryExists(dirPath: string): Promise<boolean>;
 }
+/** loadConfig 的选项:项目 / 用户 / managed 各层的发现起点与平台判定,以及 env / fs 注入缝。 */
 interface LoadConfigOptions {
     /** 项目发现起点,默认 process.cwd() */
     cwd?: string;
@@ -18044,7 +18163,7 @@ interface LoadConfigOptions {
      */
     captureLayers?: boolean;
 }
-/** T-K0:项目层被冻结的 allow 规则(按层保留原文,供确认面/未来 Grant 消费) */
+/** 项目层被冻结的 allow 规则(按层保留原文,供确认面/未来 Grant 消费) */
 interface FrozenProjectAllow {
     layer: 'projectLocal' | 'projectShared';
     rules: string[];
@@ -18054,15 +18173,15 @@ interface FrozenProjectAllow {
 /**
  * permissions 段的装配产物:各层规则数组按层保留(不跨层合并),
  * 键名即权限引擎的 RuleLayerName——可整体喂给 PermissionEngineConfig.layers,
- * 最严格者胜的合并语义由引擎在判定期执行(doc/08 §A.3)。
- * T-K0 起项目层 allow 不进 layers(见 frozenProjectAllow),deny/ask 照常。
+ * 最严格者胜的合并语义由引擎在判定期执行。
+ * 项目层 allow 不进 layers(见 frozenProjectAllow),deny/ask 照常。
  */
 interface LoadedPermissions {
     layers: Partial<Record<RuleLayerName, PermissionRules>>;
     /** 最高优先层声明的 defaultMode(managed 声明即锁定);供引擎 mode 初值 */
     defaultMode?: PermissionMode;
     /**
-     * defaultMode 的声明层(与 defaultMode 同步落定;T-R3):layer='managed'
+     * defaultMode 的声明层(与 defaultMode 同步落定):layer='managed'
      * 即构成 per-profile 权限档裁决的上界锚——serve 会话档案的 permissionMode
      * 只能比它紧,不得越过(消费在 cli serve 工厂 resolveProfilePermissionMode)。
      */
@@ -18077,7 +18196,7 @@ interface LoadedPermissions {
      * 最高优先层声明的 LLM 分类器开关(contract-v0.8,RFC-OPT18-2;
      * permissions.classifier.enabled)。分层语义与 defaultMode 同;消费在
      * cli assembly/permission-classifier.ts(TANSR_PERMISSION_CLASSIFIER
-     * 显式设置时整体接管,env 缺席才读本键)。T-K0 起仅 user/managed 层被尊重。
+     * 显式设置时整体接管,env 缺席才读本键)。仅 user/managed 层被尊重。
      */
     classifierEnabled?: boolean;
     /**
@@ -18114,9 +18233,9 @@ interface LoadedPermissions {
      */
     projectAskBudget?: number | 'off';
     /**
-     * T-K0:项目层(projectLocal/projectShared)声明的 allow 规则冻结清单——
+     * 项目层(projectLocal/projectShared)声明的 allow 规则冻结清单——
      * 不进引擎(引擎侧 collectRules 同口径二重保险),deny/ask 不受影响。
-     * 消费方(TUI 启动诊断汇总、未来 T-K18 Grant 确认面)据此展示;
+     * 消费方(TUI 启动诊断汇总、未来的 Grant 确认面)据此展示;
      * 无冻结项时不落键。
      */
     frozenProjectAllow?: FrozenProjectAllow[];
@@ -18177,7 +18296,7 @@ interface LoadedMemorySection {
 /** http 段生效值的来源层(doctor 归因;远程 org 下发时为 'remote') */
 type HttpSectionLayer = 'managed' | 'user' | 'remote';
 /**
- * http 段的逐层抽取产物(FX-B-15;user/managed 两层被尊重,项目层忽略——名单放宽即
+ * http 段的逐层抽取产物(user/managed 两层被尊重,项目层忽略——名单放宽即
  * 凭据出线面放宽,防克隆即提权,见 http-section.ts)。名单只存合法原始值,消费在
  * kernel `resolveHttpAuth(allowlist)`(Http 工具)与 `HookEngine({ http: { allowedHeaderEnvVars } })`
  * (hooks http 执行体),两处同一个键。
@@ -18191,7 +18310,7 @@ interface LoadedHttpSection {
     ignoredLayers: ConfigLayerName[];
 }
 /**
- * sandbox.mode 生效值的来源层(FX-B-01 段策略表 S1;doctor 归因 + kernel env 方向律输入):
+ * sandbox.mode 生效值的来源层(doctor 归因 + kernel env 方向律输入):
  * - `managed` = **地板**——TANSR_SANDBOX 只能比它更严(`resolveSandboxSettings` 归因 `env-suppressed`);
  * - `user` = 个人缺省——env 可任意压掉(排查 / CI 逃生阀,types.ts:161 头注意图不变);
  * - `remote` = 远程 org 常规下发(cli remote-settings 叠加;走 user 层语义——锁定下发时 env 已在
@@ -18199,8 +18318,8 @@ interface LoadedHttpSection {
  */
 type SandboxModeLayer = 'managed' | 'user' | 'remote';
 /**
- * sandbox 段的逐层抽取产物(FX-B-01;user / managed 两层被尊重,项目层忽略——`allowWrite` /
- * `network:'allow'` 只有加宽方向,`mode` 可被项目层解除,皆属 T-K0「项目字节面不得扩权」)。
+ * sandbox 段的逐层抽取产物(user / managed 两层被尊重,项目层忽略——`allowWrite` /
+ * `network:'allow'` 只有加宽方向,`mode` 可被项目层解除,皆属「项目字节面不得扩权」)。
  * 形状与 protocol SandboxSectionSchema 逐键对齐(kernel sandbox/types.ts SandboxSectionInput 直接
  * 消费:`resolveShellSandbox({ section: loaded.sandbox })`);逐键高层胜(managed > user),
  * 不跨层并集。
@@ -18219,10 +18338,10 @@ interface LoadedSandboxSection {
     /** 声明了 sandbox 段但被忽略的项目层(优先级降序) */
     ignoredLayers: ConfigLayerName[];
 }
-/** update.manifestUrl 生效值的来源层(FX-B-01 接口位;C 路 W-06 确认卡显示来源层消费;远程下发 = 'remote') */
+/** update.manifestUrl 生效值的来源层(更新确认卡显示来源层消费;远程下发 = 'remote') */
 type UpdateManifestUrlLayer = 'managed' | 'user' | 'remote';
 /**
- * update 段的逐层抽取产物(FX-B-01 / W-05 kernel 半边;user / managed 两层被尊重,项目层忽略——
+ * update 段的逐层抽取产物(user / managed 两层被尊重,项目层忽略——
  * 项目层 `manifestUrl` 指向自建 manifest = 更新链劫持,`channel:'none'` 可禁用安全更新,
  * `pinnedVersion` 可钉住有漏洞旧版,无「收紧」语义可言,整段项目层不可见)。形状与 kernel
  * UpdateSectionSchema 逐键对齐,cli update/check.ts 以 `ConfigUpdateSection` 形消费(结构兼容)。
@@ -18245,15 +18364,15 @@ interface LoadedUpdateSection {
 /**
  * loadConfig 顶层产物:合并配置 + 按层保留的 permissions + 装配后的 hooks。
  * 契约的原始 permissions / hooks / mcpServers / policy / workspaceTrust 段
- * (contract-v0.6/v0.3/v0.4/v0.8)、http 段(FX-B-15)与 sandbox / update 段(FX-B-01)在合并前
+ * (contract-v0.6/v0.3/v0.4/v0.8)、http 段与 sandbox / update 段在合并前
  * 被逐层抽取(段策略表 section-policy.ts),从不进入合并产物——此处以装配产物顶替同名键
  * (Omit 隔离两形态)。
  */
 interface LoadedConfig extends Omit<MergedTansrConfig, 'permissions' | 'hooks' | 'mcpServers' | 'policy' | 'workspaceTrust' | 'http' | 'sandbox' | 'update'> {
     permissions: LoadedPermissions;
-    /** hooks 段分层抽取产物(T-G3;可直接喂 HookEngineOptions.hooks) */
+    /** hooks 段分层抽取产物(可直接喂 HookEngineOptions.hooks) */
     hooks: LoadedHooks;
-    /** mcpServers 段分层抽取产物(T-D8;可直接喂 attachMcpTools) */
+    /** mcpServers 段分层抽取产物(可直接喂 attachMcpTools) */
     mcpServers: McpServerEntry[];
     /** policy 段分层抽取产物(contract-v0.8;仅 managed 层被尊重,见 managed-sections.ts) */
     policy: LoadedPolicySection;
@@ -18261,18 +18380,18 @@ interface LoadedConfig extends Omit<MergedTansrConfig, 'permissions' | 'hooks' |
     workspaceTrust: LoadedWorkspaceTrust;
     /** memory 段分层抽取产物(TMEM/1;user/managed 被尊重,项目层忽略,见 memory-section.ts) */
     memory: LoadedMemorySection;
-    /** http 段分层抽取产物(FX-B-15;user/managed 被尊重,项目层忽略,远程 org 可下发,见 http-section.ts) */
+    /** http 段分层抽取产物(user/managed 被尊重,项目层忽略,远程 org 可下发,见 http-section.ts) */
     http: LoadedHttpSection;
-    /** sandbox 段分层抽取产物(FX-B-01;user/managed 被尊重,项目层忽略,env 对 managed 只收紧,见 sandbox-section.ts) */
+    /** sandbox 段分层抽取产物(user/managed 被尊重,项目层忽略,env 对 managed 只收紧,见 sandbox-section.ts) */
     sandbox: LoadedSandboxSection;
-    /** update 段分层抽取产物(FX-B-01;user/managed 被尊重,项目层忽略,见 update-section.ts) */
+    /** update 段分层抽取产物(user/managed 被尊重,项目层忽略,见 update-section.ts) */
     update: LoadedUpdateSection;
 }
 
 /**
- * T-D8 — mcpServers 配置段的容错抽取(仿 hooks 在 contract 化前的先例)。
+ * mcpServers 配置段的容错抽取(仿 hooks 在 contract 化前的先例)。
  *
- * 段形态(kernel 扩展;protocol 契约缺口的 RFC 草案见任务终报):
+ * 段形态(kernel 扩展):
  *   "mcpServers": {
  *     "<name>": {
  *       "transport": "stdio",
@@ -18297,7 +18416,7 @@ interface LoadedConfig extends Omit<MergedTansrConfig, 'permissions' | 'hooks' |
  * - 密钥铁律:诊断只含键路径与类型信息,永不携带配置值(env/headers 的值
  *   可能是凭据);服务器名进诊断 params(名字非值,可安全展示)。
  *
- * 契约对齐(contract-v0.4,T-D8 RFC 落地):protocol McpServersSectionSchema
+ * 契约对齐(contract-v0.4):protocol McpServersSectionSchema
  * 已收录本段形态(规范性描述);本模块保持容错抽取语义不变(坏条目剔除 +
  * 诊断,不整段失败,不以契约 schema 的 parse 失败为准——hooks 同先例)。
  *
@@ -18336,6 +18455,7 @@ interface McpServerGovernanceOptions {
     pool?: McpServerPoolConfig;
     reconnect?: McpServerReconnectConfig;
 }
+/** 单台 MCP 服务器的完整配置:stdio 或 http 传输形 + 懒连接选项 + 连接池 / 重连治理。 */
 type McpServerConfig = (McpStdioServerConfig | McpHttpServerConfig) & McpServerLazyOptions & McpServerGovernanceOptions;
 /** 抽取产物条目(attachMcpTools 的输入形态) */
 interface McpServerEntry {
@@ -18375,9 +18495,9 @@ interface McpCatalogServerEntry {
 }
 
 /**
- * CW17-M2A — 共享连接/发现逻辑(内部模块,不进公共出口)。
+ * 共享连接/发现逻辑(内部模块,不进公共出口)。
  *
- * 自 T-D8 attach.ts 平移:`${VAR}` 整值环境引用解析、elicitation 感知的
+ * 自 attach.ts 平移:`${VAR}` 整值环境引用解析、elicitation 感知的
  * 服务端请求处理器、建连(establishMcpConnection)与 tools/list 全量发现
  * (discoverAllowedMcpTools)两步。eager 路径(attach)与懒连接管理器
  * (lazy-manager)共用,消灭双实现。
@@ -18494,7 +18614,7 @@ interface McpLazyManager extends McpExpandView {
     readonly catalog: readonly McpCatalogServerEntry[];
     /** 确保连接(idle/disconnected/failed → connecting → ready;幂等,单飞) */
     ensureConnected(name: string): Promise<McpEnsureConnectedResult>;
-    /** 显式重连(T-D9 语义修订:就地重绑不摘 def);未声明名返回 null */
+    /** 显式重连(就地重绑不摘 def);未声明名返回 null */
     reconnect(name: string): Promise<McpServerLazyStatus | null>;
     /** 断开全部连接并进入 closed 终态(幂等) */
     closeAll(): Promise<void>;
@@ -18510,7 +18630,7 @@ interface McpLazyManager extends McpExpandView {
 }
 
 /**
- * T-C8 — 内核侧价格表:内置条目 + refreshPricing() 注入缝。
+ * 内核侧价格表:内置条目 + refreshPricing() 注入缝。
  *
  * 分层铁律(AGENTS.md):kernel(L2)不得 import providers(L1)实现。本表在
  * kernel 侧独立内置,形态与 providers/src/registry/capability-defaults.ts 的
@@ -18543,7 +18663,7 @@ interface CostPricing extends Pricing {
     cacheWriteInputPerMillion?: number;
 }
 /**
- * 币种词表 v1(T-B2,《18》§8-2 币种裁决):国内试点两币种,ISO 4217 代码。
+ * 币种词表 v1:国内试点两币种,ISO 4217 代码。
  * 扩词表走 RFC(与 tansrd budget.currency 同词表同节奏);金额聚合按币种
  * 分桶(tracker.ts),严禁跨币种直加——归一呈现是报表层职责(记账汇率)。
  */
@@ -18558,27 +18678,27 @@ interface PricingUpdate {
     providerId: string;
     modelName: string;
     /**
-     * 缺省 'CNY'——kernel 面「缺省 = 现状语义零变化」:本表自 T-C8 起内置与
-     * 注入缺省皆为人民币价(doc/10 §4.1),与 tansrd budget.pricing 的缺省
-     * 'USD'(其现状 = USD/百万 token 语义)各自守现状,不互相迁就(T-B2)。
+     * 缺省 'CNY'——kernel 面「缺省 = 现状语义零变化」:本表内置与
+     * 注入缺省皆为人民币价,与 tansrd budget.pricing 的缺省
+     * 'USD'(其现状 = USD/百万 token 语义)各自守现状,不互相迁就。
      */
     currency?: PricingCurrency;
     pricing?: CostPricing | null;
-    /** 名义价标注(T-B1;语义见 PricingEntry.nominal);缺省 = 真实价 */
+    /** 名义价标注(语义见 PricingEntry.nominal);缺省 = 真实价 */
     nominal?: boolean;
     note?: string;
 }
 
 /**
- * T-G3 — command 执行体:子进程 exec-form + stdin/exit-code/stdout 协议。
+ * command 执行体:子进程 exec-form + stdin/exit-code/stdout 协议。
  *
- * 协议(doc/06 §3.4 + doc/02 §7.4):
+ * 协议:
  * - spawn(argv[0], argv[1..]) 直接执行,不经系统 shell(exec-form——hook
  *   配置本身不构成 shell 注入面);
  * - stdin 一次性写入完整 JSON 事件载荷后关闭;
- * - exit 0 → 成功:stdout 若为 JSON 对象则解析为结构化回执(HookOutputSchema,
- *   strip 未知键;回执自身可携带 decision=deny|block 表达 JSON 形态阻断);
- *   非 JSON / 空 stdout 视为「无回执的成功」;
+ * - exit 0 → 成功:stdout 若为 JSON 对象则解析为结构化响应(HookOutputSchema,
+ *   strip 未知键;响应自身可携带 decision=deny|block 表达 JSON 形态阻断);
+ *   非 JSON / 空 stdout 视为「无结构化响应的成功」;
  * - exit 2 → 阻断:stderr(截断后)作为阻断原因;
  * - 其他非零 → 非阻断错误(fail-open:单 hook 挂了不拦断主流程);
  * - spawn 失败(ENOENT/EACCES)→ 非阻断错误;
@@ -18614,9 +18734,9 @@ interface CommandHookRunnerOptions {
 
 interface HttpHookRunnerOptions {
     /**
-     * 出网客户端(FX-B-12;三层 SSRF × 代理复合,net/egress-dispatcher.ts)。缺省按
+     * 出网客户端(三层 SSRF × 代理复合,net/egress-dispatcher.ts)。缺省按
      * env(+ lookupImpl)就地构造;cli 五入口 / sdk / mcp-serve 装配层传进程级同一实例
-     * (`new HookEngine({ http: { client } })`,FX-B-13)。
+     * (`new HookEngine({ http: { client } })`)。
      */
     client?: EgressClient;
     /**
@@ -18637,34 +18757,34 @@ interface HttpHookRunnerOptions {
     /** 显式允许私网/环回端点(默认拒绝;企业内网 hook 端点场景) */
     allowPrivateUrls?: boolean;
     /**
-     * R7-P2:主机解析注入缝(解析后 IP 复核层 + socket pin 同一桩,与 Http 工具同一
+     * 主机解析注入缝(解析后 IP 复核层 + socket pin 同一桩,与 Http 工具同一
      * guard;缺省真实 dns lookup)。测试注入假解析器保持零真实网络;client 在场时忽略。
      */
     lookupImpl?: HostAddressLookup;
 }
 
 /**
- * T-G3 — HookEngine:匹配 → 并行执行 → 按配置优先级稳定排序应用。
+ * HookEngine:匹配 → 并行执行 → 按配置优先级稳定排序应用。
  *
  * 关键语义:
- * - 匹配(doc/02 §7.4):PreToolUse/PostToolUse 以 tool_name 为比较对象,
+ * - 匹配:PreToolUse/PostToolUse 以 tool_name 为比较对象,
  *   SessionStart 以 source,其余事件 matcher 视为全匹配;编译结果按配置代
  *   缓存(MatcherCache 随引擎实例);
- * - 并行执行但**结果按配置优先级稳定排序应用**(doc/06 §3.4 修正 Claude Code
+ * - 并行执行但**结果按配置优先级稳定排序应用**(修正 Claude Code
  *   按完成时间的竞态):executions/blocked 归因/additionalContexts/PreToolUse
  *   聚合全部按 LoadedHooks 的装配序(层优先级降序 → 层内配置序);
  * - 事件(protocol contract-v0.2 现有三形):hook.triggered 逐 hook 启动前
  *   按序签发;hook.completed / hook.blocked 在整批完成后按序签发——牺牲
  *   完成实时性换取事件流的确定性(与「稳定排序应用」同一取舍);
- * - fail-open(doc/02 §7.4):error/timeout 不构成阻断;只有 exit 2 或回执
+ * - fail-open:error/timeout 不构成阻断;只有 exit 2 或结构化响应
  *   decision=deny|block 计 blocked;
- * - PreToolUse 聚合(doc/06 §3.4 + doc/07 §6.2):最严格者胜
+ * - PreToolUse 聚合:最严格者胜
  *   (deny > ask > allow),无意见时 undefined——hook 的 allow 只能表达
  *   「hooks 不反对」,是否越过询问由权限引擎的规则链定夺(hook allow 仍受
- *   deny/ask 规则限制;接入点方案见任务终报);updatedInput 按配置优先级
- *   取首个提供者,冲突记 updatedInputConflict(doc/07 §6.5 冲突规则);
+ *   deny/ask 规则限制);updatedInput 按配置优先级
+ *   取首个提供者,冲突记 updatedInputConflict;
  * - 脱敏:redactSecrets 注入的全局秘密值(如 provider key)在 reason/detail/
- *   回执文本字段中统一遮蔽(http 执行体的 header 凭据已在 runner 内脱敏)。
+ *   响应文本字段中统一遮蔽(http 执行体的 header 凭据已在 runner 内脱敏)。
  */
 
 interface HookEngineOptions {
@@ -18706,18 +18826,18 @@ declare class HookEngine {
 }
 
 /**
- * T-G4 — Skills 子系统:公共类型与常量。
+ * Skills 子系统:公共类型与常量。
  *
- * 设计事实源:
- * - doc/05 §3.2 F4:Skills(SKILL.md 兼容,项目/用户/内置三源发现,按需注入);
- * - doc/06 §3.4:发现顺序 内置 → 用户(~/.tansr)→ 项目(.tansr),同名覆盖
+ * 设计要点:
+ * - Skills(SKILL.md 兼容,项目/用户/内置三源发现,按需注入);
+ * - 发现顺序 内置 → 用户(~/.tansr)→ 项目(.tansr),同名覆盖
  *   「越近越强」;技能索引注入系统提示(名称+触发描述),正文按需加载;
- * - doc/02 §7.2:模型只见名称/description/whenToUse 轻量索引,正文按需加载
+ * - 模型只见名称/description/whenToUse 轻量索引,正文按需加载
  *   (上下文经济,Claude Code 已验证路线);
- * - doc/09 T-G1(参照):诊断为纯结构化数据(code + params),渲染由表面层
+ * - 参照配置子系统:诊断为纯结构化数据(code + params),渲染由表面层
  *   按 code 映射 i18n 键;fs/env/homedir/platform 全注入缝,测试 hermetic。
  *
- * 容错铁律(任务卡):坏 frontmatter 单技能降级跳过,不拖垮整体发现;
+ * 容错铁律:坏 frontmatter 单技能降级跳过,不拖垮整体发现;
  * 诊断永不携带 frontmatter 字段「值」之外的文件正文内容(路径/目录名/键名
  * 与截断长度等元信息可携带——技能名与路径本就注入模型,不属密钥面)。
  */
@@ -18730,7 +18850,7 @@ interface SkillEntry {
     /** 触发描述(必填;已截断至上限、剥控制字符) */
     description: string;
     /**
-     * description 的多语言变体(frontmatter `description-<locale>`,T-H3);
+     * description 的多语言变体(frontmatter `description-<locale>`);
      * 键为规范化 BCP47 标签,值同 description 清洗/截断口径。消费端经
      * i18n pickLocalizedText 按「精确 → 主语言 → 无后缀缺省」回退链取值。
      * 无变体声明时字段缺席(向后兼容:旧文件产出逐字节不变)。
@@ -19083,7 +19203,7 @@ declare function resolveInitialMessages(prompt: string | undefined, initialMessa
 declare function runAgent(options: RunAgentOptions): QueryHandle;
 
 /**
- * T-B3 — capability 合并器。
+ * capability 合并器。
  *
  * 合并优先级(低 → 高):
  *   CapabilitySchema 字段默认值 < 内置默认表 (provider, model) 条目 < 用户配置 ProviderProfile.capability
@@ -19093,14 +19213,14 @@ declare function runAgent(options: RunAgentOptions): QueryHandle;
  * - 嵌套对象(promptCaching/thinking/sampling/quirks):逐键合并,用户未提的键保留内置值;
  * - 合并结果必经 CapabilitySchema.parse 校验(非法值抛 ZodError,不静默吞掉)。
  *
- * 契约注记(RFC 候选,见任务最终报告):protocol 冻结版的 ProviderProfileSchema.capability
+ * 契约注记:protocol 冻结版的 ProviderProfileSchema.capability
  * 是完整 CapabilitySchema——经 schema parse 后默认值被填充,无法区分「用户显式写的默认值」
  * 与「schema 补的默认值」。本模块因此以 CapabilityOverride(深部分形态)为合并输入,
  * 上游应传入未经 parse 默认填充的原始覆盖对象;完整 Capability 对象在类型上兼容本形态。
  *
- * T-B7 扩展位(hostedTools/background):contract-v0.4(RFC-B7-2)起并入
+ * 扩展位(hostedTools/background):contract-v0.4 起并入
  * CapabilitySchema(可选、无默认值——缺省 undefined 即「未声明」,合并产物
- * 不多出键),T-B7 期的 providers 侧过渡扩展 schema 退役。
+ * 不多出键),早先的 providers 侧过渡扩展 schema 退役。
  *
  * contract-v0.5 别名归一(本模块单点,逐层进行——保证高层显式声明压过低层):
  * - vision ↔ inputModalities.image 双向同步(RFC-B3-1):层内声明了
@@ -19152,19 +19272,19 @@ interface CapabilityOverride {
     modelModifiers?: string[];
     defaultContextWithoutModifier?: number;
     quirks?: Partial<Capability['quirks']>;
-    /** T-B7 扩展位:hosted 工具单列(数组整体覆盖不拼接,与 modelModifiers 同语义) */
+    /** 扩展位:hosted 工具单列(数组整体覆盖不拼接,与 modelModifiers 同语义) */
     hostedTools?: string[];
-    /** T-B7 扩展位:背景模式能力 */
+    /** 扩展位:背景模式能力 */
     background?: boolean;
 }
 /** imageInputMode 的返回三态(= protocol InputModalityMode,重导出以稳定消费面引用) */
 type ImageInputMode = InputModalityMode;
 
 /**
- * T-C6 — twp/1 线协议纯函数半边(契约源 = doc/28 §4;tansr-api
- * src/contract/twp.ts 出现后以其 TypeBox 为单源对表)。
+ * twp/1 线协议纯函数半边(契约源 = tansr-api
+ * src/contract/twp.ts 的 TypeBox 定义,以其为单源对表)。
  *
- * 出站(§4.3):IRRequest → { model, thread, tools, params, meta, cache?, stream }。
+ * 出站:IRRequest → { model, thread, tools, params, meta, cache?, stream }。
  * - thread = role + blocks 自有语法:system 段落逐段成 text 块;
  *   text→{t:'text',v} / tool_call→{t:'tool_use',id,name,input} /
  *   tool_result→{t:'tool_result',toolUseId,v,isError};
@@ -19188,10 +19308,9 @@ type ImageInputMode = InputModalityMode;
  * - thinking/opaque 无 twp/1 v1 载荷位:出线丢弃(方言差异收敛在网关,
  *   服务端按各厂商 must_echo_back 语义回填;载荷位扩展属 twp/1 v2 双侧
  *   契约议题——CW3 后敞口,销账登记见 doc/report/CW3-M6 终报);
- * - meta.requestId:幂等键。传输幂等键在场(RetryingModelClient 注入,
- *   T-C9)时跨 attempt 恒同号且 adapter 复用首次序列化字节(服务端指纹
- *   恒一致);缺席(裸适配器/SDK 直用)每次调用新 ULID——旧注记「重试
- *   语义敞口」已由 T-C9 销账;
+ * - meta.requestId:幂等键。传输幂等键在场(RetryingModelClient 注入)
+ *   时跨 attempt 恒同号且 adapter 复用首次序列化字节(服务端指纹
+ *   恒一致);缺席(裸适配器/SDK 直用)每次调用新 ULID;
  * - params 只落 IR 有值的键(maxTokens/temperature/stop),消毒在服务端。
  *
  * 入站:t.close.stop 枚举 → kernel 归一 stopReason;t.err/HTTP 错误码 →
@@ -19239,9 +19358,9 @@ interface TwpWarnFrame {
     message: string;
 }
 /**
- * T-C9:平台错误帧旁路(t.err 与 HTTP ApiError 信封两径共缝;display-only,
+ * 平台错误帧旁路(t.err 与 HTTP ApiError 信封两径共缝;display-only,
  * 不改 IR 错误流)。requestId = 本次 exchange 的客户端请求号锚——信封
- * `error.detail.requestId`(T-A23 幂等错误的客户端键回显)优先,缺席落
+ * `error.detail.requestId`(幂等错误的客户端键回显)优先,缺席落
  * 适配器实发值;信封顶层 `error.requestId` 是服务端 trace id,刻意不用作锚。
  * detail = 信封 `error.detail` 原样透传(idempotency_conflict 按
  * `replayable`/`via` 区分「载荷不一致」与「已完成不可重放」两族语义)。
@@ -19254,9 +19373,9 @@ interface TwpErrorFrame {
 }
 
 /**
- * T-B4 — 重试退避策略(纯函数,不含 IO/时钟/随机全局态)。
+ * 重试退避策略(纯函数,不含 IO/时钟/随机全局态)。
  *
- * 算法(doc/09 任务卡):
+ * 算法:
  * - 指数退避:上界 = min(maxMs, baseMs · 2^attempt);
  * - full jitter:延迟 = random() · 上界,均匀落在 [0, 上界](AWS 建议形态,
  *   把并发重试的「羊群效应」打散);
@@ -19513,9 +19632,9 @@ interface UpstreamGovernor {
 }
 
 /**
- * T-B3 — 别名/ref → (provider, model, capability, pricing) 解析(纯函数,不碰环境变量)。
+ * 别名/ref → (provider, model, capability, pricing) 解析(纯函数,不碰环境变量)。
  *
- * 解析顺序(doc/06 §2.3):
+ * 解析顺序:
  * 1. 输入含斜杠 → 按 ref(provider/modelOrRole)直接解析;
  * 2. 否则按别名查 config.modelAliases(三档 main/fast/reasoning 或任意自定义键),
  *    其值再按 ref 解析;
@@ -19534,7 +19653,7 @@ interface UpstreamGovernor {
 interface RegistryProviderProfile extends Omit<ProviderProfile, 'capability'> {
     capability?: CapabilityOverride;
     /**
-     * T-C2 — 逐模型能力覆盖(键 = 角色别名映射后的最终模型名):远程 bundle
+     * 逐模型能力覆盖(键 = 角色别名映射后的最终模型名):远程 bundle
      * 的 models[].capabilities 落点(profile 级 capability 表达不了同 provider
      * 下多模型差异)。合并序:内置默认 < profile.capability < 本表条目。
      * 可选字段,存量配置(kernel 五层产物/env 通路)零改动即兼容。
@@ -19549,13 +19668,13 @@ interface RegistryProviderProfile extends Omit<ProviderProfile, 'capability'> {
 interface RegistryConfig extends Omit<TansrConfig, 'providers' | 'hooks' | 'mcpServers'> {
     providers: Record<string, RegistryProviderProfile>;
 }
-/** resolveAlias / fallbacksFor 的输出单元(T-B4 重试/切换的输入) */
+/** resolveAlias / fallbacksFor 的输出单元(重试/切换的输入) */
 interface ResolvedProviderModel {
     providerId: string;
     providerProfile: RegistryProviderProfile;
     /** 经 profile.models 角色别名映射后的最终模型名(送 wire 的值) */
     modelName: string;
-    /** 内置默认 < 用户配置 合并并经 schema 校验后的能力位(含 T-B7 扩展位) */
+    /** 内置默认 < 用户配置 合并并经 schema 校验后的能力位(含 hostedTools/background 扩展位) */
     capability: ProviderCapability;
     /**
      * P-CTX2 K8(G-A6,C-06)— 三层(内置默认 < profile.capability <
@@ -19569,13 +19688,13 @@ interface ResolvedProviderModel {
 }
 
 /**
- * T-B3 — ModelClient 工厂:按 profile.protocol 分派 Anthropic/OpenAI 适配器。
+ * ModelClient 工厂:按 profile.protocol 分派 Anthropic/OpenAI 适配器。
  *
  * 密钥来源:profile.auth.env 指定的环境变量(env 记录可注入,测试不碰真实环境)。
  * 安全铁律:缺 key 抛 MissingApiKeyError——错误对象携带 env 变量名,值绝不出现;
  * key 一经读出只进适配器请求头,不落日志、不进错误消息。
  *
- * Q4-4(T4)凭据每请求重解析:构造期只做 fail-fast 探测(缺 key 即抛,值即弃,
+ * 凭据每请求重解析:构造期只做 fail-fast 探测(缺 key 即抛,值即弃,
  * 用法错误照旧首字节前暴露);适配器收到的是**解析函数**而非密钥值——每次
  * stream()/listModels() 的请求构造点重新从 env 记录取值,换密钥零重启达下一次
  * 请求。twp 档 keyId 与 SK 同为解析函数,适配器在同一同步节拍取双头(半新半旧
@@ -19584,7 +19703,7 @@ interface ResolvedProviderModel {
  */
 
 /**
- * twp 档专属构造选项(T-C6):profile.auth.env 只承载 ApiKey 单值,ApiKeyId
+ * twp 档专属构造选项:profile.auth.env 只承载 ApiKey 单值,ApiKeyId
  * 与计量/提示旁路回调经本缝注入(CLI 装配层 → ProviderRegistry → createClient)。
  * keyId 缺席时回退 env TANSR_KEY_ID(非交互逃生口与 login env 位同名)。
  */
@@ -19596,9 +19715,9 @@ interface TwpClientOptions {
         version: string;
     };
     /**
-     * T-C7 — meta.sessionId 动态供给(平台会话 id):每次 exchange 请求构造
-     * 时点取值。批ι(RFC-R79-ι)起装配层供给客户端铸造 ULID(构造期铸造,
-     * 首笔恒在场;批μ 代拍③ 起恒同值,404 回落径清除);返回 undefined =
+     * meta.sessionId 动态供给(平台会话 id):每次 exchange 请求构造
+     * 时点取值。装配层供给客户端铸造 ULID(构造期铸造,
+     * 首笔恒在场;恒同值,404 回落径清除);返回 undefined =
      * 未接线(离线/逃生)如实缺席,服务端按认证头归账不受影响。
      */
     sessionId?: () => string | undefined;
@@ -19607,49 +19726,49 @@ interface TwpClientOptions {
     /** t.warn 提示帧旁路(balance_low 沿状态栏余额预警既有位) */
     onWarn?: (warn: TwpWarnFrame) => void;
     /**
-     * T-C9:平台错误帧旁路(t.err 与 HTTP ApiError 信封的错误码;display-only)
+     * 平台错误帧旁路(t.err 与 HTTP ApiError 信封的错误码;display-only)
      * ——CLI 装配层归一 idempotency_conflict 等码的 i18n 呈现。
      */
     onPlatformError?: (frame: TwpErrorFrame) => void;
     /** 非流形态开关(stream:false 单 JSON;缺省流式) */
     stream?: boolean;
     /**
-     * T-C10(V21):交换前钩子——每次 exchange 发出前 await(CLI 装配注入
+     * 交换前钩子——每次 exchange 发出前 await(CLI 装配注入
      * 「配置陈旧则重拉 /t1/config」;异常吞掉不阻交换,缺席零行为变化)。
      */
     beforeExchange?: () => void | Promise<void>;
     /**
-     * T-C11(V23):SSE 帧间 idle 超时(毫秒;缺省 170s——C7 与 api 上游
+     * SSE 帧间 idle 超时(毫秒;缺省 170s——与 api 上游
      * connect+TTFB 预算咬合,见 twp adapter DEFAULT_TWP_IDLE_TIMEOUT_MS
      * 推导)。CLI 装配层从 settings network.twpIdleTimeoutMs 注入;缺席 =
      * 适配器内建缺省。
      */
     idleTimeoutMs?: number;
     /**
-     * P-CTX4 K17(G-A10):服务端能力串供给(心跳响应 features 缓存;
-     * 请求时点取值)。批ι(RFC-R79-ι)起仅语义能力三门消费(prompt-cache/
+     * 服务端能力串供给(心跳响应 features 缓存;
+     * 请求时点取值)。仅语义能力三门消费(prompt-cache/
      * image-input/reasoning-off,单点 twp/contract.ts);meta.purpose 不再
      * 消费此面(值级门退役,词表成员单判恒发)。
      */
     features?: () => readonly string[] | undefined;
     /**
-     * CW2-L10 K3 收口:图片输入三态供给覆写缝(测试/特殊装配用)。缺席时
+     * 图片输入三态供给覆写缝(测试/特殊装配用)。缺席时
      * 构造点按本次解析的模型 capability 直绑 imageInputMode——每个 client
      * 实例各绑各的模型,切模重建自动跟随;与 features 含 'image-input'
      * 构成双判发送门(单点 sendableTwpImages),任一不满足恒不发图。
      */
     imageInput?: () => ImageInputMode | undefined;
     /**
-     * SC-22(S-35 顺手项接缝):自持面签名三头开关(缺省 true)。令牌档等
+     * 自持面签名三头开关(缺省 true)。令牌档等
      * 装配以 fetch 包装剥除双头与签名三头时,可置 false 跳过每请求的 HMAC 与
      * 头物化(签名注定被剥,算了也白算);是否被剥除 providers 侧不可判定,
      * 由装配层(sdk/platform、serve 平台形)按其 fetch 包装形态决定。
      */
     signRequests?: boolean;
     /**
-     * SC-26:整请求墙钟(含流;ms)构造级缺省。调用级 ModelCallOptions.totalTimeoutMs
+     * 整请求墙钟(含流;ms)构造级缺省。调用级 ModelCallOptions.totalTimeoutMs
      * (kernel queryTimeouts 透传)优先;两者皆缺席 = 不设总闸(现状零漂移)。
-     * 网关形态建议 10 min 由装配层传(G9 决策项)。
+     * 网关形态建议 10 min 由装配层传。
      */
     totalTimeoutMs?: number;
 }
@@ -19672,10 +19791,9 @@ interface CreateClientOptions {
 }
 
 /**
- * T-B3 — ProviderRegistry:TansrConfig → 别名解析 / capability 协商 / 客户端工厂 / fallback 链。
+ * ProviderRegistry:TansrConfig → 别名解析 / capability 协商 / 客户端工厂 / fallback 链。
  *
- * 注:packages/providers/src/index.ts 的对外接线由主会话在任务合并时统一完成,
- * 本目录不自行挂接(并行任务约定,同 anthropic/index.ts 头注)。
+ * 注:对外接线统一在 packages/providers/src/index.ts 完成,本目录不自行挂接。
  */
 
 interface ProviderRegistryOptions {
@@ -19683,7 +19801,7 @@ interface ProviderRegistryOptions {
     env?: Record<string, string | undefined>;
     /** fetch 注入缝,透传给适配器;单测断言构造行为、不发真实请求 */
     fetchImpl?: typeof fetch;
-    /** T-C6:twp 档专属选项(keyId/计量与提示旁路回调),透传给 createClient */
+    /** twp 档专属选项(keyId/计量与提示旁路回调),透传给 createClient */
     twp?: CreateClientOptions['twp'];
     /** SC-22:上游治理层(进程级一枚),透传给 createClient 包在 fetch 链最外层;缺席零漂移 */
     governor?: CreateClientOptions['governor'];
@@ -19702,25 +19820,25 @@ declare class ProviderRegistry {
     get governor(): CreateClientOptions['governor'];
     /**
      * 别名的有序 fallback 链(链首为别名自身;循环引用抛 CyclicFallbackError)。
-     * 只解析不重试——实际切换在 T-B4。
+     * 只解析不重试——实际切换由 FallbackModelClient 执行。
      */
     fallbacksFor(alias: string): ResolvedProviderModel[];
 }
 
 /**
- * T-G5 — provider 数据边界(P0-9 fail-closed;doc/pilot/02 §6.3 / §8.1-9)。
+ * provider 数据边界(fail-closed)。
  *
  * 威胁模型:fallback 链在「未向下游放行内容」的失败(含 auth/invalid_request
  * 工厂失败)后前进到下一 entry——若私有端点(如内网 vLLM)后面配置了公有
  * provider,私有端点的认证/协议错误会把同一敏感请求原文送往公有 fallback。
  *
- * 强制语义(契约承载位 = contract-v0.13 RFC-WE-4 的 Playbook 两字段):
+ * 强制语义(契约承载位 = contract-v0.13 的 Playbook 两字段):
  * - `providerAllowlist` 在场(非空)→ 恒强制:目标 providerId ∉ 集合即在
  *   **选择时刻**被拒(不构造 client、零字节出站),与数据等级无关;
- * - allowlist 缺席时按数据等级:`dataClassification` 缺席按 internal 兜底
- *   (RFC-WE-4 注记);public/internal 不设限(现状回归);**sensitive 触发
+ * - allowlist 缺席时按数据等级:`dataClassification` 缺席按 internal 兜底;
+ *   public/internal 不设限(现状回归);**sensitive 触发
  *   fail-closed——fallback 恒不得越出链首(首选)provider**(同 provider 的
- *   模型降档仍可;跨 provider 一律拒)。T-G5 裁决:sensitive+无 allowlist
+ *   模型降档仍可;跨 provider 一律拒)。裁决:sensitive+无 allowlist
  *   取「拒绝越出首选」而非「拒绝启动」——单 provider 的敏感 Playbook 留在
  *   自己声明的 provider 上没有边界风险,风险只在「离开」;不可验证目标的
  *   「拒绝启动」语义由编排面(orchestrator agent 步预检)承担。
@@ -19745,9 +19863,9 @@ interface ProviderBoundaryDenial {
 }
 
 /**
- * T-B4 — 单次尝试的事件泵:透传上游 ModelClient 流,同时做三件事——
+ * 单次尝试的事件泵:透传上游 ModelClient 流,同时做三件事——
  *
- * 1. prelude 缓冲:message_start 不算「内容块」(任务卡铁律:重试只允许发生在
+ * 1. prelude 缓冲:message_start 不算「内容块」(铁律:重试只允许发生在
  *    未产出任何内容块之前)。把它缓冲到首个内容事件一起放行;尝试在未出内容时
  *    失败则直接丢弃——下游要么恰好见到一次 message_start,要么见到裸 [error] 流
  *    (与适配器 HTTP 级错误的产出形态一致,见 anthropic/adapter.ts)。
@@ -19768,10 +19886,10 @@ type IRErrorEvent = Extract<IRStreamEvent, {
 }>;
 
 /**
- * T-B4 — FallbackModelClient:按 fallback 链(T-B3 expandFallbacks 的输出)逐个
+ * FallbackModelClient:按 fallback 链(expandFallbacks 的输出)逐个
  * 尝试 provider 的 ModelClient 组合器。
  *
- * 切换语义(doc/09 任务卡):
+ * 切换语义:
  * - 按 entries 顺序尝试;某 entry 在「未向下游放行任何内容」时最终失败
  *   (不可恢复错误,或经重试包裹耗尽 maxAttempts)→ 前进到下一 entry;
  * - 一旦某 entry 已流出内容 → 提交(committed),之后不再切换(避免重复输出),
@@ -19805,7 +19923,7 @@ type IRErrorEvent = Extract<IRStreamEvent, {
  * 先试主模型(与 Claude Code 的 fallback 语义一致);#clients 仅是实例
  * 缓存,不构成位置状态。有测试锁定(fallback.test.ts「跨轮非粘滞」)。
  *
- * 数据边界(T-G5,P0-9):options.boundary 在场时,每个 entry 在选择时刻
+ * 数据边界:options.boundary 在场时,每个 entry 在选择时刻
  * 过 evaluateProviderBoundary(boundary.ts)——越界目标不构造 client、零
  * 字节出站,以 boundaryDenial 结构化轨迹计入 failures;全链无在界 entry
  * 即以最后一条边界拒绝作为耗尽错误收束(不可恢复),绝不静默换供应商。
@@ -19819,7 +19937,7 @@ interface FallbackFailure {
     index: number;
     error: IRErrorEvent;
     /**
-     * T-G5:该 entry 在选择时刻被数据边界拒绝(未构造 client、零字节出站)。
+     * 该 entry 在选择时刻被数据边界拒绝(未构造 client、零字节出站)。
      * 缺席 = 常规失败(重试耗尽/工厂失败)。审计消费位:原因/目标/数据等级。
      */
     boundaryDenial?: ProviderBoundaryDenial;
@@ -19843,7 +19961,7 @@ interface FallbackSelection {
      */
     failures: readonly FallbackFailure[];
     /**
-     * T-G5:boundary 选项在场时的生效数据等级(缺席声明已按 internal 兜底);
+     * boundary 选项在场时的生效数据等级(缺席声明已按 internal 兜底);
      * 未配置 boundary 时不落键。上层审计「fallback 原因/目标/数据等级」取数位。
      */
     dataClassification?: DataClassification;

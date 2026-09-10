@@ -52,3 +52,5 @@ type IRBlock =
   t: "image";
 };
 ```
+
+消息内容块:text / thinking / opaque / tool_call / tool_result / image(IRBlockSchema 推导)。

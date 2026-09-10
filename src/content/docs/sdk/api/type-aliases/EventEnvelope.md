@@ -20,6 +20,8 @@ type EventEnvelope = {
 };
 ```
 
+事件包络(EventEnvelopeSchema 推导)。
+
 ## 属性
 
 <a id="api-seq"></a>

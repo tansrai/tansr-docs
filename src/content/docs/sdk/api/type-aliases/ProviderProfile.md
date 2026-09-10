@@ -86,6 +86,8 @@ type ProviderProfile = {
 };
 ```
 
+provider 档案(ProviderProfileSchema 推导)。
+
 ## 属性
 
 <a id="api-auth"></a>

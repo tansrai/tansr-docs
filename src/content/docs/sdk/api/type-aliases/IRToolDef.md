@@ -17,6 +17,8 @@ type IRToolDef = {
 };
 ```
 
+工具定义(IRToolDefSchema 推导)。
+
 ## 属性
 
 <a id="api-description"></a>

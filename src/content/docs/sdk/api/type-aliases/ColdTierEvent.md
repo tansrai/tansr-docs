@@ -55,7 +55,7 @@ type ColdTierEvent =
 };
 ```
 
-结构化事件(doc/120 §8;S7 映射为 serve 日志事件 / onStoreError):
+结构化事件(可映射为 serve 日志事件 / onStoreError):
 - `store.segment_sealed`:收到封段通知,已入队(热层事实);
 - `store.segment_committed`:段 put 成功且冷清单 CAS 已提交(冷层事实;可逐出);
 - `store.commit_failed`:一次上传 / 提交失败(`gaveUp` = 重试预算耗尽或 permanent /

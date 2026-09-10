@@ -13,6 +13,8 @@ generated: true
 function createFsBlobStore(options): SegmentBlobStore;
 ```
 
+创建以本地目录为后端的 SegmentBlobStore(双树布局、原子条件写、原生 Range 读);只作冷层。
+
 ## 参数
 
 ### options

@@ -66,6 +66,8 @@ type Capability = {
 };
 ```
 
+模型能力位(CapabilitySchema 推导;经 schema parse 后默认值已填充)。
+
 ## 属性
 
 <a id="api-background"></a>

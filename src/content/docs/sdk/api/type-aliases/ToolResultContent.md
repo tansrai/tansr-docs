@@ -21,3 +21,5 @@ type ToolResultContent =
   t: "image";
 };
 ```
+
+工具结果的单个内容块:文本,或 base64 编码的图片。

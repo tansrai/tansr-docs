@@ -58,7 +58,7 @@ abort(reason?): void;
 optional compactNow(options?): Promise<CompactNowResult>;
 ```
 
-手动压缩(/compact 接线语义,T-C10):请求排队到下一个轮间屏障点执行
+手动压缩(/compact 接线语义):请求排队到下一个轮间屏障点执行
 (运行中轮不可就地压缩——流式/工具期间历史正在生长,折叠边界无从落定),
 返回的 promise 在屏障点执行后兑现;并发调用合流到同一次执行。
 未接压缩缝立即拒绝 not_configured;已终态(或排队后直到终态未再经过
@@ -179,7 +179,7 @@ user/assistant/tool_result 消息)。多轮会话装配(TUI/serve)在终态后
 optional reserveUserInput(input): QueryInputReservationResult;
 ```
 
-INJ-00 加法能力；旧句柄可缺席。目标为本轮，不隐式创建后续轮。
+预约式输入(加法能力)；旧句柄可缺席。目标为本轮，不隐式创建后续轮。
 
 #### 参数
 
@@ -201,7 +201,7 @@ INJ-00 加法能力；旧句柄可缺席。目标为本轮，不隐式创建后�
 optional settle(options?): Promise<QuerySettlement>;
 ```
 
-CM-13：等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
+等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
 终态事件仅代表逻辑结束；timeout/cancelled保留实际在飞工作，可再次等待。
 runQuery恒提供；第三方旧句柄可缺席，此时调用方只能证明其既有迭代器合同。
 

@@ -13,17 +13,4 @@ generated: true
 type KeyPredicate = boolean | ((key) => boolean);
 ```
 
-混沌包装器 `createChaosBlobStore(inner, faults)`(doc/119 IO-14)——把任一 `SegmentBlobStore` 包成
-会出故障的后端,供一致性测试套 / 对抗验收(doc/119 §1.2 A1–A14)注入:
-
-  failPut              put 立即失败(true / 按键谓词 / 前 N 次),kind = putErrorKind(缺省 transient)
-  failPutAfterBytes    put 消费体到 N 字节后失败(连接中断;体已部分读出,不得留半对象)
-  putErrorKind         注入的 put 失败分类(transient | permanent | not_found | precondition_failed)
-  eventualListLagMs    list 对「最近 lag 毫秒内 put 的键」不可见(最终一致);capabilities.consistency 报 eventual
-  dropListEntries      list 丢项(按键谓词 / 概率 0–1)
-  corruptSegmentKeys   get 对匹配键返回翻转首字节的体(篡改;A4)
-  abortMidStream       get 的流在首块之后以 transient 出错(下载中断;A7)
-  latencyMs            每次调用前延迟(定值 / [min,max] 均匀)
-
-`faults` 对象**按引用持有**,测试可运行时翻转(如愈合 failPut 观察追平);`stats` 记各类注入次数。
-不改语义的调用原样透传;内层错误原样上抛(不二次包装)。
+按键选择注入目标:布尔整体开关,或对键求值的谓词。

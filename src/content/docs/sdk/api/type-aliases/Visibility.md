@@ -18,6 +18,8 @@ type Visibility = {
 };
 ```
 
+记录可见性四位(VisibilitySchema 推导)。
+
 ## 属性
 
 <a id="api-defaulttranscript"></a>

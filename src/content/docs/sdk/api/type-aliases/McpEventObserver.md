@@ -13,6 +13,8 @@ generated: true
 type McpEventObserver = (event) => void;
 ```
 
+MCP 客户端事件观察者:接收连接 / 重连 / 发现等结构化事件(表面层日志与状态面消费)。
+
 ## 参数
 
 ### event

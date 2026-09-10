@@ -11,7 +11,7 @@ generated: true
 
 loadConfig 顶层产物:合并配置 + 按层保留的 permissions + 装配后的 hooks。
 契约的原始 permissions / hooks / mcpServers / policy / workspaceTrust 段
-(contract-v0.6/v0.3/v0.4/v0.8)、http 段(FX-B-15)与 sandbox / update 段(FX-B-01)在合并前
+(contract-v0.6/v0.3/v0.4/v0.8)、http 段与 sandbox / update 段在合并前
 被逐层抽取(段策略表 section-policy.ts),从不进入合并产物——此处以装配产物顶替同名键
 (Omit 隔离两形态)。
 
@@ -197,7 +197,7 @@ Omit.fallbacks
 hooks: LoadedHooks;
 ```
 
-hooks 段分层抽取产物(T-G3;可直接喂 HookEngineOptions.hooks)
+hooks 段分层抽取产物(可直接喂 HookEngineOptions.hooks)
 
 ***
 
@@ -209,7 +209,7 @@ hooks 段分层抽取产物(T-G3;可直接喂 HookEngineOptions.hooks)
 http: LoadedHttpSection;
 ```
 
-http 段分层抽取产物(FX-B-15;user/managed 被尊重,项目层忽略,远程 org 可下发,见 http-section.ts)
+http 段分层抽取产物(user/managed 被尊重,项目层忽略,远程 org 可下发,见 http-section.ts)
 
 ***
 
@@ -237,7 +237,7 @@ Omit.locale
 mcpServers: McpServerEntry[];
 ```
 
-mcpServers 段分层抽取产物(T-D8;可直接喂 attachMcpTools)
+mcpServers 段分层抽取产物(可直接喂 attachMcpTools)
 
 ***
 
@@ -473,7 +473,7 @@ Omit.providers
 sandbox: LoadedSandboxSection;
 ```
 
-sandbox 段分层抽取产物(FX-B-01;user/managed 被尊重,项目层忽略,env 对 managed 只收紧,见 sandbox-section.ts)
+sandbox 段分层抽取产物(user/managed 被尊重,项目层忽略,env 对 managed 只收紧,见 sandbox-section.ts)
 
 ***
 
@@ -681,7 +681,7 @@ Omit.ui
 update: LoadedUpdateSection;
 ```
 
-update 段分层抽取产物(FX-B-01;user/managed 被尊重,项目层忽略,见 update-section.ts)
+update 段分层抽取产物(user/managed 被尊重,项目层忽略,见 update-section.ts)
 
 ***
 

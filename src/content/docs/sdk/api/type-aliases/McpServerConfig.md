@@ -12,3 +12,5 @@ generated: true
 ```ts
 type McpServerConfig = McpStdioServerConfig | McpHttpServerConfig & McpServerLazyOptions & McpServerGovernanceOptions;
 ```
+
+单台 MCP 服务器的完整配置:stdio 或 http 传输形 + 懒连接选项 + 连接池 / 重连治理。

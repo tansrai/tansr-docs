@@ -36,3 +36,5 @@ const SpeechAudioSchema: z.ZodObject<{
   url: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+SpeechAudio 的 zod schema(passthrough 容未知键)。

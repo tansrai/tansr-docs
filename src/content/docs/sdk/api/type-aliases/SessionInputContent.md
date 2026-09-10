@@ -21,3 +21,5 @@ type SessionInputContent =
   }[];
 };
 ```
+
+会话级输入内容:纯文本,或仅含 text 块的块数组(图片等不受理)。

@@ -17,6 +17,8 @@ type IRSystemSegment = {
 };
 ```
 
+系统提示分段(IRSystemSegmentSchema 推导)。
+
 ## 属性
 
 <a id="api-cacheable"></a>

@@ -21,3 +21,5 @@ type IRToolContent =
   t: "image";
 };
 ```
+
+工具结果内容项:文本或图片(IRToolContentSchema 推导)。

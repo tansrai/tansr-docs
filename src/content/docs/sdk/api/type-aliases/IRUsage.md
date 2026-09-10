@@ -22,6 +22,8 @@ type IRUsage = {
 };
 ```
 
+归一化用量(IRUsageSchema 推导)。
+
 ## 属性
 
 <a id="api-cachecreationinputtokens"></a>

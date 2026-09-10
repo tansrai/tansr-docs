@@ -29,3 +29,5 @@ type TerminalReason =
   | "internal_error"
   | "client_gone";
 ```
+
+一轮查询的终止原因(TerminalReasonSchema 推导)。

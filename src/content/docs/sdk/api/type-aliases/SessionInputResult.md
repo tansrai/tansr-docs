@@ -20,3 +20,5 @@ type SessionInputResult =
   outcome: "closed" | "rejected";
 };
 ```
+
+会话级输入提交的结果:accepted 携凭据;closed / rejected 携拒绝码。

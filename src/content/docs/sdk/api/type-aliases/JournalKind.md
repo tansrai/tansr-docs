@@ -21,3 +21,5 @@ type JournalKind =
   | "fork"
   | "file_checkpoint";
 ```
+
+日志记录种类(JournalKindSchema 推导)。

@@ -21,6 +21,8 @@ type ImageGenArgs = {
 };
 ```
 
+ImageGen 工具的已校验参数类型(ImageGenArgsSchema 推导)。
+
 ## 属性
 
 <a id="api-imageurls"></a>

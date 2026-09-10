@@ -48,3 +48,5 @@ const ImageGenDataSchema: z.ZodObject<{
   taskId: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+ImageGenData 的 zod schema(passthrough 容未知键;消费方按需校验 ToolResult.data)。

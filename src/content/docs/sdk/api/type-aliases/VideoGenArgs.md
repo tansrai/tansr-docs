@@ -21,6 +21,8 @@ type VideoGenArgs = {
 };
 ```
 
+VideoGen 工具的已校验参数类型(VideoGenArgsSchema 推导)。
+
 ## 属性
 
 <a id="api-duration"></a>

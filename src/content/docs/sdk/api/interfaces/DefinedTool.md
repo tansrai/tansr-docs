@@ -48,7 +48,7 @@ description: string;
 optional effects?: readonly ("irreversible" | "financial" | "external" | "affects-others")[];
 ```
 
-效应声明(应用协议 v1,doc/optimize/37 §5):开发者对本工具副作用性质的
+效应声明(应用协议 v1):开发者对本工具副作用性质的
 自述——`irreversible`(不可逆)/ `financial`(资金流动)/ `external`
 (触达外部系统或第三方)/ `affects-others`(影响其他用户或租户)。
 **信号不是闸门**:只进裁决人语境(`<tool>` 段)与遥测标签,不参与任何
@@ -171,7 +171,7 @@ Q4-24b:本位允许以 getter 落位(Task 函数配置)——调度器在每次�
 optional shortDescription?: string;
 ```
 
-TCB/1 CB-3 — 模型可见短态描述(英文;一句话 + 参数签名要点)。可选
+模型可见短态描述(英文;一句话 + 参数签名要点)。可选
 资产位:装配层分段预算分配器(cli assembly/section-budget.ts)在工具
 段预算压力下以短态替换 description 进请求;缺席/门关恒用 description
 (请求字节与现状逐字节一致)。执行语义与本字段无关。
@@ -284,7 +284,7 @@ optional mutatedPathsOf(args): string[];
 optional touchedPathsOf(args): string[];
 ```
 
-文件读取触达声明位(T-CTX10,与 mutatedPathsOf 同构的只读侧):返回
+文件读取触达声明位(与 mutatedPathsOf 同构的只读侧):返回
 本次调用将读取的文件绝对路径集。调度器在调用**成功**后采集(与
 mutatedPathsOf 合并)进 ToolExecutionOutcome.touchedFiles,作查询环
 压缩后文件重建的触达台账数据源。约定同 mutatedPathsOf:args 畸形或

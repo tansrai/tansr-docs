@@ -12,3 +12,5 @@ generated: true
 ```ts
 type HookOutcomeStatus = "error" | "timeout" | "aborted" | "ok";
 ```
+
+hook 执行终态(HookOutcomeStatusSchema 推导)。

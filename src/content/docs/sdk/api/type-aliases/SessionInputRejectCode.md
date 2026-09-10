@@ -17,3 +17,5 @@ type SessionInputRejectCode =
   | "content_unsupported"
   | "input_unsupported";
 ```
+
+会话级输入的拒绝码:查询层拒绝码之外增纪元不符、不支持的确认级别 / 内容 / 输入形态。

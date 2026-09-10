@@ -59,7 +59,7 @@ kernel 查询环恒初始化并如实累计。
 queueInjections: number;
 ```
 
-注入屏障已消费的旧 enqueue 输入条数；strict input 按回执独立核对，避免宿主 slice 错位。
+注入屏障已消费的旧 enqueue 输入条数；strict input 按凭据独立核对，避免宿主 slice 错位。
 
 ***
 

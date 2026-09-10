@@ -12,3 +12,5 @@ generated: true
 ```ts
 type PermissionDecision = "allow" | "deny" | "ask";
 ```
+
+权限决策(PermissionDecisionSchema 推导)。

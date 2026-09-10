@@ -12,3 +12,5 @@ generated: true
 ```ts
 type ColdTierEventType = ColdTierEvent["type"];
 ```
+
+冷层结构化事件的 type 取值集合。

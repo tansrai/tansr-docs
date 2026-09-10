@@ -13,10 +13,10 @@ generated: true
 type StoreErrorKind = "transient" | "permanent" | "not_found" | "precondition_failed";
 ```
 
-会话历史分层存储 · 调用契约(doc/120 §3;doc/119 IO-02「接口先冻」)。
+会话历史分层存储 · 调用契约(接口先冻)。
 
 这里只有**运行时接口**;持久化数据契约(段条目 / 清单)在 protocol `storage.ts`
-(contract-v0.22,RFC-SC-4)。分层核接在既有段层之上(journal/\{writer,reader,manifest\}.ts:
+(contract-v0.22)。分层核接在既有段层之上(journal/\{writer,reader,manifest\}.ts:
 写侧 `onSegmentSealed` 钩子 → 上传不可变段;读侧 `segmentSource` 钩子 → 本地段缺席时回源),
 热层本地盘恒为耐久性地板,冷层只承接封存后不可变的段 / 快照 / 附件。
 

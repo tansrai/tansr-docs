@@ -16,8 +16,8 @@ type AskUserCallback = (call, signal?, decision?) => Promise<"allow" | "deny">;
 询问回调:表面层(TUI/headless 编排)注入;resolve 为用户的最终选择。
 signal:调用方(调度器)的中断信号——回合 Esc/中止时表面层据此撤回
 询问对话框(不撤回则残留幽灵对话框,堵塞后续对话框队列)。
-decision:触发本次询问的门面决策(T-K0 归因展示;matchedRule/sourceLayer
-供对话框呈现「哪条规则、来自哪层」;doc/113 姿态下 source='classifier' +
+decision:触发本次询问的门面决策(归因展示;matchedRule/sourceLayer
+供对话框呈现「哪条规则、来自哪层」;'ask' 姿态下 source='classifier' +
 reason 供呈现「裁决人判为危险:…」)。旧实现忽略第三参数即向后兼容。
 
 ## 参数

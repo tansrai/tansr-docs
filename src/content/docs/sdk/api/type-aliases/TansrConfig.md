@@ -322,6 +322,8 @@ type TansrConfig = {
 };
 ```
 
+五层合并后的完整配置(TansrConfigSchema 推导)。
+
 ## 属性
 
 <a id="api-schemaversion"></a>

@@ -21,3 +21,5 @@ type IRErrorKind =
   | "invalid_request"
   | "policy_denied";
 ```
+
+归一化错误类别(IRErrorKindSchema 推导)。

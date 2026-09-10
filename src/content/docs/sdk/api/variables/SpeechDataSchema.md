@@ -102,3 +102,5 @@ const SpeechDataSchema: z.ZodObject<{
   taskId: z.ZodOptional<z.ZodString>;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+SpeechData 的 zod schema(passthrough 容未知键)。

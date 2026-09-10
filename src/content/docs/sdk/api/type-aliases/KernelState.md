@@ -12,3 +12,5 @@ generated: true
 ```ts
 type KernelState = typeof KERNEL_STATES[number];
 ```
+
+查询环状态机的状态取值(KERNEL_STATES 成员)。

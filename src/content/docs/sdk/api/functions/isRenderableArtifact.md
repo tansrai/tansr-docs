@@ -13,13 +13,13 @@ generated: true
 function isRenderableArtifact(data): boolean;
 ```
 
-三端共享谓词(十王修案 FX-C-24 / doc/130 FX-C-S6-3;复审 E-03 / E-06 / M-04 / M2-06;审计 09 D-1):
+三端共享谓词:
 「产物可渲染为成功」的**单一判定**——Kotlin `isRenderableArtifact` / Swift `isRenderableArtifact` 同名同语义,
 四金样 `test/fixtures/golden/tool-card-artifact-{speech-empty,image-errorcode,video-errorcode,errorcode-null}.json`
 三端逐字 `[false, false, false, true]`。语义逐字:
 
-- `errorCode == null`(键缺席 / 值 `null` / 空串皆视为**无错**;任何其它值 = 错误回执,不论产物位是否非空——
-  此前两端 image / video 分支**不查** `errorCode`,携 url 的错误回执被渲染为成功;Android 用 `containsKey`,
+- `errorCode == null`(键缺席 / 值 `null` / 空串皆视为**无错**;任何其它值 = 错误响应,不论产物位是否非空——
+  此前两端 image / video 分支**不查** `errorCode`,携 url 的错误响应被渲染为成功;Android 用 `containsKey`,
   `errorCode: null` 被当失败)
 - 且 `kind ∉ {image, video} || url/path 非空`(`images` / `videos` 键在场即按该形判;空数组 / 全坏 / 全空串 = 不可渲染)
 - 且 `kind ≠ speech || url/b64 至少一非空`(`audio` 键在场即按 speech 判;此前 iOS 对 `url: ""` 放行为 Speech)

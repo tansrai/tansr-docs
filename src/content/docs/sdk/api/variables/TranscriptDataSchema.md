@@ -81,3 +81,5 @@ const TranscriptDataSchema: z.ZodObject<{
   text: z.ZodString;
 }, z.ZodTypeAny, "passthrough">>;
 ```
+
+TranscriptData 的 zod schema(passthrough 容未知键)。
