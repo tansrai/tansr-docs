@@ -43,7 +43,7 @@ optional contextWindowTokens?: number;
 optional maxOutputTokens?: number;
 ```
 
-新模型的输出上限(T-C12);不传则清空(同窗口的宁缺毋错纪律)
+新模型的输出上限(maxTokens 事前钳制上界);不传则清空(同窗口的宁缺毋错纪律)
 
 ***
 

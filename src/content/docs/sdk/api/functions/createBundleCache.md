@@ -13,6 +13,9 @@ generated: true
 function createBundleCache(options?): BundleCache;
 ```
 
+创建 per-app bundle / features 缓存(语义见文件头)。一个实例可被同进程内多个会话共享:
+同键并发 resolve 只出网一次,过期后带 If-None-Match 条件重拉,heartbeat 回带的 bundleEtag 触发条目级失效。
+
 ## 参数
 
 ### options?

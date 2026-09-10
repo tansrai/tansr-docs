@@ -12,3 +12,5 @@ generated: true
 ```ts
 const AdjudicatorTierSchema: z.ZodEnum<["low", "medium", "high"]>;
 ```
+
+裁决人资质档 zod schema

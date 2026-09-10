@@ -18,6 +18,8 @@ type AppTokenResponse = {
 };
 ```
 
+POST /v1/app-tokens 响应体类型
+
 ## 属性
 
 <a id="api-appid"></a>

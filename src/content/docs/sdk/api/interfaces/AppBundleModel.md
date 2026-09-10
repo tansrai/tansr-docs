@@ -51,7 +51,7 @@ displayName: string;
 family: string | null;
 ```
 
-模型族 = 系列维(api T-A13 列;两级分组二级维;缺键 = null)
+模型族(系列名);「厂商 → 系列」两级分组的二级维;平台未提供时为 null
 
 ***
 
@@ -73,9 +73,8 @@ handle: string;
 manufacturer: string | null;
 ```
 
-原始厂商(模型呈现面二波,用户拍板 2026-08-30 ④;api bundle 加法键,
-法人/品牌如 'Anthropic')。集成方模型切换器「厂商 → 系列」分组呈现的
-一级维;旧 bundle 缺键/api 未校准 = null(呈现面回落平铺,恒不猜)。
+原始厂商(法人 / 品牌名,如 'Anthropic')。模型切换器「厂商 → 系列」两级分组呈现的一级维;
+旧 bundle 缺键或平台未校准时为 null(呈现面回落平铺,恒不猜测)。
 
 ***
 
@@ -87,8 +86,8 @@ manufacturer: string | null;
 optional modelId?: string;
 ```
 
-上游模型标识(信息位;消费恒走 twp,wire model 值 = handle)。M-07(doc/130 §五;候拍 A22):sdk 0.12 起**可选**——
-api 令牌径剥 `models[].modelId`(`platformModels` 红线「恒无上游 modelId」),缺席 / 空串 / 非串 = 键缺席,条目保留。
+上游模型标识(仅供展示;实际调用恒经平台通道,wire 上的 model 值 = handle)。
+令牌档下平台不下发本字段,故为可选:缺席 / 空串 / 非字符串一律按键缺席处理,条目本身保留。
 
 ***
 
@@ -100,7 +99,7 @@ api 令牌径剥 `models[].modelId`(`platformModels` 红线「恒无上游 model
 pricing: AppBundleModelPricing | null;
 ```
 
-计价段(doc/110 B7 加法解析;缺键/坏形状 = null,恒不猜价)
+计价段;缺键 / 坏形状 = null,恒不猜价
 
 ***
 
@@ -112,4 +111,4 @@ pricing: AppBundleModelPricing | null;
 protocol: string;
 ```
 
-上游协议标识(信息位;消费恒走 twp,方言转换收敛在网关)
+上游协议标识(仅供展示;方言转换收敛在网关,消费恒经平台通道)

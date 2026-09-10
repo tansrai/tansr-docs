@@ -12,3 +12,5 @@ generated: true
 ```ts
 const EndUserIdSchema: z.ZodString;
 ```
+
+终端用户标识 zod schema(END_USER_ID_RE)

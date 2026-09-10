@@ -12,3 +12,5 @@ generated: true
 ```ts
 type PlanErrorCode = typeof PLAN_ERROR_CODES[number];
 ```
+
+套餐错误码(PLAN_ERROR_CODES 的元素类型)

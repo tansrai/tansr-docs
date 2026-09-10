@@ -12,3 +12,5 @@ generated: true
 ```ts
 const PlanTierSchema: z.ZodEnum<["test", "small", "medium", "large"]>;
 ```
+
+套餐档位 zod schema

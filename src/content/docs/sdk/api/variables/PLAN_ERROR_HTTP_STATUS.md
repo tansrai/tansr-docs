@@ -13,4 +13,4 @@ generated: true
 const PLAN_ERROR_HTTP_STATUS: Readonly<Record<PlanErrorCode, number>>;
 ```
 
-八码 → api HTTP 状态(api ERROR_CODES 注册表镜份;doc/126 PL-05)
+八码 → 平台 HTTP 状态(平台错误码注册表镜份)

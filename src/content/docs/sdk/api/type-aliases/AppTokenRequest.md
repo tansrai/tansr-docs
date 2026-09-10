@@ -16,6 +16,8 @@ type AppTokenRequest = {
 };
 ```
 
+POST /v1/app-tokens 请求体类型
+
 ## 属性
 
 <a id="api-enduserid"></a>

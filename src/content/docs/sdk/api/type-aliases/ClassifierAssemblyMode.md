@@ -13,8 +13,5 @@ generated: true
 type ClassifierAssemblyMode = "two-stage" | "single-stage";
 ```
 
-装配形态二值(E-3 升格接线,2026-08-04 会签):两阶段(快筛 + 复审,
-缺省生产形态)/ 单阶段(一次调用直出,V4 实证对照主形态)。形态在
-**装配期定格**(选定后 classify 闭包不变);形态是协议形制非模型身份,
-由宿主按评估证据选择(cli selectClassifierAssemblyMode;SDK/serve 缺省
-两阶段)。
+装配形态二值:两阶段(快筛 + 复审,缺省生产形态)/ 单阶段(一次调用直出)。形态在**装配期定格**
+(选定后 classify 闭包不变);形态是协议形制非模型身份,由宿主按评估证据选择(SDK/serve 缺省两阶段)。

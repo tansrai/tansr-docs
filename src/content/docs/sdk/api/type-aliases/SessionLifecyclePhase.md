@@ -20,3 +20,5 @@ type SessionLifecyclePhase =
   | "mcp_close"
   | "assembly_rollback";
 ```
+
+生命周期失败发生的阶段(查询环 / 空闲操作 / 存储提交 / 历史回调 / cwd 提交 / store flush / MCP 关闭 / 装配回滚)

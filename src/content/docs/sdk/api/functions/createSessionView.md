@@ -13,6 +13,9 @@ generated: true
 function createSessionView(source, options?): SessionView;
 ```
 
+把事件源(AgentSession 或任意 KernelEvent 异步流)接到纯 reducer 上,得到可订阅的视图句柄:
+每个被消费的事件换一次不可变快照并扇出通知;`options.delivery` 决定文本 / 思考的呈现档。
+
 ## 参数
 
 ### source

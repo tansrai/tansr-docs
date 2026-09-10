@@ -12,3 +12,5 @@ generated: true
 ```ts
 type TokenInvalidatingCode = typeof TOKEN_INVALIDATING_CODES[number];
 ```
+
+令牌径失效码(TOKEN_INVALIDATING_CODES 成员类型)

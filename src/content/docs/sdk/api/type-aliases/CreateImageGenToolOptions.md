@@ -17,7 +17,7 @@ type CreateImageGenToolOptions = CreatePlatformImageGenProviderOptions & {
 
 平台工具材料(baseUrl / token / fetchImpl? / models? / timeoutMs?;与平台提供方选项同形——
 `timeoutMs` 缺省 IMAGEGEN_TOOL_TIMEOUT_MS,恒不回落 kernel 120s 统一档)。`token` 在本层**恒必填**
-(SDK 令牌档恒有令牌;doc/128 §九 C2-1 只放开提供方层给 cli 装置键径)。
+(SDK 令牌档恒有令牌;只有提供方层对 cli 装置键径放开可缺席)。
 
 ## 类型声明
 

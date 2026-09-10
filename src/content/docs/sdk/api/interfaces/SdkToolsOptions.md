@@ -24,10 +24,10 @@ optional builtin?: readonly string[];
 环2 内置工具选择(词表:read/write/edit/glob/grep/list/shell/webFetch/
 webSearch/http/todoWrite/askUser + 媒体四名 imageGen/videoGen/speechToText/
 textToSpeech)。缺席 = 装配能力位放行的全部本地内置工具(**媒体四名恒不在缺省
-全集**,D-M4);空数组 = 零内置(纯自定义工具场景)。显式列出位关工具报可读错。
-webSearch 双门(S-WS2):除工具位外还需令牌档材料 + platform.webSearch 位
+全集**);空数组 = 零内置(纯自定义工具场景)。显式列出位关工具报可读错。
+webSearch 双门:除工具位外还需令牌档材料 + platform.webSearch 位
 (后端恒平台通道,SDK 恒不 BYO)——缺席选择时通道不备静默不装,显式选择
-即 fail-fast 分因可读错。媒体四名(doc/128):工具位 = capabilities.platform.\<name\>,
+即 fail-fast 分因可读错。媒体四名:工具位 = capabilities.platform.\<name\>,
 后端恒平台提供方——位关 / 令牌档材料缺席(托管/注入档)显式选择即 fail-fast 可读错。
 
 ***
@@ -54,7 +54,7 @@ optional platform?: readonly string[];
 
 #### 已被弃用
 
-兼容别名(doc/128 D-M3):词表 imageGen/videoGen/speechToText/textToSpeech
+兼容别名:词表 imageGen/videoGen/speechToText/textToSpeech
 与 tools.builtin 同名四值等价——等价并入 builtin 选择集(同名同描述同 schema 同序),
 校验与文案不变(位关恒 fail-fast;材料缺席 fail-fast 指引令牌档)。新写法请用
-tools.builtin。webSearch 已收编进 tools.builtin(S-WS2),此处显式列出报迁移指引。
+tools.builtin。webSearch 已并入 tools.builtin,此处显式列出报迁移指引。

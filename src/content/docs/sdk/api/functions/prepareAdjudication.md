@@ -15,7 +15,7 @@ function prepareAdjudication(input):
   | undefined;
 ```
 
-入口前置裁决(doc/113 §4.4):
+入口前置裁决:
 - 令牌档:缺省启用(bundle 裁决人恒在 = 平台底档);`enabled:false` → undefined(现状);
 - 托管/注入档:无 bundle 即无任命来源,`adjudication` 在场属误用 fail-fast
   (静默忽略会让开发者以为裁决人在生效);缺席 → undefined;

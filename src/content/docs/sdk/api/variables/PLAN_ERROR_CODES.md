@@ -13,6 +13,6 @@ generated: true
 const PLAN_ERROR_CODES: readonly ["plan_required", "plan_tier_insufficient", "plan_concurrency_exceeded", "plan_end_users_exceeded", "plan_apps_exceeded", "plan_members_exceeded", "plan_gate_unavailable", "refund_not_eligible"];
 ```
 
-套餐错误码八枚(api http/errors.ts 注册表同名;doc/125 §2.3 / §2.6 / §五 / §3.3)。
+套餐错误码八枚(与平台错误码注册表同名)。
 状态码镜份供开发者面分支;`PlatformRequestError.platformCode` / twp 错误信封 `code` 对表外未知码
 恒原样透传,本表只是命名锚,恒不作白名单过滤。

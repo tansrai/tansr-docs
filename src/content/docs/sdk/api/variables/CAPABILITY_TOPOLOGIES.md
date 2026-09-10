@@ -12,3 +12,5 @@ generated: true
 ```ts
 const CAPABILITY_TOPOLOGIES: Readonly<Record<CapabilityTopology, CapabilityTopologyProfile>>;
 ```
+
+两种能力拓扑的位面档(embedded 全位可勾选;hosted 只开 todoWrite / askUser / customTools / webSearch 与平台位)

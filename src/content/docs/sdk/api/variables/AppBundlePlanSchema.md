@@ -60,3 +60,5 @@ const AppBundlePlanSchema: z.ZodObject<{
   tier: "medium" | "small" | "large" | "test";
 }>;
 ```
+
+bundle 顶层 `plan` 段形态:档位、上限快照、状态、到期时刻与回落前原档(不 `.strict()`,未知键剥除)

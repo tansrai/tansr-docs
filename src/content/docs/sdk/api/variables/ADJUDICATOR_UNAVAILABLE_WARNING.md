@@ -13,7 +13,5 @@ generated: true
 const ADJUDICATOR_UNAVAILABLE_WARNING: Readonly<AdjudicationWarning>;
 ```
 
-FX-B-11(十王修案 S3 J-06;doc/132 V-B-25 接口文半边)— 「bundle 无裁决人段 × 宿主显式给了 adjudication
-选项」的通报,sdk / serve **同码同文案**的单一事实源:sdk `assembleTokenTierAdjudicator` 与 serve
-`packages/server/src/v2/adjudication.ts` `resolvePlatformAdjudicator`(FX-C-50)两处出线逐字同此
-(对照例 `packages/sdk/test/adjudication-serve-contract.test.ts` 锁字面)。
+「bundle 无裁决人段 × 宿主显式给了 adjudication 选项」时的通报(码 `adjudicator_unavailable`)。
+SDK 与 serve **同码同文案**的单一事实源:`assembleTokenTierAdjudicator` 与 serve 平台裁决人解析两处出线逐字同此。

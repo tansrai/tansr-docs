@@ -13,7 +13,7 @@ generated: true
 function featuresFingerprintOf(clientFeatures?): string;
 ```
 
-FX-C-16:features 声明指纹 = sha256(声明列表逗号串,与出线头 x-tansr-client-features 值同源) 前 8 hex。
+features 声明指纹 = sha256(声明列表逗号串,与出线头 x-tansr-client-features 值同源) 前 8 hex。
 缺省 CLIENT_FEATURES 常量(同进程恒一,不裂条目);声明变即指纹变。
 
 ## 参数

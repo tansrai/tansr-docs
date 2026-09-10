@@ -13,12 +13,10 @@ generated: true
 function appBundlePricingUpdates(bundle): PricingUpdate[];
 ```
 
-doc/110 B7 — bundle 计价 → kernel 价格簿注入行(refreshed 层;cli
-remote-bundle mapBundleToFragment 同律):币种走白名单(USD/CNY),其余
-币种如实跳过(tracker 侧不猜币种不误标);DECIMAL 串 → 数值,必要价
-NaN 整条丢弃;缓存读价 \>0 才落 cachedInputPerMillion;缓存写价 \>0 落
-cacheWriteInputPerMillion(CostPricing 写溢价维,doc/110 A4 同口径)。
-键 = (tansr, handle),与 twp 计量事件 provider/model 同口径。
+bundle 计价段 → kernel 价格簿注入行(可喂 `refreshPricing`,供本地成本估算 / 预算闸门)。
+币种走白名单(USD / CNY),其余币种如实跳过(不猜币种不误标);DECIMAL 串 → 数值,必要价 NaN 整条丢弃;
+缓存读价 \> 0 才落 cachedInputPerMillion,缓存写价 \> 0 才落 cacheWriteInputPerMillion。
+键 = (tansr, handle),与平台计量事件的 provider / model 同口径。
 
 ## 参数
 

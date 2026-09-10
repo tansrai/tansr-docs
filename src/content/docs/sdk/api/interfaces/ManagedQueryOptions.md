@@ -25,7 +25,7 @@ generated: true
 optional adjudication?: AdjudicationOptions;
 ```
 
-裁决人(doc/113,仅令牌档;语义同 CreateSessionOptions.adjudication)
+裁决人(仅令牌档;语义同 CreateSessionOptions.adjudication)
 
 ***
 
@@ -49,7 +49,7 @@ optional baseUrl?: string;
 optional capabilities?: AppCapabilities;
 ```
 
-能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1)
+能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给)
 
 ***
 
@@ -77,7 +77,7 @@ Default 30 seconds. Bounds cleanup observation, not model execution.
 optional compaction?: false | QueryCompactionOptions;
 ```
 
-上下文压缩(kernel T-C10):缺省 \{\}(自动压缩,仅上下文窗口已知时
+上下文压缩:缺省 \{\}(自动压缩,仅上下文窗口已知时
 生效——阈值代数依赖窗口,与 TUI/serve 同守卫);false 显式禁用。
 
 ***
@@ -304,6 +304,8 @@ SDK装配警告；平台子集仍沿onPlatformWarning旧出口。
 ```ts
 optional permission?: PermissionOptions;
 ```
+
+权限模式与确认通道(语义同 CreateSessionOptions.permission)
 
 ***
 

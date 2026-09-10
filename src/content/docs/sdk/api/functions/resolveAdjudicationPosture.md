@@ -17,9 +17,9 @@ function resolveAdjudicationPosture(
 ): "human-in-loop" | "headless";
 ```
 
-姿态推导(doc/113 §1.4):显式覆盖优先;A 而无询问通道 fail-fast;缺席按
-askUser 在场与否推导(在场 → A,缺席 → B)。推导本体 = kernel `derivePosture`
-(FX-B-04 单点;cli / serve 同源),本函数只加 sdk 的 fail-fast 文案。
+姿态推导:显式覆盖优先;人在环而无询问通道 fail-fast(`invalid_options`);缺席按 askUser 在场与否推导
+(在场 → 人在环,缺席 → 无人环)。推导本体 = kernel `derivePosture`(cli / serve 同源),本函数只加 SDK 的
+fail-fast 文案。
 
 ## 参数
 

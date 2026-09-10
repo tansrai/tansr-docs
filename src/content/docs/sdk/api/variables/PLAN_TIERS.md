@@ -13,4 +13,4 @@ generated: true
 const PLAN_TIERS: readonly ["test", "small", "medium", "large"];
 ```
 
-套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行
+套餐档(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);个人档 = 无套餐行

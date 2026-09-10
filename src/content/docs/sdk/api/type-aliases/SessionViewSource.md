@@ -14,3 +14,5 @@ type SessionViewSource =
   | AsyncIterable<KernelEvent>
   | SessionEventSource;
 ```
+
+视图 / 叙述器可接的事件源:KernelEvent 异步流,或带 `events` 的 AgentSession 形对象

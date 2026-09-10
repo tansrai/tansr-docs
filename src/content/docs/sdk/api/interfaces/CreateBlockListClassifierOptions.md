@@ -35,8 +35,8 @@ optional app?: ClassifierAppContext;
 optional budgets?: ClassifierStageBudgetOverrides;
 ```
 
-stage token 预算覆写(2026-08-25 拍板 C 案):覆写 = 协议变体,生效
-指纹随之现算(缓存键与证据解释同源换算);单阶段吃 stage2MaxTokens。
+stage token 预算覆写:覆写 = 协议变体,生效指纹随之现算(缓存键与证据解释同源换算);
+单阶段吃 stage2MaxTokens。
 
 ***
 
@@ -60,10 +60,9 @@ stage1 快筛档句柄(装配期快照;liveStages 在场时仅作缓存标签/�
 optional liveStages?: () => ClassifierLiveStages;
 ```
 
-批 ξ:stage 档活值供给器——每次咨询起点取现值(单次咨询内 stage1/
-stage2 同刻取值防撕裂),/model 切换后下一次咨询即用新档;缓存版本
-标签随现值现算(kernel 键失配 = 旧模型时代裁定不跨代回放)。缺席 =
-启动快照语义(零漂移)。装配形态与协议指纹仍装配期定格。
+stage 档活值供给器——每次咨询起点取现值(单次咨询内 stage1/stage2 同刻取值防撕裂),模型切换后
+下一次咨询即用新档;缓存版本标签随现值现算(kernel 键失配 = 旧模型时代裁定不跨代回放)。
+缺席 = 启动快照语义(零漂移)。装配形态与协议指纹仍装配期定格。
 
 #### 返回
 
@@ -92,9 +91,8 @@ optional mode?: ClassifierAssemblyMode;
 optional protocol?: ClassifierProtocol;
 ```
 
-协议表面(doc/optimize/37 §3):缺省 'coding'(编码协议,CLI 四入口,
-零漂移);'app' = 应用表面协议(SDK 令牌档 / serve /v2)——只定义单阶段
-形态(§9 拍板 3),与 two-stage 组合直接抛错而非静默回退编码提示词。
+协议表面:缺省 'coding'(编码代理协议,CLI 各入口,零漂移);'app' = 应用表面协议
+(SDK 令牌档 / serve)——只定义单阶段形态,与 two-stage 组合直接抛错而非静默回退编码提示词。
 
 ***
 
@@ -106,7 +104,7 @@ optional protocol?: ClassifierProtocol;
 optional requestMeasurement?: RequestMeasurementObserver;
 ```
 
-T-CTX15:请求估算配对观测缝(purpose='classifier')。每次 stage 调用
+请求估算配对观测缝(purpose='classifier';本地估算 × 服务端用量配对)。每次 stage 调用
 (两阶段至多 2 行/咨询,单阶段 1 行)各回调一次;缺省不观测。
 
 ***
@@ -119,11 +117,9 @@ T-CTX15:请求估算配对观测缝(purpose='classifier')。每次 stage 调用
 resolveTier: () => EffectiveQualificationTier;
 ```
 
-资格解析闭包(T-K23c/T-K23d;kernel resolveQualificationTier 直喂):
-返回当前生效档,引擎**每次咨询现算**。CLI 注入三源合成器
-(min(任命 entry, ceiling, override));SDK/serve 注入 bundle `tier`
-常量闭包(缺席 `() => 'none'` = 只收紧不软化)。闭包抛错/词表外值由
-kernel 按 'none' 兜底(T-INV-B fail-closed)。
+资格解析闭包(kernel resolveQualificationTier 直喂):返回当前生效档,引擎**每次咨询现算**。
+CLI 注入三源合成器(min(任命 entry, ceiling, override));SDK/serve 注入 bundle `tier` 常量闭包
+(缺席 `() => 'none'` = 只收紧不软化)。闭包抛错/词表外值由 kernel 按 'none' 兜底(fail-closed)。
 
 #### 返回
 
@@ -139,6 +135,5 @@ kernel 按 'none' 兜底(T-INV-B fail-closed)。
 optional stage2?: ClassifierStageHandle;
 ```
 
-stage2 复审档(T-K17,05 §10.2「stage2 缺省 main 档」):复审是质量敏感
-的一半,花对钱;缺席回退 fast(测试与降级形态——SDK/serve 无 fast
-别名时两阶段皆 main 即此形态,如实降级)。
+stage2 复审档(缺省 main 档):复审是质量敏感的一半,花对钱;缺席回退 fast(测试与降级形态——
+SDK/serve 无 fast 别名时两阶段皆 main 即此形态,如实降级)。

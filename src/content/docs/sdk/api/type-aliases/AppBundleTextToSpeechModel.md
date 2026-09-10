@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AppBundleTextToSpeechModel = TextToSpeechModelDescriptor;
 ```
+
+授权语音合成模型条目(bundle `platformModels.textToSpeech` 行形,含合成受理约束)

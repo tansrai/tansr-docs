@@ -33,8 +33,7 @@ ISO-8601 创建时间
 optional cwd?: string;
 ```
 
-会话**当前**工作目录(meta.json `cwd`;W-2,doc/116 §3.7):建档写入会话 cwd(此前
-file-store 恒写 process.cwd(),自 W-2 起写 createSession 的会话 cwd——server 份
+会话**当前**工作目录(meta.json `cwd`):建档写入 createSession 的会话 cwd(server 份
 AgentStoredSessionMeta.cwd 同笔),setCwd 切换后经 recordCwdChange 改写为新值;
 resume 对账锚。旧记录亦有本键(值为当时进程 cwd)。
 
@@ -48,7 +47,7 @@ resume 对账锚。旧记录亦有本键(值为当时进程 cwd)。
 optional cwdHistory?: readonly SessionCwdChange[];
 ```
 
-cwd 中途切换史(W-2;meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
+cwd 中途切换史(meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
 按切换序追加,`cwdHistory[0].from` 即创建期 cwd。未切换过的会话无本键。
 
 ***
@@ -64,7 +63,7 @@ optional forkedFrom?: {
 };
 ```
 
-F-2(doc/117 §十,D-2 B):本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
+本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
 meta.json `forkedFrom`,kernel SessionMetaSchema 可选位;createFileSessionStore 读出)。
 直建 / resume / 五方法回落径 fork 出的会话缺席。列举面据此呈现血缘;SDK 恒不据此改行为。
 
@@ -102,11 +101,10 @@ optional meta?: Record<string, unknown>;
 optional platformSessionId?: string;
 ```
 
-平台会话 id(ULID 26 位 Crockford;doc/91 拍板⑤):令牌档 createSession
+平台会话 id(ULID 26 位 Crockford):令牌档 createSession
 per-AgentSession 铸造并经 twp meta.sessionId 出线,ULID↔内核 UUID 映射
 落在此键——平台侧会话行(归因/续租/亲和)与本地记录互认的桥。
-doc/110 B2(2026-09-02 翻案拍板⑤实施语义):resume 径**沿用**此键——
-缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
+resume 径**沿用**此键——缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
 
 ***
 

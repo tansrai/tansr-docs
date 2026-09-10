@@ -15,7 +15,7 @@ type CreateSpeechToTextToolOptions = CreatePlatformSpeechToTextProviderOptions &
 };
 ```
 
-平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 SPEECH_TO_TEXT_TOOL_TIMEOUT_MS;`token` 本层恒必填,C2-1)。
+平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 SPEECH_TO_TEXT_TOOL_TIMEOUT_MS;`token` 本层恒必填)。
 
 ## 类型声明
 

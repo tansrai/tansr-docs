@@ -21,10 +21,9 @@ bundle-for-app 的 SDK 消费子集
 adjudicator: AppBundleAdjudicator | null;
 ```
 
-生效裁决人档(doc/113 §4.2;`adjudicators[0]` ?? `adjudicator`)。平台底档
-恒在(两级皆空回落 adjprof-builtin-default),故正常 bundle 恒非 null;
-null = 段缺席 / 坏形状(旧 api)→ 令牌档无裁决人,权限行为现状(default
-模式,无分类器路径)——朝严方向,无安全回退面。
+生效裁决人档(`adjudicators[0]` ?? `adjudicator`)。平台底档恒在(两级皆空回落平台内置缺省档),故正常
+bundle 恒非 null;null = 段缺席 / 坏形状(旧平台)→ 令牌档无裁决人,权限行为维持现状(default 模式,
+无分类器路径)——朝严方向,无安全回退面。
 
 ***
 
@@ -46,7 +45,7 @@ aliases: Record<string, string>;
 app: AppBundleIdentity;
 ```
 
-应用身份(应用协议 `<app>` 段;doc/optimize/37 §4.4)——name 现行键,purpose 加法键
+应用身份(应用协议 `<app>` 段)——name 现行键,purpose 可选键
 
 ***
 
@@ -58,8 +57,9 @@ app: AppBundleIdentity;
 capabilities: AppCapabilities;
 ```
 
-App 能力位(doc/89 契约 2)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPABILITIES(旧 api / 装置键径);整段坏形 =
-零能力档 `zeroAppCapabilities(platform)`(FX-A-15,真 fail-closed;`capabilitiesIssues` 非 null)。
+App 能力位(平台控制台按 App 配置的工具位 / 平台位)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPABILITIES
+(旧平台 / 装置键径);整段坏形 = 零能力档 `zeroAppCapabilities(platform)`(真 fail-closed,此时
+`capabilitiesIssues` 非 null)。
 
 ***
 
@@ -71,9 +71,9 @@ App 能力位(doc/89 契约 2)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPA
 capabilitiesIssues: ZodIssue[] | null;
 ```
 
-FX-A-15(V-A-43):capabilities 段整段坏形时的 zod 问题清单(段在场却解析失败——位非 boolean / 段非对象);
-null = 段解析成功或段缺席。装配期(`assemblePlatformModel`)据此经 onWarn 通报 `capabilities_unparsed{ detail.issues }`
-(随 bundle 缓存,每次装配都通报——DX 每会话可见)。段内未知键被 `.strip()` 剥除**不算**坏形。
+capabilities 段整段坏形时的 zod 问题清单(段在场却解析失败——位非 boolean / 段非对象);null = 段解析成功
+或段缺席。装配期(`assemblePlatformModel`)据此经 onWarn 通报 `capabilities_unparsed{ detail.issues }`
+(随 bundle 缓存,每次装配都通报,每会话可见)。段内未知键被剥除**不算**坏形。
 
 ***
 
@@ -85,10 +85,9 @@ null = 段解析成功或段缺席。装配期(`assemblePlatformModel`)据此经
 contextScheme: AppBundleContextScheme | null;
 ```
 
-上下文方案段(FX-B-30;bundle 顶层 `contextScheme`,api 必填 nullable)。null = 平台未配 /
-令牌径 owner-only 中性 null(api 表 tiers 翻行前)/ 旧 api / 坏形。在场即透传宿主:serve
-平台内置形以 kernel `contextSchemeToSchemeOptions` 化为压缩方案选项(FX-C-11);SDK 自身
-恒不映射方案键(单函数住 kernel)。
+上下文方案段(bundle 顶层 `contextScheme`,平台必填 nullable)。null = 平台未配 / 令牌径中性 null /
+旧平台 / 坏形。在场即透传宿主:serve 平台内置形以 kernel `contextSchemeToSchemeOptions` 化为压缩方案
+选项;SDK 自身恒不映射方案键。
 
 ***
 
@@ -100,9 +99,9 @@ contextScheme: AppBundleContextScheme | null;
 governance: AppBundleGovernance;
 ```
 
-org 治理段 SDK 子集(M-05;bundle 顶层 `governance`,owner 径)。恒为对象:`sessionRetentionDays` 在场且为正整数
-才落键;段缺席(令牌径剥段 / 旧 api / org 未配)/ 坏形 = `{}`。透传宿主(serve `resolveSessionRetention`),SDK
-自身零消费。
+组织治理段 SDK 子集(bundle 顶层 `governance`,owner 径)。恒为对象:`sessionRetentionDays` 在场且为
+正整数才落键;段缺席(令牌径剥段 / 旧平台 / 组织未配)/ 坏形 = `{}`。透传宿主(serve 会话保留期),
+SDK 自身零消费。
 
 ***
 
@@ -124,10 +123,9 @@ models: AppBundleModel[];
 plan: AppBundlePlan | null;
 ```
 
-owner 生效套餐投影(doc/125 §六;bundle **顶层**加法键 `plan`,契约 6)。null =
-键缺席(T0 个人无套餐行 / 旧 api)或坏形状(任一字段类型/枚举不符即整段 null,
-恒不臆造档位)。纯呈现 / 开发者面语境位:并发/应用数等硬执行恒在服务端
-(429 / 400 信封),SDK 恒不据此本地判限。
+owner 生效套餐投影(bundle **顶层** `plan` 键)。null = 键缺席(个人无套餐 / 旧平台)或坏形状(任一字段
+类型 / 枚举不符即整段 null,恒不臆造档位)。纯呈现 / 开发者面语境位:并发 / 应用数等硬限制恒在服务端
+执行(429 / 400 信封),SDK 恒不据此本地判限。
 
 ***
 
@@ -139,9 +137,8 @@ owner 生效套餐投影(doc/125 §六;bundle **顶层**加法键 `plan`,契约 
 platform: "desktop" | "mobile" | "server" | null;
 ```
 
-应用平台类型(doc/112 契约 2.4;bundle `app.platform` 加法键)。消费方据此
-判自身装配形态是否与拓扑相符(不符只提示不拒——位已按拓扑归一,安全由位
-保证)。缺席(旧 api / 装置绑定键径恒缺键)或词表外 = null(未知,恒不臆造)。
+应用平台类型(bundle `app.platform`)。消费方据此判自身装配形态是否与拓扑相符(不符只提示不拒——
+能力位已按拓扑归一,安全由位保证)。缺席(旧平台 / 装置绑定键径恒缺键)或词表外 = null(未知,恒不臆造)。
 
 ***
 
@@ -153,9 +150,8 @@ platform: "desktop" | "mobile" | "server" | null;
 platformModels: AppBundlePlatformModels;
 ```
 
-授权媒体模型集(S-G1;doc/123 起四键 imageGen/videoGen/speechToText/textToSpeech):
-工具描述/装配 system 段的自取数据源——集成方恒不手配模型名。旧 bundle 无段 /
-无键 = 空集如实(段级容错同 capabilities 方向:缺席恒不臆造)。
+授权媒体模型集(四键 imageGen / videoGen / speechToText / textToSpeech):工具描述与装配 system 段的
+自取数据源——集成方恒不手配模型名。旧 bundle 无段 / 无键 = 空集如实(缺席恒不臆造)。
 
 ***
 

@@ -17,3 +17,6 @@ type QueryOptions =
 }
   | ManagedQueryOptions;
 ```
+
+`query` 的选项:注入档(`RunAgentOptions` + `systemAppend` + 生命周期选项;不接 skills / mcp)
+或托管档(`ManagedQueryOptions`,`model` 为别名字符串),以 `client` 在场与否分流。

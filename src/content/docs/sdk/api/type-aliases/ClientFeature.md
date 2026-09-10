@@ -12,3 +12,5 @@ generated: true
 ```ts
 type ClientFeature = typeof CLIENT_FEATURES[number];
 ```
+
+客户端可选扩展词元(CLIENT_FEATURES 的元素类型)

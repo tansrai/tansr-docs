@@ -15,3 +15,5 @@ type UIMessagePart =
   | UIThinkingPart
   | UIToolCallPart;
 ```
+
+消息片段三型:文本 / 思考 / 工具调用卡

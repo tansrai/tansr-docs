@@ -13,17 +13,17 @@ generated: true
 function viewStateFromHistory(messages, options?): SessionViewReducerState;
 ```
 
-viewStateFromHistory — L2/L3 重建入口(doc/98 §五恢复链步骤④;doc/97
-卡 A3-1 的 TS 半边,与 tansr-android :core 同名 Kotlin 实现逐语义对齐,
+viewStateFromHistory — 自历史重建视图的入口(resume / attach 恢复链的一步;
+与 tansr-android :core 同名 Kotlin 实现逐语义对齐,
 双端金样卷(test/view-golden)锁一致性,重录恒双仓同笔)。
 
 语义:治理后历史快照(IRMessage[],pairing 已保证配对完整)→ 定稿消息
 投影(无流式簿记):
 - text/thinking 空文本不建 part(与 reducer「空块定稿即删」同律);
-- tool_call 与 tool_result 按 callId 全卷配对(后写者胜):有回执按
-  isError 落 completed/failed,resultText = 回执 text 项拼接(空则缺席);
-  无回执(断尾)落 aborted;
-- 纯 tool_result 消息不落 user 气泡(回执是协议载体不是用户话语);
+- tool_call 与 tool_result 按 callId 全卷配对(后写者胜):有 tool_result 按
+  isError 落 completed/failed,resultText = tool_result 的 text 项拼接(空则缺席);
+  无 tool_result(断尾)落 aborted;
+- 纯 tool_result 消息不落 user 气泡(tool_result 是协议载体不是用户话语);
   tool_result/opaque/image 与未知块型恒不建 part,空消息整条跳过;
 - 消息 id 单调续接(msg-1…),internal.nextMessageSeq 随之推进——重建后
   新增消息恒不撞 id;其余内部簿记与视图字段取初始态(status='idle')。

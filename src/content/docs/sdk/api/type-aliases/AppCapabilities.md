@@ -40,6 +40,8 @@ type AppCapabilities = {
 };
 ```
 
+App 能力位(`tools` 环2 工具位 + `platform` 环3 平台位;装配期「App 有没有」的事实源)
+
 ## 属性
 
 <a id="api-platform"></a>

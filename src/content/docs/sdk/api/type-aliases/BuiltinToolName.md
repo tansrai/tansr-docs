@@ -26,5 +26,5 @@ type BuiltinToolName =
   | PlatformCapabilityName;
 ```
 
-环2 内置工具词表(doc/84 §4.1):前 12 名与 AppCapabilities.tools 的工具位同名;媒体四名
-(doc/128 D-M3,2026-09-05)工具位 = AppCapabilities.platform 同名位(D-M4)。
+环2 内置工具词表:前 12 名与 AppCapabilities.tools 的工具位同名;媒体四名
+工具位 = AppCapabilities.platform 同名位。

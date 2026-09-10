@@ -19,6 +19,8 @@ type PlanCaps = {
 };
 ```
 
+档位上限快照类型
+
 ## 属性
 
 <a id="api-apps"></a>

@@ -13,6 +13,8 @@ generated: true
 function initialSessionViewState(options?): SessionViewReducerState;
 ```
 
+初始 reducer 状态(空视图 + 按 options 解析的呈现档);`createSessionView` / 自建泵壳的起点
+
 ## 参数
 
 ### options?

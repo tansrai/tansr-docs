@@ -13,4 +13,4 @@ generated: true
 type BundleCacheScope = "app_user" | "owner";
 ```
 
-FX-C-16:bundle 投影的径别维——令牌径(app_user 投影)/ 主凭据径(owner 投影)
+bundle 投影的径别维——令牌径(app_user 投影)/ 主凭据径(owner 投影)

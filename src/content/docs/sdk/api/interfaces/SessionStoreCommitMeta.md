@@ -21,7 +21,7 @@ commit 附带信息(与 CreateSessionOptions.onHistoryCommit 的 meta 同形)
 readonly optional reason?: "compaction" | "clear" | "restore";
 ```
 
-S-2 加法:改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
+改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
 恢复);缺席 = 非改写,或改写仅来自存根化。实现方只需消费 rewritten,本位为
 可解释性/审计用(如 cli 卷首 compact_boundary.trigger 同义)。
 
@@ -37,4 +37,4 @@ readonly rewritten: boolean;
 
 true = 历史前缀被就地改写(session.compacted 压缩折叠 /
 session.microcompacted 存根化),已存内容不再与之对齐——实现方不得按
-长度增量追加,须整卷轮换(demo persistence 先例,doc/91 §3.3)。
+长度增量追加,须整卷轮换(demo persistence 先例)。

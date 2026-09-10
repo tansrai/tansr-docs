@@ -15,4 +15,4 @@ type CheckpointMeta = ContextCheckpointMeta;
 
 快照头部(list/put 返回面;恒不含 messages):schemaVersion / checkpointId /
 sessionId / createdAt / trigger / label? / cwd / model? / tokens? / compactionId? /
-messageCount(doc/116 §3.2 全字段)。
+messageCount。

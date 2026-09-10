@@ -21,7 +21,7 @@ create 登记参数(sessionId 缺省由 store 铸造 UUID)
 optional cwd?: string;
 ```
 
-会话工作目录(W-2 同笔 server 份 create init.cwd):首次建档写入 meta.cwd;缺席沿
+会话工作目录(server 份 create init.cwd 同笔):首次建档写入 meta.cwd;缺席沿
 process.cwd() 旧值;既有记录恒不改写(创建期事实,切换走 recordCwdChange)。
 
 ***
@@ -44,8 +44,8 @@ optional meta?: Record<string, unknown>;
 optional platformSessionId?: string;
 ```
 
-平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——doc/110 B2
-起 resume 恒沿用已存值,故在场值只会是同值或旧记录无键的首次补录)
+平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——resume 恒沿用已存值,
+故在场值只会是同值或旧记录无键的首次补录)
 
 ***
 

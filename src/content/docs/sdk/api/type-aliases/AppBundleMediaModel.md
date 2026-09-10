@@ -13,8 +13,7 @@ generated: true
 type AppBundleMediaModel = Omit<MediaModelDescriptor<unknown>, "constraints">;
 ```
 
-授权媒体模型条目公共位(S-G1 媒体池化顺位取用,用户拍板 2026-08-30):`model` = canonical
-handle(/t1/\<face\> 的 model 位可直用);`displayName` 异名时描述行附注;`outputHosting` 产出托管地
-(S-ARCH P2-c 加法键 2026-09-02:overseas / domestic / inline,缺席 = 未探)。网关契约恒不下发
-价格/成本/供应商内部信息。= protocol `MediaModelDescriptor` 去 constraints(四面按约束型特化于
-下方四别名;条目级容错:constraints 缺席/坏形状 = undefined,旧 api 回落通用描述恒不臆造)。
+授权媒体模型条目的公共字段:`model` = 规范 handle(可直接用作 `/t1/<face>` 的 model 位);`displayName`
+与 handle 异名时会附注到工具描述;`outputHosting` = 产出托管地(overseas / domestic / inline,缺席 = 未探知)。
+平台恒不下发价格 / 成本 / 供应商内部信息。等于 `MediaModelDescriptor` 去掉 constraints——四个媒体面
+按各自约束类型特化为下方四个别名;constraints 缺席 / 坏形状 = undefined,回落通用描述,恒不臆造。

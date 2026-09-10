@@ -18800,21 +18800,21 @@ declare class SkillRegistry {
 }
 
 /**
- * S-B2 — defineTool:开发者函数注册面(环1;doc/84 §5.2/doc/83 §6.2)。
+ * defineTool:开发者函数注册面(环1)。
  *
- * 「注册即说明书」(doc/85 §五.2):一次声明同时产出模型可见 schema 与
+ * 「注册即说明书」:一次声明同时产出模型可见 schema 与
  * 人读文档;两档参数声明——
  * - `parameters`:JSON 参数表(低门槛档),SDK 内转 zod;
  * - `schema`:zod 直给(高级档);
  * 二选一,同给在定义点 fail-fast(编程错误不留到运行期)。
  *
- * 返回值归一(doc/83 §6.3 宽容归一):
+ * 返回值归一(宽容归一):
  * - 字符串 → 原文直落 ToolResult 文本;
  * - 其余可序列化值 → JSON.stringify(undefined 归一 null);
  * - handler 抛错 → isError 结构化结果携 message(智能体可自纠,恒不炸查询环)。
  *
  * guide 长文:挂在返回对象的 `guide` 字段(kernel Tool 契约之外的 SDK 元
- * 数据位),装配层(S-B3)聚合注入 system 的「Tool usage guide」段;
+ * 数据位),装配层(toolset)聚合注入 system 的「Tool usage guide」段;
  * kernel 不读该字段,registry 注册直接可用。
  */
 
@@ -18843,7 +18843,7 @@ interface DefineToolOptions<Args = Record<string, unknown>> {
     /** 只读声明(true = 可并发、plan 模式放行);缺省 false(保守按写工具对待) */
     readOnly?: boolean;
     /**
-     * 效应声明(应用协议 v1,doc/optimize/37 §5):`irreversible`(不可逆)/
+     * 效应声明(应用协议 v1):`irreversible`(不可逆)/
      * `financial`(资金流动)/ `external`(触达外部系统或第三方)/ `affects-others`
      * (影响其他用户或租户)。信号不是闸门——只进裁决人语境与遥测,不改任何
      * 确定性判定;词表外值声明期 fail-fast。缺省未声明。
@@ -18918,7 +18918,7 @@ interface AssembledSkills {
 declare function assembleSdkSkills(options: SdkSkillsOptions): Promise<AssembledSkills>;
 
 /**
- * S-B10 — MCP 外接(doc/84 §5.8):开发者把业界现成 MCP 服务器资产挂给
+ * MCP 外接:开发者把业界现成 MCP 服务器资产挂给
  * 智能体;kernel 客户端全套现成(连接/懒加载管理/桥接/McpDiscover),
  * SDK 只补**连接生命周期持有者**(McpHost)。
  *
@@ -19001,23 +19001,22 @@ declare class McpHost {
 declare function createMcpHost(options: McpHostOptions): McpHost;
 /** CreateSessionOptions.mcp 双形态:host 实例(应用级)或选项对象(会话级临时 host) */
 type McpSessionOption = McpHost | McpHostOptions;
-/** 会话装配产物(FX-B-19 加法形;attachSdkMcp 保持既有返回形) */
+/** 会话装配产物(attachSdkMcpWithDiscover 返回形;attachSdkMcp 保持既有返回形) */
 interface SdkMcpAttachment {
     /** 目录段(null = 无段;调用方 push 进 systemSegments) */
     segment: IRSystemSegment | null;
     /**
-     * FX-B-19(复审 02 T-16;与 cli `assembly/mcp-lazy.ts` `discoverToolFactory` 同形)— 子代理
-     * McpDiscover 换装工厂:入参 = 子代理派生期生效集,产物 = 绑定 `manager.forToolset(生效集)` 子视图的
-     * McpDiscover 实例(展开只写子代理自己的 registry/toolDefs,恒不写回父;doc/60 §3.3)。McpDiscover
-     * 已注册(懒目录非空)时在场;调用方接进 TaskToolConfig.mcpDiscover——缺席时 kernel task-tool 会把
-     * McpDiscover 并入排除集静默摘除(此前 sdk 恒缺席 = 子代理恒无 MCP 展开面)。
+     * 子代理 McpDiscover 换装工厂(与 cli 同形):入参 = 子代理派生期生效集,产物 = 绑定
+     * `manager.forToolset(生效集)` 子视图的 McpDiscover 实例(展开只写子代理自己的 registry/toolDefs,
+     * 恒不写回父)。McpDiscover 已注册(懒目录非空)时在场;调用方接进 TaskToolConfig.mcpDiscover——
+     * 缺席时 kernel task-tool 会把 McpDiscover 并入排除集静默摘除(子代理无 MCP 展开面)。
      */
     discoverToolFactory?: (toolset: McpToolset) => Tool;
 }
 /**
  * 会话装配(assembleTooling 消费):eager 全量展开进会话工具面;lazy
  * 目录段 + McpDiscover 注册(目录空则两者皆免——「目录可见才有展开
- * 承诺」,不装无意义元工具)。返回目录段 + 子代理换装工厂(FX-B-19)。
+ * 承诺」,不装无意义元工具)。返回目录段 + 子代理换装工厂。
  */
 declare function attachSdkMcpWithDiscover(host: McpHost, toolset: McpToolset): Promise<SdkMcpAttachment>;
 /**
@@ -19026,8 +19025,12 @@ declare function attachSdkMcpWithDiscover(host: McpHost, toolset: McpToolset): P
  */
 declare function attachSdkMcp(host: McpHost, toolset: McpToolset): Promise<IRSystemSegment | null>;
 
-/** runAgent 缺省 maxTokens(与 TUI/serve 驱动对齐;CW11-W3 #7 收敛 entry-budgets 单一事实源,值仍 8192) */
+/** runAgent 缺省 maxTokens(与 TUI/serve 驱动对齐;单一事实源 kernel DEFAULT_OUTPUT_CAP_TOKENS,值 8192) */
 declare const DEFAULT_MAX_TOKENS = 8192;
+/**
+ * `runAgent` 的选项(注入档):调用方自带 `client` / `model`,可选自带工具定义与执行器、系统提示、
+ * 历史前缀;其余为查询环护栏(轮数 / 工具轮 / 连续错误)、压缩接线与采样参数直通。
+ */
 interface RunAgentOptions {
     /** 模型客户端(调用方自带;测试可传 scripted client) */
     client: ModelClient;
@@ -19060,9 +19063,9 @@ interface RunAgentOptions {
     maxConsecutiveErrors?: number;
     /** 模型上下文窗口 token 数(水位分母;缺省事件不落键) */
     contextWindowTokens?: number;
-    /** 模型输出上限 capability.maxOutput(T-C12 查询环事前钳制半边;缺省不钳) */
+    /** 模型输出上限 capability.maxOutput(查询环事前钳制 maxTokens;缺省不钳) */
     maxOutputTokens?: number;
-    /** 上下文压缩接线(提供即启用;kernel T-C10 语义直通) */
+    /** 上下文压缩接线(提供即启用;kernel 压缩语义直通) */
     compaction?: QueryCompactionOptions;
     /** 采样参数直通 */
     temperature?: number;
@@ -19847,28 +19850,27 @@ interface FallbackSelection {
 }
 
 /**
- * S-1(doc/116 §3.2·§4.3 / doc/117 S-1)— CheckpointStore:上下文快照的可注入存储
- * 接口 + 缺省本地文件实现。
+ * CheckpointStore:上下文快照的可注入存储接口 + 缺省本地文件实现。
  *
- * 定位与 SessionStore 同款(doc/91 拍板③/⑦):CheckpointStore 四方法是 SDK 快照
+ * 定位与 SessionStore 同款:CheckpointStore 四方法是 SDK 快照
  * 存储的**唯一承诺面**;kernel 快照原语(writeCheckpoint/readCheckpoint/
  * listCheckpoints/deleteCheckpoint)只经 createFileCheckpointStore 内部消费,恒不经
  * SDK 出口导出。开发者自建 DB/对象存储实现四方法即可注入 createSession 的
  * `checkpoints.store`。
  *
- * 快照 = 某时刻完整 IR 历史的自包含只读拷贝(D-1 A:JSON 拷贝,非归档旧卷):
+ * 快照 = 某时刻完整 IR 历史的自包含只读拷贝(JSON 拷贝,非归档旧卷):
  * - 可列举(list 只读头部 meta,恒不携 messages)、可恢复(AgentSession.restore)、
  *   可删除;checkpointId 为 ULID(时间有序,list 升序即时间线);
  * - `put` 写前配对治理(断尾 tool_call 合成 isError 占位),读回即可直接作
  *   initialMessages;
  * - 文件实现恒 durable 写(temp + fsync + rename),半写文件恒不可见;
- * - 保留策略(D-4 A / R-3 / FX-B-23):缺省不限;`retention: { max?, maxAgeDays? }`(`max` 为
+ * - 保留策略:缺省不限;`retention: { max?, maxAgeDays? }`(`max` 为
  *   `retention.max` 别名)——先按龄再按数、到顶按 checkpointId 升序淘汰最旧,**不分 trigger**
  *   (manual 与 pre_* 同律),**刚写入者恒保留**(`max:0` 留 1)。淘汰律单点 = kernel
  *   `planCheckpointRetention`:文件 / 同居形态由 kernel 在写后施行;自建 store 经
  *   `withCheckpointRetention` 包装以同一计划经 list + delete 施行(两包对同一 max 恒同一淘汰器)。
  *
- * 目录模型(doc/116 §3.6):根目录恒显式或由会话 store 派生,SDK 恒不隐式扫用户目录。
+ * 目录模型:根目录恒显式或由会话 store 派生,SDK 恒不隐式扫用户目录。
  * - `createFileCheckpointStore({ dir })`:<dir>/<sessionId>/<checkpointId>.json
  *   (+ 旁挂 .meta.json + attachments/<sha256>);独立生命周期,不随会话删除;
  * - 缺省同居(createSession 未给 checkpoints.store/dir 且 store 为
@@ -19881,7 +19883,7 @@ type CheckpointTrigger = ContextCheckpointTrigger;
 /**
  * 快照头部(list/put 返回面;恒不含 messages):schemaVersion / checkpointId /
  * sessionId / createdAt / trigger / label? / cwd / model? / tokens? / compactionId? /
- * messageCount(doc/116 §3.2 全字段)。
+ * messageCount。
  */
 type CheckpointMeta = ContextCheckpointMeta;
 /** 快照对象(get 返回面):头部 + 完整 IR 历史(image 块已内联,可直接作 initialMessages) */
@@ -19892,7 +19894,7 @@ type Checkpoint = ContextCheckpoint;
  */
 type CheckpointInput = ContextCheckpointInput;
 /**
- * 快照存储接口(S-1 冻结形)。实现纪律:
+ * 快照存储接口(自建实现注入 `createSession({ checkpoints: { store } })`)。实现纪律:
  * - `put` 须配对治理后落盘,返回的 meta.messageCount 为治理后消息数;
  * - `list` 恒不携 messages,按 checkpointId 升序(= 时间序)返回;不存在的会话返回 `[]`;
  * - `get` 不存在返回 null;存储损坏恒结构化 throw(恒不静默回残缺快照);
@@ -19908,12 +19910,13 @@ interface CheckpointStore {
     /** 删除快照(幂等) */
     delete(sessionId: string, checkpointId: string): Promise<void>;
 }
+/** `createFileCheckpointStore` 的选项:快照根目录 + 可选保留策略 */
 interface CreateFileCheckpointStoreOptions {
     /** 快照根目录(显式传入,恒不隐式扫用户目录);布局 <dir>/<sessionId>/<checkpointId>.json */
     dir: string;
-    /** 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限,D-4 A)。= `retention.max` 别名(同给时 retention 优先) */
+    /** 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限)。= `retention.max` 别名(同给时 retention 优先) */
     max?: number;
-    /** 保留策略(FX-B-23 / D-R5):`max` / `maxAgeDays` 并集,kernel 在写后施行;刚写入者恒保留 */
+    /** 保留策略:`max` / `maxAgeDays` 并集,kernel 在写后施行;刚写入者恒保留 */
     retention?: CheckpointRetention;
 }
 /**
@@ -19927,15 +19930,14 @@ interface CreateFileCheckpointStoreOptions {
 declare function createFileCheckpointStore(options: CreateFileCheckpointStoreOptions): CheckpointStore;
 
 /**
- * doc/91 会话管理实施批 — SessionStore 可注入存储接口(拍板③/⑦)。
+ * SessionStore 可注入存储接口。
  *
- * 定位:SDK 会话存储的**唯一承诺面**(拍板⑦:kernel journal 原语恒不经
+ * 定位:SDK 会话存储的**唯一承诺面**(kernel journal 原语恒不经
  * SDK 出口导出,FileSessionStore 只作内部消费)。「存哪」被本接口抽象掉——
- * 本地文件(createFileSessionStore)、开发者自建 DB、平台托管(二期
- * createPlatformSessionStore,候独立拍板)三态同形,createSession 的
- * resume/store 双字段(拍板③)恒不随存储后端变化。
+ * 本地文件(createFileSessionStore)、开发者自建 DB、平台托管(后续)
+ * 三态同形,createSession 的 resume/store 双字段恒不随存储后端变化。
  *
- * 概念收敛(doc/91 §3.1):对外「会话」= AgentSession 逻辑会话,一个
+ * 概念收敛:对外「会话」= AgentSession 逻辑会话,一个
  * sessionId 一段历史;存储内部的卷/纪元轮换是实现细节,list 面恒按逻辑
  * 会话呈现。
  */
@@ -19951,29 +19953,27 @@ interface SessionRecordMeta {
     /** 会话标题(缺省 = 首条用户输入截断;可显式供给) */
     title?: string;
     /**
-     * 平台会话 id(ULID 26 位 Crockford;doc/91 拍板⑤):令牌档 createSession
+     * 平台会话 id(ULID 26 位 Crockford):令牌档 createSession
      * per-AgentSession 铸造并经 twp meta.sessionId 出线,ULID↔内核 UUID 映射
      * 落在此键——平台侧会话行(归因/续租/亲和)与本地记录互认的桥。
-     * doc/110 B2(2026-09-02 翻案拍板⑤实施语义):resume 径**沿用**此键——
-     * 缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
+     * resume 径**沿用**此键——缓存键/粘性/归因跨 resume 延续;旧记录无键时 resume 铸新并补录。
      */
     platformSessionId?: string;
     /** 开发者自留元数据域(SDK 恒不消费其内容) */
     meta?: Record<string, unknown>;
     /**
-     * 会话**当前**工作目录(meta.json `cwd`;W-2,doc/116 §3.7):建档写入会话 cwd(此前
-     * file-store 恒写 process.cwd(),自 W-2 起写 createSession 的会话 cwd——server 份
+     * 会话**当前**工作目录(meta.json `cwd`):建档写入 createSession 的会话 cwd(server 份
      * AgentStoredSessionMeta.cwd 同笔),setCwd 切换后经 recordCwdChange 改写为新值;
      * resume 对账锚。旧记录亦有本键(值为当时进程 cwd)。
      */
     cwd?: string;
     /**
-     * cwd 中途切换史(W-2;meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
+     * cwd 中途切换史(meta.json `cwdHistory`,原文 JSON 扩展键,platformSessionId 同法):
      * 按切换序追加,`cwdHistory[0].from` 即创建期 cwd。未切换过的会话无本键。
      */
     cwdHistory?: readonly SessionCwdChange[];
     /**
-     * F-2(doc/117 §十,D-2 B):本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
+     * 本会话由哪个会话的哪份快照 fork 而来(store.fork 建档时记入
      * meta.json `forkedFrom`,kernel SessionMetaSchema 可选位;createFileSessionStore 读出)。
      * 直建 / resume / 五方法回落径 fork 出的会话缺席。列举面据此呈现血缘;SDK 恒不据此改行为。
      */
@@ -19982,7 +19982,7 @@ interface SessionRecordMeta {
         checkpointId: string;
     };
 }
-/** 一次 cwd 切换记录(W-2;SessionStore.recordCwdChange 入参 / meta.cwdHistory 元素同形) */
+/** 一次 cwd 切换记录(SessionStore.recordCwdChange 入参 / meta.cwdHistory 元素同形) */
 interface SessionCwdChange {
     /** ISO-8601 切换时刻 */
     at: string;
@@ -19996,13 +19996,13 @@ interface SessionStoreCreateInit {
     sessionId?: string;
     title?: string;
     /**
-     * 平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——doc/110 B2
-     * 起 resume 恒沿用已存值,故在场值只会是同值或旧记录无键的首次补录)
+     * 平台会话 ULID(令牌档装配注入;重复登记时以新值对账更新——resume 恒沿用已存值,
+     * 故在场值只会是同值或旧记录无键的首次补录)
      */
     platformSessionId?: string;
     meta?: Record<string, unknown>;
     /**
-     * 会话工作目录(W-2 同笔 server 份 create init.cwd):首次建档写入 meta.cwd;缺席沿
+     * 会话工作目录(server 份 create init.cwd 同笔):首次建档写入 meta.cwd;缺席沿
      * process.cwd() 旧值;既有记录恒不改写(创建期事实,切换走 recordCwdChange)。
      */
     cwd?: string;
@@ -20012,11 +20012,11 @@ interface SessionStoreCommitMeta {
     /**
      * true = 历史前缀被就地改写(session.compacted 压缩折叠 /
      * session.microcompacted 存根化),已存内容不再与之对齐——实现方不得按
-     * 长度增量追加,须整卷轮换(demo persistence 先例,doc/91 §3.3)。
+     * 长度增量追加,须整卷轮换(demo persistence 先例)。
      */
     readonly rewritten: boolean;
     /**
-     * S-2 加法:改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
+     * 改写原因(compaction = 压缩折叠 / clear = 清空 / restore = 自快照
      * 恢复);缺席 = 非改写,或改写仅来自存根化。实现方只需消费 rewritten,本位为
      * 可解释性/审计用(如 cli 卷首 compact_boundary.trigger 同义)。
      */
@@ -20027,7 +20027,7 @@ interface SessionRecord {
     meta: SessionRecordMeta;
     messages: IRMessage[];
 }
-/** F-2:store.fork 输入(AgentSession.fork / createSession({ fork }) 经此落新会话记录) */
+/** store.fork 输入(AgentSession.fork / createSession({ fork }) 经此落新会话记录) */
 interface SessionStoreForkInput {
     /** 源会话 id(= checkpoint.sessionId;源会话记录恒不改) */
     sourceSessionId: string;
@@ -20041,14 +20041,13 @@ interface SessionStoreForkInput {
     title?: string;
 }
 /**
- * 会话存储接口(拍板③冻结形态)。实现纪律:
+ * 会话存储接口(五方法为承诺面,其余成员纯加法可选)。实现纪律:
  * - commit 的 rewritten=true 须整卷轮换(语义见 SessionStoreCommitMeta);
- * - 存储损坏恒结构化报错(throw),恒不静默返回残缺历史(doc/88 对抗式
- *   验收:改坏存储文件须报错不静默);
+ * - 存储损坏恒结构化报错(throw),恒不静默返回残缺历史(改坏存储文件须报错不静默);
  * - list 恒不携消息内容(枚举是元数据面);
  * - create 幂等(同 sessionId 重复登记返回既有记录,platformSessionId
- *   以新值对账更新——doc/110 B2:resume 后的 AgentSession **沿用**记录已存
- *   平台 ULID,本对账写只在旧记录无键(2026-09-02 前落盘)时补录新铸值)。
+ *   以新值对账更新——resume 后的 AgentSession **沿用**记录已存
+ *   平台 ULID,本对账写只在旧记录无键时补录新铸值)。
  */
 interface SessionStore {
     /** 建会话(登记 meta;id 由 store 铸造或调用方供给;幂等) */
@@ -20064,7 +20063,7 @@ interface SessionStore {
     /** 删除/归档(FileSessionStore = 目录删除;平台实现 = 归档语义) */
     delete(sessionId: string): Promise<void>;
     /**
-     * 可选(S-3,doc/116 §3.5,D-9 A):历史分页读——消息索引口径(offset = IRMessage[]
+     * 可选:历史分页读——消息索引口径(offset = IRMessage[]
      * 下标,limit = 至少返回的消息数),不暴露段/游标。实现纪律:
      * - 返回切片恒**配对完整**:start 向前对齐到 ≤ offset 的干净边界(结果 `offset`
      *   如实回填对齐后的起点),end 向后对齐到 ≥ offset+limit 的干净边界(limit 是
@@ -20073,7 +20072,7 @@ interface SessionStore {
      * - `limit: 0` 合法 = 只取 total(实现应避免为此全量装载);
      * - createFileSessionStore 以段清单跳读实现(readTail,只装尾部所需段);自建 store
      *   不实现即由 readHistoryPage() 回落 `get` 全量切片(五方法承诺不变,本成员纯加法)。
-     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
+     * 与 server v2 store 同构双份(server 份多 endUserId 首参)。
      */
     getHistoryPage?(sessionId: string, page: {
         offset: number;
@@ -20085,7 +20084,7 @@ interface SessionStore {
         nextOffset: number;
     } | null>;
     /**
-     * 可选(S-1,doc/116 §3.6 同居缺省):store 自带的、与会话同生命周期的快照存储。
+     * 可选(同居缺省):store 自带的、与会话同生命周期的快照存储。
      * createSession 在 `checkpoints.store` / `checkpoints.dir` 皆缺席时取之作为快照
      * 落点(createFileSessionStore 提供:<sessionDir>/checkpoints,随 delete 一并
      * 消失);自建 store 不提供即 = 快照未接线(相关方法结构化拒绝,恒不静默)。
@@ -20093,16 +20092,16 @@ interface SessionStore {
      */
     readonly checkpoints?: CheckpointStore;
     /**
-     * 可选(W-2,doc/116 §3.7 D-7):登记一次 cwd 中途切换——实现须把 `meta.cwd` 改写为
+     * 可选:登记一次 cwd 中途切换——实现须把 `meta.cwd` 改写为
      * `change.to` 并把 change 追加到 `meta.cwdHistory`(切换即刻、与历史提交无关;不改
      * updatedAt)。会话不存在结构化 throw(session_not_found)。createFileSessionStore 以
      * meta.json 原文读-改-写实现;自建 store 不实现即 = 切换不落盘(AgentSession.setCwd
      * 照常成功,仅无持久化记录——五方法承诺不变,本成员纯加法)。
-     * 与 server v2 store 同构双份(server 份多 endUserId 首参,doc/98 §九)。
+     * 与 server v2 store 同构双份(server 份多 endUserId 首参)。
      */
     recordCwdChange?(sessionId: string, change: SessionCwdChange): Promise<void>;
     /**
-     * 可选(F-2,doc/117 §十,D-2 B):自快照 fork 出新会话记录——源会话恒不改;新会话历史 =
+     * 可选:自快照 fork 出新会话记录——源会话恒不改;新会话历史 =
      * 快照 messages(实现方须配对治理,kernel 原语内置);新会话不被打开(调用方随后 resume)。
      * createFileSessionStore 经 kernel forkSessionFromCheckpoint 落地(新卷首记录 kind='fork' +
      * meta.forkedFrom + 附件按 sha 复制);自建 store 不实现即由 AgentSession.fork 回落五方法
@@ -20112,7 +20111,7 @@ interface SessionStore {
         sessionId: string;
     }>;
     /**
-     * 可选(IO-22,doc/119 / doc/120;server 份 `ServeAgentSessionStore.flush` 同笔):等待在飞提交 settle 与冷层上传
+     * 可选(server 份 `ServeAgentSessionStore.flush` 同笔):等待在飞提交 settle 与冷层上传
      * 队列排空(进程退出前调用可保证封存段已上传 / 冷清单已提交)。无冷层 = 等在飞 settle 后即 `true`;超时 / 中止
      * `false`(热层已耐久,只是冷层积压未清)。createFileSessionStore 提供；自建 store 不实现仅表示无全局 flush 能力，
      * 不表示其 commit 同步。AgentSession.drain 缺省只等本会话真实提交；flushStore:true 才调用借用 store 的全局
@@ -20123,7 +20122,7 @@ interface SessionStore {
         signal?: AbortSignal;
     }): Promise<boolean>;
     /**
-     * 可选(IO-22,doc/119 D-4;server 份同笔):就绪探针——分层存储热盘触顶(`policy.hotRetention.maxBytes`,已提交
+     * 可选(server 份同笔):就绪探针——分层存储热盘触顶(`policy.hotRetention.maxBytes`,已提交
      * 段逐出后仍越帽)→ `{ ready:false, reason:'store_hot_full' }`,否则 `{ ready:true }`。宿主据此拒新建 / 摘流。
      * 缺席 = 恒就绪(本成员纯加法)。
      */
@@ -20133,13 +20132,20 @@ interface SessionStore {
     };
 }
 
+/**
+ * `AgentSession.drain()` 的选项:`timeoutMs` 观察预算(缺省 30 秒;Infinity = 不限)、`signal` 只取消
+ * 观察者不取消共享工作、`flushStore` 是否顺带调用借用 store 的全局 flush、`retryPersistence` 是否
+ * 重试此前失败的持久化提交。
+ */
 interface SessionDrainOptions {
     timeoutMs?: number;
     signal?: AbortSignal;
     flushStore?: boolean;
     retryPersistence?: boolean;
 }
+/** 生命周期失败发生的阶段(查询环 / 空闲操作 / 存储提交 / 历史回调 / cwd 提交 / store flush / MCP 关闭 / 装配回滚) */
 type SessionLifecyclePhase = 'query' | 'idle_operation' | 'store_commit' | 'history_callback' | 'cwd_commit' | 'store_flush' | 'mcp_close' | 'assembly_rollback';
+/** 一条生命周期失败事实:操作序号、阶段、稳定码、原始错误与是否已被后续操作修复 */
 interface SessionLifecycleFailure {
     operationId: number;
     phase: SessionLifecyclePhase;
@@ -20147,6 +20153,10 @@ interface SessionLifecycleFailure {
     cause: unknown;
     recovered: boolean;
 }
+/**
+ * `drain()` 的结果:终态(`completed` / `failed` / `timeout` / `cancelled`)、是否已关闭、各类在飞计数、
+ * 失败清单(窗口滚动淘汰,`failureCount` 为总数、`omittedFailures` 为被淘汰条数)与清理证据。
+ */
 interface SessionDrainResult {
     status: 'completed' | 'failed' | 'timeout' | 'cancelled';
     closed: boolean;
@@ -20165,6 +20175,7 @@ interface SessionDrainResult {
         level: 'transport-completion' | 'connector-close-promise';
     }[];
 }
+/** 可等待清理完成的句柄(`SdkLifecycleError.cleanup` 携带;`drain()` 等待在飞释放并返回结果) */
 interface SdkCleanupHandle {
     drain(options?: Pick<SessionDrainOptions, 'timeoutMs' | 'signal'>): Promise<SessionDrainResult>;
 }
@@ -20193,6 +20204,7 @@ declare class OwnedResources implements SdkCleanupHandle {
 
 /** 平台业务段的组合策略；不表示模型指令或权限的强制优先级。 */
 type SystemPromptPolicy = 'fallback' | 'prepend';
+/** 本轮生效的业务提示词组合事实:采用的策略与 system 段来源(无 / 仅平台 / 仅 SDK / 平台+SDK) */
 interface ApplicationPromptInfo {
     readonly policy: SystemPromptPolicy;
     readonly source: 'none' | 'platform' | 'sdk' | 'platform+sdk';
@@ -20211,15 +20223,17 @@ declare function resolveApplicationSystem(platform: {
 };
 
 /**
- * SDK 跨仓契约 v1(S-0 冻结,doc/89;api 仓同构持份 src/contract/app-sdk.ts)。
- * 改动纪律:双仓 schema 同笔改 + doc/89 增笔;单边改动即违约。
- * 消费面:S-B1(令牌档装配:令牌头/bundle capabilities 段解析)/S-B3(能力位裁剪)/
- * demo(S-C1 token-server 请求响应形态)。zod 定义与 api 仓逐字段一致(S-0 互 diff 验证)。
+ * SDK 跨仓契约 v1(与平台 api 仓同构持份;双仓 schema 同笔改,单边改动即违约)。
+ * 消费面:令牌档装配(令牌头 / bundle capabilities 段解析)、能力位裁剪、令牌换发服务的请求响应形态。
+ * zod 定义与 api 仓逐字段一致。
  */
+/** SDK 跨仓契约版本号(与平台 api 仓同构持份的版本锚) */
 declare const APP_SDK_CONTRACT_VERSION = "v1";
 /** app_user 令牌传输头(独立头,恒不与 Bearer PAT / AKSK 双头混用;入 logger 脱敏清单) */
 declare const HEADER_APP_TOKEN = "x-tansr-app-token";
+/** 终端用户标识 zod schema(END_USER_ID_RE) */
 declare const EndUserIdSchema: z.ZodString;
+/** POST /v1/app-tokens 请求体:终端用户标识 + 可选 TTL(秒,[60, 86400]) */
 declare const AppTokenRequestSchema: z.ZodObject<{
     endUserId: z.ZodString;
     ttlSeconds: z.ZodOptional<z.ZodNumber>;
@@ -20230,7 +20244,9 @@ declare const AppTokenRequestSchema: z.ZodObject<{
     endUserId: string;
     ttlSeconds?: number | undefined;
 }>;
+/** POST /v1/app-tokens 请求体类型 */
 type AppTokenRequest = z.infer<typeof AppTokenRequestSchema>;
+/** POST /v1/app-tokens 响应体:令牌本体、过期时刻、appId 与回显的终端用户标识 */
 declare const AppTokenResponseSchema: z.ZodObject<{
     token: z.ZodString;
     /** ISO-8601 */
@@ -20249,11 +20265,12 @@ declare const AppTokenResponseSchema: z.ZodObject<{
     endUserId: string;
     appId: string;
 }>;
+/** POST /v1/app-tokens 响应体类型 */
 type AppTokenResponse = z.infer<typeof AppTokenResponseSchema>;
 /**
- * app_configs.capabilities JSON 列形态(null = 平台缺省档 DEFAULT_APP_CAPABILITIES)。
- * 模型面恒不入本 schema:沿用既有 app_configs.modelCatalogIds(单一事实源)。
- * 顶层 `.strip()`(FX-A-15):段内加法键(如日后的 `quota` / `models` 面)剥除不炸。
+ * App 能力位段形态(控制台 capabilities 配置;null = 平台缺省档 DEFAULT_APP_CAPABILITIES)。
+ * 模型面恒不入本 schema:沿用既有模型目录授权(单一事实源)。
+ * 顶层 `.strip()`:段内加法键(如日后的 `quota` / `models` 面)剥除不炸。
  */
 declare const AppCapabilitiesSchema: z.ZodObject<{
     tools: z.ZodObject<{
@@ -20388,29 +20405,33 @@ declare const AppCapabilitiesSchema: z.ZodObject<{
         textToSpeech?: boolean | undefined;
     };
 }>;
+/** App 能力位(`tools` 环2 工具位 + `platform` 环3 平台位;装配期「App 有没有」的事实源) */
 type AppCapabilities = z.infer<typeof AppCapabilitiesSchema>;
-/** 平台缺省档(保守值;终值⏸候拍板⑥,doc/83 §八)。= 进程内拓扑(embedded)缺省档,见契约 2.4。 */
+/** 平台缺省档(保守值)。= 进程内拓扑(embedded)缺省档,见契约 2.4。 */
 declare const DEFAULT_APP_CAPABILITIES: AppCapabilities;
 /**
- * 客户端可选扩展声明头(只在 bundle 拉取出线;值 = CLIENT_FEATURES 逗号分隔的列表形,RFC 9110 §5.6.1;
- * api 侧按逗号切分、trim、小写比对,词表外词元忽略)。恒定值,不进 bundle 缓存键。
+ * 客户端可选扩展声明头(只在 bundle 拉取与 heartbeat 出线;值 = CLIENT_FEATURES 逗号分隔的列表形,
+ * RFC 9110 §5.6.1;平台侧按逗号切分、trim、小写比对,词表外词元忽略)。
  */
 declare const HEADER_CLIENT_FEATURES = "x-tansr-client-features";
 /**
  * 本 SDK 可理解的可选 bundle 扩展词表:
- * - `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`
- *   (doc/123 §3.4)。
+ * - `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`。
  */
 declare const CLIENT_FEATURES: readonly ["platform-audio"];
+/** 客户端可选扩展词元(CLIENT_FEATURES 的元素类型) */
 type ClientFeature = (typeof CLIENT_FEATURES)[number];
+/** 环2 工具位键(`AppCapabilities.tools` 的键) */
 type CapabilityToolKey = keyof AppCapabilities['tools'];
+/** 环3 平台位键(`AppCapabilities.platform` 的键) */
 type CapabilityPlatformKey = keyof AppCapabilities['platform'];
 /** 工具位键闭集(17;自 schema shape 派生,恒不第二份手写) */
 declare const CAPABILITY_TOOL_KEYS: readonly CapabilityToolKey[];
-/** 平台位键闭集(5;doc/123 音频两位 speechToText/textToSpeech 自 2026-09-05 起) */
+/** 平台位键闭集(5;含音频两位 speechToText/textToSpeech) */
 declare const CAPABILITY_PLATFORM_KEYS: readonly CapabilityPlatformKey[];
 /** SDK/serve 应用平台类型词表(客户端可选集 = 全集;装置键无词位) */
 declare const APP_PLATFORMS: readonly ["desktop", "mobile", "server"];
+/** 应用平台类型(desktop / mobile / server;语义见 AppPlatformSchema) */
 type AppPlatform = (typeof APP_PLATFORMS)[number];
 /**
  * 应用平台类型:desktop=桌面应用(Electron 等,@tansr/sdk 进程内,文件工具=终端用户的盘);
@@ -20420,7 +20441,9 @@ type AppPlatform = (typeof APP_PLATFORMS)[number];
 declare const AppPlatformSchema: z.ZodEnum<["desktop", "mobile", "server"]>;
 /** 能力拓扑:embedded = harness 跑在 SDK 进程内;hosted = harness 跑在开发者会话服务(serve /v2) */
 type CapabilityTopology = 'embedded' | 'hosted';
+/** 平台类型 → 能力拓扑(desktop / server 进程内 embedded;mobile 经会话服务 hosted) */
 declare const APP_PLATFORM_TOPOLOGY: Readonly<Record<AppPlatform, CapabilityTopology>>;
+/** 一种能力拓扑的位面档:可勾选的工具位 / 平台位与行值缺席时的缺省档 */
 interface CapabilityTopologyProfile {
     /** 适用工具位(可勾选、可为 true);表外位 = 固定关(写面拒真、读面归一 false) */
     readonly tools: readonly CapabilityToolKey[];
@@ -20429,6 +20452,7 @@ interface CapabilityTopologyProfile {
     /** 行值 NULL 时的缺省档 */
     readonly defaults: AppCapabilities;
 }
+/** 两种能力拓扑的位面档(embedded 全位可勾选;hosted 只开 todoWrite / askUser / customTools / webSearch 与平台位) */
 declare const CAPABILITY_TOPOLOGIES: Readonly<Record<CapabilityTopology, CapabilityTopologyProfile>>;
 /** 平台类型 → 拓扑;NULL(装置键/未指配)→ null */
 declare function topologyOf(platform: AppPlatform | null): CapabilityTopology | null;
@@ -20450,7 +20474,7 @@ declare const CAPABILITY_BIT_TOOL_NAMES: Readonly<{
 declare function topologyToolUniverse(topology: CapabilityTopology): readonly string[];
 /**
  * hosted 拓扑(移动应用经开发者会话服务 /v2)可勾选位全集对应的工具名 —— serve
- * `capabilitiesProfile:'mobile-default'` 档的**唯一**上界来源(FX-B-07;B 分册 §六 C-4):
+ * `capabilitiesProfile:'mobile-default'` 档的**唯一**上界来源:
  * TodoWrite, AskUser, WebSearch, ImageGen, VideoGen, SpeechToText, TextToSpeech。
  * customTools 位经 clientTools 独立通路,不在此列。
  */
@@ -20461,10 +20485,10 @@ declare function hostedToolUniverse(): readonly string[];
  */
 declare function defaultAppCapabilities(platform: AppPlatform | null): AppCapabilities;
 /**
- * 零能力档(FX-A-15 sdk 半边;分册 A R-B-2 逐字):`defaultAppCapabilities(platform)` 且 `tools` 全 false——
+ * 零能力档:`defaultAppCapabilities(platform)` 且 `tools` 全 false——
  * `parseAppBundle` 对 capabilities 段**整段坏形**(位非 boolean / 段非对象)的回落值(真 fail-closed:owner 关掉
  * 的位恒不因坏形被打开;hosted 应用回落 hosted 档而非 embedded 档)。平台位随拓扑缺省档(今日皆 false)。
- * 段**缺席**不走此档(旧 api / 装置键径不发段 = 进程内缺省档,零漂移)。
+ * 段**缺席**不走此档(旧平台 / 装置键径不发段 = 进程内缺省档,零漂移)。
  */
 declare function zeroAppCapabilities(platform: AppPlatform | null): AppCapabilities;
 /** 写面校验:本平台固定关位却为 true 的位名(`tools.x` / `platform.x` 形);非空即 400。 */
@@ -20477,13 +20501,17 @@ declare function normalizeAppCapabilitiesForPlatform(caps: AppCapabilities, plat
     value: AppCapabilities;
     forcedOff: string[];
 };
-/** 裁决人资质档词表(api PoolTier 同构) */
+/** 裁决人资质档词表(平台裁决人池档位同构) */
 declare const ADJUDICATOR_TIERS: readonly ["low", "medium", "high"];
+/** 裁决人资质档(low / medium / high;缺席 = none 只收紧不软化) */
 type AdjudicatorTier = (typeof ADJUDICATOR_TIERS)[number];
+/** 裁决人资质档 zod schema */
 declare const AdjudicatorTierSchema: z.ZodEnum<["low", "medium", "high"]>;
-/** 套餐档 T1–T4(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);T0 个人 = 无套餐行 */
+/** 套餐档(test 测试期 / small 小规模 / medium 中规模 / large 较大规模);个人档 = 无套餐行 */
 declare const PLAN_TIERS: readonly ["test", "small", "medium", "large"];
+/** 套餐档位(PLAN_TIERS 的元素类型) */
 type PlanTier = (typeof PLAN_TIERS)[number];
+/** 套餐档位 zod schema */
 declare const PlanTierSchema: z.ZodEnum<["test", "small", "medium", "large"]>;
 /** 档位上限快照(api billing/plan-tiers.ts PlanCaps 同形;授档时快照,读时恒读快照) */
 declare const PlanCapsSchema: z.ZodObject<{
@@ -20495,7 +20523,7 @@ declare const PlanCapsSchema: z.ZodObject<{
     orgMembers: z.ZodNumber;
     /** 月度不同终端用户帽(仅 test = 100;null = 不限) */
     monthlyEndUsers: z.ZodNullable<z.ZodNumber>;
-    /** 可登记出口 IP 进网关档(SC-34) */
+    /** 可登记出口 IP 进网关档 */
     gatewayLane: z.ZodBoolean;
 }, "strip", z.ZodTypeAny, {
     concurrency: number;
@@ -20510,11 +20538,15 @@ declare const PlanCapsSchema: z.ZodObject<{
     monthlyEndUsers: number | null;
     gatewayLane: boolean;
 }>;
+/** 档位上限快照类型 */
 type PlanCaps = z.infer<typeof PlanCapsSchema>;
 /** active 生效 / grace 到期宽限(14 天窗内放行)/ lapsed 出窗回落 test 上限(tier 即 test,原档见 lapsedFrom) */
 declare const PLAN_STATUSES: readonly ["active", "grace", "lapsed"];
+/** 套餐状态(PLAN_STATUSES 的元素类型) */
 type PlanStatus = (typeof PLAN_STATUSES)[number];
+/** 套餐状态 zod schema */
 declare const PlanStatusSchema: z.ZodEnum<["active", "grace", "lapsed"]>;
+/** bundle 顶层 `plan` 段形态:档位、上限快照、状态、到期时刻与回落前原档(不 `.strict()`,未知键剥除) */
 declare const AppBundlePlanSchema: z.ZodObject<{
     tier: z.ZodEnum<["test", "small", "medium", "large"]>;
     caps: z.ZodObject<{
@@ -20526,7 +20558,7 @@ declare const AppBundlePlanSchema: z.ZodObject<{
         orgMembers: z.ZodNumber;
         /** 月度不同终端用户帽(仅 test = 100;null = 不限) */
         monthlyEndUsers: z.ZodNullable<z.ZodNumber>;
-        /** 可登记出口 IP 进网关档(SC-34) */
+        /** 可登记出口 IP 进网关档 */
         gatewayLane: z.ZodBoolean;
     }, "strip", z.ZodTypeAny, {
         concurrency: number;
@@ -20570,16 +20602,19 @@ declare const AppBundlePlanSchema: z.ZodObject<{
     };
     lapsedFrom?: "medium" | "small" | "large" | "test" | undefined;
 }>;
+/** owner 生效套餐投影(bundle 顶层 `plan` 段;纯呈现位,硬执行恒在服务端) */
 type AppBundlePlan = z.infer<typeof AppBundlePlanSchema>;
 /**
- * 套餐错误码八枚(api http/errors.ts 注册表同名;doc/125 §2.3 / §2.6 / §五 / §3.3)。
+ * 套餐错误码八枚(与平台错误码注册表同名)。
  * 状态码镜份供开发者面分支;`PlatformRequestError.platformCode` / twp 错误信封 `code` 对表外未知码
  * 恒原样透传,本表只是命名锚,恒不作白名单过滤。
  */
 declare const PLAN_ERROR_CODES: readonly ["plan_required", "plan_tier_insufficient", "plan_concurrency_exceeded", "plan_end_users_exceeded", "plan_apps_exceeded", "plan_members_exceeded", "plan_gate_unavailable", "refund_not_eligible"];
+/** 套餐错误码(PLAN_ERROR_CODES 的元素类型) */
 type PlanErrorCode = (typeof PLAN_ERROR_CODES)[number];
-/** 八码 → api HTTP 状态(api ERROR_CODES 注册表镜份;doc/126 PL-05) */
+/** 八码 → 平台 HTTP 状态(平台错误码注册表镜份) */
 declare const PLAN_ERROR_HTTP_STATUS: Readonly<Record<PlanErrorCode, number>>;
+/** 是否为套餐错误码(PLAN_ERROR_CODES 词表内) */
 declare function isPlanErrorCode(code: string): code is PlanErrorCode;
 /** 平台套餐错误 detail 里的升级链接(api `planUpgradeUrl` = 控制台套餐页);缺席 / 非串 = undefined */
 declare function planUpgradeUrlOf(detail: Record<string, unknown> | undefined): string | undefined;
@@ -20591,10 +20626,8 @@ declare function planUpgradeUrlOf(detail: Record<string, unknown> | undefined): 
 declare function planErrorGuidance(code: string, detail?: Record<string, unknown>): string | undefined;
 
 /**
- * bundle 模型计价段(api /t1/config 既有键;DECIMAL 串形与 cli
- * remote-bundle RemoteBundleModel.pricing 同形)。doc/110 B7 起 SDK 解析:
- * serve 平台内置形据此喂 CostTracker 价格簿(会话级 budget 闸的金额维)。
- * 服务端 t.usage 恒为计费权威,本地估算仅闸门/展示口径。
+ * bundle 模型计价段(每百万 token 的价格,DECIMAL 字符串,与平台 `/t1/config` 下发形一致)。
+ * 宿主可据此喂本地价格簿做会话级预算闸门;服务端用量帧恒为计费权威,本地估算只作闸门 / 展示口径。
  */
 interface AppBundleModelPricing {
     currency: string;
@@ -20607,45 +20640,45 @@ interface AppBundleModelPricing {
 interface AppBundleModel {
     handle: string;
     /**
-     * 上游模型标识(信息位;消费恒走 twp,wire model 值 = handle)。M-07(doc/130 §五;候拍 A22):sdk 0.12 起**可选**——
-     * api 令牌径剥 `models[].modelId`(`platformModels` 红线「恒无上游 modelId」),缺席 / 空串 / 非串 = 键缺席,条目保留。
+     * 上游模型标识(仅供展示;实际调用恒经平台通道,wire 上的 model 值 = handle)。
+     * 令牌档下平台不下发本字段,故为可选:缺席 / 空串 / 非字符串一律按键缺席处理,条目本身保留。
      */
     modelId?: string;
     displayName: string;
     /**
-     * 原始厂商(模型呈现面二波,用户拍板 2026-08-30 ④;api bundle 加法键,
-     * 法人/品牌如 'Anthropic')。集成方模型切换器「厂商 → 系列」分组呈现的
-     * 一级维;旧 bundle 缺键/api 未校准 = null(呈现面回落平铺,恒不猜)。
+     * 原始厂商(法人 / 品牌名,如 'Anthropic')。模型切换器「厂商 → 系列」两级分组呈现的一级维;
+     * 旧 bundle 缺键或平台未校准时为 null(呈现面回落平铺,恒不猜测)。
      */
     manufacturer: string | null;
-    /** 模型族 = 系列维(api T-A13 列;两级分组二级维;缺键 = null) */
+    /** 模型族(系列名);「厂商 → 系列」两级分组的二级维;平台未提供时为 null */
     family: string | null;
-    /** 上游协议标识(信息位;消费恒走 twp,方言转换收敛在网关) */
+    /** 上游协议标识(仅供展示;方言转换收敛在网关,消费恒经平台通道) */
     protocol: string;
     capabilities: Record<string, unknown>;
     contextWindow: number | null;
-    /** 计价段(doc/110 B7 加法解析;缺键/坏形状 = null,恒不猜价) */
+    /** 计价段;缺键 / 坏形状 = null,恒不猜价 */
     pricing: AppBundleModelPricing | null;
 }
 
 /**
- * 授权媒体模型条目公共位(S-G1 媒体池化顺位取用,用户拍板 2026-08-30):`model` = canonical
- * handle(/t1/<face> 的 model 位可直用);`displayName` 异名时描述行附注;`outputHosting` 产出托管地
- * (S-ARCH P2-c 加法键 2026-09-02:overseas / domestic / inline,缺席 = 未探)。网关契约恒不下发
- * 价格/成本/供应商内部信息。= protocol `MediaModelDescriptor` 去 constraints(四面按约束型特化于
- * 下方四别名;条目级容错:constraints 缺席/坏形状 = undefined,旧 api 回落通用描述恒不臆造)。
+ * 授权媒体模型条目的公共字段:`model` = 规范 handle(可直接用作 `/t1/<face>` 的 model 位);`displayName`
+ * 与 handle 异名时会附注到工具描述;`outputHosting` = 产出托管地(overseas / domestic / inline,缺席 = 未探知)。
+ * 平台恒不下发价格 / 成本 / 供应商内部信息。等于 `MediaModelDescriptor` 去掉 constraints——四个媒体面
+ * 按各自约束类型特化为下方四个别名;constraints 缺席 / 坏形状 = undefined,回落通用描述,恒不臆造。
  */
 type AppBundleMediaModel = Omit<MediaModelDescriptor<unknown>, 'constraints'>;
+/** 授权图像模型条目(bundle `platformModels.imageGen` 行形,含图像受理约束) */
 type AppBundleImageModel = ImageModelDescriptor;
+/** 授权视频模型条目(bundle `platformModels.videoGen` 行形,含视频受理约束) */
 type AppBundleVideoModel = VideoModelDescriptor;
-/** doc/123 音频两面(2026-09-05):bundle platformModels.speechToText / textToSpeech 行形 */
+/** 授权语音识别模型条目(bundle `platformModels.speechToText` 行形,含音频受理约束) */
 type AppBundleSpeechToTextModel = SpeechToTextModelDescriptor;
+/** 授权语音合成模型条目(bundle `platformModels.textToSpeech` 行形,含合成受理约束) */
 type AppBundleTextToSpeechModel = TextToSpeechModelDescriptor;
 /**
- * 授权媒体模型集(bundle platformModels 段):序 = 平台收敛稳定序,**顺位第一
- * 即工具/网关 model 缺省时的生效模型**;空数组 = 平台未配置(如实,恒不猜名)。
- * 音频两键(doc/123 D-A1/D-A3,2026-09-05):ASR 与 TTS 为两个独立面,键名用全词
- * `speechToText` / `textToSpeech`(SDK 面风格;wire 面对应 `/t1/asr`、`/t1/tts`)。
+ * 授权媒体模型集(bundle `platformModels` 段):顺序 = 平台下发的稳定序,**顺位第一即工具 / 网关未指定
+ * model 时的生效模型**;空数组 = 平台未配置(如实呈现,恒不猜名)。语音识别与语音合成是两个独立面,
+ * 键名用全词 `speechToText` / `textToSpeech`(wire 面对应 `/t1/asr`、`/t1/tts`)。
  */
 interface AppBundlePlatformModels {
     imageGen: AppBundleImageModel[];
@@ -20654,19 +20687,18 @@ interface AppBundlePlatformModels {
     textToSpeech: AppBundleTextToSpeechModel[];
 }
 /**
- * bundle 生效裁决人档(doc/113 §4.2;api bundle `adjudicators[0]` ?? 单数
- * `adjudicator`,cli remote-bundle 同一双形容忍)。SDK/serve 消费面:
- * - `modelHandle`:绑定裁决模型(bundle 目录 handle;api 046 起可缺席 =
- *   跟随会话主模型——裁决质量优先 + 父前缀缓存经济学);
- * - `tier`:资质档(G-3 加法键 = 档 PoolTier ∧ org 天花板);缺席 / 词表外 =
- *   undefined → 装配按 'none'(只收紧不软化,恒不臆造资格);
- * - `callBudget`:每会话裁决咨询预算(api D-A1 加法键,org governance → app 覆写;
- *   FX-B-08 起 sdk / serve 真消费:与宿主 `adjudication.callBudget` 取 **min**,宿主只能
- *   收紧);缺席 / 非正整数 = 不落键 → kernel 缺省 200;
- * - `budgets` / `escalation`:宽松记录(键集随 api 演进),FX-B-08 起分类器面消费其中
- *   `budgets.maxUsd` / `maxCny`(→ 与裁决模型同币价目折算 callBudget 上界,恒不造汇率)与
- *   `escalation.mode:'reject'`(→ 姿态覆写为 headless);其余键仍是派生裁决链语义;
- *   `locked`:企业策略包锁定位(T-C7 加法容忍,纯呈现)。
+ * bundle 生效裁决人档(平台控制台为 App 任命的裁决人;取 bundle `adjudicators[0]`,缺席回落旧形单数键
+ * `adjudicator`)。SDK 令牌档与 serve 据此装配权限分类器裁决人:
+ * - `modelHandle`:绑定的裁决模型(bundle 目录内 handle);缺席 = 跟随会话主模型(裁决质量优先,
+ *   且与主模型共享前缀缓存);
+ * - `tier`:资质档(平台任命档位与组织天花板取交);缺席 / 词表外 = undefined → 装配按 'none'
+ *   (只收紧不软化,恒不臆造资格);
+ * - `callBudget`:每会话裁决咨询预算(组织治理 → 应用覆写);与宿主 `adjudication.callBudget` 取 **min**,
+ *   宿主只能收紧;缺席 / 非正整数 = 不落键 → kernel 缺省 200;
+ * - `budgets` / `escalation`:宽松记录(键集随平台演进)。分类器面消费其中 `budgets.maxUsd` / `maxCny`
+ *   (按裁决模型同币价目折算为 callBudget 上界,恒不造汇率)与 `escalation.mode:'reject'`(姿态覆写为
+ *   headless);其余键属派生裁决链语义;
+ * - `locked`:企业策略包锁定位(纯呈现,未知取值容忍)。
  */
 interface AppBundleAdjudicator {
     profileId: string;
@@ -20677,21 +20709,20 @@ interface AppBundleAdjudicator {
     tier?: AdjudicatorTier;
     callBudget?: number;
     /**
-     * 该档评估证据的协议指纹(api AP-6 加法键 = 档 `evaluation.fingerprint`)。
-     * 只用于漂移通报(与 sdk 编译内应用协议指纹不等 → `adjudicator_evidence_drifted`),
-     * 不改 tier——RFC-U3「任命即授照、证据不是权力」。缺席 = 平台未下发,不通报。
+     * 该档评估证据的协议指纹(平台下发的 `evaluation.fingerprint`)。只用于漂移通报:与 SDK 编译内置的
+     * 应用协议指纹不等时发 `adjudicator_evidence_drifted`,不改 tier(任命即授照,证据不是权力)。
+     * 缺席 = 平台未下发,不通报。
      */
     evidenceFingerprint?: string;
 }
 /**
- * bundle 上下文方案段(api `ClientConfigBundleSchema.contextScheme` 非 null 分支;FX-B-30
- * R-18 N-10 α)。SDK 只做**形状级**解析透传(`.strip()` 面:四键之外的加法键剥除不炸),
- * 真消费 = kernel `contextSchemeToSchemeOptions(bundle.contextScheme)`(单函数;参数域校验、
- * 键映射、坏形归因 `contextScheme_unparsed` 皆在 kernel,本模块恒不映射方案键)。
- * - `schemeId` 必要非空;`stage` 词表外按 experimental 收敛(围栏 4 警示方向安全);
- * - `scheme` 非对象 = 整段 null(api schema 必填 Record;缺席 / 坏形恒不臆造方案);
+ * bundle 上下文方案段(平台 `contextScheme` 非 null 分支)。SDK 只做**形状级**解析透传(四键之外的
+ * 加法键剥除不炸);真消费在 kernel `contextSchemeToSchemeOptions(bundle.contextScheme)`——参数域校验、
+ * 键映射、坏形归因 `contextScheme_unparsed` 皆在 kernel,本模块恒不映射方案键。
+ * - `schemeId` 必要非空;`stage` 词表外按 experimental 收敛(朝警示方向,安全);
+ * - `scheme` 非对象 = 整段 null(平台必填对象;缺席 / 坏形恒不臆造方案);
  * - `locked`:仅字面 true 记锁定位(企业策略包锁定段标记,呈现位)。
- * 与 kernel `BundleContextScheme` 同形(`locked` 收窄为 `true` 字面,cli remote-bundle 同律)。
+ * 与 kernel `BundleContextScheme` 同形(`locked` 收窄为 `true` 字面)。
  */
 interface AppBundleContextScheme {
     schemeId: string;
@@ -20700,19 +20731,19 @@ interface AppBundleContextScheme {
     locked?: true;
 }
 /**
- * bundle org 治理段的 SDK 消费子集(十王修案 M-05;api `ClientConfigBundleSchema.governance.sessionRetentionDays`
- * FX-A-17 加法键,owner 径下发、org 配置了才发键)。SDK 只做**形状级**透传:`sessionRetentionDays` 正整数才落键,
- * 缺席 / 坏形 = 键缺席(恒不臆造保留期);真消费 = serve 平台会话工厂 `resolveSessionRetention`(缺省 30 d 改读本值,
- * C-α FX-C-09 / M-05 收尾)。段内其余键(org / licenseStatus / softLock / budgets)是 CLI 宿主语义,SDK 不读。
+ * bundle 组织治理段的 SDK 消费子集(`governance.sessionRetentionDays`;owner 径下发,组织配置了才发键)。
+ * SDK 只做**形状级**透传:`sessionRetentionDays` 为正整数才落键,缺席 / 坏形 = 键缺席(恒不臆造保留期);
+ * 真消费在 serve 平台会话工厂(会话保留期缺省 30 天,配置了即改读本值)。段内其余键
+ * (org / licenseStatus / softLock / budgets)是 CLI 宿主语义,SDK 不读。
  */
 interface AppBundleGovernance {
-    /** org 会话保留天数(整数 ≥ 1;api 上限 3650 由 api 校验);缺席 = 平台未配 / 令牌径剥段 / 旧 api → 消费方自持缺省 */
+    /** 组织会话保留天数(整数 ≥ 1;上限 3650 由平台校验);缺席 = 平台未配 / 令牌径剥段 / 旧平台 → 消费方自持缺省 */
     sessionRetentionDays?: number;
 }
-/** 应用身份段 SDK 消费子集(`<app>` 段数据源;缺席字段 null) */
+/** 应用身份段 SDK 消费子集(应用协议 `<app>` 段的数据源;缺席字段为 null) */
 interface AppBundleIdentity {
     name: string | null;
-    /** 应用用途(控制台可选字段;AP-6 加法键 `app.purpose`) */
+    /** 应用用途(控制台可选字段,bundle `app.purpose`) */
     purpose: string | null;
 }
 /** bundle-for-app 的 SDK 消费子集 */
@@ -20723,55 +20754,51 @@ interface AppBundle {
     models: AppBundleModel[];
     aliases: Record<string, string>;
     /**
-     * App 能力位(doc/89 契约 2)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPABILITIES(旧 api / 装置键径);整段坏形 =
-     * 零能力档 `zeroAppCapabilities(platform)`(FX-A-15,真 fail-closed;`capabilitiesIssues` 非 null)。
+     * App 能力位(平台控制台按 App 配置的工具位 / 平台位)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPABILITIES
+     * (旧平台 / 装置键径);整段坏形 = 零能力档 `zeroAppCapabilities(platform)`(真 fail-closed,此时
+     * `capabilitiesIssues` 非 null)。
      */
     capabilities: AppCapabilities;
     /**
-     * FX-A-15(V-A-43):capabilities 段整段坏形时的 zod 问题清单(段在场却解析失败——位非 boolean / 段非对象);
-     * null = 段解析成功或段缺席。装配期(`assemblePlatformModel`)据此经 onWarn 通报 `capabilities_unparsed{ detail.issues }`
-     * (随 bundle 缓存,每次装配都通报——DX 每会话可见)。段内未知键被 `.strip()` 剥除**不算**坏形。
+     * capabilities 段整段坏形时的 zod 问题清单(段在场却解析失败——位非 boolean / 段非对象);null = 段解析成功
+     * 或段缺席。装配期(`assemblePlatformModel`)据此经 onWarn 通报 `capabilities_unparsed{ detail.issues }`
+     * (随 bundle 缓存,每次装配都通报,每会话可见)。段内未知键被剥除**不算**坏形。
      */
     capabilitiesIssues: ZodIssue[] | null;
     /**
-     * 授权媒体模型集(S-G1;doc/123 起四键 imageGen/videoGen/speechToText/textToSpeech):
-     * 工具描述/装配 system 段的自取数据源——集成方恒不手配模型名。旧 bundle 无段 /
-     * 无键 = 空集如实(段级容错同 capabilities 方向:缺席恒不臆造)。
+     * 授权媒体模型集(四键 imageGen / videoGen / speechToText / textToSpeech):工具描述与装配 system 段的
+     * 自取数据源——集成方恒不手配模型名。旧 bundle 无段 / 无键 = 空集如实(缺席恒不臆造)。
      */
     platformModels: AppBundlePlatformModels;
     /**
-     * 应用平台类型(doc/112 契约 2.4;bundle `app.platform` 加法键)。消费方据此
-     * 判自身装配形态是否与拓扑相符(不符只提示不拒——位已按拓扑归一,安全由位
-     * 保证)。缺席(旧 api / 装置绑定键径恒缺键)或词表外 = null(未知,恒不臆造)。
+     * 应用平台类型(bundle `app.platform`)。消费方据此判自身装配形态是否与拓扑相符(不符只提示不拒——
+     * 能力位已按拓扑归一,安全由位保证)。缺席(旧平台 / 装置绑定键径恒缺键)或词表外 = null(未知,恒不臆造)。
      */
     platform: AppPlatform | null;
-    /** 应用身份(应用协议 `<app>` 段;doc/optimize/37 §4.4)——name 现行键,purpose 加法键 */
+    /** 应用身份(应用协议 `<app>` 段)——name 现行键,purpose 可选键 */
     app: AppBundleIdentity;
     /**
-     * 生效裁决人档(doc/113 §4.2;`adjudicators[0]` ?? `adjudicator`)。平台底档
-     * 恒在(两级皆空回落 adjprof-builtin-default),故正常 bundle 恒非 null;
-     * null = 段缺席 / 坏形状(旧 api)→ 令牌档无裁决人,权限行为现状(default
-     * 模式,无分类器路径)——朝严方向,无安全回退面。
+     * 生效裁决人档(`adjudicators[0]` ?? `adjudicator`)。平台底档恒在(两级皆空回落平台内置缺省档),故正常
+     * bundle 恒非 null;null = 段缺席 / 坏形状(旧平台)→ 令牌档无裁决人,权限行为维持现状(default 模式,
+     * 无分类器路径)——朝严方向,无安全回退面。
      */
     adjudicator: AppBundleAdjudicator | null;
     /**
-     * owner 生效套餐投影(doc/125 §六;bundle **顶层**加法键 `plan`,契约 6)。null =
-     * 键缺席(T0 个人无套餐行 / 旧 api)或坏形状(任一字段类型/枚举不符即整段 null,
-     * 恒不臆造档位)。纯呈现 / 开发者面语境位:并发/应用数等硬执行恒在服务端
-     * (429 / 400 信封),SDK 恒不据此本地判限。
+     * owner 生效套餐投影(bundle **顶层** `plan` 键)。null = 键缺席(个人无套餐 / 旧平台)或坏形状(任一字段
+     * 类型 / 枚举不符即整段 null,恒不臆造档位)。纯呈现 / 开发者面语境位:并发 / 应用数等硬限制恒在服务端
+     * 执行(429 / 400 信封),SDK 恒不据此本地判限。
      */
     plan: AppBundlePlan | null;
     /**
-     * 上下文方案段(FX-B-30;bundle 顶层 `contextScheme`,api 必填 nullable)。null = 平台未配 /
-     * 令牌径 owner-only 中性 null(api 表 tiers 翻行前)/ 旧 api / 坏形。在场即透传宿主:serve
-     * 平台内置形以 kernel `contextSchemeToSchemeOptions` 化为压缩方案选项(FX-C-11);SDK 自身
-     * 恒不映射方案键(单函数住 kernel)。
+     * 上下文方案段(bundle 顶层 `contextScheme`,平台必填 nullable)。null = 平台未配 / 令牌径中性 null /
+     * 旧平台 / 坏形。在场即透传宿主:serve 平台内置形以 kernel `contextSchemeToSchemeOptions` 化为压缩方案
+     * 选项;SDK 自身恒不映射方案键。
      */
     contextScheme: AppBundleContextScheme | null;
     /**
-     * org 治理段 SDK 子集(M-05;bundle 顶层 `governance`,owner 径)。恒为对象:`sessionRetentionDays` 在场且为正整数
-     * 才落键;段缺席(令牌径剥段 / 旧 api / org 未配)/ 坏形 = `{}`。透传宿主(serve `resolveSessionRetention`),SDK
-     * 自身零消费。
+     * 组织治理段 SDK 子集(bundle 顶层 `governance`,owner 径)。恒为对象:`sessionRetentionDays` 在场且为
+     * 正整数才落键;段缺席(令牌径剥段 / 旧平台 / 组织未配)/ 坏形 = `{}`。透传宿主(serve 会话保留期),
+     * SDK 自身零消费。
      */
     governance: AppBundleGovernance;
 }
@@ -20785,25 +20812,22 @@ declare const APP_TOKEN_PLACEHOLDER_ENV = "TANSR_SDK_APP_TOKEN_TIER";
 /** 占位值(剥头包装失守时线上出现的也只是本哑值,不是令牌) */
 declare const APP_TOKEN_PLACEHOLDER_VALUE = "app-token-tier";
 /**
- * doc/110 B7 — bundle 计价 → kernel 价格簿注入行(refreshed 层;cli
- * remote-bundle mapBundleToFragment 同律):币种走白名单(USD/CNY),其余
- * 币种如实跳过(tracker 侧不猜币种不误标);DECIMAL 串 → 数值,必要价
- * NaN 整条丢弃;缓存读价 >0 才落 cachedInputPerMillion;缓存写价 >0 落
- * cacheWriteInputPerMillion(CostPricing 写溢价维,doc/110 A4 同口径)。
- * 键 = (tansr, handle),与 twp 计量事件 provider/model 同口径。
+ * bundle 计价段 → kernel 价格簿注入行(可喂 `refreshPricing`,供本地成本估算 / 预算闸门)。
+ * 币种走白名单(USD / CNY),其余币种如实跳过(不猜币种不误标);DECIMAL 串 → 数值,必要价 NaN 整条丢弃;
+ * 缓存读价 > 0 才落 cachedInputPerMillion,缓存写价 > 0 才落 cacheWriteInputPerMillion。
+ * 键 = (tansr, handle),与平台计量事件的 provider / model 同口径。
  */
 declare function appBundlePricingUpdates(bundle: AppBundle): PricingUpdate[];
 /**
- * bundle 载荷 → SDK 消费子集。顶层形状非法返回 null(调用方结构化报错);
- * 条目级损坏逐条跳过。capabilities 段 `.strip()` 校验(FX-A-15):缺席 → 进程内
- * 缺省档;整段坏形 → 零能力档 + `capabilitiesIssues`(真 fail-closed)。platformModels 段(S-G1)加法解析:
- * 段缺席(旧 api)/坏形状 = 四空集如实(图像/视频/ASR/TTS)——媒体工具据此
- * 如实注明未配置,恒不猜模型名;**序恒保持下发序**(顺位第一即缺省)。app.platform
- * (doc/112)加法解析:缺席/词表外 = null。adjudicator(doc/113)加法解析:
- * 清单首个可解析档 ?? 单数键;皆无 = null(无裁决人,权限行为现状)。plan
- * (doc/125 契约 6)顶层加法解析:缺席(T0 / 旧 api)/ 坏形 = null,旧 bundle 零行为变化。
- * contextScheme(FX-B-30)形状级透传:缺席 / null / 坏形 = null,方案键不在此映射。
- * governance.sessionRetentionDays(M-05)形状级透传:正整数才落键,段缺席 / 坏形 = `{}`。
+ * bundle 载荷 → SDK 消费子集。顶层形状非法返回 null(调用方结构化报错);条目级损坏逐条跳过。
+ * - capabilities 段:缺席 → 进程内缺省档;整段坏形 → 零能力档 + `capabilitiesIssues`(真 fail-closed);
+ * - platformModels 段:缺席(旧平台)/ 坏形状 = 四空集如实(图像 / 视频 / 语音识别 / 语音合成)——媒体工具据此
+ *   如实注明未配置,恒不猜模型名;**顺序恒保持下发序**(顺位第一即缺省);
+ * - app.platform:缺席 / 词表外 = null;
+ * - adjudicator:清单首个可解析档 ?? 单数键;皆无 = null(无裁决人,权限行为维持现状);
+ * - plan(顶层):缺席(个人无套餐 / 旧平台)/ 坏形 = null,旧 bundle 零行为变化;
+ * - contextScheme:形状级透传,缺席 / null / 坏形 = null,方案键不在此映射;
+ * - governance.sessionRetentionDays:形状级透传,正整数才落键,段缺席 / 坏形 = `{}`。
  */
 declare function parseAppBundle(raw: unknown): AppBundle | null;
 /**
@@ -20814,6 +20838,7 @@ declare function appBundleRegistryConfig(bundle: AppBundle, baseUrl: string): Re
 
 /** 缺省 TTL(与平台 /t1/config 的 max-age=60 同值;响应 max-age 更短时取更短) */
 declare const DEFAULT_BUNDLE_CACHE_TTL_MS = 60000;
+/** `createBundleCache` 的选项:fetch 注入、TTL 上界与两类条目帽(全部可选) */
 interface CreateBundleCacheOptions {
     /** 缺省 fetch(resolve 入参 fetchImpl 优先;皆缺席用全局 fetch) */
     fetchImpl?: typeof fetch;
@@ -20828,29 +20853,31 @@ interface CreateBundleCacheOptions {
     maxFeatureEntries?: number;
     now?: () => number;
 }
-/** FX-C-16:bundle 投影的径别维——令牌径(app_user 投影)/ 主凭据径(owner 投影) */
+/** bundle 投影的径别维——令牌径(app_user 投影)/ 主凭据径(owner 投影) */
 type BundleCacheScope = 'app_user' | 'owner';
-/** FX-C-16:缺省径别(sdk `fetchAppBundle` 恒携 x-tansr-app-token = 令牌径) */
+/** 缺省径别(sdk `fetchAppBundle` 恒携 x-tansr-app-token = 令牌径) */
 declare const DEFAULT_BUNDLE_CACHE_SCOPE: BundleCacheScope;
+/** `BundleCache.resolve` 的入参:平台地址与令牌,外加缓存键的 appId / 径别 / features 维与 heartbeat 会话 id */
 interface BundleCacheResolveInput {
     baseUrl: string;
     token: string;
     fetchImpl?: typeof fetch;
     /** 缓存键的应用维;缺席退化 per-baseUrl 单条目(见文件头) */
     appId?: string;
-    /** 首次触发 heartbeat 时随体携带(现行为维持;命中缓存时不出线) */
+    /** 首次触发 heartbeat 时随体携带(命中缓存时不出线) */
     sessionId?: string;
     /**
-     * FX-C-16:缓存键的径别维(缺省 'app_user');宿主以主凭据径(自带 AK/SK 头的 fetchImpl)拉 owner 投影并与
+     * 缓存键的径别维(缺省 'app_user');宿主以主凭据径(自带 AK/SK 头的 fetchImpl)拉 owner 投影并与
      * 令牌径共享同一实例时传 'owner'——同 (baseUrl, appId) 两径各得各投影,恒不串档。
      */
     scope?: BundleCacheScope;
     /**
-     * FX-C-16:本次拉取声明的客户端 features(出线头 x-tansr-client-features;缺省 CLIENT_FEATURES 常量)。键含其指纹:
-     * 声明变 → api 投影变 → 键变 → 重拉;bundle 与 heartbeat 三径同携同值(api bundleEtag 按头分档)。
+     * 本次拉取声明的客户端 features(出线头 x-tansr-client-features;缺省 CLIENT_FEATURES 常量)。键含其指纹:
+     * 声明变 → 平台投影变 → 键变 → 重拉;bundle 与 heartbeat 同携同值(平台 bundleEtag 按头分档)。
      */
     clientFeatures?: readonly string[];
 }
+/** `BundleCache.resolve` 的产物:解析后的 bundle、可复用的 registry 配置、etag、TWP 能力串与归档信号 */
 interface ResolvedBundle {
     bundle: AppBundle;
     /** 按 etag 复用的 registry 配置对象(ProviderRegistry 构造只存引用) */
@@ -20859,12 +20886,13 @@ interface ResolvedBundle {
     /** TWP 能力串(heartbeat features;undefined = 门全关同现状) */
     features: readonly string[] | undefined;
     /**
-     * M-07:本次 resolve 触发的 heartbeat 收到 410 `session_archived` 且归档的正是本调用携带的
+     * 本次 resolve 触发的 heartbeat 收到 410 `session_archived` 且归档的正是本调用携带的
      * `sessionId`(或信封未指明 id)→ 回带该 id;命中缓存 / 去重合并 / 归档的是他人会话 = 缺席。
      * 消费方停该会话心跳、铸新 id、下轮 exchange 开新会话。
      */
     archivedSessionId?: string;
 }
+/** `BundleCache.stats()` 计数快照(bundle / features 两类条目的命中、重拉与失效计数) */
 interface BundleCacheStats {
     entries: number;
     /** bundle 时效内命中 */
@@ -20880,35 +20908,36 @@ interface BundleCacheStats {
     featureEntries: number;
     featureHits: number;
     featureMisses: number;
-    /** SC-34b:heartbeat `bundleEtag` 与条目 etag 不同而触发的条目级失效次数 */
+    /** heartbeat `bundleEtag` 与条目 etag 不同而触发的条目级失效次数 */
     etagInvalidations: number;
 }
-/** bundle 条目键(与 resolve 入参同形;appId 缺席 = per-baseUrl 退化条目;FX-C-16 scope / clientFeatures 缺省同 resolve) */
+/** bundle 条目键(与 resolve 入参同形;appId 缺席 = per-baseUrl 退化条目;scope / clientFeatures 缺省同 resolve) */
 interface BundleCacheKey {
     baseUrl: string;
     appId?: string;
     scope?: BundleCacheScope;
     clientFeatures?: readonly string[];
 }
+/** per-app bundle / features 缓存(由 `createBundleCache` 创建;可跨会话共享一个实例) */
 interface BundleCache {
     /** 取 bundle(+ registryConfig)与 features;命中零上游往返 */
     resolve(input: BundleCacheResolveInput): Promise<ResolvedBundle>;
     /**
      * 无参:清空全部条目(bundle + features;下次 resolve 无条件重拉,既有 etag 一并丢弃)。
-     * 带键(SC-34b):只把该 (baseUrl, appId, scope, featuresFingerprint) 的 bundle 条目标记过期——etag 保留,下次
+     * 带键:只把该 (baseUrl, appId, scope, featuresFingerprint) 的 bundle 条目标记过期——etag 保留,下次
      * resolve 走 If-None-Match 条件重拉(304 续期 / 200 换新);features 条目不动;键无条目 = 零动作。
      */
     invalidate(target?: BundleCacheKey): void;
     stats(): BundleCacheStats;
 }
 /**
- * FX-C-16:features 声明指纹 = sha256(声明列表逗号串,与出线头 x-tansr-client-features 值同源) 前 8 hex。
+ * features 声明指纹 = sha256(声明列表逗号串,与出线头 x-tansr-client-features 值同源) 前 8 hex。
  * 缺省 CLIENT_FEATURES 常量(同进程恒一,不裂条目);声明变即指纹变。
  */
 declare function featuresFingerprintOf(clientFeatures?: readonly string[]): string;
 /**
- * bundle 条目键(FX-C-16 四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint;与 resolveBundle 内部键同形)。
- * 导出供卷断言键形;消费方不应依赖串形。
+ * bundle 条目键(四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint;与 resolveBundle 内部键同形)。
+ * 导出供测试断言键形;消费方不应依赖串形。
  */
 declare function bundleKey(base: string, appId: string | undefined, scope: BundleCacheScope, featuresFingerprint: string): string;
 /**
@@ -20917,17 +20946,21 @@ declare function bundleKey(base: string, appId: string | undefined, scope: Bundl
  * 归一后比对两形皆稳。
  */
 declare function normalizeEtagValue(value: string): string;
+/**
+ * 创建 per-app bundle / features 缓存(语义见文件头)。一个实例可被同进程内多个会话共享:
+ * 同键并发 resolve 只出网一次,过期后带 If-None-Match 条件重拉,heartbeat 回带的 bundleEtag 触发条目级失效。
+ */
 declare function createBundleCache(options?: CreateBundleCacheOptions): BundleCache;
 
 /**
- * 平台提示帧(TWP t.warn 同形;S-ARCH doc/109 代拍②):平台对非致命降级
+ * 平台提示帧(TWP t.warn 同形):平台对非致命降级
  * 的结构化告知(思考不可用/余额预警等),恒不代表请求失败。
  */
 interface PlatformWarning {
     code: string;
     message: string;
     /**
-     * 结构化语境(加法,FX-A-15):如 `capabilities_unparsed` 携 `{ issues: ZodIssue[] }`。平台 t.warn 帧不携本键;
+     * 结构化语境(可选):如 `capabilities_unparsed` 携 `{ issues: ZodIssue[] }`。平台 t.warn 帧不携本键;
      * `onPlatformWarning` 子集通道只交付 code / message,`onWarning`(SdkWarning.detail)全量交付。
      */
     detail?: Record<string, unknown>;
@@ -20945,40 +20978,37 @@ interface AssemblePlatformModelOptions {
     /** fallback 链最终命中通报(session 装配合成 cost.provider.switched) */
     onProviderSelected?: (selection: FallbackSelection) => void;
     /**
-     * S-ARCH(doc/109 代拍②):平台 t.warn 提示帧旁路(thinking_unavailable_on_face
-     * /balance_low 等)。此前 SDK 面恒缺席 = 平台的结构化告知在最后一米静默
-     * 蒸发;经既有 registry twp 选项缝透传,providers 零改动。
+     * 平台 t.warn 提示帧旁路(thinking_unavailable_on_face / balance_low 等):平台的结构化告知经此到达
+     * 开发者,不静默蒸发;经既有 registry twp 选项缝透传。
      */
     onWarn?: (warn: PlatformWarning) => void;
     /**
-     * doc/91 拍板⑤ — twp meta.sessionId 动态供给(平台会话 id,ULID 形制;
-     * 经 ProviderRegistry twp 选项缝透传,providers 零改动)。createSession
-     * 令牌档 per-AgentSession 铸造一枚注入;缺席 = meta.sessionId 如实不携带
-     * (归账兜底在认证头,批ι 前语义),query 单轮档现维持缺席。
+     * twp meta.sessionId 动态供给(平台会话 id,ULID 形制;经 ProviderRegistry twp 选项缝透传)。
+     * createSession 令牌档 per-AgentSession 铸造一枚注入;缺席 = meta.sessionId 如实不携带
+     * (归账兜底在认证头),query 单轮档现维持缺席。
      */
     sessionId?: () => string | undefined;
     /**
-     * M-07(doc/130 §五;api FX-A-06 归档会话心跳 410 `session_archived`):装配期心跳报告
-     * 「本会话 id 已被平台归档」的旁路——消费方(createSession)据此**停止对该 id 的心跳、不重试**,
-     * 并铸新平台会话 id,下轮 exchange 以新 id 开新会话(exchange 首见幂等登记)。入参 = 被归档的
-     * 会话 id(api 信封 `detail.sessionId`;缺席回落本次心跳携带的 id;皆缺席 undefined)。
-     * 缺席 = 410 与其它非 2xx 同为静默失败(features 门关),行为现状。
+     * 归档会话心跳(410 `session_archived`)旁路:装配期心跳报告「本会话 id 已被平台归档」——消费方
+     * (createSession)据此**停止对该 id 的心跳、不重试**,并铸新平台会话 id,下轮 exchange 以新 id 开新会话
+     * (exchange 首见幂等登记)。入参 = 被归档的会话 id(平台信封 `detail.sessionId`;缺席回落本次心跳携带的 id;
+     * 皆缺席 undefined)。缺席 = 410 与其它非 2xx 同为静默失败(features 门关),行为现状。
      */
     onSessionArchived?: (sessionId: string | undefined) => void;
     /**
-     * SC-24(serve 并发审计 S-14)— bundle/features 进程级缓存(createBundleCache):
-     * 在场时 bundle 与 features 经缓存取得(TTL = 响应 max-age 与 ttlMs 取小;过期后
-     * If-None-Match 条件重拉;同键并发只一次出网),命中即零上游往返;缺席 = 逐会话
-     * 拉取现状(零漂移)。serve 平台内置形缺省接一枚;SDK 端侧多会话同 app 可自接。
+     * bundle/features 进程级缓存(createBundleCache):在场时 bundle 与 features 经缓存取得
+     * (TTL = 响应 max-age 与 ttlMs 取小;过期后 If-None-Match 条件重拉;同键并发只一次出网),
+     * 命中即零上游往返;缺席 = 逐会话拉取(零漂移)。serve 平台内置形缺省接一枚;SDK 端侧多会话同 app 可自接。
      */
     bundleCache?: BundleCache;
     /**
-     * SC-24 — 缓存键的应用维(令牌所属 app 的公开标识):同一进程对同一 baseUrl 混用
-     * 多个 app 的令牌时必须传,否则缓存退化为 per-baseUrl 单条目(首个令牌拉到的 bundle
-     * 被后续会话复用)。app_user 令牌本体不暴露 appId,故无法自推。
+     * 缓存键的应用维(令牌所属 app 的公开标识):同一进程对同一 baseUrl 混用多个 app 的令牌时必须传,
+     * 否则缓存退化为 per-baseUrl 单条目(首个令牌拉到的 bundle 被后续会话复用)。app_user 令牌本体不暴露
+     * appId,故无法自推。
      */
     appId?: string;
 }
+/** 令牌档装配产物:fallback 链 client、解析出的模型、bundle 装配的 registry 与 bundle 各段的 SDK 消费子集 */
 interface AssembledPlatformModel {
     client: ModelClient;
     model: ResolvedModel;
@@ -20986,29 +21016,26 @@ interface AssembledPlatformModel {
     maxOutputTokens?: number;
     /** bundle 装配的 registry(setModel 别名热切换与 Task resolveModel 复用) */
     registry: ProviderRegistry;
-    /** bundle capabilities 段(S-B3 裁剪的事实源;缺席时为平台缺省档) */
+    /** bundle capabilities 段(工具裁剪的事实源;缺席时为平台缺省档) */
     capabilities: AppCapabilities;
     /**
-     * bundle 授权媒体模型集(S-G1;初始化即取,媒体工具装配自取的数据源——
-     * 集成方零手配)。旧 api 无段 = 双空集如实。
+     * bundle 授权媒体模型集(初始化即取,媒体工具装配自取的数据源——集成方零手配)。旧平台无段 = 空集如实。
      */
     platformModels: AppBundlePlatformModels;
     /**
-     * doc/110 B7 — bundle 计价 → kernel 价格簿注入行((tansr, handle) 键,
-     * USD/CNY 白名单;appBundlePricingUpdates 语义)。消费方(serve 平台内置
-     * 形)经 PricingBook.refreshPricing(rows, 'refreshed') 喂 CostTracker,
+     * bundle 计价 → kernel 价格簿注入行((tansr, handle) 键,USD/CNY 白名单;appBundlePricingUpdates 语义)。
+     * 消费方(serve 平台内置形)经 PricingBook.refreshPricing(rows, 'refreshed') 喂 CostTracker,
      * 会话级 budget 闸的金额维自此对 tansr 模型出数。无计价段 = 空数组。
      */
     pricingUpdates: PricingUpdate[];
     /**
-     * 应用平台类型(doc/112 契约 2.4;bundle `app.platform` 加法键)。消费方据此
-     * 判装配形态与能力拓扑是否相符(进程内 SDK 装配 vs 会话服务 serve /v2);
-     * 不符只提示不拒。旧 api 缺键 / 装置绑定键径 = null(未知,恒不臆造)。
+     * 应用平台类型(bundle `app.platform`)。消费方据此判装配形态与能力拓扑是否相符(进程内 SDK 装配 vs
+     * 会话服务 serve);不符只提示不拒。旧平台缺键 / 装置绑定键径 = null(未知,恒不臆造)。
      */
     platform: AppPlatform | null;
     /**
-     * bundle 生效裁决人档(doc/113 §4.2;G-5 SDK 令牌档 / G-6 serve /v2 装配
-     * 分类器裁决人的任命来源)。null = 段缺席(旧 api)→ 无裁决人,行为现状。
+     * bundle 生效裁决人档(SDK 令牌档 / serve 装配分类器裁决人的任命来源)。null = 段缺席(旧平台)→
+     * 无裁决人,行为现状。
      */
     adjudicator: AppBundleAdjudicator | null;
     /** 应用身份(应用协议 `<app>` 段:name / purpose;缺席字段 null) */
@@ -21016,26 +21043,26 @@ interface AssembledPlatformModel {
     systemPrompt?: string;
     systemPromptPolicy?: SystemPromptPolicy;
     /**
-     * owner 生效套餐投影(doc/125 契约 6;bundle 顶层 `plan`)。null = T0 无套餐行 / 旧 api /
-     * 坏形。开发者面语境位(宿主日志 / 排障);硬执行恒在服务端,SDK 恒不本地判限。
+     * owner 生效套餐投影(bundle 顶层 `plan`)。null = 个人无套餐 / 旧平台 / 坏形。开发者面语境位
+     * (宿主日志 / 排障);硬执行恒在服务端,SDK 恒不本地判限。
      */
     plan: AppBundlePlan | null;
     /**
-     * bundle 上下文方案段(FX-B-30 R-18 N-10 α;形状级透传)。宿主(serve 平台内置形,FX-C-11)
-     * 以 kernel `contextSchemeToSchemeOptions(platform.contextScheme)` 化为压缩方案选项接
-     * `compactionManagerOptions`;null = 平台未配 / 令牌径中性 null / 旧 api / 坏形 → 压缩沿入口
-     * 缺省。SDK 恒不在此映射方案键(单函数住 kernel,三形零副本)。
+     * bundle 上下文方案段(形状级透传)。宿主(serve 平台内置形)以 kernel
+     * `contextSchemeToSchemeOptions(platform.contextScheme)` 化为压缩方案选项接 `compactionManagerOptions`;
+     * null = 平台未配 / 令牌径中性 null / 旧平台 / 坏形 → 压缩沿入口缺省。SDK 恒不在此映射方案键
+     * (单函数住 kernel)。
      */
     contextScheme: AppBundleContextScheme | null;
     /**
-     * bundle org 治理段 SDK 子集(十王修案 M-05;形状级透传)。宿主(serve 平台会话工厂 `resolveSessionRetention`)
-     * 读 `governance.sessionRetentionDays ?? 30` 作会话保留期缺省(`sessions.retention.maxAgeDays`);`{}` = 平台未配 /
-     * 令牌径剥段 / 旧 api / 坏形 → 宿主自持缺省。SDK 自身零消费。
+     * bundle 组织治理段 SDK 子集(形状级透传)。宿主(serve 平台会话工厂)读 `governance.sessionRetentionDays ?? 30`
+     * 作会话保留期缺省(`sessions.retention.maxAgeDays`);`{}` = 平台未配 / 令牌径剥段 / 旧平台 / 坏形 →
+     * 宿主自持缺省。SDK 自身零消费。
      */
     governance: AppBundleGovernance;
 }
 /**
- * SDK 通用告警(W-3,doc/117 W-3 / doc/116 §七 D-S4):平台提示帧(`source:'platform'`,
+ * SDK 通用告警:平台提示帧(`source:'platform'`,
  * PlatformWarning 同 code/message)与 SDK 自身的非致命提示(`source:'sdk'`:
  * `cwd_mismatch_on_restore` / `cwd_mismatch_on_resume` 等)统一形。恒不代表请求失败;
  * `detail` 为结构化语境(路径 / id 等),呈现策略归开发者。code 为自由串(端侧未知 code 兜底)。
@@ -21052,19 +21079,19 @@ interface SdkWarning {
  */
 declare function createAppTokenFetch(token: string, inner?: typeof fetch): typeof fetch;
 /**
- * POST /t1/heartbeat 一次的解析结果(SC-34b;doc/89 §2.5)。
+ * POST /t1/heartbeat 一次的解析结果。
  * features 与 bundleEtag 两键彼此独立解析:任一缺席/坏类型只让自己回 undefined。
  */
 interface TwpHeartbeatResult {
     /** TWP 能力串;失败 / 缺席 / 非数组 = undefined(门全关同现状) */
     features: readonly string[] | undefined;
     /**
-     * 平台此刻该 App `GET /t1/config` 的 ETag(api 加法字段,同一计算函数;SC-34 A4 泳道)。
-     * 缺席(旧 api)/ 非字符串 / 空串 = undefined → 消费方不动。
+     * 平台此刻该 App `GET /t1/config` 的 ETag(与 /t1/config 响应头同一计算函数)。
+     * 缺席(旧平台)/ 非字符串 / 空串 = undefined → 消费方不动。
      */
     bundleEtag: string | undefined;
     /**
-     * M-07:HTTP 410 信封 `{ error: { code: 'session_archived', detail: { sessionId } } }` —— 平台已归档
+     * HTTP 410 信封 `{ error: { code: 'session_archived', detail: { sessionId } } }` —— 平台已归档
      * 本次心跳携带的会话(`DELETE /t1/sessions/:id` / 租约过期)。`sessionId` = 信封 detail 值,缺席回落
      * 请求携带的 id。消费方:停该会话心跳、不重试、下轮 exchange 开新会话。非 410 / 非该码 = 缺席。
      */
@@ -21073,25 +21100,22 @@ interface TwpHeartbeatResult {
     };
 }
 /**
- * S-TH3(2026-09-01)——SDK 令牌档 heartbeat:POST /t1/heartbeat(令牌头鉴权,api 侧
- * authenticateAppOrToken 双径受理),响应 features 数组即 TWP 能力串(TWP_FEATURES
- * 单源;此前恒缺席 = 发送门全关,思考档位恒不出线的最后一米)。SC-34b 加法:同一响应
- * 的 `bundleEtag`(bundle 失效订阅锚)顺手解析。HTTP 失败 / 网络错 / 非 JSON 恒静默回
- * 双 undefined(fail-open 到现状,恒不阻装配、恒不炸会话)。
+ * SDK 令牌档 heartbeat:POST /t1/heartbeat(令牌头鉴权),响应 features 数组即 TWP 能力串
+ * (决定思考档位等可选能力是否出线);同一响应的 `bundleEtag`(bundle 失效订阅锚)顺手解析。
+ * HTTP 失败 / 网络错 / 非 JSON 恒静默回双 undefined(fail-open 到现状,恒不阻装配、恒不炸会话)。
  *
- * D-B1 三径同携(doc/123;A 终报 §六-3):`x-tansr-client-features` 与 bundle 拉取同值出线——
- * api 按该头计算 `bundleEtag`(分档形各异),漏头即恒指缺省档 etag,与本 SDK 缓存的声明档 etag
- * 恒不等 → `configStale` 恒真、每次心跳重拉。
+ * `x-tansr-client-features` 与 bundle 拉取同值出线——平台按该头计算 `bundleEtag`(分档形各异),
+ * 漏头即恒指缺省档 etag,与本 SDK 缓存的声明档 etag 恒不等 → 每次心跳重拉。
  */
 declare function fetchTwpHeartbeat(base: string, token: string, fetchImpl: typeof fetch, sessionId?: string, 
-/** FX-C-16:声明的客户端 features(缺省 CLIENT_FEATURES;与 bundle 拉取同携同值——api bundleEtag 按头分档) */
+/** 声明的客户端 features(缺省 CLIENT_FEATURES;与 bundle 拉取同携同值——平台 bundleEtag 按头分档) */
 clientFeatures?: readonly string[]): Promise<TwpHeartbeatResult>;
 /**
  * features 能力串取得(既有出口;= `fetchTwpHeartbeat(...).features`,行为逐字节不变)。
  * 失败恒静默回 undefined = 门关(fail-open 到现状)。
  */
 declare function fetchTwpFeatures(base: string, token: string, fetchImpl: typeof fetch, sessionId?: string): Promise<readonly string[] | undefined>;
-/** GET /t1/config 的一次结果:bundle(304 时 null,仅条件请求径)+ 缓存元信息(SC-24) */
+/** GET /t1/config 的一次结果:bundle(304 时 null,仅条件请求径)+ 缓存元信息 */
 interface FetchedAppBundle {
     /** 解析后的 bundle;304 Not Modified 时 null(调用方沿用既有条目) */
     bundle: AppBundle | null;
@@ -21105,18 +21129,17 @@ interface FetchedAppBundle {
 declare function parseCacheControlMaxAgeMs(header: string | null): number | undefined;
 /**
  * 拉 bundle(GET {baseUrl}/t1/config,令牌头鉴权)并解析;失败一律
- * TansrSdkError('assembly_failed') 携修复指引。SC-24:ifNoneMatch 在场即条件请求
+ * TansrSdkError('assembly_failed') 携修复指引。ifNoneMatch 在场即条件请求
  * (平台支持 ETag/304),304 返回 bundle=null 由缓存续期。既有逐会话拉取径
  * (assemblePlatformModel 无 bundleCache)与缓存径共用本函数——单一拉取实现。
  *
- * D-B1(doc/123;B-5):恒携 `x-tansr-client-features: platform-audio`——声明本 SDK 可理解的
- * 可选 bundle 扩展词表,api(A-6)据此分档下发五键/三键(缺头 = 旧 SDK,恒三键)。恒定值:
- * 不进 bundle 缓存键(仍 (baseUrl, appId)),条件重拉同携(api 侧 ETag 按实际下发形计算);
- * serve 托管拓扑经同一函数自动继承。bundle 拉取与 heartbeat 同携同值(api 侧 bundleEtag 按头
- * 分档计算,见 fetchTwpHeartbeat 注);exchange 不携(与 bundle 形无关)。
+ * 恒携 `x-tansr-client-features`(缺省 `platform-audio`)——声明本 SDK 可理解的可选 bundle 扩展词表,
+ * 平台据此分档下发(缺头 = 旧 SDK,只下发基础键)。声明值进 bundle 缓存键指纹,条件重拉同携
+ * (平台侧 ETag 按实际下发形计算);serve 托管拓扑经同一函数自动继承。bundle 拉取与 heartbeat
+ * 同携同值(平台侧 bundleEtag 按头分档计算,见 fetchTwpHeartbeat 注);exchange 不携(与 bundle 形无关)。
  */
 declare function fetchAppBundle(base: string, token: string, fetchImpl: typeof fetch, ifNoneMatch?: string, 
-/** FX-C-16:声明的客户端 features(缺省 CLIENT_FEATURES;缓存键指纹与本头同源) */
+/** 声明的客户端 features(缺省 CLIENT_FEATURES;缓存键指纹与本头同源) */
 clientFeatures?: readonly string[]): Promise<FetchedAppBundle>;
 /**
  * 令牌档一站式:拉 bundle(GET {baseUrl}/t1/config,令牌头鉴权)→ 解析
@@ -21132,14 +21155,14 @@ clientFeatures?: readonly string[]): Promise<FetchedAppBundle>;
 declare function assemblePlatformModel(options: AssemblePlatformModelOptions): Promise<AssembledPlatformModel>;
 
 /**
- * 环2 内置工具词表(doc/84 §4.1):前 12 名与 AppCapabilities.tools 的工具位同名;媒体四名
- * (doc/128 D-M3,2026-09-05)工具位 = AppCapabilities.platform 同名位(D-M4)。
+ * 环2 内置工具词表:前 12 名与 AppCapabilities.tools 的工具位同名;媒体四名
+ * 工具位 = AppCapabilities.platform 同名位。
  */
 type BuiltinToolName = 'read' | 'write' | 'edit' | 'glob' | 'grep' | 'list' | 'shell' | 'webFetch' | 'webSearch' | 'http' | 'todoWrite' | 'askUser' | PlatformCapabilityName;
 /**
  * 媒体四名(BuiltinToolName 子集;与 AppCapabilities.platform 同名——webSearch 位仍在能力契约
- * 但恒不在此词表,S-WS2)。兼作 `tools.platform` 兼容别名词表(D-M3):imageGen 自 S-E1、videoGen
- * 自 S-F、speechToText / textToSpeech 自 doc/123 D-A1/D-A3(两独立面:/t1/asr、/t1/tts)。
+ * 但恒不在此词表)。兼作 `tools.platform` 兼容别名词表;speechToText / textToSpeech 为两独立面
+ * (/t1/asr、/t1/tts)。
  */
 type PlatformCapabilityName = 'imageGen' | 'videoGen' | 'speechToText' | 'textToSpeech';
 /** 三环工具入口(CreateSessionOptions.tools / ManagedQueryOptions.tools) */
@@ -21148,25 +21171,25 @@ interface SdkToolsOptions {
      * 环2 内置工具选择(词表:read/write/edit/glob/grep/list/shell/webFetch/
      * webSearch/http/todoWrite/askUser + 媒体四名 imageGen/videoGen/speechToText/
      * textToSpeech)。缺席 = 装配能力位放行的全部本地内置工具(**媒体四名恒不在缺省
-     * 全集**,D-M4);空数组 = 零内置(纯自定义工具场景)。显式列出位关工具报可读错。
-     * webSearch 双门(S-WS2):除工具位外还需令牌档材料 + platform.webSearch 位
+     * 全集**);空数组 = 零内置(纯自定义工具场景)。显式列出位关工具报可读错。
+     * webSearch 双门:除工具位外还需令牌档材料 + platform.webSearch 位
      * (后端恒平台通道,SDK 恒不 BYO)——缺席选择时通道不备静默不装,显式选择
-     * 即 fail-fast 分因可读错。媒体四名(doc/128):工具位 = capabilities.platform.<name>,
+     * 即 fail-fast 分因可读错。媒体四名:工具位 = capabilities.platform.<name>,
      * 后端恒平台提供方——位关 / 令牌档材料缺席(托管/注入档)显式选择即 fail-fast 可读错。
      */
     builtin?: readonly string[];
     /**
-     * @deprecated 兼容别名(doc/128 D-M3):词表 imageGen/videoGen/speechToText/textToSpeech
+     * @deprecated 兼容别名:词表 imageGen/videoGen/speechToText/textToSpeech
      * 与 tools.builtin 同名四值等价——等价并入 builtin 选择集(同名同描述同 schema 同序),
      * 校验与文案不变(位关恒 fail-fast;材料缺席 fail-fast 指引令牌档)。新写法请用
-     * tools.builtin。webSearch 已收编进 tools.builtin(S-WS2),此处显式列出报迁移指引。
+     * tools.builtin。webSearch 已并入 tools.builtin,此处显式列出报迁移指引。
      */
     platform?: readonly string[];
     /** 环1 自定义工具(defineTool 产物;kernel Tool 形态直给亦可) */
     custom?: readonly Tool[];
 }
 /**
- * 平台通道装配材料(令牌档专属;S-E1 起):baseUrl/token 来自会话令牌档,令牌只穿透进
+ * 平台通道装配材料(令牌档专属):baseUrl/token 来自会话令牌档,令牌只穿透进
  * 提供方闭包(恒不进工具定义/toolDefs)。WebSearch 平台后端与媒体四工具平台提供方同一材料闸。
  * 托管/注入档无平台网关连接,恒缺席。
  */
@@ -21176,17 +21199,18 @@ interface PlatformToolContext {
     /** fetch 注入缝(测试桩网关;缺省全局 fetch) */
     fetchImpl?: typeof fetch;
     /**
-     * bundle 授权媒体模型集(S-G1 媒体池化顺位取用):令牌档装配自
+     * bundle 授权媒体模型集(媒体池化顺位取用):令牌档装配自
      * assemblePlatformModel 随取随注——媒体四工具描述自列授权集(顺位第一 =
      * model 缺省生效模型),集成方零手配。缺席(注入档测试直构等)= 工具描述按
      * 未知集处理(仍可显式点名)。
      */
     platformModels?: AppBundlePlatformModels;
 }
+/** `buildSdkToolSet` 的输入:三环工具选择 + 能力位档 + 各内置工具所需材料(交互通道 / 平台材料 / 出网客户端 …) */
 interface BuildSdkToolSetOptions {
     /** 三环工具入口;缺席 = 只装能力位放行的内置工具 */
     tools?: SdkToolsOptions;
-    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
+    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给) */
     capabilities?: AppCapabilities;
     /** AskUser 交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
     promptChannel?: PromptChannel;
@@ -21195,31 +21219,32 @@ interface BuildSdkToolSetOptions {
     /** 平台通道材料(令牌档注入;缺席 = 显式选择媒体四名即 fail-fast 指引令牌档) */
     platformContext?: PlatformToolContext;
     /**
-     * 装配期告警回调(W-3 通用告警通道,createSession 注入 `warn`):目前只出
+     * 装配期告警回调(通用告警通道,createSession 注入 `warn`):目前只出
      * `tools_platform_deprecated`(`tools.platform` 兼容别名弃用提示,每次装配一条,
      * `detail.names` = 别名里的媒体名)。缺席 = 静默(低阶 runAgent / query 径无通道)。
      */
     onWarning?: (warning: SdkWarning) => void;
     /**
-     * FX-B-13:出网客户端(三层 SSRF × 代理复合;WebFetch / Http 同经此出网)。缺省进程级
+     * 出网客户端(三层 SSRF × 代理复合;WebFetch / Http 同经此出网)。缺省进程级
      * 共享实例(sdkEgressClient);宿主 / 测试可注入。
      */
     egress?: EgressClient;
     /**
-     * FX-B-15:Http 工具 auth 可引用的环境变量名单(托管档 = 配置段 `http.allowedAuthEnvVars`,
+     * Http 工具 auth 可引用的环境变量名单(托管档 = 配置段 `http.allowedAuthEnvVars`,
      * assembleTooling 以 `httpAllowlistForTool(loaded.http)` 展开传入,与 HookEngine
      * `allowedHeaderEnvVars` 同一键)。缺席 = 不限(令牌 / 注入档无本地配置来源;hard-safety 兜底)。
      */
     allowedAuthEnvVars?: readonly string[];
     /**
-     * FX-B-20 / T-15:Read 图片分支的模型能力谓词(kernel 门 2,J16)。装配层把**当前**会话
+     * Read 图片分支的模型能力谓词(kernel 门 2)。装配层把**当前**会话
      * 模型的 imageInputMode 以 getter 注入(setModel 热切换即时生效;取值在工具执行时点);
      * 缺席 = 未接线 = Read 图片径 fail-closed 恒拒并如实说明「capability: unknown」。
      */
     imageInput?: () => InputModalityMode | undefined;
 }
-/** `tools.platform` 兼容别名弃用提示的告警码(D-M3;source 'sdk',经 onWarning / sdk.notice 回落) */
+/** `tools.platform` 兼容别名弃用提示的告警码(source 'sdk',经 onWarning / sdk.notice 回落) */
 declare const TOOLS_PLATFORM_DEPRECATED_CODE = "tools_platform_deprecated";
+/** `buildSdkToolSet` 的产物:kernel 工具注册表 + 送模型的工具定义 + custom 工具 guide 聚合段 */
 interface SdkToolSet {
     registry: ToolRegistry;
     toolDefs: IRToolDef[];
@@ -21258,23 +21283,20 @@ declare function buildToolGuideSegment(custom: readonly Tool[]): IRSystemSegment
 declare function buildSdkToolSet(options?: BuildSdkToolSetOptions): SdkToolSet;
 
 /**
- * T-E8 — SDK 托管装配:五层配置 → ProviderRegistry → fallback 链 client,
- * 以及「权限引擎 → hooks → 工具集 → 权限门 → 调度执行器」的工装一站式
- * (assembleTooling,createSession 与托管 query 共用,两处语义恒一致)。
+ * SDK 托管装配:五层配置 → ProviderRegistry → fallback 链 client,以及「权限引擎 → hooks → 工具集 →
+ * 权限门 → 调度执行器」的工装一站式(assembleTooling,createSession 与托管 query 共用,两处语义恒一致)。
  *
- * 分层裁决 A 的高阶档:全部经 @tansr/kernel 与 @tansr/providers 公共 API
- * 完成,不 import @tansr/cli。客户端形态与 cli 同源——RFC-E8-1(contract-
- * v0.6 波)起链装配由 providers buildAliasClient 单源承载:fallbacksFor
- * (alias) 有序链包 FallbackModelClient,每 entry 自动套 RetryingModelClient
- * (entry 内先重试,耗尽再切换);链首 client 立即构造(缺 key/未知
- * provider 在装配期结构化抛出,而非首次 stream 的流内错误)。
+ * 全部经 @tansr/kernel 与 @tansr/providers 公共 API 完成,不 import @tansr/cli。客户端形态与 cli 同源:
+ * 链装配由 providers buildAliasClient 单源承载——fallbacksFor(alias) 有序链包 FallbackModelClient,每 entry
+ * 自动套 RetryingModelClient(entry 内先重试,耗尽再切换);链首 client 立即构造(缺 key / 未知 provider
+ * 在装配期结构化抛出,而非首次 stream 的流内错误)。
  *
- * 与 cli 的裁剪差异:不含 TANSR_TEST_* 环境变量回退通路(cli 的 G1 过渡
- * 遗留,已标注退役方向)——SDK 托管档只认五层配置文件或注入的 config。
+ * 与 cli 的裁剪差异:不含 TANSR_TEST_* 环境变量回退通路——SDK 托管档只认五层配置文件或注入的 config。
  */
 
 /** 托管档单轮 modelTurns 护栏缺省(失控保护;与 serve 对齐) */
 declare const DEFAULT_MAX_TURNS = 200;
+/** `assembleManagedModel` 的选项:模型别名与配置来源 / 注入缝(全部可选,缺省 = 当前目录五层配置 + 'main') */
 interface AssembleManagedModelOptions {
     /** 模型别名(main/fast/reasoning/自定义)或 ref(provider/model);缺省 'main' */
     model?: string;
@@ -21291,12 +21313,13 @@ interface AssembleManagedModelOptions {
     /** fallback 链最终命中通报(session 装配据此合成 cost.provider.switched) */
     onProviderSelected?: (selection: FallbackSelection) => void;
 }
+/** `assembleManagedModel` 的产物:fallback 链 client、解析出的模型及装配所用 registry / 配置 / 诊断 */
 interface AssembledManagedModel {
     client: ModelClient;
     model: ResolvedModel;
     /** provider capability.maxContext(水位分母;能力表缺省时不落) */
     contextWindowTokens?: number;
-    /** provider capability.maxOutput(T-C12 查询环事前钳制半边;未实证不落) */
+    /** provider capability.maxOutput(查询环事前钳制 maxTokens 的上界;未实证不落) */
     maxOutputTokens?: number;
     /** 装配所用 registry(setModel 别名热切换与后续解析复用同一 config) */
     registry: ProviderRegistry;
@@ -21307,9 +21330,8 @@ interface AssembledManagedModel {
 }
 /**
  * registry + 别名 → fallback 链 client 与解析结果(setModel 热切换复用)。
- * 链装配自 RFC-E8-1(contract-v0.6 波)起由 @tansr/providers buildAliasClient
- * 单源承载;本函数保留 SDK 专属职责:错误包装(TansrSdkError)与
- * ResolvedModel/contextWindowTokens 投影。
+ * 链装配由 @tansr/providers buildAliasClient 单源承载;本函数保留 SDK 专属职责:错误包装
+ * (TansrSdkError `assembly_failed`)与 ResolvedModel / contextWindowTokens 投影。
  */
 declare function buildClientFromRegistry(registry: ProviderRegistry, aliasOrRef: string, onProviderSelected?: (selection: FallbackSelection) => void): {
     client: ModelClient;
@@ -21320,18 +21342,17 @@ declare function buildClientFromRegistry(registry: ProviderRegistry, aliasOrRef:
 /** 五层配置(或注入 config)→ registry → 别名 client(托管档一站式) */
 declare function assembleManagedModel(options?: AssembleManagedModelOptions): Promise<AssembledManagedModel>;
 /**
- * FallbackSelection → cost.provider.switched 事件体。构造逻辑自 RFC-E8-1 起
- * 下沉 @tansr/providers providerSwitchedEventBody(cli/sdk 双端单源);保留
- * 原函数名维持 SDK 消费面不变。
+ * FallbackSelection → cost.provider.switched 事件体。构造逻辑住 @tansr/providers providerSwitchedEventBody
+ * (cli / sdk 双端单源);保留原函数名维持 SDK 消费面不变。
  */
 declare function providerSwitchedBody(selection: FallbackSelection): EventBody | null;
+/** `createSession` / `query` 的权限选项:模式、附加规则与询问回调(缺省全部沿五层配置 / fail-closed) */
 interface PermissionOptions {
     /**
-     * 权限模式;缺省取五层配置 defaultMode(注入档缺省 'default')。令牌档装配了裁决人时
-     * 模式由 kernel `modeUnderAdjudicator` 推导(doc/113 §4.4;FX-B-05)。与本位同现(FX-B-06
-     * Q-05 兼容径):显式 `adjudication` 选项 × mode → fail-fast invalid_options(真矛盾);
-     * 缺省注入的 bundle 裁决人 × mode → 不装裁决人、按本位自管模式 + 通报
-     * `adjudicator_skipped_by_mode`(0.10 输入照常合法);要静默自管请传 `adjudication: { enabled: false }`。
+     * 权限模式;缺省取五层配置 defaultMode(注入档缺省 'default')。令牌档装配了裁决人时模式由 kernel
+     * `modeUnderAdjudicator` 推导。与本位同现:显式 `adjudication` 选项 × mode → fail-fast invalid_options
+     * (真矛盾);缺省注入的 bundle 裁决人 × mode → 不装裁决人、按本位自管模式 + 通报
+     * `adjudicator_skipped_by_mode`(兼容旧版输入);要静默自管请传 `adjudication: { enabled: false }`。
      */
     mode?: PermissionMode;
     /** 附加规则:并入 user 层,与配置规则按「最严格者胜」合并 */
@@ -21344,8 +21365,8 @@ interface PermissionOptions {
     askUser?: AskUserCallback;
 }
 /**
- * FX-B-05:`assembleTooling` 的裁决人材料——决定权限模式所需的事实(姿态 × 资格档)随分类器
- * 配置一并传入,模式推导住 kernel `modeUnderAdjudicator`(sdk / serve 同源,不再各写 'auto')。
+ * `assembleTooling` 的裁决人材料——决定权限模式所需的事实(姿态 × 资格档)随分类器配置一并传入,
+ * 模式推导住 kernel `modeUnderAdjudicator`(sdk / serve 同源)。
  * 形状 = `AssembledBundleAdjudicator` 的 `{ config → classifier, posture, tier }` 三件。
  */
 interface AssembleToolingAdjudication {
@@ -21356,13 +21377,14 @@ interface AssembleToolingAdjudication {
     /** 生效资格档(bundle tier ?? 'none';none = 裁决人对 safe 零软化权) */
     tier: EffectiveQualificationTier;
     /**
-     * FX-B-06(Q-05 兼容径):开发者是否**显式**给了 `adjudication` 选项(`PreparedAdjudication.explicit`)。
-     * 与 `permission.mode` 同现时:显式 → 真矛盾 fail-fast;缺省注入(令牌档 bundle 裁决人恒在 = 平台底档)
-     * → 不装裁决人、模式按 `permission.mode` 自管 + 通报 `adjudicator_skipped_by_mode`——0.10 的合法输入
-     * `createSession({ token, permission: { mode } })` 在 0.11 变 throw 是 breaking,此径把它收回。
+     * 开发者是否**显式**给了 `adjudication` 选项(`PreparedAdjudication.explicit`)。与 `permission.mode`
+     * 同现时:显式 → 真矛盾 fail-fast;缺省注入(令牌档 bundle 裁决人恒在 = 平台底档)→ 不装裁决人、
+     * 模式按 `permission.mode` 自管 + 通报 `adjudicator_skipped_by_mode`——使 `createSession({ token,
+     * permission: { mode } })` 这类旧版合法输入不因裁决人引入而变为 throw。
      */
     explicit: boolean;
 }
+/** `assembleTooling` 的选项:cwd / 会话归属 / 配置 + 工具、能力位、skills、MCP、权限与裁决人材料 */
 interface AssembleToolingOptions {
     /** 私有所有权移交：query在回滚开始接管资源及统一观察预算；session保留缺省回滚。 */
     onRollback?: (resources: OwnedResources, cause: unknown) => never;
@@ -21372,26 +21394,25 @@ interface AssembleToolingOptions {
     sessionId: string;
     /** 五层配置(permissions/hooks 段来源);注入档无配置为 null(hooks 不装) */
     loaded: LoadedConfig | null;
-    /** 三环工具入口(S-B3;缺席 = 装配能力位放行的全部内置工具) */
+    /** 三环工具入口(内置 / 自定义 / 平台;缺席 = 装配能力位放行的全部内置工具) */
     tools?: SdkToolsOptions;
-    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
+    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给) */
     capabilities?: AppCapabilities;
-    /** 环3 平台工具材料(S-E1;令牌档由 createSession/query 注入,其余档恒缺席) */
+    /** 环3 平台工具材料(令牌档由 createSession/query 注入,其余档恒缺席) */
     platformContext?: PlatformToolContext;
-    /** skills 注入(S-B9;受 skills 位——位关而材料在场 fail-fast) */
+    /** skills 注入(受 skills 能力位——位关而材料在场 fail-fast) */
     skills?: SdkSkillsOptions;
-    /** MCP 外接(S-B10;host 实例 = 应用级共享,选项对象 = 会话级临时 host) */
+    /** MCP 外接(host 实例 = 应用级共享,选项对象 = 会话级临时 host) */
     mcp?: McpSessionOption;
     /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
     promptChannel?: PromptChannel;
     permission?: PermissionOptions;
     /**
-     * 裁决人(doc/113 §4.4,G-5;FX-B-05 形):kernel 分类器配置 + 生效姿态 + 生效资格档
-     * (assembleBundleAdjudicator 产物三件,治理旋钮已叠加)。在场即
-     * PermissionEngine({ mode: modeUnderAdjudicator({ posture, tier }), classifier })——模式由
-     * kernel 单点推导(B 姿态 × tier none 不切 auto,维持 default;其余 auto):「本应 ask」的调用
-     * 经裁决人终裁(判危险按 rejectEffect 落 ask/deny,判安全且资格半径覆盖 → allow);与
-     * `permission.mode` 同现 fail-fast。缺席 = 现状(无分类器路径,模式沿 permission.mode / 配置缺省)。
+     * 裁决人:kernel 分类器配置 + 生效姿态 + 生效资格档(assembleBundleAdjudicator 产物三件,治理旋钮已叠加)。
+     * 在场即 PermissionEngine({ mode: modeUnderAdjudicator({ posture, tier }), classifier })——模式由 kernel
+     * 单点推导(无人环姿态 × tier none 不切 auto,维持 default;其余 auto):「本应 ask」的调用经裁决人终裁
+     * (判危险按 rejectEffect 落 ask/deny,判安全且资格半径覆盖 → allow);与 `permission.mode` 同现 fail-fast。
+     * 缺席 = 现状(无分类器路径,模式沿 permission.mode / 配置缺省)。
      */
     adjudication?: AssembleToolingAdjudication;
     /**
@@ -21400,35 +21421,34 @@ interface AssembleToolingOptions {
      * gate 决策语义不受影响(hooks 仍参与决策,仅损失 hook.* 可观测事件)。
      */
     emit?: (body: EventBody, source: string) => void;
-    /** W-3 告警通道(createSession 注入;装配期非致命提示如 `tools_platform_deprecated` 经此出;缺席静默) */
+    /** 告警通道(createSession 注入;装配期非致命提示如 `tools_platform_deprecated` 经此出;缺席静默) */
     warn?: (warning: SdkWarning) => void;
     /**
-     * FX-B-09(十王修案 S3 候拍 ② (c);复审 J-02)— 每次经门终局的审计记录出口(kernel 执行器
-     * `onDecision` 缝;`ToolDecisionRecord` 与 cli `decisions.jsonl` 行同形,含**机器放行** classifier /
-     * mode)。此前 sdk 构造执行器不传此缝 = 记录丢弃。缺省实现:`source === 'classifier'` 的记录经 `warn`
-     * 通报 `permission_decided`(平台源;令牌档无本地盘,事件流已由 kernel 门面 `decided{allow}` 帧覆盖,
-     * 本缝是开发者审计半边);传自己的写入器即接管;传 `() => {}` 即静默。
+     * 每次经门终局的审计记录出口(kernel 执行器 `onDecision` 缝;`ToolDecisionRecord` 与 cli `decisions.jsonl`
+     * 行同形,含**机器放行** classifier / mode)。缺省实现:`source === 'classifier'` 的记录经 `warn` 通报
+     * `permission_decided`(平台源;令牌档无本地盘,事件流已由 kernel 门面 `decided{allow}` 帧覆盖,本缝是
+     * 开发者审计半边);传自己的写入器即接管;传 `() => {}` 即静默。
      */
     onDecision?: (record: ToolDecisionRecord) => void;
     /**
-     * FX-B-13:出网客户端(三层 SSRF × 代理复合)——WebFetch / Http 与托管档 hooks http
-     * 执行体同经此出网。缺省进程级共享实例(sdkEgressClient);宿主 / 测试可注入。
+     * 出网客户端(三层 SSRF 防护 × 代理复合)——WebFetch / Http 与托管档 hooks http 执行体同经此出网。
+     * 缺省进程级共享实例(sdkEgressClient);宿主 / 测试可注入。
      */
     egress?: EgressClient;
     /**
-     * FX-B-20 / T-15:Read 图片分支的模型能力谓词(kernel 门 2)。createSession / query 以会话
-     * **当前**模型的 imageInputMode 绑 getter(setModel 热切换即时生效);缺席 = 未接线 =
-     * 图片径 fail-closed 恒拒并如实说明未接线。
+     * Read 工具图片分支的模型能力谓词。createSession / query 以会话**当前**模型的 imageInputMode 绑 getter
+     * (setModel 热切换即时生效);缺席 = 未接线 = 图片径 fail-closed 恒拒并如实说明未接线。
      */
     imageInput?: () => InputModalityMode | undefined;
 }
+/** `assembleTooling` 的产物:执行器、工具定义 / 注册表、权限门、装配层 system 段与 cwd 重绑能力 */
 interface AssembledTooling {
     executor: ToolExecutor;
     /** 模型可见工具定义(与 executor 的 registry 名字集合恒一致) */
     toolDefs: IRToolDef[];
-    /** 工具注册表(与 toolDefs 名字集合恒一致;Task 附着面,S-B4) */
+    /** 工具注册表(与 toolDefs 名字集合恒一致;Task 子代理附着面) */
     registry: ToolRegistry;
-    /** 权限门(Task 子代理沿用同实例,S-B4) */
+    /** 权限门(Task 子代理沿用同实例) */
     permissionGate: PermissionGate;
     /** 装配层合成 system 段(guide 等;调用方追加到用户 system 尾部) */
     systemSegments: IRSystemSegment[];
@@ -21439,19 +21459,17 @@ interface AssembledTooling {
     /** 内部所有权载体，会话与单轮 query 装配共享同一真实在飞清理。 */
     ownedResources?: OwnedResources;
     /**
-     * FX-B-19(T-16)— Task 子代理 McpDiscover 换装工厂(懒目录非空时在场;与 cli
-     * `assembly/mcp-lazy.ts` `discoverToolFactory` 同形)。调用方接进 attachSdkTaskTool 的
-     * `mcpDiscover`:子代理生效集含 McpDiscover 时派生期换装为绑定子视图的实例(展开只写子代理
-     * 自己的工具面);缺席 = kernel 防御性摘除(子代理无 MCP 展开面)。
+     * Task 子代理 McpDiscover 换装工厂(MCP 懒目录非空时在场;与 cli 同形)。调用方接进 attachSdkTaskTool 的
+     * `mcpDiscover`:子代理生效集含 McpDiscover 时派生期换装为绑定子视图的实例(展开只写子代理自己的工具面);
+     * 缺席 = kernel 防御性摘除(子代理无 MCP 展开面)。
      */
     mcpDiscover?: (toolset: McpToolset) => Tool;
     /**
-     * W-2(doc/116 §3.7 D-7):按新 cwd 重建 cwd 锚定的三件——PreToolUse HookEngine
-     * (command 执行体 cwd 与载荷 cwd)、权限门(规则路径锚定 / 工作区快路径)、执行器
-     * (kernel withCwd 派生:registry / fileReadState / searchAggregator 共享)。权限引擎
-     * 实例复用(会话缓存 / 分类器熔断与预算 / 已装载策略束跨切换存续;规则编译按 cwd
-     * 键缓存无陈旧面)。返回新实例,既有实例零改动;调用方(AgentSession.setCwd)在空闲期
-     * 替换持有引用。多次调用自最近一次派生。
+     * 按新 cwd 重建 cwd 锚定的三件——PreToolUse HookEngine(command 执行体 cwd 与载荷 cwd)、权限门
+     * (规则路径锚定 / 工作区快路径)、执行器(kernel withCwd 派生:registry / fileReadState / searchAggregator
+     * 共享)。权限引擎实例复用(会话缓存 / 分类器熔断与预算 / 已装载策略束跨切换存续;规则编译按 cwd 键缓存
+     * 无陈旧面)。返回新实例,既有实例零改动;调用方(AgentSession.setCwd)在空闲期替换持有引用。
+     * 多次调用自最近一次派生。
      */
     rebindCwd: (cwd: string) => {
         executor: DispatchingToolExecutor;
@@ -21467,37 +21485,33 @@ interface AssembledTooling {
 declare function assembleTooling(options: AssembleToolingOptions): Promise<AssembledTooling>;
 
 /**
- * 分类器协议表面(doc/optimize/37 §3):`coding` = 编码代理协议(CLI 四入口;
- * 本文件的指令文本);`app` = 应用表面协议(SDK 令牌档 / serve /v2 平台会话;
- * 指令文本在 prompts-app.ts)。表面决定「裁决人看什么、按什么判」,姿态决定
- * 「裁决结果如何落地」,两者正交。
+ * 分类器协议表面:`coding` = 编码代理协议(CLI 各入口;本文件的指令文本);`app` = 应用表面协议
+ * (SDK 令牌档 / serve 平台会话;指令文本在 prompts-app.ts)。表面决定「裁决人看什么、按什么判」,
+ * 姿态决定「裁决结果如何落地」,两者正交。
  */
 type ClassifierProtocol = 'coding' | 'app';
 /** 两阶段合计咨询超时(引擎强制;单阶段场景余量只多不少) */
 declare const TWO_STAGE_TIMEOUT_MS = 15000;
 /**
- * 超时策略(T-K17 续轮 B2):咨询超时的全部行为参数。当前仅总预算一维;
- * 续轮预算矩阵会签定 cells 后扩 stage1CapMs(快筛硬顶)与
- * stage2MinReserveMs(复审最小保留量)——字段已占位,序列化器显式记
- * `none`,机制实现随矩阵会签一体落地(评估与生产同构)。
+ * 超时策略:咨询超时的全部行为参数。当前生效的是总预算与首字对冲两维;stage1CapMs(快筛硬顶)与
+ * stage2MinReserveMs(复审最小保留量)字段已占位,序列化器显式记 `none`,机制实现随预算矩阵定案
+ * 一体落地(评估与生产同构)。
  */
 interface ClassifierTimeoutPolicy {
     totalMs: number;
     stage1CapMs?: number;
     stage2MinReserveMs?: number;
     /**
-     * 首字对冲上限(协议 v4 A-1,doc/optimize/36 §5;P1 探针 2026-09-05 实证:
-     * 端点首字延迟双峰——85–95% 在 1–3.3 s,5–17% 停滞 6–22 s 且与我方并发无关
-     * ——同一请求的停滞彼此独立,对冲把「双双停滞」压到 p²)。首事件超过本值
-     * 仍未到达即并行再发一份同请求,先到 message_stop 者胜。
+     * 首字对冲上限(协议 v4;探针实证端点首字延迟双峰——多数在 1–3.3 s,少数停滞 6–22 s 且与我方并发
+     * 无关——同一请求的停滞彼此独立,对冲把「双双停滞」压到 p²)。首事件超过本值仍未到达即并行再发一份
+     * 同请求,先到 message_stop 者胜。
      */
     firstEventCapMs?: number;
     /** 对冲形态:'same-handle' = 同句柄同请求再发一份;缺席 = 不对冲 */
     hedge?: 'same-handle';
     /**
-     * 每分类器实例(= 每会话)对冲次数上限(协议 v5 O-9,doc/optimize/38 D-8):V8 那晚
-     * 形态下约四成咨询会对冲,成本 ×1.4 无位可见——耗尽后不再对冲(首字停滞回到
-     * 截止 → unsure 交人,方向安全),遥测单列。缺席 = 不限。
+     * 每分类器实例(= 每会话)对冲次数上限(协议 v5):实证形态下约四成咨询会对冲,成本 ×1.4
+     * ——耗尽后不再对冲(首字停滞回到截止 → unsure 交人,方向安全),遥测单列。缺席 = 不限。
      */
     hedgeBudget?: number;
 }
@@ -21512,37 +21526,30 @@ declare const CLASSIFIER_TIMEOUT_POLICY: ClassifierTimeoutPolicy;
  * 超时策略规范化序列化(指纹分量;缺席字段显式 `none` 保持规范形):
  * 任何超时行为变更——总预算、stage cap/保留量、首字对冲——都会改变指纹,
  * 既有资格机械失效(堵审计发现的指纹缝:此前改 TWO_STAGE_TIMEOUT_MS
- * 不动指纹,超时行为可在资格有效期内静默漂移;复核 doc/todo/04 §4-B2)。
+ * 不动指纹,超时行为可在资格有效期内静默漂移)。
  * v2(协议 v4):追加 firstEventCap / hedge 两分量。
  */
 declare function serializeTimeoutPolicy(policy: ClassifierTimeoutPolicy): string;
 /**
- * stage token 预算覆写(2026-08-25 拍板 C 案本地层;kernel 抽取
- * permissions.classifier.{stage1MaxTokens,stage2MaxTokens} 投影)。
- * 覆写 = 协议变体:生效值卷入协议指纹(fingerprintFor 现算),旧评估
- * 证据机械失效(T-K17 钉指纹纪律的既有语义,不是新发明);单阶段形态
- * 吃 stage2MaxTokens(输出形制与 stage2 同型同额,512→1024 先例同源)。
+ * stage token 预算覆写(kernel 自配置 permissions.classifier.{stage1MaxTokens,stage2MaxTokens} 投影)。
+ * 覆写 = 协议变体:生效值卷入协议指纹(fingerprintFor 现算),旧评估证据机械失效(钉指纹纪律的既有语义);
+ * 单阶段形态吃 stage2MaxTokens(输出形制与 stage2 同型同额)。
  */
 interface ClassifierStageBudgetOverrides {
     stage1MaxTokens?: number;
     stage2MaxTokens?: number;
 }
 /**
- * 两阶段协议指纹现算(T-K17 分量全集;预算参数化,2026-08-25 拍板):
+ * 两阶段协议指纹现算(分量全集;预算参数化):
  * 缺省实参 = 编译内缺省预算,产值 === CLASSIFIER_PROTOCOL_FINGERPRINT。
  */
 declare function classifierProtocolFingerprintFor(stage1MaxTokens?: number, stage2MaxTokens?: number): string;
 /**
- * 协议指纹(T-K17):两阶段协议的全部行为成分——指令文本、解析正则
- * (含 A3 思考剥离)、输出预算、**超时策略(B2,2026-07-31 起)**——的
- * sha256 前 16 位。资格名单条目钉住此值:任何提示词/解析器/预算/超时改动
- * 都会改变指纹,旧资格**机械失效**(无须人工记得 bump 版本号),重评后才
- * 可重新登记。危险类别清单已内嵌于两段指令文本。历史指纹:首轮
- * 7fb7bc14df39353b → K6 硬化 → V1/V2 报告 b63459158f490cf4 → B2 超时分量
- * de1f4f6a5f86cad7(V3)→ A3 思考剥离分量后再变(资格名单空表,失效
- * 零代价;新值以运行时计算为准,见 doc/optimize/13)。本值 = 缺省预算
- * 指纹;预算覆写场景以 classifierProtocolFingerprintFor 现算值为准。
- * G-4 下沉(2026-09-04)搬迁前后值逐字节相等(cli/sdk 双卷钉值)。
+ * 协议指纹:两阶段协议的全部行为成分——指令文本、解析正则(含思考剥离)、输出预算、**超时策略**——的
+ * sha256 前 16 位。资格名单条目钉住此值:任何提示词/解析器/预算/超时改动都会改变指纹,旧资格**机械失效**
+ * (无须人工记得 bump 版本号),重评后才可重新登记。危险类别清单已内嵌于两段指令文本。新值恒以运行时
+ * 计算为准。本值 = 缺省预算指纹;预算覆写场景以 classifierProtocolFingerprintFor 现算值为准。
+ * 自 cli 迁入 sdk 时搬迁前后值逐字节相等(cli/sdk 双卷钉值)。
  */
 declare const CLASSIFIER_PROTOCOL_FINGERPRINT: string;
 /**
@@ -21551,11 +21558,10 @@ declare const CLASSIFIER_PROTOCOL_FINGERPRINT: string;
  */
 declare function singleStageProtocolFingerprintFor(maxTokens?: number): string;
 /**
- * 单阶段协议指纹(B3 对照,与两阶段指纹互异):单阶段候选的资格绑定键
+ * 单阶段协议指纹(与两阶段指纹互异):单阶段候选的资格绑定键
  * ——stage1=stage2=同一句柄 × 本指纹。共用硬化/超时策略/思考剥离分量
- * (同一治理域;单阶段解析走 parseStage2Output,A3 剥离同样生效),
- * 指令/解析/预算分量独立。历史:V4 报告 d2f5259a40281bb9 → A3 分量
- * → temperature 分量后再变(新值恒以运行时计算为准)。本值 = 缺省预算
+ * (同一治理域;单阶段解析走 parseStage2Output,思考剥离同样生效),
+ * 指令/解析/预算分量独立。新值恒以运行时计算为准。本值 = 缺省预算
  * 指纹;预算覆写场景以 singleStageProtocolFingerprintFor 现算值为准。
  */
 declare const SINGLE_STAGE_PROTOCOL_FINGERPRINT: string;
@@ -21572,13 +21578,20 @@ declare function parseStage2Output(raw: string): {
     block: boolean;
     reason: string;
 } | null;
+/**
+ * 引擎事实段 `<engine-facts>`(协议 v4):把权限引擎已算出的结论级事实(shell 各段是否只读 / 重定向 /
+ * 注入痕迹、路径是否在工作区内、规避信号等)渲染成裁决人可读的行,模型据此判断而不必自行推演。
+ * 事实来自 kernel describeTargetFacts(引擎与 harness 同一函数);段内措辞冻结(模型可见)。
+ * 缺席不渲染空段(旧宿主 / 未注入零漂移)。
+ */
 declare function renderEngineFacts(facts: ClassifierTargetFacts): string[];
 /**
- * 应用语境段渲染(应用协议 v1,doc/optimize/37 §4.4):`<app>` 与 `<tool>` 是
+ * 应用语境段渲染(应用协议 v1):`<app>` 与 `<tool>` 是
  * 开发者/平台声明的事实,置于一切数据载荷之前。缺席字段显式 "(not declared)"
- * ——语境缺席本身让准则退回保守(doc/optimize/37 §9 拍板 1)。
+ * ——语境缺席本身让准则退回保守。
  */
 declare function renderAppContext(app: ClassifierAppContext | undefined, tool: ClassifierToolMeta | undefined, toolName: string): string[];
+/** `renderCallPayloadDetailed` 的选项:协议表面 + 应用语境 */
 interface RenderPayloadOptions {
     /** 协议表面(缺省 coding = 现行段序 + engine-facts) */
     protocol?: ClassifierProtocol;
@@ -21598,83 +21611,71 @@ declare function renderCallPayloadDetailed(input: ClassifierInput, options?: Ren
 declare function renderClassifierStagePrompt(stage: 1 | 2, input: ClassifierInput): string;
 
 /**
- * 分类器裁决人档 — 核心(两阶段 / 单阶段状态机、模型调用面、fail-degrade、
- * 观测遥测、脱敏、窄缓存版本标签)。G-4 下沉(doc/113 §4.3、doc/115 G-4):
- * 自 cli assembly/permission-classifier.ts 迁入 @tansr/sdk,使 SDK 令牌档
- * (G-5)与 serve /v2 平台内置形(G-6)可与 CLI 四入口消费**同一份**裁决人
- * 档实现(单源两入口)。
+ * 分类器裁决人档 — 核心(两阶段 / 单阶段状态机、模型调用面、fail-degrade、观测遥测、脱敏、
+ * 窄缓存版本标签)。与 CLI 共用**同一份**实现:SDK 令牌档与 serve 平台内置形皆消费本模块(单源多入口)。
  *
  * 分层与注入面(sdk 恒不 import cli):
- * - **stage 模型调用面**:`ClassifierStageHandle`(client + 已解析 model +
- *   temperatureFixed / thinkingOff 能力位)——cli 的 AuxFastModel 结构兼容
- *   直传;SDK/serve 以 bundle registry 别名解析后构造同形句柄;
- * - **资格解析闭包注入**:`resolveTier: () => EffectiveQualificationTier`
- *   ——CLI 沿裁决人池任命 × managed/env 天花板 × 会话覆盖三源合成
- *   (cli permission-classifier.ts createTierResolver);SDK/serve 沿 bundle
- *   `adjudicator.tier`(缺席按 'none' = 只收紧不软化)。本核心不含任何
- *   任命/天花板数学,只把闭包原样喂给 kernel resolveQualificationTier;
- * - **治理旋钮不在此**:启用开关、tightenOutsideAuto、callBudget 属宿主
- *   配置面(cli env/五层配置;SDK `adjudication` 选项)——宿主在返回体上
- *   叠加;stage token 预算覆写以 `budgets` 参数注入(协议变体 → 指纹现算)。
+ * - **stage 模型调用面**:`ClassifierStageHandle`(client + 已解析 model + temperatureFixed / thinkingOff
+ *   能力位)——cli 的辅助模型结构兼容直传;SDK/serve 以 bundle registry 别名解析后构造同形句柄;
+ * - **资格解析闭包注入**:`resolveTier: () => EffectiveQualificationTier`——CLI 沿裁决人池任命 ×
+ *   managed/env 天花板 × 会话覆盖三源合成;SDK/serve 沿 bundle `adjudicator.tier`(缺席按 'none' =
+ *   只收紧不软化)。本核心不含任何任命/天花板数学,只把闭包原样喂给 kernel resolveQualificationTier;
+ * - **治理旋钮不在此**:启用开关、tightenOutsideAuto、callBudget 属宿主配置面(cli env/五层配置;
+ *   SDK `adjudication` 选项)——宿主在返回体上叠加;stage token 预算覆写以 `budgets` 参数注入
+ *   (协议变体 → 指纹现算)。
  *
- * 协议语义(与 cli 原实现逐字节同构;详见 prompts.ts 头注与 git 史):
- * - stage1 偏拦快筛(fast 档;`no` → safe)→ stage2 独立复审(缺省 main 档;
- *   确认 → unsafe 携理由,推翻 → safe);单阶段一次直出;
- * - **fail-degrade 恒为 unsure**:模型错误/流异常/产出不可解析/句柄现值
- *   缺席一律回 unsure(引擎侧 = 维持 ask,绝不因分类器故障放行或误拦);
- * - 硬化(T-K6):秘密脱敏后入 prompt(redactDeep,尾 4 位保形);args/
- *   结构树被截时 safe 降 unsure(unsafe 收紧不受限);
- * - 观测遥测(T-K17 A1):逐阶段观测型终态 + 计时 + 五路用量;不可解析分支
- *   附脱敏定长 rawDigest;只记计时/枚举/用量,不落 thinking 正文;
- * - 活值供给(批 ξ):`liveStages` 在场时每次咨询起点取 stage 句柄现值
- *   (单次咨询内同代取值防撕裂),缓存版本标签随现值现算;
- * - 窄缓存版本标签 = 协议指纹 × stage 模型对(kernel §10.3 键分量)。
+ * 协议语义(与 cli 原实现逐字节同构;详见 prompts.ts 头注):
+ * - stage1 偏拦快筛(fast 档;`no` → safe)→ stage2 独立复审(缺省 main 档;确认 → unsafe 携理由,
+ *   推翻 → safe);单阶段一次直出;
+ * - **fail-degrade 恒为 unsure**:模型错误/流异常/产出不可解析/句柄现值缺席一律回 unsure
+ *   (引擎侧 = 维持 ask,绝不因分类器故障放行或误拦);
+ * - 硬化:秘密脱敏后入 prompt(redactDeep,尾 4 位保形);args/结构树被截时 safe 降 unsure
+ *   (unsafe 收紧不受限);
+ * - 观测遥测:逐阶段观测型终态 + 计时 + 五路用量;不可解析分支附脱敏定长 rawDigest;
+ *   只记计时/枚举/用量,不落 thinking 正文;
+ * - 活值供给:`liveStages` 在场时每次咨询起点取 stage 句柄现值(单次咨询内同代取值防撕裂),
+ *   缓存版本标签随现值现算;
+ * - 窄缓存版本标签 = 协议指纹 × stage 模型对(kernel 缓存键分量)。
  */
 
 /**
- * 装配形态二值(E-3 升格接线,2026-08-04 会签):两阶段(快筛 + 复审,
- * 缺省生产形态)/ 单阶段(一次调用直出,V4 实证对照主形态)。形态在
- * **装配期定格**(选定后 classify 闭包不变);形态是协议形制非模型身份,
- * 由宿主按评估证据选择(cli selectClassifierAssemblyMode;SDK/serve 缺省
- * 两阶段)。
+ * 装配形态二值:两阶段(快筛 + 复审,缺省生产形态)/ 单阶段(一次调用直出)。形态在**装配期定格**
+ * (选定后 classify 闭包不变);形态是协议形制非模型身份,由宿主按评估证据选择(SDK/serve 缺省两阶段)。
  */
 type ClassifierAssemblyMode = 'two-stage' | 'single-stage';
 /**
- * stage 模型调用句柄(裁决人档的模型调用面):已解析客户端 + (provider,
- * model)标识 + 请求构造所需能力位。cli AuxFastModel(OPT-10 buildAuxModel
- * 产物)是本形的结构超集,直传即可;SDK/serve 以 bundle registry 解析
- * `modelHandle` / 主模型后构造同形句柄。
+ * stage 模型调用句柄(裁决人档的模型调用面):已解析客户端 + (provider, model)标识 + 请求构造所需
+ * 能力位。cli 的辅助模型结构是本形的超集,直传即可;SDK/serve 以 bundle registry 解析 `modelHandle` /
+ * 主模型后构造同形句柄。
  */
 interface ClassifierStageHandle {
     client: ModelClient;
     model: ResolvedModel;
     /**
-     * capability.sampling.temperatureFixed 透出(T-K23j):厂商固定温度的
-     * 模型(如 kimi 系 openai 面「only 1 allowed」,t=0 直接 400)——请求
-     * 构造**省略 temperature 参数**采用厂商固定值(providers clamp 契约
-     * 「透传不改写」,规避只能在请求构造端做)。
+     * capability.sampling.temperatureFixed 透出:厂商固定温度的模型(如 kimi 系 openai 面「only 1 allowed」,
+     * t=0 直接 400)——请求构造**省略 temperature 参数**采用厂商固定值(providers 契约「透传不改写」,
+     * 规避只能在请求构造端做)。
      */
     temperatureFixed?: number;
     /**
-     * RFC-M3 B2:fast 形态思考关断标记——true 时请求恒带 `thinking: { off: true }`
-     * (适配器按方言显式关断);仅「主模型 fast 形态 × 思考模型实证可关」
-     * 产生本标记,独立 fast 模型恒缺席 = 出线字节零漂移。
+     * fast 形态思考关断标记——true 时请求恒带 `thinking: { off: true }`(适配器按方言显式关断);
+     * 仅「主模型 fast 形态 × 思考模型实证可关」产生本标记,独立 fast 模型恒缺席 = 出线字节零漂移。
      */
     thinkingOff?: true;
 }
 /**
- * 批 ξ(2026-08-28 账单实锤切模快照滞留)— stage 档现值对:liveStages
- * 供给器的返回形态。fast 缺席 = 档位现值不可用(咨询即 unsure 交人工,
+ * stage 档现值对:liveStages 供给器的返回形态。fast 缺席 = 档位现值不可用(咨询即 unsure 交人工,
  * fail-degrade 既有方向);stage2 缺席回退 fast(启动装配同律)。
  */
 interface ClassifierLiveStages {
     fast?: ClassifierStageHandle;
     stage2?: ClassifierStageHandle;
 }
+/** 当前轮用户 prompt 记录器(裁决人意图对齐信号源;由 `createClassifierTranscriptRecorder` 创建) */
 interface ClassifierTranscriptRecorder {
     /** 轮起跑登记:覆盖式记录当前轮用户 prompt(截断 + 条数上限) */
     noteTurn(prompts: readonly string[]): void;
-    /** INJ：同轮真实用户补充；保留首条任务及最新意图，不重置轮。 */
+    /** 同轮真实用户补充输入；保留首条任务及最新意图，不重置轮。 */
     noteInput(prompts: readonly string[]): void;
     /** 提供器(直接喂 PermissionClassifierConfig.transcript);空时 undefined */
     transcript(): ClassifierTranscript | undefined;
@@ -21690,29 +21691,25 @@ interface CreateBlockListClassifierOptions {
     /** stage1 快筛档句柄(装配期快照;liveStages 在场时仅作缓存标签/回退基线) */
     fast: ClassifierStageHandle;
     /**
-     * stage2 复审档(T-K17,05 §10.2「stage2 缺省 main 档」):复审是质量敏感
-     * 的一半,花对钱;缺席回退 fast(测试与降级形态——SDK/serve 无 fast
-     * 别名时两阶段皆 main 即此形态,如实降级)。
+     * stage2 复审档(缺省 main 档):复审是质量敏感的一半,花对钱;缺席回退 fast(测试与降级形态——
+     * SDK/serve 无 fast 别名时两阶段皆 main 即此形态,如实降级)。
      */
     stage2?: ClassifierStageHandle;
     /**
-     * 批 ξ:stage 档活值供给器——每次咨询起点取现值(单次咨询内 stage1/
-     * stage2 同刻取值防撕裂),/model 切换后下一次咨询即用新档;缓存版本
-     * 标签随现值现算(kernel 键失配 = 旧模型时代裁定不跨代回放)。缺席 =
-     * 启动快照语义(零漂移)。装配形态与协议指纹仍装配期定格。
+     * stage 档活值供给器——每次咨询起点取现值(单次咨询内 stage1/stage2 同刻取值防撕裂),模型切换后
+     * 下一次咨询即用新档;缓存版本标签随现值现算(kernel 键失配 = 旧模型时代裁定不跨代回放)。
+     * 缺席 = 启动快照语义(零漂移)。装配形态与协议指纹仍装配期定格。
      */
     liveStages?: () => ClassifierLiveStages;
     /**
-     * 资格解析闭包(T-K23c/T-K23d;kernel resolveQualificationTier 直喂):
-     * 返回当前生效档,引擎**每次咨询现算**。CLI 注入三源合成器
-     * (min(任命 entry, ceiling, override));SDK/serve 注入 bundle `tier`
-     * 常量闭包(缺席 `() => 'none'` = 只收紧不软化)。闭包抛错/词表外值由
-     * kernel 按 'none' 兜底(T-INV-B fail-closed)。
+     * 资格解析闭包(kernel resolveQualificationTier 直喂):返回当前生效档,引擎**每次咨询现算**。
+     * CLI 注入三源合成器(min(任命 entry, ceiling, override));SDK/serve 注入 bundle `tier` 常量闭包
+     * (缺席 `() => 'none'` = 只收紧不软化)。闭包抛错/词表外值由 kernel 按 'none' 兜底(fail-closed)。
      */
     resolveTier: () => EffectiveQualificationTier;
     /**
-     * stage token 预算覆写(2026-08-25 拍板 C 案):覆写 = 协议变体,生效
-     * 指纹随之现算(缓存键与证据解释同源换算);单阶段吃 stage2MaxTokens。
+     * stage token 预算覆写:覆写 = 协议变体,生效指纹随之现算(缓存键与证据解释同源换算);
+     * 单阶段吃 stage2MaxTokens。
      */
     budgets?: ClassifierStageBudgetOverrides;
     /**
@@ -21721,9 +21718,8 @@ interface CreateBlockListClassifierOptions {
      */
     mode?: ClassifierAssemblyMode;
     /**
-     * 协议表面(doc/optimize/37 §3):缺省 'coding'(编码协议,CLI 四入口,
-     * 零漂移);'app' = 应用表面协议(SDK 令牌档 / serve /v2)——只定义单阶段
-     * 形态(§9 拍板 3),与 two-stage 组合直接抛错而非静默回退编码提示词。
+     * 协议表面:缺省 'coding'(编码代理协议,CLI 各入口,零漂移);'app' = 应用表面协议
+     * (SDK 令牌档 / serve)——只定义单阶段形态,与 two-stage 组合直接抛错而非静默回退编码提示词。
      */
     protocol?: ClassifierProtocol;
     /**
@@ -21733,7 +21729,7 @@ interface CreateBlockListClassifierOptions {
      */
     app?: ClassifierAppContext;
     /**
-     * T-CTX15:请求估算配对观测缝(purpose='classifier')。每次 stage 调用
+     * 请求估算配对观测缝(purpose='classifier';本地估算 × 服务端用量配对)。每次 stage 调用
      * (两阶段至多 2 行/咨询,单阶段 1 行)各回调一次;缺省不观测。
      */
     requestMeasurement?: RequestMeasurementObserver;
@@ -21754,55 +21750,52 @@ interface BlockListClassifierConfig extends Pick<PermissionClassifierConfig, 'cl
  * 的启用裁决、治理旋钮、资格合成均在调用前完成——本函数只收注入面产物。
  */
 declare function createBlockListClassifier(options: CreateBlockListClassifierOptions): BlockListClassifierConfig;
+/**
+ * 两阶段分类器核心(生产缺省形态):stage1 fast 快筛 → stage2 复审。
+ * 返回体四键(classifier / timeoutMs / resolveQualificationTier /
+ * cacheVersionTag)直接进 PermissionEngineConfig.classifier;宿主叠加治理
+ * 旋钮、transcript 提供器与 onBreakerTrip 通知面。
+ */
 declare function createTwoStageClassifier(options: CreateBlockListClassifierOptions): BlockListClassifierConfig;
 /**
- * 单阶段分类器核心(T-K17 续轮 B3 评估形态 → E-3 升格为生产形态):一次
- * 调用直出结论 + 理由(stage2 输出形制,parseStage2Output 解析),同用脱敏/
- * 截断禁 safe/fail-degrade/A1 遥测口径。裁决档 = stage2 ?? fast(质量敏感档,
- * 与两阶段复审档一致)。
+ * 单阶段分类器核心(由评估形态升格为生产形态):一次调用直出结论 + 理由(stage2 输出形制,
+ * parseStage2Output 解析),同用脱敏/截断禁 safe/fail-degrade/遥测口径。裁决档 = stage2 ?? fast
+ * (质量敏感档,与两阶段复审档一致)。
  */
 declare function createSingleStageClassifier(options: CreateBlockListClassifierOptions): BlockListClassifierConfig;
 
 /**
- * SDK 裁决人装配(doc/113 §4.2/§4.4、doc/115 G-5):令牌档把 bundle 生效裁决人
- * 档(控制台「裁决人」页签的任命,doc/64「任命即授照」)装配成 kernel
- * PermissionClassifierConfig,注入 PermissionEngine({ mode:'auto', classifier })。
+ * SDK 裁决人装配:令牌档把 bundle 生效裁决人档(控制台「裁决人」页签的任命——任命即授照)装配成
+ * kernel PermissionClassifierConfig,注入 PermissionEngine({ mode:'auto', classifier })。
  *
- * 姿态(doc/113 §1.2/§1.4;表面属性,不是应用属性):
- * - `human-in-loop`(A 人在环):裁决人判危险 → 升到询问面(rejectEffect='ask',
- *   携理由交用户终审,用户拒即 deny;机器恒不代批);
- * - `headless`(B 无人环):判危险 → deny(deny-and-continue,理由回喂模型)。
- * 缺省按询问通道推导:`permission.askUser` 在场 → A,缺席 → B;显式 A 而无
- * askUser → 装配期 fail-fast(恒不出现「选了 A 却一律 deny」的自相矛盾)。
+ * 姿态(表面属性,不是应用属性):
+ * - `human-in-loop`(人在环):裁决人判危险 → 升到询问面(携理由交用户终审,用户拒即 deny;机器恒不代批);
+ * - `headless`(无人环):判危险 → deny(deny-and-continue,理由回喂模型)。
+ * 缺省按询问通道推导:`permission.askUser` 在场 → 人在环,缺席 → 无人环;显式人在环而无 askUser →
+ * 装配期 fail-fast(恒不出现「选了人在环却一律 deny」的自相矛盾)。
  *
- * 模型(§4.2「裁决模型 = modelHandle ?? 会话主模型」):stage2 复审档 = bundle
- * `adjudicator.modelHandle` 经 registry 目录自动别名解析,缺席 / 目录外回落
- * 会话主模型(回落如实通报);stage1 快筛档 = bundle `fast` 别名,缺席即复用复审档
- * (两阶段皆同模型,如实降级;思考模型实证可关时以 thinkingOff 形态跑快筛,
- * RFC-M3 fast 形态同律)。计费归 App(与会话模型同径)。
+ * 模型(裁决模型 = modelHandle ?? 会话主模型):复审档 = bundle `adjudicator.modelHandle` 经 registry 目录
+ * 自动别名解析,缺席 / 目录外回落会话主模型(回落如实通报);快筛档 = bundle `fast` 别名,缺席即复用复审档
+ * (两阶段同模型,如实降级;思考模型实证可关时以 thinkingOff 形态跑快筛)。计费归 App(与会话模型同径)。
  *
- * 资格(§4.2):`adjudicator.tier`(档 PoolTier ∧ org 天花板,api G-3 加法键)作
- * 常量闭包喂 kernel resolveQualificationTier;缺席 = 'none' = 只收紧不软化。
- * safe→allow 软化半径恒由 kernel SOFTEN_RADIUS(档 × 调用面)单源裁决,本模块
- * 不含任何半径数学(doc/64 铁轨 4)。
+ * 资格:`adjudicator.tier`(平台任命档位与组织天花板取交)作常量闭包喂 kernel resolveQualificationTier;
+ * 缺席 = 'none' = 只收紧不软化。safe→allow 软化半径恒由 kernel SOFTEN_RADIUS(档 × 调用面)单源裁决,
+ * 本模块不含任何半径数学。
  *
- * 通知面:预算耗尽 / 熔断跳闸经 onWarn 以平台提示帧形制上报(createSession /
- * query 的 onPlatformWarning 缝;码 `adjudicator_budget_exhausted` /
- * `adjudicator_breaker_tripped`),恒不静默蒸发。
+ * 通知面:预算耗尽 / 熔断跳闸经 onWarn 以平台提示帧形制上报(createSession / query 的 onPlatformWarning 缝;
+ * 码 `adjudicator_budget_exhausted` / `adjudicator_breaker_tripped`),恒不静默蒸发。
  *
- * 治理位真消费(FX-B-08,十王修案 S2 J2-01(b) / J2-06;doc/113 §4.5 二期落位):
- * bundle 生效裁决人档的三件治理位自此在分类器面**生效**,而非只被宽松记录——
- * - `escalation.mode:'reject'` → 姿态覆写为 headless(判危险 deny-and-continue,不上升
- *   终端用户;宿主显式 human-in-loop 被覆写时通报 `adjudicator_posture_overridden`);
- * - `callBudget`(api D-A1 加法键)→ 每会话咨询预算的 bundle 侧值;
- * - `budgets.maxUsd` / `maxCny` → 与裁决模型**同币**价目折算为咨询次数上界(保守
- *   token 估算,恒不造汇率;价目缺席 / 币种不匹配 = 金额径不可折算,通报
- *   `adjudicator_budget_unenforced` 而非静默);
- * 生效 callBudget = min(bundle callBudget, 金额折算, 宿主 `adjudication.callBudget`)
- * ——**宿主只能收紧**;三者皆缺席 = kernel 缺省 200。推导单点 = resolveAdjudicatorGovernance
- * (sdk / serve 皆经 assembleBundleAdjudicator 走同一函数)。
+ * 治理位:bundle 生效裁决人档的三件治理位在分类器面**生效**——
+ * - `escalation.mode:'reject'` → 姿态覆写为 headless(判危险 deny-and-continue,不上升终端用户;宿主显式
+ *   human-in-loop 被覆写时通报 `adjudicator_posture_overridden`);
+ * - `callBudget` → 每会话咨询预算的 bundle 侧值;
+ * - `budgets.maxUsd` / `maxCny` → 与裁决模型**同币**价目折算为咨询次数上界(保守 token 估算,恒不造汇率;
+ *   价目缺席 / 币种不匹配 = 金额径不可折算,通报 `adjudicator_budget_unenforced` 而非静默);
+ * 生效 callBudget = min(bundle callBudget, 金额折算, 宿主 `adjudication.callBudget`)——**宿主只能收紧**;
+ * 三者皆缺席 = kernel 缺省 200。推导单点 = resolveAdjudicatorGovernance(sdk / serve 皆经
+ * assembleBundleAdjudicator 走同一函数)。
  *
- * 分层:恒 kernel/providers/protocol,恒不 import cli。
+ * 分层:恒 kernel / providers / protocol,恒不 import cli。
  */
 
 /**
@@ -21824,6 +21817,7 @@ interface AdjudicatorMoneyFold {
     /** 折算次数 = floor(maxNano / perConsultNano)(可为 0:预算不够一次咨询即全部直通 ask) */
     calls: number;
 }
+/** `resolveAdjudicatorGovernance` 的输入:bundle 裁决人档 + 宿主给的姿态 / 预算 + 折算金额所需的模型与价目 */
 interface AdjudicatorGovernanceInput {
     adjudicator: AppBundleAdjudicator;
     /** 宿主显式 / 通道推导的姿态 */
@@ -21837,6 +21831,7 @@ interface AdjudicatorGovernanceInput {
     /** bundle 价目(AssembledPlatformModel.pricingUpdates);缺席 = 金额径不折算 */
     pricing?: readonly PricingUpdate[];
 }
+/** `resolveAdjudicatorGovernance` 的产物:生效姿态 / 咨询预算及其来源、金额折算明细与待上报的通报 */
 interface AdjudicatorGovernance {
     posture: AdjudicationPosture;
     /** 'bundle' = escalation.mode:'reject' 覆写;'host' = 宿主 / 推导值原样 */
@@ -21862,8 +21857,8 @@ interface AdjudicatorGovernance {
 declare function resolveAdjudicatorGovernance(input: AdjudicatorGovernanceInput): AdjudicatorGovernance;
 
 /**
- * `createSession` / `query` 令牌档的裁决人选项(doc/115 G-5)。缺席 = 全缺省:
- * bundle 裁决人在场即装配,姿态按 askUser 推导,预算沿 kernel 缺省(200/会话)。
+ * `createSession` / `query` 令牌档的裁决人选项。缺席 = 全缺省:
+ * bundle 裁决人在场即装配,姿态按 askUser 推导,预算沿 kernel 缺省(200 / 会话)。
  */
 interface AdjudicationOptions {
     /**
@@ -21883,9 +21878,8 @@ interface AdjudicationOptions {
      */
     enabled?: boolean;
     /**
-     * 终端用户身份(应用协议 v2,doc/optimize/38 O-4):开发者提供的不透明标识
-     * (你的系统里的用户 id / 账号名;不要传令牌或密钥)。裁决人据以比对工具
-     * 参数中的归属字段——「用户要求」不授权他人记录;缺席时归属无法确立的
+     * 终端用户身份:开发者提供的不透明标识(你的系统里的用户 id / 账号名;不要传令牌或密钥)。
+     * 裁决人据以比对工具参数中的归属字段——「用户要求」不授权他人记录;缺席时归属无法确立的
      * 他人记录读会被交回你的 askUser。非空字符串,≤ 120 字符。
      */
     endUser?: string;
@@ -21896,40 +21890,37 @@ interface AdjudicationWarning {
     message: string;
 }
 /**
- * FX-B-11(十王修案 S3 J-06;doc/132 V-B-25 接口文半边)— 「bundle 无裁决人段 × 宿主显式给了 adjudication
- * 选项」的通报,sdk / serve **同码同文案**的单一事实源:sdk `assembleTokenTierAdjudicator` 与 serve
- * `packages/server/src/v2/adjudication.ts` `resolvePlatformAdjudicator`(FX-C-50)两处出线逐字同此
- * (对照例 `packages/sdk/test/adjudication-serve-contract.test.ts` 锁字面)。
+ * 「bundle 无裁决人段 × 宿主显式给了 adjudication 选项」时的通报(码 `adjudicator_unavailable`)。
+ * SDK 与 serve **同码同文案**的单一事实源:`assembleTokenTierAdjudicator` 与 serve 平台裁决人解析两处出线逐字同此。
  */
 declare const ADJUDICATOR_UNAVAILABLE_WARNING: Readonly<AdjudicationWarning>;
 /**
- * FX-B-11(J2-05)— **开发者向**裁决人通报码:只走宿主通道(sdk `onPlatformWarning` / `onWarning`;serve
- * `onPlatformWarning` / 结构化日志),**恒不下发终端用户设备**(serve `server.platform.warning` 帧不携;
- * `packages/server/src/v2/agent-platform-identity.ts` `DEVELOPER_ONLY_ADJUDICATOR_WARNINGS` 逐字同集)。
- * FX-C-12 收尾并入两码:`adjudicator_posture_overridden`(控制台 escalation reject 覆写宿主显式 A)/
+ * **开发者向**裁决人通报码:只走宿主通道(sdk `onPlatformWarning` / `onWarning`;serve `onPlatformWarning` /
+ * 结构化日志),**恒不下发终端用户设备**(serve 的 `server.platform.warning` 帧不携带;serve 侧受众规则以本集为准,
+ * 新增码时先加此处)。`adjudicator_posture_overridden`(控制台 escalation reject 覆写宿主显式人在环)与
  * `adjudicator_budget_unenforced`(金额预算不可折算)皆为控制台 × 宿主配置面事实,终端用户无可行动,同律归入。
- * 其余 `adjudicator_*`(如 `adjudicator_model_unavailable`)与 `adjudicator_skipped_by_mode` 同为开发者面装配期通报,
- * sdk 单进程无「端上」之分;serve 侧受众规则以本集为准,新增码时先加此处。
+ * 其余 `adjudicator_*`(如 `adjudicator_model_unavailable`)与 `adjudicator_skipped_by_mode` 同为开发者面装配期通报;
+ * SDK 单进程无「端上」之分。
  */
 declare const DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES: readonly string[];
 /** 选项形状校验(fail-fast 编程错误;api 位用于报错前缀) */
 declare function validateAdjudicationOptions(api: string, options: AdjudicationOptions | undefined): void;
 /**
- * 姿态推导(doc/113 §1.4):显式覆盖优先;A 而无询问通道 fail-fast;缺席按
- * askUser 在场与否推导(在场 → A,缺席 → B)。推导本体 = kernel `derivePosture`
- * (FX-B-04 单点;cli / serve 同源),本函数只加 sdk 的 fail-fast 文案。
+ * 姿态推导:显式覆盖优先;人在环而无询问通道 fail-fast(`invalid_options`);缺席按 askUser 在场与否推导
+ * (在场 → 人在环,缺席 → 无人环)。推导本体 = kernel `derivePosture`(cli / serve 同源),本函数只加 SDK 的
+ * fail-fast 文案。
  */
 declare function resolveAdjudicationPosture(api: string, options: AdjudicationOptions | undefined, askUserPresent: boolean): AdjudicationPosture;
 /**
  * registry 别名/ref → stage 句柄(client + 已解析 model + 请求构造能力位)。
  * 不可解析(别名缺席 / provider 未知 / 缺 key)返回 undefined 交调用方回落;
  * 非 registry 结构化错误(编程错误)原样上抛。
- * - temperatureFixed:厂商固定温度模型(kimi 系)省略 temperature 参数(T-K23j);
- * - thinkingOff(仅 fast 形态请求):思考模型实证可关(reasoning ∧ thinkingOptional)
- *   时快筛请求显式关断思考——stage1 64 token 预算下 reasoning 耗尽即不可解析
- *   (RFC-M3 B2 白名单制;能力未实证不发,恒不猜)。
+ * - temperatureFixed:厂商固定温度模型(kimi 系)省略 temperature 参数;
+ * - thinkingOff(仅 fast 形态请求):思考模型实证可关(reasoning ∧ thinkingOptional)时快筛请求显式关断思考
+ *   ——快筛 64 token 预算下 reasoning 耗尽即不可解析(白名单制;能力未实证不发,恒不猜)。
  */
 declare function resolveStageHandle(registry: ProviderRegistry, aliasOrRef: string, role: 'fast' | 'review'): ClassifierStageHandle | undefined;
+/** `assembleBundleAdjudicator` 的输入:令牌档 registry、会话主模型、bundle 裁决人档与宿主给的姿态 / 预算 / 通知面 */
 interface AssembleBundleAdjudicatorOptions {
     /** 令牌档 registry(bundle 装配产物;stage 模型经其别名/ref 解析) */
     registry: ProviderRegistry;
@@ -21938,20 +21929,20 @@ interface AssembleBundleAdjudicatorOptions {
     /** bundle 生效裁决人档(parseAppBundle 产物) */
     adjudicator: AppBundleAdjudicator;
     /**
-     * 应用语境(应用协议 v1 `<app>` 段;bundle `app.name` / `app.purpose`)。缺席
+     * 应用语境(应用协议 `<app>` 段;bundle `app.name` / `app.purpose`)。缺席
      * = 两字段皆 null(渲染 "(not declared)",准则退回保守)。
      */
     app?: ClassifierAppContext;
     /**
      * 宿主显式 / 通道推导的姿态。bundle `escalation.mode:'reject'` 覆写为 headless
-     * (FX-B-08;返回值 `posture` 为生效姿态,调用方据其推导权限模式)。
+     * (返回值 `posture` 为生效姿态,调用方据其推导权限模式)。
      */
     posture: AdjudicationPosture;
     /** 宿主显式给了 posture(被 bundle 覆写时通报 `adjudicator_posture_overridden`);缺省 false */
     postureExplicit?: boolean;
     /**
-     * 宿主每会话咨询预算(已校验)。FX-B-08 起只能**收紧**:与 bundle `callBudget` /
-     * 金额折算取 min;缺席且 bundle 无治理位 = kernel 缺省。
+     * 宿主每会话咨询预算(已校验)。只能**收紧**:与 bundle `callBudget` / 金额折算取 min;
+     * 缺席且 bundle 无治理位 = kernel 缺省。
      */
     callBudget?: number;
     /**
@@ -21961,9 +21952,10 @@ interface AssembleBundleAdjudicatorOptions {
     pricing?: readonly PricingUpdate[];
     /** 通知面(预算耗尽 / 熔断跳闸 / 绑定模型不可解析回落 / 治理位覆写与不可执行) */
     onWarn: (warning: AdjudicationWarning) => void;
-    /** T-CTX15 请求估算配对观测缝(purpose='classifier');缺省不观测 */
+    /** 请求估算配对观测缝(purpose='classifier';每次裁决咨询的本地估算 × 服务端用量配对);缺省不观测 */
     requestMeasurement?: RequestMeasurementObserver;
 }
+/** `assembleBundleAdjudicator` 的产物:可直接注入 PermissionEngine 的分类器配置及其生效姿态 / 资格档 / 模型对 */
 interface AssembledBundleAdjudicator {
     /** 直接进 PermissionEngineConfig.classifier(治理旋钮已叠加) */
     config: PermissionClassifierConfig;
@@ -21977,8 +21969,8 @@ interface AssembledBundleAdjudicator {
     /** 轮起跑回填当前轮用户 prompt(宿主在每轮开始时调用 noteTurn) */
     transcript: ClassifierTranscriptRecorder;
     /**
-     * bundle 治理位消费明细(FX-B-08;姿态 / 预算来源与金额折算;诊断 / 测试面)。
-     * assembleBundleAdjudicator 恒填;可选只为宿主测试桩(serve 卷手构产物)零随动。
+     * bundle 治理位消费明细(姿态 / 预算来源与金额折算;诊断 / 测试面)。
+     * assembleBundleAdjudicator 恒填;可选只为宿主测试桩手构产物时零随动。
      */
     governance?: AdjudicatorGovernance;
 }
@@ -22002,7 +21994,7 @@ interface PreparedAdjudication {
     explicit: boolean;
 }
 /**
- * 入口前置裁决(doc/113 §4.4):
+ * 入口前置裁决:
  * - 令牌档:缺省启用(bundle 裁决人恒在 = 平台底档);`enabled:false` → undefined(现状);
  * - 托管/注入档:无 bundle 即无任命来源,`adjudication` 在场属误用 fail-fast
  *   (静默忽略会让开发者以为裁决人在生效);缺席 → undefined;
@@ -22015,10 +22007,9 @@ declare function prepareAdjudication(input: {
     askUserPresent: boolean;
 }): PreparedAdjudication | undefined;
 /**
- * 令牌档装配后半场:bundle 裁决人段在场 → 装配;缺席(旧 api / 坏形状)→
- * undefined = 现状,开发者显式配置了 adjudication 时经 onWarn 如实通报
- * (`adjudicator_unavailable`),恒不静默。FX-B-08:bundle 治理位(callBudget /
- * budgets 金额 / escalation.mode)在此半场生效——`assembled.pricingUpdates`
+ * 令牌档装配后半场:bundle 裁决人段在场 → 装配;缺席(旧平台 / 坏形状)→ undefined = 现状,开发者显式
+ * 配置了 adjudication 时经 onWarn 如实通报(`adjudicator_unavailable`),恒不静默。bundle 治理位
+ * (callBudget / budgets 金额 / escalation.mode)在此半场生效——`assembled.pricingUpdates`
  * (AssembledPlatformModel 同名键)在场即为金额折算的同币单价源。
  */
 declare function assembleTokenTierAdjudicator(prepared: PreparedAdjudication | undefined, assembled: {
@@ -22032,12 +22023,11 @@ declare function assembleTokenTierAdjudicator(prepared: PreparedAdjudication | u
 }, onWarn: (warning: AdjudicationWarning) => void, requestMeasurement?: RequestMeasurementObserver): AssembledBundleAdjudicator | undefined;
 
 /**
- * T-E8 — SDK 结构化错误。
+ * SDK 结构化错误。
  *
- * 契约(任务卡"错误结构化"条):SDK 永不 process.exit、不吞 reject——
- * 装配期/选项期错误以本类型同步 throw(code 可编程分支);运行期模型错误
- * 经事件流(turn.error / turn.aborted)表达,与内核语义一致,不在此重复。
- * 面向开发者的 API 错误消息用英文(非用户可见面,i18n 铁律豁免,见任务报告)。
+ * 契约:SDK 永不 process.exit、不吞 reject——装配期/选项期错误以本类型同步 throw(code 可编程分支);
+ * 运行期模型错误经事件流(turn.error / turn.aborted)表达,与内核语义一致,不在此重复。
+ * 面向开发者的 API 错误消息用英文(非终端用户可见面)。
  */
 /** 错误码(SDK 对外 API 的稳定分支面) */
 type SdkErrorCode = 
@@ -22045,16 +22035,16 @@ type SdkErrorCode =
 'invalid_options'
 /** 托管装配失败(模型别名解析/缺 key/配置不可用;cause 携带底层结构化错误) */
  | 'assembly_failed'
-/** App 能力位关闭而被显式选择(S-B3;消息含控制台修复指引) */
+/** App 能力位关闭而被显式选择(消息含控制台修复指引) */
  | 'capability_disabled'
 /** 会话已关闭后仍调用会改变状态的方法 */
  | 'session_closed'
-/** resume 目标会话在 store 中不存在(doc/91 拍板③) */
+/** resume 目标会话在 store 中不存在 */
  | 'session_not_found'
-/** 会话存储损坏(中段损坏/哈希链断裂/坏 payload;doc/88 对抗锚:恒不静默) */
+/** 会话存储损坏(中段损坏/哈希链断裂/坏 payload;恒不静默返回残缺历史) */
  | 'session_store_corrupted'
 /**
- * 快照存储未接线(doc/116 §4.3,S-1):createSession 未给 checkpoints.store/dir
+ * 快照存储未接线:createSession 未给 checkpoints.store/dir
  * 且会话 store 不提供同居快照存储,却调用了 checkpoint()/listCheckpoints()/
  * deleteCheckpoint() 或显式要求 compact({ checkpoint: true })
  */
@@ -22066,20 +22056,20 @@ type SdkErrorCode =
  * compact()/restore() 以结果联合 rejected:'turn_running' 表达,不抛)
  */
  | 'turn_running'
-/** F-2:fork()/exportCheckpoint() 指名的快照在本会话下不存在(返回形无 rejected 位,结构化 throw) */
+/** fork()/exportCheckpoint() 指名的快照在本会话下不存在(返回形无 rejected 位,结构化 throw) */
  | 'checkpoint_not_found'
 /**
- * F-2:importCheckpoint() 的字节不是合法导出体(format / schema / 附件 sha256 / 消息形任一不过;
+ * importCheckpoint() 的字节不是合法导出体(format / schema / 附件 sha256 / 消息形任一不过;
  * 篡改即拒,不落半成品)
  */
  | 'checkpoint_import_invalid'
 /**
- * F-2:fork() 需要会话存储安放新会话,而 createSession 未给 store(fork 的产物是 store 里的一条
+ * fork() 需要会话存储安放新会话,而 createSession 未给 store(fork 的产物是 store 里的一条
  * 新会话记录,开发者随后以 createSession({ resume: { sessionId, store } }) 打开)
  */
  | 'session_store_not_wired'
 /**
- * doc/123 D-A9 ②:令牌档平台直连方法(session.platform.transcribe / speak)的平台请求
+ * 令牌档平台直连方法(session.platform.transcribe / speak)的平台请求
  * 失败——网关拒绝(HTTP 非 2xx,携网关错误码)或请求未达平台(网络错)。抛出形为
  * PlatformRequestError(TansrSdkError 子类):`status` / `platformCode` / `platformMessage`
  * 携网关事实,开发者按 platformCode(asr_not_configured / model_not_authorized …)分支
@@ -22087,6 +22077,7 @@ type SdkErrorCode =
  | 'platform_request_failed'
 /** 可等待生命周期中的提交或资源收口失败；保留原始失败及继续回收入口。 */
  | 'lifecycle_failed';
+/** SDK 结构化错误基类:`code` 是稳定的可编程分支面,`cause` 携带底层错误(如有) */
 declare class TansrSdkError extends Error {
     readonly code: SdkErrorCode;
     constructor(code: SdkErrorCode, message: string, options?: {
@@ -22094,6 +22085,10 @@ declare class TansrSdkError extends Error {
     });
 }
 
+/**
+ * 生命周期收口失败(`lifecycle_failed` / 装配期 `assembly_failed`):`failures` 逐项列出失败阶段与码,
+ * `errors` 为对应原始错误;`cleanup` 在场时可再次调用以继续回收未收口的资源。
+ */
 declare class SdkLifecycleError extends TansrSdkError {
     readonly failures: readonly SessionLifecycleFailure[];
     readonly errors: readonly unknown[];
@@ -22155,12 +22150,13 @@ interface ManagedQueryOptions extends QueryLifecycleOptions {
     mcp?: McpSessionOption;
     /** SDK装配警告；平台子集仍沿onPlatformWarning旧出口。 */
     onWarning?: (warning: SdkWarning) => void;
-    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
+    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给) */
     capabilities?: AppCapabilities;
     /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
     promptChannel?: PromptChannel;
+    /** 权限模式与确认通道(语义同 CreateSessionOptions.permission) */
     permission?: PermissionOptions;
-    /** 裁决人(doc/113,仅令牌档;语义同 CreateSessionOptions.adjudication) */
+    /** 裁决人(仅令牌档;语义同 CreateSessionOptions.adjudication) */
     adjudication?: AdjudicationOptions;
     /** 缺省 8192 */
     maxTokens?: number;
@@ -22175,7 +22171,7 @@ interface ManagedQueryOptions extends QueryLifecycleOptions {
     /** 连续可恢复错误熔断上限;缺省 3(内核缺省) */
     maxConsecutiveErrors?: number;
     /**
-     * 上下文压缩(kernel T-C10):缺省 {}(自动压缩,仅上下文窗口已知时
+     * 上下文压缩:缺省 {}(自动压缩,仅上下文窗口已知时
      * 生效——阈值代数依赖窗口,与 TUI/serve 同守卫);false 显式禁用。
      */
     compaction?: QueryCompactionOptions | false;
@@ -22186,6 +22182,10 @@ interface ManagedQueryOptions extends QueryLifecycleOptions {
     };
     stopSequences?: string[];
 }
+/**
+ * `query` 的选项:注入档(`RunAgentOptions` + `systemAppend` + 生命周期选项;不接 skills / mcp)
+ * 或托管档(`ManagedQueryOptions`,`model` 为别名字符串),以 `client` 在场与否分流。
+ */
 type QueryOptions = (RunAgentOptions & Pick<ManagedQueryOptions, 'systemAppend'> & QueryLifecycleOptions & {
     skills?: never;
     mcp?: never;
@@ -22216,7 +22216,7 @@ declare function accumulateUsage(total: IRUsage | undefined, next: IRUsage): IRU
 declare function query(options: QueryOptions): AsyncGenerator<KernelEvent, QueryResult, undefined>;
 
 /**
- * 媒体异步任务客户端(异步化拍板 2026-09-01;videogen/imagegen 双工具共用):
+ * 媒体异步任务客户端(四面媒体工具共用):
  * POST {base}/t1/{face}/tasks 提交即返 taskId → GET {base}/t1/{face}/tasks/{id}
  * 短请求轮询至终态——工具不再对网关长挂单请求(旧同步径的断连/超时丢结果
  * 形态就此拆除:预算耗尽/中断时 taskId 在手,产出可找回,服务端照跑照扣不亏)。
@@ -22234,26 +22234,21 @@ declare function query(options: QueryOptions): AsyncGenerator<KernelEvent, Query
  */
 /**
  * 媒体面词表(URL 模板 `/t1/${face}/tasks` 自动跟随):图像 / 视频 + 音频两面
- * `asr`(语音转文字)/ `tts`(文字转语音)——doc/123 D-A1/D-A3(2026-09-05):
- * 音频不是「一个面的两种参数」,ASR 与 TTS 各为独立面(输入输出模态相反、
- * 计量量纲不同),任务径 `/t1/{asr,tts}/tasks[/:id]` 与 imagegen 同构。
+ * `asr`(语音转文字)/ `tts`(文字转语音)——音频不是「一个面的两种参数」,
+ * ASR 与 TTS 各为独立面(输入输出模态相反、计量量纲不同),任务径
+ * `/t1/{asr,tts}/tasks[/:id]` 与 imagegen 同构。
  */
 type MediaTaskFace = 'videogen' | 'imagegen' | 'asr' | 'tts';
 
 /**
- * 平台媒体错误 hint 单源表(十王修案 FX-B-26;分册 B §三 S8 目标形态 3;doc/128 §九 裁定 3 hint 分派)。
- *
- * 此前四面提供方(imagegen / videogen / speech-to-text / text-to-speech)各持一份 `hintOf` 表,文案按 **App
- * 开发者**受众写(「the app developer needs to top up」/「console → app → capabilities」),而 cli 登录态用户
- * 复用同一提供方(user-platform 档,钱包按牌价计费)时把 App 口径原样吐给终端用户(复审 M-02);词表外码回
- * `''` 抑制了 kernel 通用指引,与 BYO 径「缺席回落通用指引」不一致(M-08);`not_found`(任务号 404 终局)无
- * hint(M-07 残留)。自此:
- * - **单源**:四面表并在此,一码一行,受众差异只在 `forbidden` / `insufficient_balance` / `model_not_authorized`
+ * 平台媒体错误 hint 单源表:四面提供方(imagegen / videogen / speech-to-text / text-to-speech)的网关
+ * 错误码 → 修复指引,一码一行。
+ * - **单源**:四面表并在此,受众差异只在 `forbidden` / `insufficient_balance` / `model_not_authorized`
  *   三码(其余码两档同文);
- * - **受众**:`'app'`(sdk 令牌档 / serve 平台内置形,缺省,文案逐字不变)/ `'user'`(cli 登录态装置键径:
- *   钱包 / 平台管理员口径,恒不出现「app developer」);
+ * - **受众**:`'app'`(sdk 令牌档 / serve 平台内置形,缺省:App 开发者口径,如「console → app → capabilities」)/
+ *   `'user'`(cli 登录态装置键径:钱包 / 平台管理员口径,恒不出现「app developer」);
  * - **词表外 → `undefined`**:kernel `formatMediaProviderError` 对 `hint === undefined` 回落 `MEDIA_GENERIC_HINT`
- *   (与 BYO `openai-compatible-common.ts` 同律);显式 `''` 仍 = 无指引(意外响应形保留)。
+ *   (与 BYO 径同律);显式 `''` 仍 = 无指引(意外响应形保留)。
  * 文案纪律同 sdk errors.ts:英文、面向智能体(下一步做什么),不走 i18n。
  */
 
@@ -22268,34 +22263,32 @@ type MediaHintFace = MediaTaskFace;
 declare function hintFor(face: MediaHintFace, code: string, audience?: MediaHintAudience): string | undefined;
 
 /**
- * 平台媒体提供方公共径(媒体能力内核化 doc/128 §3.3,S-1;四面 ImageGen / VideoGen /
- * SpeechToText / TextToSpeech 平台提供方共用的网关调用壳)。
+ * 平台媒体提供方公共径:四面 ImageGen / VideoGen / SpeechToText / TextToSpeech 平台提供方共用的
+ * 网关调用壳。
  *
- * 切法(先例 S-WS2 websearch-provider.ts):工具骨架(参数 schema / 描述装配 / 超时 / 错误纪律 /
- * data 组装)已收编进 kernel 环2 `tools/media`,sdk 只供**执行后端** = kernel 四提供方缝的平台
- * 实现(name 'tansr')。本模块承担四面同律的网关径,面差(URL 面名 / 轮询拍 / hint 表 / 找回
- * 径尾注 / 中断主语)由 `PlatformMediaFace` 描述,四个 `*-provider.ts` 只做 args → payload 与
- * 响应体 → Outcome。
+ * 切法(先例 websearch-provider.ts):工具骨架(参数 schema / 描述装配 / 超时 / 错误纪律 / data 组装)
+ * 在 kernel 环2 `tools/media`,sdk 只供**执行后端** = kernel 四提供方缝的平台实现(name 'tansr')。
+ * 本模块承担四面同律的网关径,面差(URL 面名 / 轮询拍 / hint 表 / 找回径尾注 / 中断主语)由
+ * `PlatformMediaFace` 描述,四个 `*-provider.ts` 只做 args → payload 与响应体 → Outcome。
  *
- * 网关径(逐字沿 sdk 环3 四工具 2026-09-01 异步化形态):
+ * 网关径:
  * - 任务径先行:POST {base}/t1/{face}/tasks 提交即返 taskId → 短请求轮询至终态(media-task-client);
  *   旧版生产无任务端点(404)自动回落 POST {base}/t1/{face} 同步径,判定按提供方实例(= 工具实例
  *   = 会话)缓存,不再逐次探测;
  * - 预算 = `timeoutMs`(与工具 Tool.timeoutMs 同值;薄封装同源传入),任务径内扣安全余量得轮询
  *   截止——恒先于 kernel 骨架 withTimeout / 执行器强杀返回,`task_pending` 携 taskId 与找回径可达
- *   智能体(服务端照跑照扣,断连语义 A 不亏)。
+ *   智能体(服务端照跑照扣,断连不亏)。
  *
  * 错误纪律(kernel MediaProviderError 契约):网关错误信封 / 任务失败终态 → `MediaProviderError{ code,
  * message, hint, taskId }`(码逐字透传;hint = `options.hintOf?.(code) ?? hintFor(face, code, audience)`——
- * 单源表 `media-hints.ts`(FX-B-26),受众档 `audience` 缺省 `'app'` 文案逐字同迁移前;**词表外码 → `undefined`**
- * 让 kernel 回落通用指引,与 BYO 径同律);预算耗尽 → `task_pending` + taskId;中断而 taskId 在手 →
- * `aborted` + taskId + 找回径;提交前中断 → AbortError 原样上抛(骨架按信号 reason 归 timeout /
- * aborted);网络失败 → 普通 Error(骨架归 `provider_error`)。令牌本体只活在闭包(INV-10)。
+ * 单源表 `media-hints.ts`,受众档 `audience` 缺省 `'app'`;**词表外码 → `undefined`** 让 kernel 回落
+ * 通用指引,与 BYO 径同律);预算耗尽 → `task_pending` + taskId;中断而 taskId 在手 → `aborted` +
+ * taskId + 找回径;提交前中断 → AbortError 原样上抛(骨架按信号 reason 归 timeout / aborted);
+ * 网络失败 → 普通 Error(骨架归 `provider_error`)。令牌本体只活在闭包。
  *
- * 鉴权承载(doc/128 §九 R-6,C2-1):`token` 在场 → 任务径提交 / 轮询与同步径三处请求头恒携
- * `x-tansr-app-token`(SDK 令牌档);`token` 缺席 → **不发该头**,鉴权全由注入的 `fetchImpl` 承载
- * (cli 装置键径 = tansrFetch AK/SK 双头 + /t1 签名三头)。除头之外一切(任务径先行 / 404 回落 /
- * 信封归一 / hint 表)两径逐字同款。
+ * 鉴权承载:`token` 在场 → 任务径提交 / 轮询与同步径三处请求头恒携 `x-tansr-app-token`(SDK 令牌档);
+ * `token` 缺席 → **不发该头**,鉴权全由注入的 `fetchImpl` 承载(cli 装置键径 = tansrFetch AK/SK 双头 +
+ * /t1 签名三头)。除头之外一切(任务径先行 / 404 回落 / 信封归一 / hint 表)两径逐字同款。
  */
 
 /** 平台提供方名(kernel 提供方缝 `name`;进审计与描述装配,恒不进 ToolResult.data)。 */
@@ -22317,17 +22310,18 @@ interface PlatformMediaProviderOptions {
      */
     timeoutMs?: number;
     /**
-     * FX-B-26:错误 hint 受众档——`'app'`(缺省;sdk 令牌档 / serve 平台内置形:App 开发者口径,文案逐字不变)/
+     * 错误 hint 受众档——`'app'`(缺省;sdk 令牌档 / serve 平台内置形:App 开发者口径)/
      * `'user'`(cli 登录态装置键径:钱包 / 平台管理员口径,恒不出现「app developer」)。单源表 `media-hints.ts hintFor`。
      */
     audience?: MediaHintAudience;
     /**
-     * FX-B-26:hint 覆写缝——按码返回指引即用之(`''` = 显式无指引);返回 `undefined` 回落单源表;表外仍 `undefined`
+     * hint 覆写缝——按码返回指引即用之(`''` = 显式无指引);返回 `undefined` 回落单源表;表外仍 `undefined`
      * → kernel 通用指引。宿主(cli 活性门 / 自建提供方)按需覆写个别码,不必复制整表。
      */
     hintOf?: (code: string) => string | undefined;
 }
 
+/** `createPlatformSpeechToTextProvider` 的材料:公共网关材料 + 授权 ASR 模型集 */
 interface CreatePlatformSpeechToTextProviderOptions extends PlatformMediaProviderOptions {
     /**
      * 授权 ASR 模型集(bundle platformModels.speechToText,装配循环自取):骨架描述自列(顺位第一 =
@@ -22337,16 +22331,16 @@ interface CreatePlatformSpeechToTextProviderOptions extends PlatformMediaProvide
     models?: readonly AppBundleSpeechToTextModel[];
 }
 /**
- * 成功体归一(doc/123 §3.1 响应形 → TranscriptData;同步端点响应体与异步任务 result 同形,双径
+ * 成功体归一(网关 /t1/asr 响应形 → TranscriptData;同步端点响应体与异步任务 result 同形,双径
  * 共用;serve /v2 直连端点与 session.platform.transcribe 亦经此单点)。`text` 非串 = 意外响应 →
  * null(调用方按结构化错误处置)。坏分段逐条剔除;计量/售价位(usage/cost/currency)刻意不进
- * Data 形——端侧恒无金额(doc/89 契约 3.2 同律)。
+ * Data 形——端侧恒无金额。
  */
 declare function parseTranscriptData(raw: unknown, modelRef: string, taskId?: string): TranscriptData | null;
 /** 平台语音转文字提供方(kernel SpeechToTextProvider 契约;一枚实例 = 一枚工具 = 一个会话)。 */
 declare function createPlatformSpeechToTextProvider(options: CreatePlatformSpeechToTextProviderOptions): SpeechToTextProvider;
 
-/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 SPEECH_TO_TEXT_TOOL_TIMEOUT_MS;`token` 本层恒必填,C2-1)。 */
+/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 SPEECH_TO_TEXT_TOOL_TIMEOUT_MS;`token` 本层恒必填)。 */
 type CreateSpeechToTextToolOptions = CreatePlatformSpeechToTextProviderOptions & {
     token: string;
 };
@@ -22356,6 +22350,7 @@ type CreateSpeechToTextToolOptions = CreatePlatformSpeechToTextProviderOptions &
  */
 declare function createSpeechToTextTool(options: CreateSpeechToTextToolOptions): Tool<SpeechToTextArgs>;
 
+/** `createPlatformTextToSpeechProvider` 的材料:公共网关材料 + 授权 TTS 模型集 */
 interface CreatePlatformTextToSpeechProviderOptions extends PlatformMediaProviderOptions {
     /**
      * 授权 TTS 模型集(bundle platformModels.textToSpeech,装配循环自取):骨架描述自列(顺位第一 =
@@ -22365,16 +22360,16 @@ interface CreatePlatformTextToSpeechProviderOptions extends PlatformMediaProvide
     models?: readonly AppBundleTextToSpeechModel[];
 }
 /**
- * 成功体归一(doc/123 §3.2 响应形 → SpeechData;同步端点响应体与异步任务 result 同形,双径共用;
+ * 成功体归一(网关 /t1/tts 响应形 → SpeechData;同步端点响应体与异步任务 result 同形,双径共用;
  * serve /v2 直连端点与 session.platform.speak 亦经此单点)。`audio` 缺 mime 或 url/b64 皆缺 = 意外
  * 响应 → null;`format` 缺席自 mime 推导(audio/mpeg → mpeg)。计量/售价位(cost/currency/
- * outputHosting)刻意不进 Data 形——端侧恒无金额(doc/89 契约 3.2 同律)。
+ * outputHosting)刻意不进 Data 形——端侧恒无金额。
  */
 declare function parseSpeechData(raw: unknown, modelRef: string, taskId?: string): SpeechData | null;
 /** 平台文字转语音提供方(kernel TextToSpeechProvider 契约;一枚实例 = 一枚工具 = 一个会话)。 */
 declare function createPlatformTextToSpeechProvider(options: CreatePlatformTextToSpeechProviderOptions): TextToSpeechProvider;
 
-/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 TEXT_TO_SPEECH_TOOL_TIMEOUT_MS;`token` 本层恒必填,C2-1)。 */
+/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 TEXT_TO_SPEECH_TOOL_TIMEOUT_MS;`token` 本层恒必填)。 */
 type CreateTextToSpeechToolOptions = CreatePlatformTextToSpeechProviderOptions & {
     token: string;
 };
@@ -22385,14 +22380,14 @@ type CreateTextToSpeechToolOptions = CreatePlatformTextToSpeechProviderOptions &
 declare function createTextToSpeechTool(options: CreateTextToSpeechToolOptions): Tool<TextToSpeechArgs>;
 
 /**
- * 平台音频直连客户端(doc/123 D-A9 ② / §3.5「直连方法」,2026-09-05):
+ * 平台音频直连客户端:
  * `session.platform.transcribe(...)` / `session.platform.speak(...)` 的实现件——
  * **纯 HTTP 客户端**,经令牌档材料(baseUrl / token / fetchImpl,与环3 工具的
  * PlatformToolContext 同源)直打 `POST {baseUrl}/t1/asr` / `POST {baseUrl}/t1/tts`,
  * **不进会话历史、不进事件流**(App 自决是否把转写文本作为下一条用户输入、是否
  * 把助手回复送去合成播放)。
  *
- * 为何与环3 工具并立(D-A9):图像/视频只有工具链,因为它们是「智能体产出」;语音天然
+ * 为何与环3 工具并立:图像/视频只有工具链,因为它们是「智能体产出」;语音天然
  * 是**用户输入 / 助手输出的载体**——只有工具链会把「说一句话」变成一次智能体工具调用
  * (既慢又贵),直连是开发者需求优先的直接答案。
  *
@@ -22404,15 +22399,15 @@ declare function createTextToSpeechTool(options: CreateTextToSpeechToolOptions):
  * 形同型同源解析,计量/售价位不进形——端侧恒无金额)。
  *
  * 径:直连恒走同步端点(不走任务径)——交互式语音 UX(麦克风 → 文本 / 回复 →
- * 播放)以最低时延为要;长音频异步转写候后批(doc/123 §六)。
+ * 播放)以最低时延为要;长音频异步转写候后批。
  *
- * serve /v2 直连端点(doc/123 §3.6)复用本文件的 `requestPlatformAudio`(状态码 + 体
+ * serve /v2 直连端点复用本文件的 `requestPlatformAudio`(状态码 + 体
  * 透传)与两工具模块的 parse 单点,三处(工具 / SDK 直连 / serve 代打)一形。
  */
 
 /** 音频两面(MediaTaskFace 子集;URL = `/t1/${face}`) */
 type PlatformAudioFace = Extract<MediaTaskFace, 'asr' | 'tts'>;
-/** 直连 transcribe 入参(doc/123 §3.1 请求体逐字;audio = data:audio/*;base64 URI 或 http(s) URL) */
+/** 直连 transcribe 入参(与网关 POST /t1/asr 请求体同形;audio = data:audio/*;base64 URI 或 http(s) URL) */
 interface TranscribeInput {
     audio: string;
     /** 缺席 = 授权集顺位第一(与工具 / 网关同律) */
@@ -22423,7 +22418,7 @@ interface TranscribeInput {
     /** 领域提示(可选) */
     prompt?: string;
 }
-/** 直连 speak 入参(doc/123 §3.2 请求体逐字) */
+/** 直连 speak 入参(与网关 POST /t1/tts 请求体同形) */
 interface SpeakInput {
     input: string;
     model?: string;
@@ -22432,17 +22427,19 @@ interface SpeakInput {
     format?: 'wav' | 'mp3';
     speed?: number;
 }
+/** 直连单次调用的可选项 */
 interface PlatformAudioCallOptions {
     /** 中断信号(App 取消录音上传 / 停止播放请求) */
     signal?: AbortSignal;
 }
-/** 令牌档平台直连面(AgentSession.platform 挂载点;doc/123 D-A9 ②) */
+/** 令牌档平台直连面(AgentSession.platform 挂载点) */
 interface PlatformAudioClient {
     /** 语音转文字:POST /t1/asr → TranscriptData;失败 throw PlatformRequestError */
     transcribe(input: TranscribeInput, options?: PlatformAudioCallOptions): Promise<TranscriptData>;
     /** 文字转语音:POST /t1/tts → SpeechData(audio 恒在场);失败 throw PlatformRequestError */
     speak(input: SpeakInput, options?: PlatformAudioCallOptions): Promise<SpeechData>;
 }
+/** `createPlatformAudioClient` 的材料:平台基址、app_user 令牌与可选 fetch 注入 */
 interface CreatePlatformAudioClientOptions {
     /** 平台 API 基址(/t1 前缀由本客户端追加) */
     baseUrl: string;
@@ -22453,7 +22450,7 @@ interface CreatePlatformAudioClientOptions {
 }
 /**
  * 平台直连请求失败(code `platform_request_failed`):`status` = 网关 HTTP 状态
- * (0 = 请求未达平台,网络错);`platformCode` = 网关错误码(doc/123 §3.1/§3.2 族:
+ * (0 = 请求未达平台,网络错);`platformCode` = 网关错误码(音频两端点的错误码族:
  * asr_not_configured / tts_not_configured / *_quota_exceeded / model_not_authorized /
  * bad_request / upstream_error / forbidden …;非 JSON 体降级 `http_<status>`;网络错
  * `network_error`);`platformMessage` = 网关人话(或网络错 message)。
@@ -22473,10 +22470,11 @@ type PlatformAudioResponse = {
     readonly kind: 'transport_error';
     readonly message: string;
 };
+/** `requestPlatformAudio` 的入参:基址、面(asr / tts)、已白名单化的请求体与鉴权头值 */
 interface RequestPlatformAudioOptions {
     baseUrl: string;
     face: PlatformAudioFace;
-    /** 请求体(doc/123 §3.1 / §3.2 形;调用方已白名单化) */
+    /** 请求体(与对应网关端点请求体同形;调用方已白名单化) */
     payload: unknown;
     /** 鉴权头值(app_user 令牌;serve 径可为占位哑值——刷新 fetch 后写胜) */
     token: string;
@@ -22502,7 +22500,7 @@ declare function createPlatformAudioClient(options: CreatePlatformAudioClientOpt
 declare function createUnavailablePlatformAudioClient(): PlatformAudioClient;
 
 /**
- * S-3(doc/116 §3.5 / doc/117 S-3,D-9 A)— 历史分页公共件(消息索引口径:offset =
+ * 历史分页公共件(消息索引口径:offset =
  * IRMessage[] 下标,limit = 至少返回的消息数;不暴露段/游标/manifest)。
  *
  * - `sliceHistoryPage`:全量消息上的分页切片,经 alignHistoryPage 配对边界对齐——
@@ -22516,14 +22514,14 @@ declare function createUnavailablePlatformAudioClient(): PlatformAudioClient;
  * 只取 total;offset ≥ total → 空页且 offset 回填 total。
  */
 
-/** history()/readHistoryPage 选项(doc/116 §4.3 逐字) */
+/** history()/readHistoryPage 选项(消息索引口径) */
 interface HistoryPageOptions {
     /** 起始消息下标(缺省 0;非负整数,越界 → 空页) */
     offset?: number;
     /** 至少返回的消息数(缺省全量;0 = 只取 total;为凑齐工具轮可多返回) */
     limit?: number;
 }
-/** history()/readHistoryPage/getHistoryPage 结果(doc/116 §4.3 逐字) */
+/** history()/readHistoryPage/getHistoryPage 结果(配对完整的切片 + 分页游标) */
 interface HistoryPage {
     /** 配对完整的切片(两端皆干净边界) */
     messages: IRMessage[];
@@ -22531,7 +22529,7 @@ interface HistoryPage {
     total: number;
     /** 切片首元素的绝对下标(≤ 请求 offset;向前对齐时回填对齐后的值) */
     offset: number;
-    /** 下一页起点(原始下标空间 = 对齐后终点;空页 = 回填的 offset)。翻页恒用它推进——出流投影可能剔除页内消息,offset + messages.length 不可靠(D-V11) */
+    /** 下一页起点(原始下标空间 = 对齐后终点;空页 = 回填的 offset)。翻页恒用它推进——出流投影可能剔除页内消息,offset + messages.length 不可靠 */
     nextOffset: number;
 }
 /**
@@ -22545,6 +22543,11 @@ declare function sliceHistoryPage(messages: readonly IRMessage[], offset: number
  */
 declare function readHistoryPage(store: SessionStore, sessionId: string, options?: HistoryPageOptions): Promise<HistoryPage | null>;
 
+/**
+ * `createSession` 的选项。三档模型来源互斥:令牌档(`token` + `baseUrl`,模型与能力位由平台 bundle 供给)/
+ * 托管档(`model` 为别名字符串,五层配置装配)/ 注入档(`client` + `model` 对象,零配置零 IO);
+ * 其余为工具与权限、会话参数、持久化与快照 / 恢复 / fork 三组可选项。
+ */
 interface CreateSessionOptions {
     /** Actual user input incorporation; not acceptance or a new turn. */
     onInputsConsumed?: (texts: readonly string[]) => void;
@@ -22559,7 +22562,7 @@ interface CreateSessionOptions {
     client?: ModelClient;
     /** 注入模式的上下文窗口(托管模式自 capability.maxContext 取,忽略本值) */
     contextWindowTokens?: number;
-    /** 注入模式的输出上限(T-C12;托管模式自 capability.maxOutput 取,忽略本值) */
+    /** 注入模式的输出上限(maxTokens 事前钳制上界;托管模式自 capability.maxOutput 取,忽略本值) */
     maxOutputTokens?: number;
     /**
      * app_user 短期令牌(开发者服务端换发;终端分发形态)。在场即令牌档:
@@ -22570,27 +22573,25 @@ interface CreateSessionOptions {
     /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
     baseUrl?: string;
     /**
-     * S-ARCH(doc/109 代拍②)— 平台提示帧承接(仅令牌档产生;其余档恒不
-     * 触发)。平台以 t.warn 结构化告知非致命降级(如 thinking_unavailable_on_face
-     * :思考被请求而当前供应商面无从外露,回答照常仅无思考;balance_low:
-     * 余额预警)。缺席时缺省承接 = console.warn 每码一次(告知恒不静默蒸发);
+     * 平台提示帧承接(仅令牌档产生;其余档恒不触发)。平台以 t.warn 结构化告知非致命降级
+     * (如 thinking_unavailable_on_face:思考被请求而当前供应商面无从外露,回答照常仅无思考;
+     * balance_low:余额预警)。缺席时缺省承接 = console.warn 每码一次(告知恒不静默蒸发);
      * 提供回调即全量接管(不去重,原始帧逐一交付,呈现策略归开发者)。
      */
     onPlatformWarning?: (warning: PlatformWarning) => void;
     /**
-     * W-3(doc/117 W-3 / doc/116 §七 D-S4)— 通用告警通道:平台提示帧(`source:'platform'`,
-     * 与 onPlatformWarning 同源同 code)与 SDK 自身非致命提示(`source:'sdk'`:
-     * `cwd_mismatch_on_restore` / `cwd_mismatch_on_resume`)统一汇入。与 onPlatformWarning 同给时
-     * 平台告警各到一次不重复(后者是已发版的平台子集通道,恒不收 sdk 源)。缺席时:平台源按
+     * 通用告警通道:平台提示帧(`source:'platform'`,与 onPlatformWarning 同源同 code)与 SDK 自身非致命提示
+     * (`source:'sdk'`:`cwd_mismatch_on_restore` / `cwd_mismatch_on_resume`)统一汇入。与 onPlatformWarning
+     * 同给时平台告警各到一次不重复(后者是已发版的平台子集通道,恒不收 sdk 源)。缺席时:平台源按
      * onPlatformWarning / console.warn 现状回落;sdk 源回落为 `turn.error{scope:'sdk.notice',
      * recoverable:true}` 入事件流(提示不丢)。
      */
     onWarning?: (warning: SdkWarning) => void;
     /**
-     * FX-B-09(复审 J-02)— 权限终局审计记录出口(kernel `onDecision` 缝;`ToolDecisionRecord` 与 cli
-     * `decisions.jsonl` 行同形,含机器放行 classifier / mode)。缺省:裁决人终局(source 'classifier')经
-     * `onWarning` / `onPlatformWarning` 通报 `permission_decided`;传自己的写入器即接管,传 `() => {}` 静默。
-     * 事件流本身已携 `tool.permission.decided{allow|deny, decisionSource}`(含机器放行),本缝是审计半边。
+     * 权限终局审计记录出口(kernel `onDecision` 缝;`ToolDecisionRecord` 与 cli `decisions.jsonl` 行同形,
+     * 含机器放行 classifier / mode)。缺省:裁决人终局(source 'classifier')经 `onWarning` / `onPlatformWarning`
+     * 通报 `permission_decided`;传自己的写入器即接管,传 `() => {}` 静默。事件流本身已携
+     * `tool.permission.decided{allow|deny, decisionSource}`(含机器放行),本缝是审计半边。
      */
     onDecision?: (record: ToolDecisionRecord) => void;
     /** 项目层配置发现起点与工具 cwd;缺省 process.cwd() */
@@ -22604,34 +22605,30 @@ interface CreateSessionOptions {
     /** loadConfig 其余注入缝(fs/homedir/platform;测试 hermetic 用) */
     loadOptions?: Omit<LoadConfigOptions, 'cwd' | 'env'>;
     /**
-     * 三环工具入口(S-B3):builtin(环2 内置,词表逐名)/ platform(环3
-     * 平台能力,现只校验位)/ custom(环1 defineTool 产物)。缺席 = 装配
-     * 能力位放行的全部内置工具;`tools: { builtin: [] }` = 零内置。
+     * 三环工具入口:builtin(环2 内置,词表逐名)/ platform(环3 平台能力,现只校验位)/ custom
+     * (环1 defineTool 产物)。缺席 = 装配能力位放行的全部内置工具;`tools: { builtin: [] }` = 零内置。
      */
     tools?: SdkToolsOptions;
-    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给,S-B1) */
+    /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给) */
     capabilities?: AppCapabilities;
     /**
-     * skills 注入(S-B9):custom(defineSkill 内联)+ dirs(<name>/SKILL.md
-     * 目录)。SDK 恒零发现(不扫 ~/.tansr 与 cwd);受 skills 能力位。
+     * skills 注入:custom(defineSkill 内联)+ dirs(<name>/SKILL.md 目录)。SDK 恒零发现
+     * (不扫 ~/.tansr 与 cwd);受 skills 能力位。
      */
     skills?: SdkSkillsOptions;
     /**
-     * MCP 外接(S-B10):McpHost 实例 = 应用级共享(跨会话复用连接,生命
-     * 周期归调用方 dispose);{ servers } 选项对象 = 会话级临时 host,会话
-     * close 时自动断连收口。受 mcp 能力位。
+     * MCP 外接:McpHost 实例 = 应用级共享(跨会话复用连接,生命周期归调用方 dispose);
+     * { servers } 选项对象 = 会话级临时 host,会话 close 时自动断连收口。受 mcp 能力位。
      */
     mcp?: McpSessionOption;
     /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
     promptChannel?: PromptChannel;
     permission?: PermissionOptions;
     /**
-     * 裁决人(doc/113,仅令牌档):bundle 生效裁决人档缺省即装配——「本应 ask」
-     * 的工具调用先经裁决人:判危险按姿态落地(人在环 → 经 permission.askUser 携
-     * 理由交用户终审;无人环 → deny 理由回喂模型),判安全且资格半径覆盖 →
-     * 放行,缺省安全的操作恒不送裁决人。姿态缺省按 askUser 在场推导;
-     * `enabled:false` 回到 default 模式现状;与 permission.mode 同现 fail-fast。
-     * 托管/注入档无任命来源,传本位 fail-fast。
+     * 裁决人(仅令牌档):bundle 生效裁决人档缺省即装配——「本应 ask」的工具调用先经裁决人:判危险按姿态落地
+     * (人在环 → 经 permission.askUser 携理由交用户终审;无人环 → deny 理由回喂模型),判安全且资格半径覆盖 →
+     * 放行,缺省安全的操作恒不送裁决人。姿态缺省按 askUser 在场推导;`enabled:false` 回到 default 模式现状;
+     * 与 permission.mode 同现 fail-fast。托管/注入档无任命来源,传本位 fail-fast。
      */
     adjudication?: AdjudicationOptions;
     /** 业务提示词：平台 fallback 策略下显式值（含 []）覆盖；prepend 策略保留平台段在前。SDK 段创建时固定；平台正文和策略在每个新轮前自动刷新。 */
@@ -22656,15 +22653,14 @@ interface CreateSessionOptions {
     /** 会话级中断信号:abort 即 close(运行中轮先优雅中止,尾部事件不丢) */
     signal?: AbortSignal;
     /**
-     * 上下文压缩(kernel T-C10):缺省 {}(自动压缩,仅上下文窗口已知的轮
-     * 生效——阈值代数依赖窗口,与 TUI/serve 同守卫);false 显式禁用。
+     * 上下文压缩(kernel 自动压缩):缺省 {}(自动压缩,仅上下文窗口已知的轮生效——阈值代数依赖窗口,
+     * 与 TUI/serve 同守卫);false 显式禁用。
      */
     compaction?: QueryCompactionOptions | false;
     /** 历史预载(恢复场景):后续轮以「预载历史 + 新 user 消息」起步 */
     initialMessages?: readonly IRMessage[];
     /**
-     * 可注入持久化缝(S-B5,doc/84 §5.4 / doc/83 §3.1 缺口 3;形态对齐 cli
-     * session-driver onHistoryCommit 先例):每轮终态收口(历史快照已就位)
+     * 可注入持久化缝(形态对齐 cli 的 onHistoryCommit):每轮终态收口(历史快照已就位)
      * 时捕获全量历史深拷贝，按会话提交顺序回调，存到哪由开发者决定。缺省缺席 = 纯内存
      * 零变化(SDK 恒不引入任何隐式落盘)。
      * meta.rewritten:本轮历史前缀被就地改写(session.compacted 压缩折叠,
@@ -22673,9 +22669,8 @@ interface CreateSessionOptions {
      * 落盘方不得按长度增量追加,须整卷轮换。
      * 回调抛错(含异步 reject)恒不破会话主流程:吞错并合成
      * turn.error(scope='sdk.persistence')入事件流;事件流已终结时退化
-     * console.warn(错误不静默消失)。FX-B-21:rewritten 提交失败后,下一次提交
-     * 恒再以 rewritten:true 交付(存储与回调独立内存位),落盘方不会只凭「本轮无改写」
-     * 走增量径而留下「旧前缀 + 新尾巴」拼接体。
+     * console.warn(错误不静默消失)。rewritten 提交失败后,下一次提交恒再以 rewritten:true 交付
+     * (存储与回调独立内存位),落盘方不会只凭「本轮无改写」走增量径而留下「旧前缀 + 新尾巴」拼接体。
      * idle()/session.ended 仍不等异步提交；需要真实完成使用 drain()/closeAsync()。
      * 回调中不得等待本会话 drain()，否则会等待回调自身；retryPersistence 不重放回调。
      */
@@ -22683,7 +22678,7 @@ interface CreateSessionOptions {
     /**
      * 一等恢复:自 store 取回历史与 meta 预载(与 initialMessages 互斥;
      * sessionId 同给时必须与 resume.sessionId 一致)。resume 径内置配对治理
-     * (sessions/pairing.ts,拍板④):断尾 tool_call 补 isError 占位、孤儿
+     * (`repairHistoryPairing`):断尾 tool_call 补 isError 占位、孤儿
      * tool_result 截断到干净边界——kernel 对 initialMessages 原样收不校验,
      * 治理保证 wire 恒不 400。目标不存在抛 TansrSdkError('session_not_found');
      * 存储损坏由 store.get 结构化上抛(恒不静默)。
@@ -22694,25 +22689,24 @@ interface CreateSessionOptions {
     };
     /**
      * 在场时自动接管会话登记(store.create,幂等;令牌档的平台会话 ULID
-     * 映射随登记落 SessionRecordMeta,拍板⑤)与每轮落卷(store.commit;
+     * 映射随登记落 SessionRecordMeta)与每轮落卷(store.commit;
      * store 先行、onHistoryCommit 回调后行,失败面同 sdk.persistence 吞错
      * 纪律)。与 resume 正交:续存一个恢复的会话把同一 store 同时传两处。
      * 缺席 = 纯内存零变化(SDK 恒不引入任何隐式落盘)。
      */
     store?: SessionStore;
     /**
-     * 上下文快照(S-1,doc/116 §3.2·§4.3):完整上下文的自包含只读拷贝,可列举/
-     * 可恢复/可删除。落点三选一:`store`(自建 CheckpointStore)> `dir`(独立目录,
-     * 独立生命周期)> 缺省同居——会话 `store` 自带的 `checkpoints`(createFileSessionStore
-     * = <sessionDir>/checkpoints,随会话删除)。三者皆缺 = 快照未接线:checkpoint()/
-     * listCheckpoints()/deleteCheckpoint() 抛 `checkpoints_not_wired`,restore() 返回
-     * `rejected:'store_not_wired'`,compact() 缺省不落快照(显式 `checkpoint:true` 才抛)。
+     * 上下文快照:完整上下文的自包含只读拷贝,可列举 / 可恢复 / 可删除。落点三选一:`store`
+     * (自建 CheckpointStore)> `dir`(独立目录,独立生命周期)> 缺省同居——会话 `store` 自带的
+     * `checkpoints`(createFileSessionStore = <sessionDir>/checkpoints,随会话删除)。三者皆缺 =
+     * 快照未接线:checkpoint()/listCheckpoints()/deleteCheckpoint() 抛 `checkpoints_not_wired`,
+     * restore() 返回 `rejected:'store_not_wired'`,compact() 缺省不落快照(显式 `checkpoint:true` 才抛)。
      */
     checkpoints?: SessionCheckpointOptions;
     /**
-     * F-2(doc/117 §十,D-2 B)— fork 快捷形 = `fork()` + `resume`:以 `store` 里源会话 `sessionId`
-     * 的快照 `checkpointId` 建出新会话记录(源会话零改动)并立即打开它;新会话事件流紧随
-     * session.created 签发 `session.forked{ sourceSessionId, checkpointId, sessionId }`。
+     * fork 快捷形 = `fork()` + `resume`:以 `store` 里源会话 `sessionId` 的快照 `checkpointId` 建出新会话
+     * 记录(源会话零改动)并立即打开它;新会话事件流紧随 session.created 签发
+     * `session.forked{ sourceSessionId, checkpointId, sessionId }`。
      * 须与 `store` 同给(新会话落在该 store);与 `resume` / `initialMessages` 互斥(同给 fail-fast
      * `invalid_options`,先于任何 IO);`sessionId` 同给时 = 新会话 id。快照经与 `checkpoints`
      * 选项同一落点解析读取(store > dir > 会话 store 同居);快照不存在抛 `checkpoint_not_found`。
@@ -22722,7 +22716,7 @@ interface CreateSessionOptions {
         checkpointId: string;
     };
 }
-/** createSession.checkpoints(doc/116 §4.3 逐字;缺省值随注) */
+/** createSession.checkpoints 选项(缺省值随注) */
 interface SessionCheckpointOptions {
     /** 自建快照存储(与 dir 互斥;同给抛 invalid_options) */
     store?: CheckpointStore;
@@ -22736,12 +22730,12 @@ interface SessionCheckpointOptions {
      */
     autoBeforeClear?: boolean;
     /**
-     * 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限,D-4 A)。= `retention.max`
-     * 别名(同给时 `retention` 优先)。刚写入者恒保留(`max:0` 留 1,FX-B-23 / C-05)。
+     * 同会话快照数上限;到顶按时间序淘汰最旧,不分 trigger(缺省不限)。= `retention.max`
+     * 别名(同给时 `retention` 优先)。刚写入者恒保留(`max:0` 留 1)。
      */
     max?: number;
     /**
-     * 保留策略(FX-B-23 / D-R5;kernel `CheckpointRetention` 同形):`max` / `maxAgeDays` 并集,先按龄再按数;
+     * 保留策略(与 kernel `CheckpointRetention` 同形):`max` / `maxAgeDays` 并集,先按龄再按数;
      * store / dir / 同居三形态同一淘汰律(kernel `planCheckpointRetention`)。
      */
     retention?: CheckpointRetention;
@@ -22772,7 +22766,7 @@ interface CompactOptions {
         label?: string;
     };
 }
-/** compact() 结果联合(doc/116 §4.3;failed 形 checkpointId 为 §5.1「结果携 id」加法) */
+/** compact() 结果联合(compacted / rejected / failed;failed 形亦携失败前已落的快照 id) */
 type CompactResult = {
     status: 'compacted';
     /** 压缩执行 id(与 session.compacted.compactionId / 摘要 meta.compactionId 同源) */
@@ -22793,7 +22787,7 @@ type CompactResult = {
     status: 'failed';
     /** kernel 压缩失败原因(nothing_to_compact / model_error / before_compact_failed …) */
     reason: CompactionFailureReason;
-    /** D-11 A:失败前已落的快照不回滚,id 随结果交付 */
+    /** 失败前已落的快照不回滚,id 随结果交付 */
     checkpointId?: string;
 };
 /** checkpoint() 选项 */
@@ -22806,7 +22800,7 @@ interface RestoreOptions {
     /** 恢复前是否先落 pre_restore 快照;缺省 true */
     checkpoint?: boolean;
 }
-/** restore() 结果联合(doc/116 §4.3 逐字) */
+/** restore() 结果联合(restored / rejected) */
 type RestoreResult = {
     status: 'restored';
     checkpointId: string;
@@ -22820,7 +22814,7 @@ type RestoreResult = {
     status: 'rejected';
     /**
      * turn_running = 运行中 / not_found = 本会话下无此快照 / session_mismatch = 快照
-     * 属于别的会话(跨会话恢复 = 越界;fork 二期)/ store_not_wired = 快照存储未接线
+     * 属于别的会话(跨会话恢复 = 越界;请用 fork)/ store_not_wired = 快照存储未接线
      */
     reason: 'turn_running' | 'not_found' | 'session_mismatch' | 'store_not_wired';
 };
@@ -22864,7 +22858,7 @@ interface ModelBinding {
     client: ModelClient;
     model: ResolvedModel;
     contextWindowTokens?: number;
-    /** capability.maxOutput(T-C12 查询环事前钳制半边) */
+    /** capability.maxOutput(查询环事前钳制 maxTokens 的上界) */
     maxOutputTokens?: number;
 }
 /** setModel 的注入档参数(client 与 model 必须成对更换) */
@@ -22873,7 +22867,7 @@ interface SetModelBinding {
     model: ResolvedModel;
     /** 新模型的上下文窗口;不传则清空(宁缺毋错,与 TUI 驱动同语义) */
     contextWindowTokens?: number;
-    /** 新模型的输出上限(T-C12);不传则清空(同窗口的宁缺毋错纪律) */
+    /** 新模型的输出上限(maxTokens 事前钳制上界);不传则清空(同窗口的宁缺毋错纪律) */
     maxOutputTokens?: number;
 }
 /** AgentSession 构造参数(createSession 装配产物;不对外) */
@@ -22902,40 +22896,46 @@ interface AgentSessionInit {
     /** 会话收口回调(session.ended 后调用;临时 MCP host dispose 等) */
     onEnded?: () => Promise<void>;
     ownedResources?: OwnedResources;
-    /** S-1:快照接线(装配期解析;null = 未接线) */
+    /** 快照接线(装配期解析;null = 未接线) */
     checkpoints: ResolvedCheckpoints | null;
-    /** 轮起跑回调(裁决人 transcript 记录器回填当前轮用户 prompt,T-K2) */
+    /** 轮起跑回调(裁决人 transcript 记录器回填当前轮用户 prompt) */
     onTurnStart?: (prompts: readonly string[]) => void;
     onInputsConsumed?: (texts: readonly string[]) => void;
     /**
-     * W-2:按新 cwd 重建执行器(装配层 rebindCwd:权限门 / hooks 同步换新,registry 与
+     * 按新 cwd 重建执行器(装配层 rebindCwd:权限门 / hooks 同步换新,registry 与
      * 会话级执行态共享);setCwd 成功即以返回值替换 #executor。
      */
     rebindCwd: (cwd: string) => ToolExecutor;
     /**
-     * W-2:切换落盘缝(store.recordCwdChange 在场时由 createSession 接线;缺席 = 不落盘)。
+     * cwd 切换落盘缝(store.recordCwdChange 在场时由 createSession 接线;缺席 = 不落盘)。
      * 失败按 sdk.persistence 吞错纪律入事件流,恒不破切换本身。
      */
     onCwdChanged?: (change: SessionCwdChange) => void | Promise<void>;
-    /** W-3:告警通道(createSdkWarningChannel 产物;sdk 源提示经此汇入 onWarning 或回落 sdk.notice) */
+    /** 告警通道(createSdkWarningChannel 产物;sdk 源提示经此汇入 onWarning 或回落 sdk.notice) */
     warn: (warning: SdkWarning) => void;
     hasWarningHandler?: boolean;
-    /** F-2:会话存储(fork() 安放新会话记录;缺席 = fork() 抛 session_store_not_wired) */
+    /** 会话存储(fork() 安放新会话记录;缺席 = fork() 抛 session_store_not_wired) */
     store?: SessionStore;
     /**
-     * doc/123 D-A9 ②:令牌档平台直连材料(与环3 工具 PlatformToolContext 同源:baseUrl /
-     * token / fetchImpl);在场即挂载 session.platform 直连客户端,缺席(托管/注入档)=
-     * fail-fast 占位(调用即 invalid_options 指引令牌档,imageGen 工具选择同律)。
+     * 令牌档平台直连材料(与环3 工具 PlatformToolContext 同源:baseUrl / token / fetchImpl);
+     * 在场即挂载 session.platform 直连客户端,缺席(托管/注入档)= fail-fast 占位
+     * (调用即 invalid_options 指引令牌档,imageGen 工具选择同律)。
      */
     platformContext?: PlatformToolContext;
 }
+/**
+ * 多轮会话句柄(纯 headless,无 UI;由 `createSession` 创建)。`send()` 提交输入(空闲起新轮,运行中经注入
+ * 屏障并入下一轮),`events` 为可多消费者的会话事件流,`messages()` / `history()` 读历史快照;另提供
+ * 手动压缩 / 快照 / 恢复 / fork、`setModel` / `setThinking` / `setCwd` 空闲期热切换、`interrupt()` 与幂等
+ * `close()`。
+ */
 declare class AgentSession {
     #private;
     get applicationPrompt(): ApplicationPromptInfo;
     constructor(init: AgentSessionInit);
     get sessionId(): string;
     /**
-     * 平台直连面(doc/123 D-A9 ②;令牌档):`platform.transcribe({ audio, model?, language? })` /
+     * 平台直连面(令牌档):`platform.transcribe({ audio, model?, language? })` /
      * `platform.speak({ input, voice?, model?, format? })`——纯 HTTP 客户端直打
      * `/t1/asr`、`/t1/tts`,**不进会话历史、不进事件流**(App 自决是否把转写作为下一条
      * 输入、是否播放合成音频);失败 throw PlatformRequestError(携网关错误码)。托管/
@@ -22959,7 +22959,7 @@ declare class AgentSession {
     /** 会话历史快照(深拷贝;可直接作恢复/续跑的 initialMessages) */
     messages(): IRMessage[];
     /**
-     * 历史分页读(S-3,doc/116 §3.5,D-9 A):消息索引口径的 [offset, offset+limit) 切片,
+     * 历史分页读:消息索引口径的 [offset, offset+limit) 切片,
      * 与 messages() 同一投影口径(同一份历史快照、同为深拷贝;运行中亦可读,返回轮起
      * 时的历史)。切片恒**配对完整**:起点向前对齐到干净边界并回填 `offset`,终点向后
      * 对齐(limit 是下限,为凑齐工具轮可多返回几条)。缺省全量 = 与 messages() 字节等价;
@@ -22999,10 +22999,10 @@ declare class AgentSession {
     /** 排空当前轮(含结转连锁起的新轮)与空闲期操作链:close/断言前等待终态收口 */
     idle(): Promise<void>;
     /**
-     * 手动压缩(doc/116 §5.1):对当前历史执行一次 manual 压缩,成功即就地替换历史、
+     * 手动压缩:对当前历史执行一次 manual 压缩,成功即就地替换历史、
      * 推 session.compacted / cost.usage.updated 事件、以 { rewritten:true, reason:
      * 'compaction' } 提交落盘。压缩前缺省先落 pre_compaction 快照(可关;快照 id 随
-     * 结果与事件体交付);压缩失败快照保留(D-11 A)。
+     * 结果与事件体交付);压缩失败快照保留。
      * - 运行中 → rejected:'turn_running'(不排队;await idle() 后重试——显式优于隐式);
      * - 历史为空 → rejected:'empty_history';compaction:false 或窗口未知 → 'not_configured';
      * - 并发 compact()/restore()/checkpoint() 按到达序串行;期间 send() 缓冲到操作链排空。
@@ -23018,7 +23018,7 @@ declare class AgentSession {
     /** 列举本会话全部快照头部(checkpointId 升序 = 时间线;只读,运行中亦可) */
     listCheckpoints(): Promise<CheckpointMeta[]>;
     /**
-     * 自快照恢复(doc/116 §3.3,D-2 A 同会话就地换史):空闲校验 → 读快照 → sessionId
+     * 自快照恢复(同会话就地换史):空闲校验 → 读快照 → sessionId
      * 对账 → (可选)pre_restore 快照 → 以快照 messages 替换历史(与 resume 预载同径:
      * 配对治理 + 深拷贝)→ 推 session.restored → { rewritten:true, reason:'restore' } 提交
      * 落盘(整卷轮换)。同一快照连续恢复两次,第二次历史字节等价、仍换卷(不做无变化
@@ -23050,11 +23050,10 @@ declare class AgentSession {
      * 校验 format / schema / 每附件 sha256 / 每 $ref 皆有附件 / 消息形(任一不过 throw
      * `checkpoint_import_invalid`,不落半成品;校验先于入队,零副作用)→ 身份改写(sessionId = 本会话;
      * checkpointId 重铸;trigger 'manual';createdAt 现时;label 覆写或沿用;cwd / model / tokens 沿用;
-     * compactionId 剥除)→ `store.put` → 推 `session.checkpointed`(每次快照落盘皆签发,RFC-CP-1 R4)。
+     * compactionId 剥除)→ `store.put` → 推 `session.checkpointed`(每次快照落盘皆签发)。
      * 不触本会话历史(导入的是快照,之后可 restore()/fork());close 后 throw `session_closed`。
-     * FX-B-23(C-06):put 入空闲期串行链 `#runIdleOp`——与 checkpoint / restore / deleteCheckpoint 同链
-     * 按到达序执行(此前「运行中亦可调用」= 与删除的附件 GC 并发 → 共享附件误删窗);运行中的轮不受
-     * 影响(本方法不触历史,链内不校验 turn_running)。
+     * put 入空闲期串行链——与 checkpoint / restore / deleteCheckpoint 同链按到达序执行(避免与删除的附件 GC
+     * 并发造成共享附件误删);运行中的轮不受影响(本方法不触历史,链内不校验 turn_running)。
      */
     importCheckpoint(bytes: Uint8Array, options?: ImportCheckpointOptions): Promise<CheckpointMeta>;
     /**
@@ -23076,7 +23075,7 @@ declare class AgentSession {
      * cwd(快照 meta.cwd、恢复对账锚、Task 子代理 ToolContext.cwd 随之)→ 推 session.cwd_changed
      * {from,to} → 落盘 store.recordCwdChange(meta.cwd 改写 + cwdHistory 追加;缺席不落)。
      * 与 compact()/restore() 同一空闲期串行链(期间 send() 缓冲)。目标与当前相同:零副作用回
-     * changed(不推事件、不落盘)。不重跑 loadConfig(项目层配置不随 cwd 变;已知限界,见 doc/90)。
+     * changed(不推事件、不落盘)。不重跑 loadConfig(项目层配置不随 cwd 变;已知限界,详见 SDK 技术手册)。
      */
     setCwd(dir: string): Promise<SetCwdResult>;
 }
@@ -23087,48 +23086,49 @@ declare class AgentSession {
  */
 declare function createSession(options?: CreateSessionOptions): Promise<AgentSession>;
 
+/** `createFileSessionStore` 的选项:存储根目录 + 可选封段阈值、冷层分层存储与可观测回调 */
 interface CreateFileSessionStoreOptions {
     /** 存储根目录(显式传入,恒不隐式扫用户目录;Electron 场景传 userData) */
     dir: string;
     /**
-     * S-3:卷内动态封段阈值(doc/116 §3.4;D-5 缺省 16 MiB / 5000 记录)。缺席 = 按缺省
+     * 卷内动态封段阈值(缺省 16 MiB / 5000 记录)。缺席 = 按缺省
      * 阈值**启用**;`{ enabled: false }` = 恒单卷(旧布局)。只影响写侧文件布局:读侧
      * 汇合透明,无 manifest 的旧目录零迁移可读。
      */
     segmentation?: SegmentationOptions;
     /**
-     * IO-22(doc/119 / doc/120 §3;server 份 `CreateServeAgentSessionStoreOptions.cold` 同笔同名):冷层——一级
+     * 冷层(server 份 `CreateServeAgentSessionStoreOptions.cold` 同名):一级
      * `SegmentBlobStore`(S3 / OSS / COS / MinIO / GCS / 文件系统 …:五个字节方法,引擎内置分段 / 编码 / 清单提交 /
      * 热盘 LRU / 重试)或二级 `SessionHistoryStore`(KV / 关系库自管布局)。**缺席 = 仅热层 = 今日行为字节等价**
      * (此时 `index` / `policy` / `metrics` 无效)。
      */
     cold?: SegmentBlobStore | SessionHistoryStore;
     /**
-     * IO-22:多副本共享会话元 / 无条件写冷层的 CAS 落点。一级冷层 `capabilities.conditionalPut:false` 或
-     * `list:'none'` 时**必填**,否则构造期 fail-fast 抛出(A15 / D-5)。
+     * 多副本共享会话元 / 无条件写冷层的 CAS 落点。一级冷层 `capabilities.conditionalPut:false` 或
+     * `list:'none'` 时**必填**,否则构造期 fail-fast 抛出。
      */
     index?: SessionIndexStore;
     /**
-     * IO-22:分层策略(`codec` / `hotRetention` / `upload` / `restore` / `transform` / `keyMapper` / `tenant`);
+     * 分层策略(`codec` / `hotRetention` / `upload` / `restore` / `transform` / `keyMapper` / `tenant`);
      * 缺省见 kernel `SEGMENTED_STORE_DEFAULTS`。`hotRetention.maxBytes` 触顶 → `readiness()` 红 + `store.hot_full` 事件。
      */
     policy?: SegmentedStorePolicy;
-    /** IO-22:`tansr_kernel_store_*` 指标族注册表;缺省 kernel defaultMetrics */
+    /** `tansr_kernel_store_*` 指标族注册表;缺省 kernel defaultMetrics */
     metrics?: MetricsRegistry;
-    /** IO-22(server 份同名):冷层事件原样回调(`store.segment_sealed` / `store.segment_committed` / `store.commit_failed` / `store.hot_full` …);回调抛错被吞 */
+    /** 冷层事件原样回调(`store.segment_sealed` / `store.segment_committed` / `store.commit_failed` / `store.hot_full` …);回调抛错被吞 */
     onStoreEvent?: (event: ColdTierEvent) => void;
     /**
-     * IO-22(server 份同名):冷层**放弃**的上传 / 清单提交通报(重试预算耗尽的 transient、permanent、
+     * 冷层**放弃**的上传 / 清单提交通报(重试预算耗尽的 transient、permanent、
      * precondition_failed)。热层已 ack,恒不抛给调用方——该段留在热盘、下次 bind 对账补传。回调抛错被吞。
      */
     onStoreError?: (sessionId: string, error: StoreError) => void;
     /**
-     * FX-B-21(十王修案 S7):store 核警告出口——`store_prefix_mismatch`(增量径前缀失配 → 已整卷轮换)/
+     * store 核警告出口——`store_prefix_mismatch`(增量径前缀失配 → 已整卷轮换)/
      * `store_pending_rewrite`(上次 rewritten 提交未成 → 本次整卷轮换)。缺席静默(轮换本身恒执行,警告只为可观测)。
      */
     onStoreWarning?: (warning: SessionStoreCoreWarning) => void;
 }
-/** IO-22:单租户形态的冷层分域键(doc/120 §5;server 份为 sha256(endUserId) 前 16 hex) */
+/** 单租户形态的冷层分域键(server 份为 sha256(endUserId) 前 16 hex) */
 declare const LOCAL_END_USER_KEY = "local";
 
 /**
@@ -23141,10 +23141,10 @@ declare const LOCAL_END_USER_KEY = "local";
 declare function createFileSessionStore(options: CreateFileSessionStoreOptions): SessionStore;
 
 /**
- * S-B7 — SessionView 状态投影器(核心纯 reducer):KernelEvent 流 →
- * 可直接渲染的视图模型(doc/84 §5.6 层1)。
+ * SessionView 状态投影器(核心纯 reducer):KernelEvent 流 →
+ * 可直接渲染的视图模型(渲染数据管道层1)。
  *
- * 设计不变量(doc/84 §5.6,恒守):
+ * 设计不变量(恒守):
  * 1. 纯函数投影:reduce(state, event) => state,无第二事实源、无 IO;
  * 2. 零 node: 依赖、状态快照 structuredClone-safe(Electron IPC 直传,
  *    将来 webui 形态在浏览器侧复用同一投影器);
@@ -23175,7 +23175,7 @@ type TextDeliveryMode = 'stream' | 'final';
 /** 思考呈现档:'stream'(缺省)| 'final' | 'off' 恒不物化(状态派生仍见 thinking) */
 type ThinkingDeliveryMode = 'stream' | 'final' | 'off';
 /**
- * 呈现档选项(用户拍板 2026-09-01「呈现方式做成会话选项交给开发者选」):
+ * 呈现档选项(呈现方式做成会话选项交给开发者选):
  * 恒只影响 text/thinking part 的物化时机与在场性——状态机派生(thinking/
  * responding 等)与工具卡(本就一次性整卡)恒不受档位影响。缺省全 'stream'
  * = 既有行为零漂移。
@@ -23201,16 +23201,19 @@ interface DeliveryConfig {
 }
 /** 工具调用 part 全生命周期状态('aborted' = 轮终态时仍未收口的残留工具) */
 type ToolCallPartStatus = 'proposed' | 'awaiting_permission' | 'running' | 'completed' | 'failed' | 'denied' | 'aborted';
+/** 消息内的文本片段(流式期间随 msg.text.delta 增长) */
 interface UITextPart {
     readonly type: 'text';
     /** msg.text.delta 已拼接文本(流式期间增量增长) */
     readonly text: string;
 }
+/** 消息内的思考片段(delivery.thinking = 'off' 时恒不出现) */
 interface UIThinkingPart {
     readonly type: 'thinking';
     /** msg.thinking.delta 已拼接文本 */
     readonly text: string;
 }
+/** 嵌在 assistant 消息里的工具调用卡(全生命周期原位更新:proposed → … → 终态) */
 interface UIToolCallPart {
     readonly type: 'toolCall';
     /** 协议 toolCallId */
@@ -23221,14 +23224,16 @@ interface UIToolCallPart {
     readonly status: ToolCallPartStatus;
     /** tool.completed 的结构化渲染数据(ToolResult.data 透传位) */
     readonly result?: unknown;
-    /** tool.completed 的模型可见文本投影(contract-v0.8 content) */
+    /** tool.completed 的模型可见文本投影(ToolResult content) */
     readonly resultText?: string;
     /** tool.failed 的错误分类(协议五枚举,原样透传) */
     readonly errorType?: string;
     readonly errorMessage?: string;
     readonly durationMs?: number;
 }
+/** 消息片段三型:文本 / 思考 / 工具调用卡 */
 type UIMessagePart = UITextPart | UIThinkingPart | UIToolCallPart;
+/** 视图消息(user 或 assistant;assistant 消息由 parts 依序组成,可直接渲染) */
 interface UIMessage {
     /** 视图内单调 id(`msg-<n>`;React key 可直接用) */
     readonly id: string;
@@ -23237,6 +23242,7 @@ interface UIMessage {
 }
 /** 进行中工具的活跃状态(终态后移出 activeTools,终态数据看消息 part) */
 type ActiveToolStatus = 'proposed' | 'awaiting_permission' | 'running';
+/** 进行中工具的活跃视图(`SessionViewState.activeTools` 元素;进度与输出尾部只在此处) */
 interface ToolCallView {
     readonly id: string;
     readonly name: string;
@@ -23247,6 +23253,7 @@ interface ToolCallView {
     /** tool.output.delta 聚合尾部(超限保尾,上限 OUTPUT_TAIL_MAX_CHARS) */
     readonly outputTail: string;
 }
+/** 待办条目视图(plan.todo.* 事件的投影) */
 interface TodoView {
     readonly id: string;
     readonly content: string;
@@ -23266,6 +23273,7 @@ interface UsageView {
     /** cost.usage.updated 事件次数 */
     readonly requests: number;
 }
+/** 最近一次失败(`SessionViewState.lastError`):turn.error{recoverable:false} 或泵壳源故障的投影 */
 interface ErrorView {
     /** turn.error 的 errorKind 透传(词表锚定 IRErrorKind;可缺席) */
     readonly code?: string;
@@ -23273,27 +23281,26 @@ interface ErrorView {
     /** turn.error 的 scope(错误链路归属;可缺席 = 非 turn.error 来源) */
     readonly scope?: string;
     /**
-     * turn.error 的 recoverable 镜 payload(protocol `events.ts` 位必填;doc/130 R-05,FX-B-29):
+     * turn.error 的 recoverable 镜 payload(protocol `events.ts` 位必填):
      * 落到 lastError 的恒是失败形 = `false`(`true` 的咨询帧进 `SessionView.notices`,恒不到此处);
      * 泵壳源故障(markSourceFailure)同为 `false`。必填而非可选——三端 reducer 同键同金样
      * (protocol `test/fixtures/golden/turn-error-{recoverable,fatal}.json`)。
      */
     readonly recoverable: boolean;
     /**
-     * turn.error 的 detail 透传(contract-v0.26,FX-B-20 / M-03;加法可选):机器可判事实,首个取值
+     * turn.error 的 detail 透传(加法可选):机器可判事实,首个取值
      * `{ scope: 'plan' }` = 开发者套餐配额拒绝(与 HTTP 面 `error.detail.scope` 同键同值;端侧
      * `ErrorEnvelope.scope` 同一读法)。缺席 = 无附加事实。
      */
     readonly detail?: Record<string, unknown>;
 }
 /**
- * 咨询通报(doc/130 R-05 / M-08,FX-B-29):`turn.error{recoverable:true}` 的归约形——kernel 的
+ * 咨询通报:`turn.error{recoverable:true}` 的归约形——kernel 的
  * 咨询帧(压缩熔断暂停 / sdk.notice 弃用提示 / sdk.persistence 落卷失败 / serve store_commit_failed …)
- * 此前三端 reducer 一律丢弃或污染 lastError。字段恒自 wire 派生,不发明词:
+ * 不是失败,归 `notices` 而不污染 lastError。字段恒自 wire 派生,不发明词:
  * - seq / at = 事件包络 seq / ts;
  * - code = errorKind,errorKind 缺席回落 scope;
- * - detail = `turn.error.detail` 透传(contract-v0.26,FX-B-20 / M-03 起 wire 有位;首个取值套餐配额
- *   `{ scope: 'plan' }`);缺席即键缺席。
+ * - detail = `turn.error.detail` 透传(首个取值套餐配额 `{ scope: 'plan' }`);缺席即键缺席。
  */
 interface SessionNotice {
     readonly seq: number;
@@ -23364,6 +23371,7 @@ interface SessionViewReducerState {
 }
 /** 工具输出尾部聚合上限(与 TUI OUTPUT_TAIL_MAX_CHARS 同值同语义) */
 declare const OUTPUT_TAIL_MAX_CHARS = 4000;
+/** 初始 reducer 状态(空视图 + 按 options 解析的呈现档);`createSessionView` / 自建泵壳的起点 */
 declare function initialSessionViewState(options?: SessionViewOptions): SessionViewReducerState;
 /**
  * 纯函数投影:reduce(state, event) => state。
@@ -23378,7 +23386,7 @@ declare function reduceSessionView(state: SessionViewReducerState, event: Kernel
  */
 declare function appendUserMessage(state: SessionViewReducerState, text: string): SessionViewReducerState;
 /**
- * 动态切换呈现档(纯函数;用户拍板 2026-09-01「留切换入口随时切换」):
+ * 动态切换呈现档(纯函数;随时可切):
  * 恒**块粒度**生效——已开启的块沿其 block.start 时捕获的形态收尾(缓冲/
  * 占位/不物化已定格在块登记,恒不中途变形),新块即用新档。恒不追溯已
  * 物化 part;切 thinking:'off' 要既有思考即刻消失用 stripThinkingParts 配套。
@@ -23401,17 +23409,17 @@ declare function stripThinkingParts(state: SessionViewReducerState): SessionView
 declare function markSourceFailure(state: SessionViewReducerState, error: unknown): SessionViewReducerState;
 
 /**
- * viewStateFromHistory — L2/L3 重建入口(doc/98 §五恢复链步骤④;doc/97
- * 卡 A3-1 的 TS 半边,与 tansr-android :core 同名 Kotlin 实现逐语义对齐,
+ * viewStateFromHistory — 自历史重建视图的入口(resume / attach 恢复链的一步;
+ * 与 tansr-android :core 同名 Kotlin 实现逐语义对齐,
  * 双端金样卷(test/view-golden)锁一致性,重录恒双仓同笔)。
  *
  * 语义:治理后历史快照(IRMessage[],pairing 已保证配对完整)→ 定稿消息
  * 投影(无流式簿记):
  * - text/thinking 空文本不建 part(与 reducer「空块定稿即删」同律);
- * - tool_call 与 tool_result 按 callId 全卷配对(后写者胜):有回执按
- *   isError 落 completed/failed,resultText = 回执 text 项拼接(空则缺席);
- *   无回执(断尾)落 aborted;
- * - 纯 tool_result 消息不落 user 气泡(回执是协议载体不是用户话语);
+ * - tool_call 与 tool_result 按 callId 全卷配对(后写者胜):有 tool_result 按
+ *   isError 落 completed/failed,resultText = tool_result 的 text 项拼接(空则缺席);
+ *   无 tool_result(断尾)落 aborted;
+ * - 纯 tool_result 消息不落 user 气泡(tool_result 是协议载体不是用户话语);
  *   tool_result/opaque/image 与未知块型恒不建 part,空消息整条跳过;
  * - 消息 id 单调续接(msg-1…),internal.nextMessageSeq 随之推进——重建后
  *   新增消息恒不撞 id;其余内部簿记与视图字段取初始态(status='idle')。
@@ -23420,7 +23428,7 @@ declare function markSourceFailure(state: SessionViewReducerState, error: unknow
 declare function viewStateFromHistory(messages: readonly IRMessage[], options?: SessionViewOptions): SessionViewReducerState;
 
 /**
- * S-B7 — 事件泵(view 内部共享;session-view 与 narrator 同用)。
+ * 事件泵(view 内部共享;session-view 与 narrator 同用)。
  *
  * 输入档二选一(结构化判定,零对 session.ts 的运行时依赖):
  * - AsyncIterable<KernelEvent>:直接消费;
@@ -23438,8 +23446,10 @@ declare function viewStateFromHistory(messages: readonly IRMessage[], options?: 
 interface SessionEventSource {
     readonly events: AsyncIterable<KernelEvent>;
 }
+/** 视图 / 叙述器可接的事件源:KernelEvent 异步流,或带 `events` 的 AgentSession 形对象 */
 type SessionViewSource = AsyncIterable<KernelEvent> | SessionEventSource;
 
+/** 会话视图句柄(由 `createSessionView` 创建):不可变快照 + 订阅 + 用户消息入账 + 呈现档切换 + 停泵 */
 interface SessionView {
     /** 当前视图快照(不可变;每次变更换新引用) */
     readonly state: SessionViewState;
@@ -23447,7 +23457,7 @@ interface SessionView {
     subscribe(listener: (state: SessionViewState) => void): () => void;
     /**
      * 用户消息入 transcript(事件流无用户输入事件,须宿主显式调用——通常与
-     * session.send(text) 同时;γ 泳道 DX 登记②的壳形态,底层即 reducer 纯函数)。
+     * session.send(text) 同时;底层即 reducer 纯函数)。
      * dispose 后为无害空操作。
      */
     appendUserMessage(text: string): void;
@@ -23460,19 +23470,30 @@ interface SessionView {
     /** 停泵并清空订阅(幂等);state 冻结在最后快照 */
     dispose(): void;
 }
+/**
+ * 把事件源(AgentSession 或任意 KernelEvent 异步流)接到纯 reducer 上,得到可订阅的视图句柄:
+ * 每个被消费的事件换一次不可变快照并扇出通知;`options.delivery` 决定文本 / 思考的呈现档。
+ */
 declare function createSessionView(source: SessionViewSource, options?: SessionViewOptions): SessionView;
 
+/** 叙述详细度(累进):quiet 轮次级 / normal + 工具级 / verbose + delta 摘要与权限细节 */
 type NarratorVerbosity = 'quiet' | 'normal' | 'verbose';
+/** `createNarrator` 的选项:详细度 + 行出口 */
 interface NarratorOptions {
     /** 缺省 'normal' */
     verbosity?: NarratorVerbosity;
     /** 行出口(逐行交付;回调抛错被吞——叙述不反噬事件消费) */
     onLine: (line: string) => void;
 }
+/** 叙述器句柄(由 `createNarrator` 创建;只有停泵一件事) */
 interface Narrator {
     /** 停泵(释放上游迭代器);幂等 */
     dispose(): void;
 }
+/**
+ * 挂一个叙述器到事件源(AgentSession 或任意 KernelEvent 异步流):逐事件按详细度产出英文日志行
+ * 交给 `onLine`;内部借 reducer 投影做上下文,自身无 IO。用完 `dispose()` 停泵。
+ */
 declare function createNarrator(source: SessionViewSource, options: NarratorOptions): Narrator;
 
 /**
@@ -23480,20 +23501,23 @@ declare function createNarrator(source: SessionViewSource, options: NarratorOpti
  * `APP_TOKEN_TRANSIENT_REASONS`)→ 持有方失效缓存令牌并重铸恰一次。只对令牌径生效(同码在 Bearer 面另有含义)。
  */
 declare const TOKEN_INVALIDATING_CODES: readonly ["unauthorized"];
+/** 令牌径失效码(TOKEN_INVALIDATING_CODES 成员类型) */
 type TokenInvalidatingCode = (typeof TOKEN_INVALIDATING_CODES)[number];
 /** 令牌径 401 `unauthorized` 信封 `detail.reason` 词表(api `src/auth/app-token.ts` 失效形各标其一)。 */
 declare const APP_TOKEN_REJECT_REASONS: readonly ["revoked", "expired", "invalid", "unknown_app", "missing", "check_unavailable"];
+/** 令牌径 401 信封 `detail.reason` 的取值(APP_TOKEN_REJECT_REASONS 成员类型) */
 type AppTokenRejectReason = (typeof APP_TOKEN_REJECT_REASONS)[number];
 /** 词表中的瞬态子集:收到此 reason **不**失效缓存、**不**重铸(平台校验依赖不可用,重铸无益)。 */
 declare const APP_TOKEN_TRANSIENT_REASONS: readonly ["check_unavailable"];
 /** `code` 是否令牌径失效码(TOKEN_INVALIDATING_CODES 成员判) */
 declare function isTokenInvalidatingCode(code: string): code is TokenInvalidatingCode;
-/** `reason` 是否瞬态(不失效、不重铸);缺席 / 词表外 = false(按失效处置,与 api R-02 同向) */
+/** `reason` 是否瞬态(不失效、不重铸);缺席 / 词表外 = false(按失效处置,与 api 端同向) */
 declare function isTransientAppTokenReason(reason: unknown): boolean;
 
+/** `createPlatformImageGenProvider` 的材料:公共网关材料 + 授权图像模型集 */
 interface CreatePlatformImageGenProviderOptions extends PlatformMediaProviderOptions {
     /**
-     * 授权图像模型集(S-G1;bundle platformModels.imageGen,装配循环自取):骨架描述自列(顺位
+     * 授权图像模型集(bundle platformModels.imageGen,装配循环自取):骨架描述自列(顺位
      * 第一 = model 缺省生效模型),constraints 在场时逐模型拼受理约束注记;空数组 = 平台未配置
      * (描述如实注明,恒不猜名);缺席 = 集未知(注入档直构/旧径),描述回落通用指引。
      */
@@ -23505,7 +23529,7 @@ declare function createPlatformImageGenProvider(options: CreatePlatformImageGenP
 /**
  * 平台工具材料(baseUrl / token / fetchImpl? / models? / timeoutMs?;与平台提供方选项同形——
  * `timeoutMs` 缺省 IMAGEGEN_TOOL_TIMEOUT_MS,恒不回落 kernel 120s 统一档)。`token` 在本层**恒必填**
- * (SDK 令牌档恒有令牌;doc/128 §九 C2-1 只放开提供方层给 cli 装置键径)。
+ * (SDK 令牌档恒有令牌;只有提供方层对 cli 装置键径放开可缺席)。
  */
 type CreateImageGenToolOptions = CreatePlatformImageGenProviderOptions & {
     token: string;
@@ -23516,9 +23540,10 @@ type CreateImageGenToolOptions = CreatePlatformImageGenProviderOptions & {
  */
 declare function createImageGenTool(options: CreateImageGenToolOptions): Tool<ImageGenArgs>;
 
+/** `createPlatformVideoGenProvider` 的材料:公共网关材料 + 授权视频模型集 */
 interface CreatePlatformVideoGenProviderOptions extends PlatformMediaProviderOptions {
     /**
-     * 授权视频模型集(S-G1;bundle platformModels.videoGen,装配循环自取):骨架描述自列(顺位
+     * 授权视频模型集(bundle platformModels.videoGen,装配循环自取):骨架描述自列(顺位
      * 第一 = model 缺省生效模型),constraints 在场时逐模型拼受理约束注记(时长域/i2v 首帧/比例域);
      * 空数组 = 平台未配置(如实注明恒不猜名);缺席 = 集未知,描述回落通用指引。
      */
@@ -23527,7 +23552,7 @@ interface CreatePlatformVideoGenProviderOptions extends PlatformMediaProviderOpt
 /** 平台视频生成提供方(kernel VideoGenProvider 契约;一枚实例 = 一枚工具 = 一个会话)。 */
 declare function createPlatformVideoGenProvider(options: CreatePlatformVideoGenProviderOptions): VideoGenProvider;
 
-/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 VIDEOGEN_TOOL_TIMEOUT_MS;`token` 本层恒必填,C2-1)。 */
+/** 平台工具材料(与平台提供方选项同形;`timeoutMs` 缺省 VIDEOGEN_TOOL_TIMEOUT_MS;`token` 本层恒必填)。 */
 type CreateVideoGenToolOptions = CreatePlatformVideoGenProviderOptions & {
     token: string;
 };
@@ -23538,28 +23563,26 @@ type CreateVideoGenToolOptions = CreatePlatformVideoGenProviderOptions & {
 declare function createVideoGenTool(options: CreateVideoGenToolOptions): Tool<VideoGenArgs>;
 
 /**
- * S-WS2 — 平台联网搜索后端(kernel WebSearchProvider 实现;用户拍板 2026-08-31
- * 「SDK 恒不暴露 BYO 档,移除相关逻辑,内核态 WebSearch 直接走平台」)。
+ * 平台联网搜索后端(kernel WebSearchProvider 实现):SDK 恒不暴露 BYO 档,内核态 WebSearch
+ * 直接走平台。
  *
- * 形态注记(取代 S-WS 的环3 独立工具 'PlatformWebSearch'):SDK 里联网搜索恒
- * 一件工具 = kernel 环2 'WebSearch',后端恒为本 provider(平台通道)。BYO
- * (TANSR_WEBSEARCH_ENDPOINT/KEY 环境变量后端)在 SDK 装配面恒不存在——终端
- * 持搜索商密钥即 appkey 防盗模型要消灭的反模式;可解释可审计面恒在平台
- * (逐笔 usage_events、预扣结算闭环、endUserId 归因、失败零计费)。
+ * 形态注记:SDK 里联网搜索恒一件工具 = kernel 环2 'WebSearch',后端恒为本 provider(平台通道)。
+ * BYO(TANSR_WEBSEARCH_ENDPOINT/KEY 环境变量后端)在 SDK 装配面恒不存在——终端持搜索商密钥
+ * 即 appkey 防盗模型要消灭的反模式;可解释可审计面恒在平台(逐笔用量事件、预扣结算闭环、
+ * endUserId 归因、失败零计费)。
  *
- * wire 契约(api TwpWebsearchRequest/Response,doc/36 §3.2):POST /t1/websearch
- * {query, max_results} snake_case;响应 {results:[{title,url,snippet}]}
- * (供应商方言已在网关归一;供应商身份恒匿名,doc/50 采购红线)。按次计量
- * 计费归 App(pricePerCall;开发者对终端如何转售自主,计量计费分离)。
+ * wire 契约:POST /t1/websearch {query, max_results} snake_case;响应 {results:[{title,url,snippet}]}
+ * (供应商方言已在网关归一;供应商身份恒匿名)。按次计量计费归 App(pricePerCall;开发者对终端
+ * 如何转售自主,计量计费分离)。
  *
- * 错误纪律:WebSearchProvider 契约以 throw 表达失败——kernel search-tool 捕获
- * 转 provider_error 结构化错误(不炸查询环),错误消息携网关错误码与修复指引;
- * 令牌只活在闭包(INV-10),查询文本平台侧恒不落日志不落库(网关红线),SDK
- * 侧同样恒不打印。
+ * 错误纪律:WebSearchProvider 契约以 throw 表达失败——kernel search-tool 捕获转 provider_error
+ * 结构化错误(不炸查询环),错误消息携网关错误码与修复指引;令牌只活在闭包,查询文本平台侧
+ * 恒不落日志不落库,SDK 侧同样恒不打印。
  */
 
 /** 后端名(进 kernel WebSearch 的 ToolResult.data.provider,供渲染与审计)。 */
 declare const PLATFORM_SEARCH_PROVIDER_NAME = "tansr-platform";
+/** `createPlatformSearchProvider` 的材料:平台基址、app_user 令牌与可选 fetch 注入 */
 interface CreatePlatformSearchProviderOptions {
     /** 平台 API 基址(令牌档会话档;/t1 前缀由本 provider 追加)。 */
     baseUrl: string;
@@ -23576,12 +23599,17 @@ interface CreatePlatformSearchProviderOptions {
  */
 declare function createPlatformSearchProvider(options: CreatePlatformSearchProviderOptions): WebSearchProvider;
 
+/** `createSdkPermissionGate` 的选项:规则路径锚定目录 + 可选 PreToolUse hooks 引擎 */
 interface CreateSdkPermissionGateOptions {
     /** 权限规则的路径锚定目录;必须与 executor 的 cwd 一致 */
     cwd: string;
     /** PreToolUse hooks 引擎;缺省不参与决策 */
     hooks?: HookEngine;
 }
+/**
+ * 把 kernel 权限引擎装成执行器可用的 PermissionGate:每次工具调用先经 hooks(如有)再经引擎裁决,
+ * 工具元数据(描述 / 效应声明 / 只读位)随咨询透传给分类器;Skill / TodoWrite 等只读工具按既有纪律放行。
+ */
 declare function createSdkPermissionGate(engine: PermissionEngine, registry: ToolRegistry, options: CreateSdkPermissionGateOptions): PermissionGate;
 
 /** 工具集双面引用(registry 执行面 + toolDefs 模型可见面;push 对引用可见) */
@@ -23605,7 +23633,7 @@ declare function attachSdkTaskTool(toolset: SdkToolsetRef, config: AttachSdkTask
 declare function subagentModelResolverOf(registry: ProviderRegistry | null): SubagentModelResolver | undefined;
 
 /**
- * S-2(doc/116 §5.1 / doc/117 S-2)— 空闲直压公共件:轮间(无运行中查询环)对当前
+ * 空闲直压公共件:轮间(无运行中查询环)对当前
  * 历史执行一次 manual 压缩,与 cli `tui/session-driver.ts` `#runIdleCompact` 同律
  * (同一 manager.compact 请求形态、同一 maxTokens 公式、同一应用器/事件体组装),
  * 抽成纯装配件供 SDK `AgentSession.compact()` 与 serve v2(V-1 `POST …/compact`,
@@ -23643,6 +23671,7 @@ interface IdleCompactionInput {
         checkpointId?: string;
     } | void>;
 }
+/** 空闲直压结局:`compacted`(新历史 + 待签发事件体)或 `failed`(失败结局 + 已报成本事件体;历史不变) */
 type IdleCompactionResult = {
     status: 'compacted';
     outcome: CompactOutcomeSuccess;
@@ -23668,12 +23697,12 @@ type IdleCompactionResult = {
 declare function runIdleCompaction(input: IdleCompactionInput): Promise<IdleCompactionResult>;
 
 /**
- * doc/91 拍板④ — resume 径历史配对治理(SDK 内同构实现)。
+ * resume 径历史配对治理(SDK 内同构实现)。
  *
- * 与 cli/src/sessions/pairing.ts(T-C12)同构双份:目标不变量、断尾合成、
+ * 与 cli/src/sessions/pairing.ts 同构双份:目标不变量、断尾合成、
  * 中段截断三段语义逐条对齐,仅剥 @tansr/i18n 依赖(SDK 面向开发者的占位
- * 文案用英文,errors.ts 同豁免)。**T-F5 收编登记**:共享装配包收敛债
- * (doc/83 §3.1 缺口 5 同路)落地时两份下沉合一,本文件届时退役为 re-export。
+ * 文案用英文,errors.ts 同豁免)。共享装配包收敛落地时两份下沉合一,
+ * 本文件届时退役为 re-export。
  *
  * 目标不变量:治理后的 IRMessage[] 可直接作下一轮 runQuery 的
  * initialMessages——每个 assistant tool_call 都有配对 tool_result,且不存在
@@ -23694,7 +23723,7 @@ interface AlignedHistoryPage {
     end: number;
 }
 /**
- * S-3(doc/116 §3.5,D-9 A)— 历史分页边界对齐:消息索引口径的窗口
+ * 历史分页边界对齐:消息索引口径的窗口
  * [offset, offset + limit) 扩到配对干净的边界。「干净边界」= 该长度的前缀内每个
  * assistant tool_call 都已见到配对 tool_result(无 open 调用)——两端皆干净的切片
  * 自身必配对完整,可直接作视图/initialMessages。
@@ -23719,6 +23748,10 @@ declare function appSingleStageProtocolFingerprintFor(maxTokens?: number): strin
 /** 应用单阶段协议指纹(资格证据 / 缓存标签 / 报告 summary 的键;值以运行时计算为准) */
 declare const APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT: string;
 
+/**
+ * `prepareApplicationPromptTurn` 的输入:先异步预检(`prepare`,如刷新应用提示词)、成功后再以选定的
+ * system 段起真正的一轮(`start`);预检失败按 `errorMessage` 出 turn.error 并保留既有历史。
+ */
 interface ApplicationPromptTurnOptions {
     sessionId: string;
     /** 预检失败时原样保留的既有历史；本轮尚未送往模型的输入不记入。 */
@@ -23731,6 +23764,10 @@ interface ApplicationPromptTurnOptions {
     /** 预检绝对上限，缺省30秒；即使自定义fetch忽略取消，也能收束本轮。 */
     prepareTimeoutMs?: number;
 }
+/**
+ * 把「异步预检 → 起轮」包成一个同步返回的 QueryHandle:预检期间的排队输入 / 取消原样接管,
+ * 预检超时(缺省 30 秒)或失败以 turn.started → turn.error → turn.aborted 收束本轮,恒不悬挂。
+ */
 declare function prepareApplicationPromptTurn(options: ApplicationPromptTurnOptions): QueryHandle;
 
 /** 仅刷新应用提示词字段；模型、工具和权限仍由原会话装配管理。 */

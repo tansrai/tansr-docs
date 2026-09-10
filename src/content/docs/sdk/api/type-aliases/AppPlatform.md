@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AppPlatform = typeof APP_PLATFORMS[number];
 ```
+
+应用平台类型(desktop / mobile / server;语义见 AppPlatformSchema)

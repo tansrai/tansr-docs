@@ -15,7 +15,7 @@ function attachSdkMcpWithDiscover(host, toolset): Promise<SdkMcpAttachment>;
 
 会话装配(assembleTooling 消费):eager 全量展开进会话工具面;lazy
 目录段 + McpDiscover 注册(目录空则两者皆免——「目录可见才有展开
-承诺」,不装无意义元工具)。返回目录段 + 子代理换装工厂(FX-B-19)。
+承诺」,不装无意义元工具)。返回目录段 + 子代理换装工厂。
 
 ## 参数
 

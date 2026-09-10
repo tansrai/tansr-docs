@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AppBundleVideoModel = VideoModelDescriptor;
 ```
+
+授权视频模型条目(bundle `platformModels.videoGen` 行形,含视频受理约束)

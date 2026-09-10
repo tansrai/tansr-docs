@@ -12,3 +12,5 @@ generated: true
 ```ts
 type CapabilityPlatformKey = keyof AppCapabilities["platform"];
 ```
+
+环3 平台位键(`AppCapabilities.platform` 的键)

@@ -13,4 +13,4 @@ generated: true
 const DEFAULT_APP_CAPABILITIES: AppCapabilities;
 ```
 
-平台缺省档(保守值;终值⏸候拍板⑥,doc/83 §八)。= 进程内拓扑(embedded)缺省档,见契约 2.4。
+平台缺省档(保守值)。= 进程内拓扑(embedded)缺省档,见契约 2.4。

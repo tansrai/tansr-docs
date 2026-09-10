@@ -13,5 +13,5 @@ generated: true
 const HEADER_CLIENT_FEATURES: "x-tansr-client-features" = "x-tansr-client-features";
 ```
 
-客户端可选扩展声明头(只在 bundle 拉取出线;值 = CLIENT_FEATURES 逗号分隔的列表形,RFC 9110 §5.6.1;
-api 侧按逗号切分、trim、小写比对,词表外词元忽略)。恒定值,不进 bundle 缓存键。
+客户端可选扩展声明头(只在 bundle 拉取与 heartbeat 出线;值 = CLIENT_FEATURES 逗号分隔的列表形,
+RFC 9110 §5.6.1;平台侧按逗号切分、trim、小写比对,词表外词元忽略)。

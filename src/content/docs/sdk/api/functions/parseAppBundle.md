@@ -13,16 +13,15 @@ generated: true
 function parseAppBundle(raw): AppBundle | null;
 ```
 
-bundle 载荷 → SDK 消费子集。顶层形状非法返回 null(调用方结构化报错);
-条目级损坏逐条跳过。capabilities 段 `.strip()` 校验(FX-A-15):缺席 → 进程内
-缺省档;整段坏形 → 零能力档 + `capabilitiesIssues`(真 fail-closed)。platformModels 段(S-G1)加法解析:
-段缺席(旧 api)/坏形状 = 四空集如实(图像/视频/ASR/TTS)——媒体工具据此
-如实注明未配置,恒不猜模型名;**序恒保持下发序**(顺位第一即缺省)。app.platform
-(doc/112)加法解析:缺席/词表外 = null。adjudicator(doc/113)加法解析:
-清单首个可解析档 ?? 单数键;皆无 = null(无裁决人,权限行为现状)。plan
-(doc/125 契约 6)顶层加法解析:缺席(T0 / 旧 api)/ 坏形 = null,旧 bundle 零行为变化。
-contextScheme(FX-B-30)形状级透传:缺席 / null / 坏形 = null,方案键不在此映射。
-governance.sessionRetentionDays(M-05)形状级透传:正整数才落键,段缺席 / 坏形 = `{}`。
+bundle 载荷 → SDK 消费子集。顶层形状非法返回 null(调用方结构化报错);条目级损坏逐条跳过。
+- capabilities 段:缺席 → 进程内缺省档;整段坏形 → 零能力档 + `capabilitiesIssues`(真 fail-closed);
+- platformModels 段:缺席(旧平台)/ 坏形状 = 四空集如实(图像 / 视频 / 语音识别 / 语音合成)——媒体工具据此
+  如实注明未配置,恒不猜模型名;**顺序恒保持下发序**(顺位第一即缺省);
+- app.platform:缺席 / 词表外 = null;
+- adjudicator:清单首个可解析档 ?? 单数键;皆无 = null(无裁决人,权限行为维持现状);
+- plan(顶层):缺席(个人无套餐 / 旧平台)/ 坏形 = null,旧 bundle 零行为变化;
+- contextScheme:形状级透传,缺席 / null / 坏形 = null,方案键不在此映射;
+- governance.sessionRetentionDays:形状级透传,正整数才落键,段缺席 / 坏形 = `{}`。
 
 ## 参数
 

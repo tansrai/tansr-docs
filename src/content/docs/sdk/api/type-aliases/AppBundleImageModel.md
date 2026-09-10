@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AppBundleImageModel = ImageModelDescriptor;
 ```
+
+授权图像模型条目(bundle `platformModels.imageGen` 行形,含图像受理约束)

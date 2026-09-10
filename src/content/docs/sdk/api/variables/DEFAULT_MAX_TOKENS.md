@@ -13,4 +13,4 @@ generated: true
 const DEFAULT_MAX_TOKENS: 8192 = 8192;
 ```
 
-runAgent 缺省 maxTokens(与 TUI/serve 驱动对齐;CW11-W3 #7 收敛 entry-budgets 单一事实源,值仍 8192)
+runAgent 缺省 maxTokens(与 TUI/serve 驱动对齐;单一事实源 kernel DEFAULT_OUTPUT_CAP_TOKENS,值 8192)

@@ -13,6 +13,9 @@ generated: true
 function prepareApplicationPromptTurn(options): QueryHandle;
 ```
 
+把「异步预检 → 起轮」包成一个同步返回的 QueryHandle:预检期间的排队输入 / 取消原样接管,
+预检超时(缺省 30 秒)或失败以 turn.started → turn.error → turn.aborted 收束本轮,恒不悬挂。
+
 ## 参数
 
 ### options

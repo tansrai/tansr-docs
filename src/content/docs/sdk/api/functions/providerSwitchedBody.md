@@ -13,9 +13,8 @@ generated: true
 function providerSwitchedBody(selection): EventBody | null;
 ```
 
-FallbackSelection → cost.provider.switched 事件体。构造逻辑自 RFC-E8-1 起
-下沉 @tansr/providers providerSwitchedEventBody(cli/sdk 双端单源);保留
-原函数名维持 SDK 消费面不变。
+FallbackSelection → cost.provider.switched 事件体。构造逻辑住 @tansr/providers providerSwitchedEventBody
+(cli / sdk 双端单源);保留原函数名维持 SDK 消费面不变。
 
 ## 参数
 

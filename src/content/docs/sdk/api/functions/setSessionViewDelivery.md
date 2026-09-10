@@ -13,7 +13,7 @@ generated: true
 function setSessionViewDelivery(state, delivery): SessionViewReducerState;
 ```
 
-动态切换呈现档(纯函数;用户拍板 2026-09-01「留切换入口随时切换」):
+动态切换呈现档(纯函数;随时可切):
 恒**块粒度**生效——已开启的块沿其 block.start 时捕获的形态收尾(缓冲/
 占位/不物化已定格在块登记,恒不中途变形),新块即用新档。恒不追溯已
 物化 part;切 thinking:'off' 要既有思考即刻消失用 stripThinkingParts 配套。

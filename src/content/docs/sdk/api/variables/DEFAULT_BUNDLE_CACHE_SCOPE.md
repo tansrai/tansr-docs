@@ -13,4 +13,4 @@ generated: true
 const DEFAULT_BUNDLE_CACHE_SCOPE: BundleCacheScope;
 ```
 
-FX-C-16:缺省径别(sdk `fetchAppBundle` 恒携 x-tansr-app-token = 令牌径)
+缺省径别(sdk `fetchAppBundle` 恒携 x-tansr-app-token = 令牌径)

@@ -20,15 +20,14 @@ function fetchAppBundle(
 ```
 
 拉 bundle(GET \{baseUrl\}/t1/config,令牌头鉴权)并解析;失败一律
-TansrSdkError('assembly_failed') 携修复指引。SC-24:ifNoneMatch 在场即条件请求
+TansrSdkError('assembly_failed') 携修复指引。ifNoneMatch 在场即条件请求
 (平台支持 ETag/304),304 返回 bundle=null 由缓存续期。既有逐会话拉取径
 (assemblePlatformModel 无 bundleCache)与缓存径共用本函数——单一拉取实现。
 
-D-B1(doc/123;B-5):恒携 `x-tansr-client-features: platform-audio`——声明本 SDK 可理解的
-可选 bundle 扩展词表,api(A-6)据此分档下发五键/三键(缺头 = 旧 SDK,恒三键)。恒定值:
-不进 bundle 缓存键(仍 (baseUrl, appId)),条件重拉同携(api 侧 ETag 按实际下发形计算);
-serve 托管拓扑经同一函数自动继承。bundle 拉取与 heartbeat 同携同值(api 侧 bundleEtag 按头
-分档计算,见 fetchTwpHeartbeat 注);exchange 不携(与 bundle 形无关)。
+恒携 `x-tansr-client-features`(缺省 `platform-audio`)——声明本 SDK 可理解的可选 bundle 扩展词表,
+平台据此分档下发(缺头 = 旧 SDK,只下发基础键)。声明值进 bundle 缓存键指纹,条件重拉同携
+(平台侧 ETag 按实际下发形计算);serve 托管拓扑经同一函数自动继承。bundle 拉取与 heartbeat
+同携同值(平台侧 bundleEtag 按头分档计算,见 fetchTwpHeartbeat 注);exchange 不携(与 bundle 形无关)。
 
 ## 参数
 
@@ -52,7 +51,7 @@ serve 托管拓扑经同一函数自动继承。bundle 拉取与 heartbeat 同�
 
 readonly `string`[]
 
-FX-C-16:声明的客户端 features(缺省 CLIENT_FEATURES;缓存键指纹与本头同源)
+声明的客户端 features(缺省 CLIENT_FEATURES;缓存键指纹与本头同源)
 
 ## 返回
 

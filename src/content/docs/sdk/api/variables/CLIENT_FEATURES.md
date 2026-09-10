@@ -14,5 +14,4 @@ const CLIENT_FEATURES: readonly ["platform-audio"];
 ```
 
 本 SDK 可理解的可选 bundle 扩展词表:
-- `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`
-  (doc/123 §3.4)。
+- `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`。

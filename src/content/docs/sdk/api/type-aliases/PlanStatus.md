@@ -12,3 +12,5 @@ generated: true
 ```ts
 type PlanStatus = typeof PLAN_STATUSES[number];
 ```
+
+套餐状态(PLAN_STATUSES 的元素类型)

@@ -16,7 +16,7 @@ function serializeTimeoutPolicy(policy): string;
 超时策略规范化序列化(指纹分量;缺席字段显式 `none` 保持规范形):
 任何超时行为变更——总预算、stage cap/保留量、首字对冲——都会改变指纹,
 既有资格机械失效(堵审计发现的指纹缝:此前改 TWO_STAGE_TIMEOUT_MS
-不动指纹,超时行为可在资格有效期内静默漂移;复核 doc/todo/04 §4-B2)。
+不动指纹,超时行为可在资格有效期内静默漂移)。
 v2(协议 v4):追加 firstEventCap / hedge 两分量。
 
 ## 参数

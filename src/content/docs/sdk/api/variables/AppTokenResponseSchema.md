@@ -27,3 +27,5 @@ const AppTokenResponseSchema: z.ZodObject<{
   token: string;
 }>;
 ```
+
+POST /v1/app-tokens 响应体:令牌本体、过期时刻、appId 与回显的终端用户标识

@@ -13,7 +13,7 @@ generated: true
 function isTransientAppTokenReason(reason): boolean;
 ```
 
-`reason` 是否瞬态(不失效、不重铸);缺席 / 词表外 = false(按失效处置,与 api R-02 同向)
+`reason` 是否瞬态(不失效、不重铸);缺席 / 词表外 = false(按失效处置,与 api 端同向)
 
 ## 参数
 

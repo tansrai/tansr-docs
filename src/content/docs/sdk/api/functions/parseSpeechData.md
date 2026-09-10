@@ -17,10 +17,10 @@ function parseSpeechData(
 ): SpeechData | null;
 ```
 
-成功体归一(doc/123 §3.2 响应形 → SpeechData;同步端点响应体与异步任务 result 同形,双径共用;
+成功体归一(网关 /t1/tts 响应形 → SpeechData;同步端点响应体与异步任务 result 同形,双径共用;
 serve /v2 直连端点与 session.platform.speak 亦经此单点)。`audio` 缺 mime 或 url/b64 皆缺 = 意外
 响应 → null;`format` 缺席自 mime 推导(audio/mpeg → mpeg)。计量/售价位(cost/currency/
-outputHosting)刻意不进 Data 形——端侧恒无金额(doc/89 契约 3.2 同律)。
+outputHosting)刻意不进 Data 形——端侧恒无金额。
 
 ## 参数
 

@@ -142,6 +142,6 @@ const AppCapabilitiesSchema: z.ZodObject<{
 }>;
 ```
 
-app_configs.capabilities JSON 列形态(null = 平台缺省档 DEFAULT_APP_CAPABILITIES)。
-模型面恒不入本 schema:沿用既有 app_configs.modelCatalogIds(单一事实源)。
-顶层 `.strip()`(FX-A-15):段内加法键(如日后的 `quota` / `models` 面)剥除不炸。
+App 能力位段形态(控制台 capabilities 配置;null = 平台缺省档 DEFAULT_APP_CAPABILITIES)。
+模型面恒不入本 schema:沿用既有模型目录授权(单一事实源)。
+顶层 `.strip()`:段内加法键(如日后的 `quota` / `models` 面)剥除不炸。

@@ -14,7 +14,7 @@ function hostedToolUniverse(): readonly string[];
 ```
 
 hosted 拓扑(移动应用经开发者会话服务 /v2)可勾选位全集对应的工具名 —— serve
-`capabilitiesProfile:'mobile-default'` 档的**唯一**上界来源(FX-B-07;B 分册 §六 C-4):
+`capabilitiesProfile:'mobile-default'` 档的**唯一**上界来源:
 TodoWrite, AskUser, WebSearch, ImageGen, VideoGen, SpeechToText, TextToSpeech。
 customTools 位经 clientTools 独立通路,不在此列。
 

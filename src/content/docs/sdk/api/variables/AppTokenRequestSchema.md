@@ -21,3 +21,5 @@ const AppTokenRequestSchema: z.ZodObject<{
   ttlSeconds?: number;
 }>;
 ```
+
+POST /v1/app-tokens 请求体:终端用户标识 + 可选 TTL(秒,[60, 86400])

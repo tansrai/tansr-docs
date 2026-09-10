@@ -17,6 +17,9 @@ function createSdkPermissionGate(
 ): PermissionGate;
 ```
 
+把 kernel 权限引擎装成执行器可用的 PermissionGate:每次工具调用先经 hooks(如有)再经引擎裁决,
+工具元数据(描述 / 效应声明 / 只读位)随咨询透传给分类器;Skill / TodoWrite 等只读工具按既有纪律放行。
+
 ## 参数
 
 ### engine

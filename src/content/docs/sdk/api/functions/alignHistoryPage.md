@@ -17,7 +17,7 @@ function alignHistoryPage(
 ): AlignedHistoryPage | null;
 ```
 
-S-3(doc/116 §3.5,D-9 A)— 历史分页边界对齐:消息索引口径的窗口
+历史分页边界对齐:消息索引口径的窗口
 [offset, offset + limit) 扩到配对干净的边界。「干净边界」= 该长度的前缀内每个
 assistant tool_call 都已见到配对 tool_result(无 open 调用)——两端皆干净的切片
 自身必配对完整,可直接作视图/initialMessages。

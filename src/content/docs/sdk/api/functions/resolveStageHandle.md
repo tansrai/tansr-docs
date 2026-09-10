@@ -22,10 +22,9 @@ function resolveStageHandle(
 registry 别名/ref → stage 句柄(client + 已解析 model + 请求构造能力位)。
 不可解析(别名缺席 / provider 未知 / 缺 key)返回 undefined 交调用方回落;
 非 registry 结构化错误(编程错误)原样上抛。
-- temperatureFixed:厂商固定温度模型(kimi 系)省略 temperature 参数(T-K23j);
-- thinkingOff(仅 fast 形态请求):思考模型实证可关(reasoning ∧ thinkingOptional)
-  时快筛请求显式关断思考——stage1 64 token 预算下 reasoning 耗尽即不可解析
-  (RFC-M3 B2 白名单制;能力未实证不发,恒不猜)。
+- temperatureFixed:厂商固定温度模型(kimi 系)省略 temperature 参数;
+- thinkingOff(仅 fast 形态请求):思考模型实证可关(reasoning ∧ thinkingOptional)时快筛请求显式关断思考
+  ——快筛 64 token 预算下 reasoning 耗尽即不可解析(白名单制;能力未实证不发,恒不猜)。
 
 ## 参数
 

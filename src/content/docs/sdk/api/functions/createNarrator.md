@@ -13,6 +13,9 @@ generated: true
 function createNarrator(source, options): Narrator;
 ```
 
+挂一个叙述器到事件源(AgentSession 或任意 KernelEvent 异步流):逐事件按详细度产出英文日志行
+交给 `onLine`;内部借 reducer 投影做上下文,自身无 IO。用完 `dispose()` 停泵。
+
 ## 参数
 
 ### source

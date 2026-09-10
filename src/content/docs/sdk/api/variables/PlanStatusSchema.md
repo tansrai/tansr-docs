@@ -12,3 +12,5 @@ generated: true
 ```ts
 const PlanStatusSchema: z.ZodEnum<["active", "grace", "lapsed"]>;
 ```
+
+套餐状态 zod schema

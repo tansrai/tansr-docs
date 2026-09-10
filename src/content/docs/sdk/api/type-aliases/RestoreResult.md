@@ -24,7 +24,7 @@ type RestoreResult =
 };
 ```
 
-restore() 结果联合(doc/116 §4.3 逐字)
+restore() 结果联合(restored / rejected)
 
 ## 联合成员
 
@@ -94,7 +94,7 @@ reason: "turn_running" | "not_found" | "session_mismatch" | "store_not_wired";
 ```
 
 turn_running = 运行中 / not_found = 本会话下无此快照 / session_mismatch = 快照
-属于别的会话(跨会话恢复 = 越界;fork 二期)/ store_not_wired = 快照存储未接线
+属于别的会话(跨会话恢复 = 越界;请用 fork)/ store_not_wired = 快照存储未接线
 
 #### status
 

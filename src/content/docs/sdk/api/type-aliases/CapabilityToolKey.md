@@ -12,3 +12,5 @@ generated: true
 ```ts
 type CapabilityToolKey = keyof AppCapabilities["tools"];
 ```
+
+环2 工具位键(`AppCapabilities.tools` 的键)

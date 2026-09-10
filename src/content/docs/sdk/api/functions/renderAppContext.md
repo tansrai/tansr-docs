@@ -17,9 +17,9 @@ function renderAppContext(
 ): string[];
 ```
 
-应用语境段渲染(应用协议 v1,doc/optimize/37 §4.4):`<app>` 与 `<tool>` 是
+应用语境段渲染(应用协议 v1):`<app>` 与 `<tool>` 是
 开发者/平台声明的事实,置于一切数据载荷之前。缺席字段显式 "(not declared)"
-——语境缺席本身让准则退回保守(doc/optimize/37 §9 拍板 1)。
+——语境缺席本身让准则退回保守。
 
 ## 参数
 

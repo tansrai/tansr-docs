@@ -13,4 +13,4 @@ generated: true
 const TOOLS_PLATFORM_DEPRECATED_CODE: "tools_platform_deprecated" = "tools_platform_deprecated";
 ```
 
-`tools.platform` 兼容别名弃用提示的告警码(D-M3;source 'sdk',经 onWarning / sdk.notice 回落)
+`tools.platform` 兼容别名弃用提示的告警码(source 'sdk',经 onWarning / sdk.notice 回落)

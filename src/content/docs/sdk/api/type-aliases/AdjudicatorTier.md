@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AdjudicatorTier = typeof ADJUDICATOR_TIERS[number];
 ```
+
+裁决人资质档(low / medium / high;缺席 = none 只收紧不软化)

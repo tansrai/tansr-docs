@@ -13,4 +13,4 @@ generated: true
 const ADJUDICATOR_TIERS: readonly ["low", "medium", "high"];
 ```
 
-裁决人资质档词表(api PoolTier 同构)
+裁决人资质档词表(平台裁决人池档位同构)

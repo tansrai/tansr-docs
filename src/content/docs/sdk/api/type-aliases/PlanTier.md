@@ -12,3 +12,5 @@ generated: true
 ```ts
 type PlanTier = typeof PLAN_TIERS[number];
 ```
+
+套餐档位(PLAN_TIERS 的元素类型)

@@ -13,4 +13,4 @@ generated: true
 const LOCAL_END_USER_KEY: "local" = "local";
 ```
 
-IO-22:单租户形态的冷层分域键(doc/120 §5;server 份为 sha256(endUserId) 前 16 hex)
+单租户形态的冷层分域键(server 份为 sha256(endUserId) 前 16 hex)

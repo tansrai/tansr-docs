@@ -13,10 +13,9 @@ generated: true
 function createSingleStageClassifier(options): BlockListClassifierConfig;
 ```
 
-单阶段分类器核心(T-K17 续轮 B3 评估形态 → E-3 升格为生产形态):一次
-调用直出结论 + 理由(stage2 输出形制,parseStage2Output 解析),同用脱敏/
-截断禁 safe/fail-degrade/A1 遥测口径。裁决档 = stage2 ?? fast(质量敏感档,
-与两阶段复审档一致)。
+单阶段分类器核心(由评估形态升格为生产形态):一次调用直出结论 + 理由(stage2 输出形制,
+parseStage2Output 解析),同用脱敏/截断禁 safe/fail-degrade/遥测口径。裁决档 = stage2 ?? fast
+(质量敏感档,与两阶段复审档一致)。
 
 ## 参数
 

@@ -13,10 +13,10 @@ generated: true
 function zeroAppCapabilities(platform): AppCapabilities;
 ```
 
-零能力档(FX-A-15 sdk 半边;分册 A R-B-2 逐字):`defaultAppCapabilities(platform)` 且 `tools` 全 false——
+零能力档:`defaultAppCapabilities(platform)` 且 `tools` 全 false——
 `parseAppBundle` 对 capabilities 段**整段坏形**(位非 boolean / 段非对象)的回落值(真 fail-closed:owner 关掉
 的位恒不因坏形被打开;hosted 应用回落 hosted 档而非 embedded 档)。平台位随拓扑缺省档(今日皆 false)。
-段**缺席**不走此档(旧 api / 装置键径不发段 = 进程内缺省档,零漂移)。
+段**缺席**不走此档(旧平台 / 装置键径不发段 = 进程内缺省档,零漂移)。
 
 ## 参数
 

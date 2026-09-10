@@ -13,7 +13,4 @@ generated: true
 const APP_SDK_CONTRACT_VERSION: "v1" = "v1";
 ```
 
-SDK 跨仓契约 v1(S-0 冻结,doc/89;api 仓同构持份 src/contract/app-sdk.ts)。
-改动纪律:双仓 schema 同笔改 + doc/89 增笔;单边改动即违约。
-消费面:S-B1(令牌档装配:令牌头/bundle capabilities 段解析)/S-B3(能力位裁剪)/
-demo(S-C1 token-server 请求响应形态)。zod 定义与 api 仓逐字段一致(S-0 互 diff 验证)。
+SDK 跨仓契约版本号(与平台 api 仓同构持份的版本锚)

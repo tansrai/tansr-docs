@@ -25,6 +25,8 @@ type AppBundlePlan = {
 };
 ```
 
+owner 生效套餐投影(bundle 顶层 `plan` 段;纯呈现位,硬执行恒在服务端)
+
 ## 属性
 
 <a id="api-caps"></a>

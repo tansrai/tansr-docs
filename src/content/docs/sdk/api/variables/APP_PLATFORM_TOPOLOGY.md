@@ -12,3 +12,5 @@ generated: true
 ```ts
 const APP_PLATFORM_TOPOLOGY: Readonly<Record<AppPlatform, CapabilityTopology>>;
 ```
+
+平台类型 → 能力拓扑(desktop / server 进程内 embedded;mobile 经会话服务 hosted)

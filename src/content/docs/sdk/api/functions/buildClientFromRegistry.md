@@ -23,9 +23,8 @@ function buildClientFromRegistry(
 ```
 
 registry + 别名 → fallback 链 client 与解析结果(setModel 热切换复用)。
-链装配自 RFC-E8-1(contract-v0.6 波)起由 @tansr/providers buildAliasClient
-单源承载;本函数保留 SDK 专属职责:错误包装(TansrSdkError)与
-ResolvedModel/contextWindowTokens 投影。
+链装配由 @tansr/providers buildAliasClient 单源承载;本函数保留 SDK 专属职责:错误包装
+(TansrSdkError `assembly_failed`)与 ResolvedModel / contextWindowTokens 投影。
 
 ## 参数
 

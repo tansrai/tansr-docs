@@ -13,10 +13,9 @@ generated: true
 const DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES: readonly string[];
 ```
 
-FX-B-11(J2-05)— **开发者向**裁决人通报码:只走宿主通道(sdk `onPlatformWarning` / `onWarning`;serve
-`onPlatformWarning` / 结构化日志),**恒不下发终端用户设备**(serve `server.platform.warning` 帧不携;
-`packages/server/src/v2/agent-platform-identity.ts` `DEVELOPER_ONLY_ADJUDICATOR_WARNINGS` 逐字同集)。
-FX-C-12 收尾并入两码:`adjudicator_posture_overridden`(控制台 escalation reject 覆写宿主显式 A)/
+**开发者向**裁决人通报码:只走宿主通道(sdk `onPlatformWarning` / `onWarning`;serve `onPlatformWarning` /
+结构化日志),**恒不下发终端用户设备**(serve 的 `server.platform.warning` 帧不携带;serve 侧受众规则以本集为准,
+新增码时先加此处)。`adjudicator_posture_overridden`(控制台 escalation reject 覆写宿主显式人在环)与
 `adjudicator_budget_unenforced`(金额预算不可折算)皆为控制台 × 宿主配置面事实,终端用户无可行动,同律归入。
-其余 `adjudicator_*`(如 `adjudicator_model_unavailable`)与 `adjudicator_skipped_by_mode` 同为开发者面装配期通报,
-sdk 单进程无「端上」之分;serve 侧受众规则以本集为准,新增码时先加此处。
+其余 `adjudicator_*`(如 `adjudicator_model_unavailable`)与 `adjudicator_skipped_by_mode` 同为开发者面装配期通报;
+SDK 单进程无「端上」之分。

@@ -24,6 +24,8 @@ type IdleCompactionResult =
 };
 ```
 
+空闲直压结局:`compacted`(新历史 + 待签发事件体)或 `failed`(失败结局 + 已报成本事件体;历史不变)
+
 ## 联合成员
 
 ### 类型字面量

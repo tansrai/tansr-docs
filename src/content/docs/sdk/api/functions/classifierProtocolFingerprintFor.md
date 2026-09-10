@@ -13,7 +13,7 @@ generated: true
 function classifierProtocolFingerprintFor(stage1MaxTokens?, stage2MaxTokens?): string;
 ```
 
-两阶段协议指纹现算(T-K17 分量全集;预算参数化,2026-08-25 拍板):
+两阶段协议指纹现算(分量全集;预算参数化):
 缺省实参 = 编译内缺省预算,产值 === CLASSIFIER_PROTOCOL_FINGERPRINT。
 
 ## 参数

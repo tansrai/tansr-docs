@@ -13,6 +13,8 @@ generated: true
 function isPlanErrorCode(code): code is "plan_required" | "plan_tier_insufficient" | "plan_concurrency_exceeded" | "plan_end_users_exceeded" | "plan_apps_exceeded" | "plan_members_exceeded" | "plan_gate_unavailable" | "refund_not_eligible";
 ```
 
+是否为套餐错误码(PLAN_ERROR_CODES 词表内)
+
 ## 参数
 
 ### code

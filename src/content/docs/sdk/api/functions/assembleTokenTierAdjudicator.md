@@ -20,10 +20,9 @@ function assembleTokenTierAdjudicator(
   | undefined;
 ```
 
-令牌档装配后半场:bundle 裁决人段在场 → 装配;缺席(旧 api / 坏形状)→
-undefined = 现状,开发者显式配置了 adjudication 时经 onWarn 如实通报
-(`adjudicator_unavailable`),恒不静默。FX-B-08:bundle 治理位(callBudget /
-budgets 金额 / escalation.mode)在此半场生效——`assembled.pricingUpdates`
+令牌档装配后半场:bundle 裁决人段在场 → 装配;缺席(旧平台 / 坏形状)→ undefined = 现状,开发者显式
+配置了 adjudication 时经 onWarn 如实通报(`adjudicator_unavailable`),恒不静默。bundle 治理位
+(callBudget / budgets 金额 / escalation.mode)在此半场生效——`assembled.pricingUpdates`
 (AssembledPlatformModel 同名键)在场即为金额折算的同币单价源。
 
 ## 参数

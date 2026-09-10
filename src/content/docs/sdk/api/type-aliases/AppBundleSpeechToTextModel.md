@@ -13,4 +13,4 @@ generated: true
 type AppBundleSpeechToTextModel = SpeechToTextModelDescriptor;
 ```
 
-doc/123 音频两面(2026-09-05):bundle platformModels.speechToText / textToSpeech 行形
+授权语音识别模型条目(bundle `platformModels.speechToText` 行形,含音频受理约束)

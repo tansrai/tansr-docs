@@ -39,7 +39,7 @@ description: string;
 optional effects?: readonly ("irreversible" | "financial" | "external" | "affects-others")[];
 ```
 
-效应声明(应用协议 v1,doc/optimize/37 §5):`irreversible`(不可逆)/
+效应声明(应用协议 v1):`irreversible`(不可逆)/
 `financial`(资金流动)/ `external`(触达外部系统或第三方)/ `affects-others`
 (影响其他用户或租户)。信号不是闸门——只进裁决人语境与遥测,不改任何
 确定性判定;词表外值声明期 fail-fast。缺省未声明。

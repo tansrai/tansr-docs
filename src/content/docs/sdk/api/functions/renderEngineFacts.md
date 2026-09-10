@@ -13,6 +13,11 @@ generated: true
 function renderEngineFacts(facts): string[];
 ```
 
+引擎事实段 `<engine-facts>`(协议 v4):把权限引擎已算出的结论级事实(shell 各段是否只读 / 重定向 /
+注入痕迹、路径是否在工作区内、规避信号等)渲染成裁决人可读的行,模型据此判断而不必自行推演。
+事实来自 kernel describeTargetFacts(引擎与 harness 同一函数);段内措辞冻结(模型可见)。
+缺席不渲染空段(旧宿主 / 未注入零漂移)。
+
 ## 参数
 
 ### facts

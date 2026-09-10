@@ -18,8 +18,8 @@ function bundleKey(
 ): string;
 ```
 
-bundle 条目键(FX-C-16 四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint;与 resolveBundle 内部键同形)。
-导出供卷断言键形;消费方不应依赖串形。
+bundle 条目键(四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint;与 resolveBundle 内部键同形)。
+导出供测试断言键形;消费方不应依赖串形。
 
 ## 参数
 

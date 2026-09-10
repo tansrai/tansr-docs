@@ -12,3 +12,5 @@ generated: true
 ```ts
 type AppTokenRejectReason = typeof APP_TOKEN_REJECT_REASONS[number];
 ```
+
+令牌径 401 信封 `detail.reason` 的取值(APP_TOKEN_REJECT_REASONS 成员类型)

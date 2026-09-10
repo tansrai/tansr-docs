@@ -14,5 +14,5 @@ type PlatformCapabilityName = "imageGen" | "videoGen" | "speechToText" | "textTo
 ```
 
 媒体四名(BuiltinToolName 子集;与 AppCapabilities.platform 同名——webSearch 位仍在能力契约
-但恒不在此词表,S-WS2)。兼作 `tools.platform` 兼容别名词表(D-M3):imageGen 自 S-E1、videoGen
-自 S-F、speechToText / textToSpeech 自 doc/123 D-A1/D-A3(两独立面:/t1/asr、/t1/tts)。
+但恒不在此词表)。兼作 `tools.platform` 兼容别名词表;speechToText / textToSpeech 为两独立面
+(/t1/asr、/t1/tts)。

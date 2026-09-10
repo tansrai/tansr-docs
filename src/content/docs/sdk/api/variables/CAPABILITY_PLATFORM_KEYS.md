@@ -13,4 +13,4 @@ generated: true
 const CAPABILITY_PLATFORM_KEYS: readonly CapabilityPlatformKey[];
 ```
 
-平台位键闭集(5;doc/123 音频两位 speechToText/textToSpeech 自 2026-09-05 起)
+平台位键闭集(5;含音频两位 speechToText/textToSpeech)

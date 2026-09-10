@@ -13,6 +13,11 @@ generated: true
 function createTwoStageClassifier(options): BlockListClassifierConfig;
 ```
 
+两阶段分类器核心(生产缺省形态):stage1 fast 快筛 → stage2 复审。
+返回体四键(classifier / timeoutMs / resolveQualificationTier /
+cacheVersionTag)直接进 PermissionEngineConfig.classifier;宿主叠加治理
+旋钮、transcript 提供器与 onBreakerTrip 通知面。
+
 ## 参数
 
 ### options

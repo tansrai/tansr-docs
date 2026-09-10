@@ -17,10 +17,10 @@ function parseTranscriptData(
 ): TranscriptData | null;
 ```
 
-成功体归一(doc/123 §3.1 响应形 → TranscriptData;同步端点响应体与异步任务 result 同形,双径
+成功体归一(网关 /t1/asr 响应形 → TranscriptData;同步端点响应体与异步任务 result 同形,双径
 共用;serve /v2 直连端点与 session.platform.transcribe 亦经此单点)。`text` 非串 = 意外响应 →
 null(调用方按结构化错误处置)。坏分段逐条剔除;计量/售价位(usage/cost/currency)刻意不进
-Data 形——端侧恒无金额(doc/89 契约 3.2 同律)。
+Data 形——端侧恒无金额。
 
 ## 参数
 

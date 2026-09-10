@@ -28,7 +28,7 @@ type CompactResult =
 };
 ```
 
-compact() 结果联合(doc/116 §4.3;failed 形 checkpointId 为 §5.1「结果携 id」加法)
+compact() 结果联合(compacted / rejected / failed;failed 形亦携失败前已落的快照 id)
 
 ## 联合成员
 
@@ -118,7 +118,7 @@ status: "rejected";
 optional checkpointId?: string;
 ```
 
-D-11 A:失败前已落的快照不回滚,id 随结果交付
+失败前已落的快照不回滚,id 随结果交付
 
 #### reason
 

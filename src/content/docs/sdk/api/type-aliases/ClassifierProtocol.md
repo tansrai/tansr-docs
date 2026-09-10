@@ -13,7 +13,6 @@ generated: true
 type ClassifierProtocol = "coding" | "app";
 ```
 
-分类器协议表面(doc/optimize/37 §3):`coding` = 编码代理协议(CLI 四入口;
-本文件的指令文本);`app` = 应用表面协议(SDK 令牌档 / serve /v2 平台会话;
-指令文本在 prompts-app.ts)。表面决定「裁决人看什么、按什么判」,姿态决定
-「裁决结果如何落地」,两者正交。
+分类器协议表面:`coding` = 编码代理协议(CLI 各入口;本文件的指令文本);`app` = 应用表面协议
+(SDK 令牌档 / serve 平台会话;指令文本在 prompts-app.ts)。表面决定「裁决人看什么、按什么判」,
+姿态决定「裁决结果如何落地」,两者正交。

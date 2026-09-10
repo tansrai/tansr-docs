@@ -21,9 +21,9 @@ generated: true
 optional appId?: string;
 ```
 
-SC-24 — 缓存键的应用维(令牌所属 app 的公开标识):同一进程对同一 baseUrl 混用
-多个 app 的令牌时必须传,否则缓存退化为 per-baseUrl 单条目(首个令牌拉到的 bundle
-被后续会话复用)。app_user 令牌本体不暴露 appId,故无法自推。
+缓存键的应用维(令牌所属 app 的公开标识):同一进程对同一 baseUrl 混用多个 app 的令牌时必须传,
+否则缓存退化为 per-baseUrl 单条目(首个令牌拉到的 bundle 被后续会话复用)。app_user 令牌本体不暴露
+appId,故无法自推。
 
 ***
 
@@ -47,10 +47,9 @@ baseUrl: string;
 optional bundleCache?: BundleCache;
 ```
 
-SC-24(serve 并发审计 S-14)— bundle/features 进程级缓存(createBundleCache):
-在场时 bundle 与 features 经缓存取得(TTL = 响应 max-age 与 ttlMs 取小;过期后
-If-None-Match 条件重拉;同键并发只一次出网),命中即零上游往返;缺席 = 逐会话
-拉取现状(零漂移)。serve 平台内置形缺省接一枚;SDK 端侧多会话同 app 可自接。
+bundle/features 进程级缓存(createBundleCache):在场时 bundle 与 features 经缓存取得
+(TTL = 响应 max-age 与 ttlMs 取小;过期后 If-None-Match 条件重拉;同键并发只一次出网),
+命中即零上游往返;缺席 = 逐会话拉取(零漂移)。serve 平台内置形缺省接一枚;SDK 端侧多会话同 app 可自接。
 
 ***
 
@@ -108,11 +107,10 @@ fallback 链最终命中通报(session 装配合成 cost.provider.switched)
 optional onSessionArchived?: (sessionId) => void;
 ```
 
-M-07(doc/130 §五;api FX-A-06 归档会话心跳 410 `session_archived`):装配期心跳报告
-「本会话 id 已被平台归档」的旁路——消费方(createSession)据此**停止对该 id 的心跳、不重试**,
-并铸新平台会话 id,下轮 exchange 以新 id 开新会话(exchange 首见幂等登记)。入参 = 被归档的
-会话 id(api 信封 `detail.sessionId`;缺席回落本次心跳携带的 id;皆缺席 undefined)。
-缺席 = 410 与其它非 2xx 同为静默失败(features 门关),行为现状。
+归档会话心跳(410 `session_archived`)旁路:装配期心跳报告「本会话 id 已被平台归档」——消费方
+(createSession)据此**停止对该 id 的心跳、不重试**,并铸新平台会话 id,下轮 exchange 以新 id 开新会话
+(exchange 首见幂等登记)。入参 = 被归档的会话 id(平台信封 `detail.sessionId`;缺席回落本次心跳携带的 id;
+皆缺席 undefined)。缺席 = 410 与其它非 2xx 同为静默失败(features 门关),行为现状。
 
 #### 参数
 
@@ -134,9 +132,8 @@ M-07(doc/130 §五;api FX-A-06 归档会话心跳 410 `session_archived`):装配
 optional onWarn?: (warn) => void;
 ```
 
-S-ARCH(doc/109 代拍②):平台 t.warn 提示帧旁路(thinking_unavailable_on_face
-/balance_low 等)。此前 SDK 面恒缺席 = 平台的结构化告知在最后一米静默
-蒸发;经既有 registry twp 选项缝透传,providers 零改动。
+平台 t.warn 提示帧旁路(thinking_unavailable_on_face / balance_low 等):平台的结构化告知经此到达
+开发者,不静默蒸发;经既有 registry twp 选项缝透传。
 
 #### 参数
 
@@ -158,10 +155,9 @@ S-ARCH(doc/109 代拍②):平台 t.warn 提示帧旁路(thinking_unavailable_on_
 optional sessionId?: () => string | undefined;
 ```
 
-doc/91 拍板⑤ — twp meta.sessionId 动态供给(平台会话 id,ULID 形制;
-经 ProviderRegistry twp 选项缝透传,providers 零改动)。createSession
-令牌档 per-AgentSession 铸造一枚注入;缺席 = meta.sessionId 如实不携带
-(归账兜底在认证头,批ι 前语义),query 单轮档现维持缺席。
+twp meta.sessionId 动态供给(平台会话 id,ULID 形制;经 ProviderRegistry twp 选项缝透传)。
+createSession 令牌档 per-AgentSession 铸造一枚注入;缺席 = meta.sessionId 如实不携带
+(归账兜底在认证头),query 单轮档现维持缺席。
 
 #### 返回
 

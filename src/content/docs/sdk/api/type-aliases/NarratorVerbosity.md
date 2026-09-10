@@ -12,3 +12,5 @@ generated: true
 ```ts
 type NarratorVerbosity = "quiet" | "normal" | "verbose";
 ```
+
+叙述详细度(累进):quiet 轮次级 / normal + 工具级 / verbose + delta 摘要与权限细节
