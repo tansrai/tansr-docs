@@ -3,15 +3,19 @@
  * 「本文是否有帮助」:两钮。点击即显感谢并记 localStorage(键 `tansr-docs:feedback:<pathname>`,再次进入同页回显已选态),
  * 同时 `POST {API_BASE}/v1/docs/feedback { path, helpful, locale }`(端点契约:202 `{ ok: true }`;无鉴权;每 IP 60 / h)。
  * 任何非 2xx / 网络错 / 超时 → 只留 localStorage 形(delivered: false),界面恒显感谢、不暴露错误细节(console.debug 一条)。
- * 零第三方脚本;文案两语按 Astro.currentLocale。
+ * 零第三方脚本;文案四语(zh-CN · en · ja · ko)按当前语言查表;载荷里的 locale 由 docs-api `normalizeLocale` 归一到 api 契约
+ * 接受的取值(ja / ko 页归 zh-CN;路径本身已带语言前缀)。
  */
-import { normalizeLocale } from '../lib/docs-api.mjs';
+import { uiLocale } from '../lib/categories.mjs';
 
-const lang = normalizeLocale(Astro.currentLocale ?? Astro.locals.starlightRoute.locale);
-const t =
-  lang === 'en'
-    ? { q: 'Was this page helpful?', yes: 'Yes', no: 'No', thanks: 'Thanks for your feedback.' }
-    : { q: '本文是否有帮助?', yes: '有帮助', no: '没帮助', thanks: '感谢反馈,我们会持续改进这篇文章。' };
+const lang = uiLocale(Astro.locals.starlightRoute.locale);
+const STRINGS = {
+  'zh-CN': { q: '本文是否有帮助?', yes: '有帮助', no: '没帮助', thanks: '感谢反馈,我们会持续改进这篇文章。' },
+  en: { q: 'Was this page helpful?', yes: 'Yes', no: 'No', thanks: 'Thanks for your feedback.' },
+  ja: { q: 'このページは役に立ちましたか？', yes: 'はい', no: 'いいえ', thanks: 'フィードバックありがとうございます。この記事の改善に活かします。' },
+  ko: { q: '이 페이지가 도움이 되었나요?', yes: '예', no: '아니요', thanks: '피드백 감사합니다. 이 문서를 계속 개선하겠습니다.' },
+} as const;
+const t = STRINGS[lang];
 ---
 
 <section class="feedback" aria-labelledby="feedback-title" data-feedback data-feedback-locale={lang}>

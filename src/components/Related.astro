@@ -4,10 +4,18 @@
  * slug 在当前语言与根语言都不存在 → 构建期抛(死链不进 dist)。无 related 不渲染。
  */
 import { localeEntries, slugToHref } from '../lib/resolve';
+import { uiLocale } from '../lib/categories.mjs';
 
 const { entry, locale } = Astro.locals.starlightRoute;
 const related = entry.data.related ?? [];
-const isEn = locale === 'en';
+/** 标题与「该文尚无本语言版本、链到中文原文」的角标 */
+const STRINGS = {
+  'zh-CN': { title: '相关文章', fallback: '中文' },
+  en: { title: 'Related articles', fallback: 'zh-CN' },
+  ja: { title: '関連記事', fallback: '中国語' },
+  ko: { title: '관련 문서', fallback: '중국어' },
+} as const;
+const t = STRINGS[uiLocale(locale)];
 
 const current = await localeEntries(locale);
 const root = locale ? await localeEntries(undefined) : current;
@@ -31,12 +39,12 @@ const items = related.map((slug) => {
 {
   items.length > 0 && (
     <section class="related" aria-labelledby="related-title">
-      <h2 id="related-title">{isEn ? 'Related articles' : '相关文章'}</h2>
+      <h2 id="related-title">{t.title}</h2>
       <ul>
         {items.map((it) => (
           <li>
             <a href={it.href}>{it.title}</a>
-            {it.fallback && <span class="category-badge">{isEn ? 'zh-CN' : '中文'}</span>}
+            {it.fallback && <span class="category-badge">{t.fallback}</span>}
           </li>
         ))}
       </ul>

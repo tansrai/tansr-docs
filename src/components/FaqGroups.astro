@@ -1,42 +1,50 @@
 ---
 /**
  * 帮助中心首页的 FAQ 分组卡:每组一个落地页(构建期解析存在性)+ 该组覆盖的问题要点。
- * 落地页未上线时卡片保留、标「即将上线」,不产死链。
+ * 落地页未上线时卡片保留、标「即将上线」,不产死链。文案四语(zh-CN · en · ja · ko)按当前语言查表。
  */
 import { Icon } from '@astrojs/starlight/components';
 import { resolveExisting } from '../lib/resolve';
+import { uiLocale } from '../lib/categories.mjs';
 
-const isEn = Astro.locals.starlightRoute.locale === 'en';
+const lang = uiLocale(Astro.locals.starlightRoute.locale);
+
+const STRINGS = {
+  'zh-CN': {
+    soon: '即将上线',
+    account: { title: '账号、密钥、套餐与计费', points: ['登录与组织', '创建、轮换与吊销 API 密钥', '套餐额度与用量', '账单与付款'] },
+    troubleshooting: { title: '常见问题排障', points: ['看懂 doctor 输出', '常见错误码与处置', '网络与代理问题', '会话无法恢复'] },
+    contact: { title: '联系支持', points: ['微信支持群', '邮件支持', '反馈时请附上的信息'] },
+  },
+  en: {
+    soon: 'Coming soon',
+    account: { title: 'Account, keys, plans & billing', points: ['Sign in and organizations', 'Create, rotate and revoke API keys', 'Plan limits and usage', 'Invoices and payment'] },
+    troubleshooting: { title: 'Troubleshooting', points: ['Read the doctor output', 'Common error codes and what to do', 'Network and proxy issues', 'Session not resuming'] },
+    contact: { title: 'Contact support', points: ['WeChat support group', 'Email support', 'What to include in a report'] },
+  },
+  ja: {
+    soon: '近日公開',
+    account: { title: 'アカウント・キー・プラン・請求', points: ['ログインと組織', 'API キーの作成・ローテーション・失効', 'プランの上限と使用量', '請求書と支払い'] },
+    troubleshooting: { title: 'トラブルシューティング', points: ['doctor の出力の読み方', 'よくあるエラーコードと対処', 'ネットワークとプロキシの問題', 'セッションを再開できない'] },
+    contact: { title: 'サポートに連絡', points: ['WeChat サポートグループ', 'メールサポート', '問い合わせに添える情報'] },
+  },
+  ko: {
+    soon: '준비 중',
+    account: { title: '계정, 키, 플랜 및 결제', points: ['로그인과 조직', 'API 키 생성, 교체, 폐기', '플랜 한도와 사용량', '청구서와 결제'] },
+    troubleshooting: { title: '문제 해결', points: ['doctor 출력 읽는 법', '자주 보는 오류 코드와 대처', '네트워크와 프록시 문제', '세션을 재개할 수 없을 때'] },
+    contact: { title: '지원 문의', points: ['WeChat 지원 그룹', '이메일 지원', '문의 시 함께 보낼 정보'] },
+  },
+} as const;
+const t = STRINGS[lang];
 
 const GROUPS = [
-  {
-    slug: 'support/account',
-    icon: 'setting',
-    title: isEn ? 'Account, keys, plans & billing' : '账号、密钥、套餐与计费',
-    points: isEn
-      ? ['Sign in and organizations', 'Create, rotate and revoke API keys', 'Plan limits and usage', 'Invoices and payment']
-      : ['登录与组织', '创建、轮换与吊销 API 密钥', '套餐额度与用量', '账单与付款'],
-  },
-  {
-    slug: 'support/troubleshooting',
-    icon: 'warning',
-    title: isEn ? 'Troubleshooting' : '常见问题排障',
-    points: isEn
-      ? ['Read the doctor output', 'Common error codes and what to do', 'Network and proxy issues', 'Session not resuming']
-      : ['看懂 doctor 输出', '常见错误码与处置', '网络与代理问题', '会话无法恢复'],
-  },
-  {
-    slug: 'support/contact',
-    icon: 'comment',
-    title: isEn ? 'Contact support' : '联系支持',
-    points: isEn
-      ? ['WeChat support group', 'Email support', 'What to include in a report']
-      : ['微信支持群', '邮件支持', '反馈时请附上的信息'],
-  },
+  { slug: 'support/account', icon: 'setting', ...t.account },
+  { slug: 'support/troubleshooting', icon: 'warning', ...t.troubleshooting },
+  { slug: 'support/contact', icon: 'comment', ...t.contact },
 ] as const;
 
 const existing = new Map((await resolveExisting(Astro.locals.starlightRoute.locale, GROUPS.map((g) => g.slug))).map((e) => [e.slug, e.href]));
-const soon = isEn ? 'Coming soon' : '即将上线';
+const soon = t.soon;
 ---
 
 <ul class="category-grid faq-groups" role="list">

@@ -4,6 +4,7 @@
  * 一个都没有时显示占位句。
  */
 import { resolveExisting } from '../lib/resolve';
+import { uiLocale } from '../lib/categories.mjs';
 
 interface Props {
   /** 站内 slug(不含前后斜杠),按展示顺序 */
@@ -24,9 +25,15 @@ const DEFAULT_SLUGS = [
 ] as const;
 
 const { locale } = Astro.locals.starlightRoute;
-const isEn = locale === 'en';
+const STRINGS = {
+  'zh-CN': { title: '热门文章', empty: '文章陆续上线中。' },
+  en: { title: 'Popular articles', empty: 'Articles are on their way.' },
+  ja: { title: '人気の記事', empty: '記事は順次公開します。' },
+  ko: { title: '인기 문서', empty: '문서를 순차적으로 공개하고 있습니다.' },
+} as const;
+const t = STRINGS[uiLocale(locale)];
 const items = await resolveExisting(locale, Astro.props.slugs ?? DEFAULT_SLUGS);
-const title = Astro.props.title ?? (isEn ? 'Popular articles' : '热门文章');
+const title = Astro.props.title ?? t.title;
 ---
 
 <section class="hot-articles" aria-labelledby="hot-articles-title">
@@ -41,7 +48,7 @@ const title = Astro.props.title ?? (isEn ? 'Popular articles' : '热门文章');
         ))}
       </ol>
     ) : (
-      <p class="hot-empty">{isEn ? 'Articles are on their way.' : '文章陆续上线中。'}</p>
+      <p class="hot-empty">{t.empty}</p>
     )
   }
 </section>
