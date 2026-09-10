@@ -5,8 +5,8 @@
  * 每 IP 5 / h → 429;邮件通道未配 → 503)。状态:idle → submitting → success(显 ticketId)| error(显「暂时无法提交,请发邮件」
  * + 带主题 / 正文的 mailto 回退)。任何非 2xx / 网络错 / 超时一律 error 态,页面不假死、不暴露错误细节(console.debug 一条)。
  * 零第三方脚本;文案四语(zh-CN · en · ja · ko)按当前语言查表,脚本侧文案经 data-* 属性下发(脚本本身不分语言);无 JS 时 <noscript> 给 mailto。
- * 载荷里的 locale 由 docs-api `normalizeLocale` 归一:∈ `API_LOCALES`(与 api 契约同集)原样,否则 zh-CN
- * (现 ja / ko 归 zh-CN,api 收 ja / ko 后在该常量加项即可;`page` 已带语言前缀)。
+ * 载荷里的 locale 由 docs-api `normalizeLocale` 归一:∈ `API_LOCALES`(与 api 契约同集,四语齐;ja / ko 随 api 2026-09-11 上产加入)原样,
+ * 否则 zh-CN(`page` 已带语言前缀)。
  */
 import { LIMITS, SUPPORT_MAILBOX } from '../lib/docs-api.mjs';
 import { uiLocale } from '../lib/categories.mjs';

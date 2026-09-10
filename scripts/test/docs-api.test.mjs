@@ -63,12 +63,13 @@ test('反馈载荷形:{ path, helpful, locale };path 不合契约形 / 超 200 /
   assert.equal(normalizeLocale('en'), 'en');
 });
 
-test('语言集常量:API_LOCALES = [zh-CN, en](与 api DOCS_LOCALES 同集;ja / ko 待 api 上产后由主线加);normalizeLocale ∈ 集合原样、否则 zh-CN;集合可注入(含 ja 时原样),常量本身不动;两载荷沿同一归一', () => {
-  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en']);
+test('语言集常量:API_LOCALES = [zh-CN, en, ja, ko](与 api DOCS_LOCALES 同集;ja / ko 随 api fe7706e 上产于 2026-09-11 加入);normalizeLocale ∈ 集合原样、否则 zh-CN;集合可注入(窄集时 ja 归 zh-CN),常量本身不动;两载荷沿同一归一', () => {
+  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en', 'ja', 'ko']);
   assert.ok(Object.isFrozen(API_LOCALES), '常量冻结');
   for (const l of API_LOCALES) assert.equal(normalizeLocale(l), l, `${l} 原样`);
-  assert.equal(normalizeLocale('ja'), 'zh-CN', '当前 api 契约不认 ja → zh-CN');
-  assert.equal(normalizeLocale('ko'), 'zh-CN');
+  assert.equal(normalizeLocale('ja'), 'ja', 'api 契约已收 ja → 原样');
+  assert.equal(normalizeLocale('ko'), 'ko');
+  assert.equal(normalizeLocale('fr'), 'zh-CN', 'api 未收的语言 → zh-CN');
   assert.equal(normalizeLocale('root'), 'zh-CN');
   assert.equal(normalizeLocale(undefined), 'zh-CN');
   assert.equal(normalizeLocale(null), 'zh-CN');
@@ -76,19 +77,20 @@ test('语言集常量:API_LOCALES = [zh-CN, en](与 api DOCS_LOCALES 同集;ja /
   assert.equal(normalizeLocale('EN'), 'zh-CN', '与 api 枚举逐字,大小写敏感');
   assert.equal(normalizeLocale('zh'), 'zh-CN');
   assert.equal(normalizeLocale(['en']), 'zh-CN', '非字符串不认');
-  // 注入:api 扩 ja / ko 上产后主线只需在 API_LOCALES 加两项,归一即原样 —— 这里以参数化验证,不改常量
-  const extended = Object.freeze(['zh-CN', 'en', 'ja', 'ko']);
-  assert.equal(normalizeLocale('ja', extended), 'ja');
-  assert.equal(normalizeLocale('ko', extended), 'ko');
-  assert.equal(normalizeLocale('en', extended), 'en');
-  assert.equal(normalizeLocale('fr', extended), 'zh-CN', '不在注入集合内仍归 zh-CN');
+  // 注入:归一随注入集合走(窄集 = 上产前形态,ja / ko 归 zh-CN;再扩语言时先以注入验证、api 上产后再加常量),不改常量
+  const narrow = Object.freeze(['zh-CN', 'en']);
+  assert.equal(normalizeLocale('ja', narrow), 'zh-CN', '窄集不含 ja → zh-CN');
+  assert.equal(normalizeLocale('ko', narrow), 'zh-CN');
+  assert.equal(normalizeLocale('en', narrow), 'en');
+  assert.equal(normalizeLocale('fr', ['zh-CN', 'en', 'ja', 'ko', 'fr']), 'fr', '宽集含 fr → 原样');
   assert.equal(normalizeLocale('en', ['zh-CN']), 'zh-CN', '注入更窄集合同样生效');
-  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en'], '注入不改常量');
-  // 载荷成形沿同一归一(ja / ko 页现归 zh-CN 上报;路径 / page 自带语言前缀可反查)
-  assert.equal(feedbackPayload({ pathname: '/ja/support/', value: 'yes', locale: 'ja' }).locale, 'zh-CN');
+  assert.deepEqual([...API_LOCALES], ['zh-CN', 'en', 'ja', 'ko'], '注入不改常量');
+  // 载荷成形沿同一归一(ja / ko 页如实上报;路径 / page 自带语言前缀)
+  assert.equal(feedbackPayload({ pathname: '/ja/support/', value: 'yes', locale: 'ja' }).locale, 'ja');
   assert.equal(feedbackPayload({ pathname: '/en/support/', value: 'yes', locale: 'en' }).locale, 'en');
-  assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'ko' }).locale, 'zh-CN');
+  assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'ko' }).locale, 'ko');
   assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'en' }).locale, 'en');
+  assert.equal(ticketPayload({ subject: 's', body: 'b', locale: 'fr' }).locale, 'zh-CN', 'api 未收的语言归 zh-CN');
 });
 
 test('组件注释:Feedback / ContactForm 的归一说明指向 API_LOCALES(集合内原样、否则 zh-CN),不写死 ja / ko 的归一结果', () => {

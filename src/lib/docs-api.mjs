@@ -20,10 +20,10 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * api 两端点 `locale` 字段接受的取值(与 api `DOCS_LOCALES` 同集,逐字)。
- * api 扩 ja / ko **上产后**由主线在此加两项即可(normalizeLocale / 两载荷随之原样透传);上产前不加——
- * 否则 ja / ko 页会向生产端点发契约外的值而吃 400,反馈 / 工单转回退。
+ * ja / ko 于 2026-09-11 随 api `fe7706e` 上产(DS-39)后加入;此前不加是为免 ja / ko 页向生产端点发契约外的值吃 400。
+ * 再扩语言仍循同律:api 先上产、本常量后加项(normalizeLocale / 两载荷随之原样透传)。
  */
-export const API_LOCALES = Object.freeze(/** @type {const} */ (['zh-CN', 'en']));
+export const API_LOCALES = Object.freeze(/** @type {const} */ (['zh-CN', 'en', 'ja', 'ko']));
 /** @typedef {typeof API_LOCALES[number]} ApiLocale */
 
 /**
@@ -50,8 +50,8 @@ export function ticketsUrl(base) {
 }
 
 /**
- * 语言归一:∈ `accepted`(缺省 API_LOCALES)原样;其余(含 undefined / `root` / 大小写不合 / 站内有页但 api 未收的 ja / ko)→ `zh-CN`。
- * `accepted` 只作注入位(卷以此验证「集合含 ja 时原样」),组件恒走缺省。
+ * 语言归一:∈ `accepted`(缺省 API_LOCALES)原样;其余(含 undefined / `root` / 大小写不合 / api 未收的语言)→ `zh-CN`。
+ * `accepted` 只作注入位(卷以此验证「集合窄于 / 宽于常量时归一随集合走」),组件恒走缺省。
  * @param {unknown} locale
  * @param {readonly string[]} [accepted]
  * @returns {ApiLocale}
