@@ -5,6 +5,7 @@ zone: docs
 category: getting-started
 related:
   - sdk/system-prompts
+  - sdk/midturn-input
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
@@ -13,7 +14,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 `@tansr/sdk` is the headless language binding of the tansr kernel: prompts in, events out, zero UI dependencies. The query loop, tool scheduling, permission engine and context compaction all come from the kernel and are compiled inline; what you get is the same runtime as the `tansr` CLI, embedded in your application as a library.
@@ -25,6 +26,8 @@ Platform `systemPrompt` holds the shared role; SDK `system` holds code-managed b
 Windows Electron runs the SDK in its main process; renderer input remains a user message. These prompt features await compatible releases. Supporting builds expose read-only `session.applicationPrompt` with source / policy, without prompt text. Platform prompts and policies refresh before a subsequent turn; an executing turn keeps its configuration, and the same session and history are preserved. See [Application system prompts](/en/sdk/system-prompts/) for the truth table, platform PUT / GET, and complete examples.
 
 ## Prerequisites
+
+To add requirements while a task is running, use [same-turn input](/en/sdk/midturn-input/) with `getInputTarget`, `submitInput` and receipt lookup. It does not interrupt the execution or create a session. This first release supports memory text delivery and requires compatible package releases.
 
 For application shutdown, see [session and resource cleanup](/en/sdk/lifecycle/). The additive closeAsync / drain APIs distinguish terminal events from actual cleanup; compatible releases are required.
 

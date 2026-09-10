@@ -5,6 +5,7 @@ zone: docs
 category: sdk
 related:
   - sdk/system-prompts
+  - sdk/midturn-input
   - getting-started/sdk
   - sdk/checkpoints
   - sdk/platform-bundle
@@ -14,7 +15,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-10'
 ---
 
 SDK 的一句话分工：**智能体循环归 SDK，交互体验归你**。你提供 UI（或没有 UI）、业务函数、权限确认交互；SDK 提供模型接入、工具执行、事件流与状态投影。这一篇讲事件流这条主干。
@@ -63,7 +64,7 @@ const pump = (async () => {
 })();
 
 session.send('第一轮问题');      // 空闲 → 起新一轮
-session.send('补充一句');        // 运行中 → 经内核注入屏障并入当前轮,输入恒不丢失
+session.send('补充一句');        // 旧兼容入口；严格同轮与回执使用 submitInput
 await session.idle();            // 等当前轮(含结转连锁轮)终态
 session.interrupt();             // 优雅中止当前轮(事件流走到 turn.aborted),会话可继续
 console.log(session.messages()); // 历史快照(深拷贝;可持久化 / 续跑)
@@ -73,7 +74,7 @@ await pump;
 
 方法语义要点：
 
-- `send(prompt)`：空闲起新轮；运行中经注入屏障在下一次模型调用前消费，轮终态时未消费的注入自动结转为下一轮开场输入。`close` 后再调用 throw `session_closed`，不静默吞输入。
+- `send(prompt)`：空闲起新轮；运行中经输入屏障消费，自然 `completed` / `structured_output` 窗口内未消费的旧输入可结转。限额/显式中止等硬终态不自动新开同代轮逃避预算。需要严格同轮与回执时使用 [submitInput](/sdk/midturn-input/)，不要在关闭目标后回落 `send()`。`close` 后再调用 throw `session_closed`。
 - `events`：跨轮连续、会话内 `seq` 单调的 `AsyncIterable<KernelEvent>`。**多消费者广播**：每次 `for await` 都是一个独立订阅者，SessionView 泵、Narrator、你自己的循环可以同时挂，各得全量。首轮 `send()` 前挂上的订阅者得到会话创建以来的全部事件；直播中挂上的自订阅点起。
 - `setModel(next)`：对后续轮生效。令牌 / 托管档传别名字符串（重解析失败抛 `assembly_failed`，会话状态不变）；注入档传 `{ client, model }`。
 - `signal` 选项：AbortSignal，abort 即 close。

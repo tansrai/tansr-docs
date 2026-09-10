@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:528 篇中文文章中 English 12 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:536 篇中文文章中 English 13 篇;未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-09-10'
@@ -14,7 +14,7 @@ generated: true
 
 | 语言 | 已翻译 / 总数 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 12 / 528 | 2.3% |
+| English(`en`) | 13 / 536 | 2.4% |
 
 ## 逐页
 
@@ -301,6 +301,10 @@ generated: true
 | [SessionEventSource(生成页)](/sdk/api/interfaces/sessioneventsource/) `sdk/api/interfaces/sessioneventsource` | ✓ | 回落 |
 | [SessionHistoryStore(生成页)](/sdk/api/interfaces/sessionhistorystore/) `sdk/api/interfaces/sessionhistorystore` | ✓ | 回落 |
 | [SessionIndexStore(生成页)](/sdk/api/interfaces/sessionindexstore/) `sdk/api/interfaces/sessionindexstore` | ✓ | 回落 |
+| [SessionInputCapabilities(生成页)](/sdk/api/interfaces/sessioninputcapabilities/) `sdk/api/interfaces/sessioninputcapabilities` | ✓ | 回落 |
+| [SessionInputReceipt(生成页)](/sdk/api/interfaces/sessioninputreceipt/) `sdk/api/interfaces/sessioninputreceipt` | ✓ | 回落 |
+| [SessionInputSubmission(生成页)](/sdk/api/interfaces/sessioninputsubmission/) `sdk/api/interfaces/sessioninputsubmission` | ✓ | 回落 |
+| [SessionInputTarget(生成页)](/sdk/api/interfaces/sessioninputtarget/) `sdk/api/interfaces/sessioninputtarget` | ✓ | 回落 |
 | [SessionLifecycleFailure(生成页)](/sdk/api/interfaces/sessionlifecyclefailure/) `sdk/api/interfaces/sessionlifecyclefailure` | ✓ | 回落 |
 | [SessionNotice(生成页)](/sdk/api/interfaces/sessionnotice/) `sdk/api/interfaces/sessionnotice` | ✓ | 回落 |
 | [SessionRecord(生成页)](/sdk/api/interfaces/sessionrecord/) `sdk/api/interfaces/sessionrecord` | ✓ | 回落 |
@@ -437,6 +441,9 @@ generated: true
 | [RestoreResult(生成页)](/sdk/api/type-aliases/restoreresult/) `sdk/api/type-aliases/restoreresult` | ✓ | 回落 |
 | [SdkErrorCode(生成页)](/sdk/api/type-aliases/sdkerrorcode/) `sdk/api/type-aliases/sdkerrorcode` | ✓ | 回落 |
 | [SequentialToolHandler(生成页)](/sdk/api/type-aliases/sequentialtoolhandler/) `sdk/api/type-aliases/sequentialtoolhandler` | ✓ | 回落 |
+| [SessionInputContent(生成页)](/sdk/api/type-aliases/sessioninputcontent/) `sdk/api/type-aliases/sessioninputcontent` | ✓ | 回落 |
+| [SessionInputRejectCode(生成页)](/sdk/api/type-aliases/sessioninputrejectcode/) `sdk/api/type-aliases/sessioninputrejectcode` | ✓ | 回落 |
+| [SessionInputResult(生成页)](/sdk/api/type-aliases/sessioninputresult/) `sdk/api/type-aliases/sessioninputresult` | ✓ | 回落 |
 | [SessionLifecyclePhase(生成页)](/sdk/api/type-aliases/sessionlifecyclephase/) `sdk/api/type-aliases/sessionlifecyclephase` | ✓ | 回落 |
 | [SessionViewSource(生成页)](/sdk/api/type-aliases/sessionviewsource/) `sdk/api/type-aliases/sessionviewsource` | ✓ | 回落 |
 | [SessionViewStatus(生成页)](/sdk/api/type-aliases/sessionviewstatus/) `sdk/api/type-aliases/sessionviewstatus` | ✓ | 回落 |
@@ -536,6 +543,7 @@ generated: true
 | [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 |
 | [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 |
 | [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) |
+| [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) |
 | [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 |
 | [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 |
 | [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) |

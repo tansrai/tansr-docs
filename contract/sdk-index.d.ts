@@ -11243,6 +11243,51 @@ interface MetricsRegistry {
 declare const KERNEL_STATES: readonly ["idle", "assembling", "streaming", "awaiting_permission", "executing_tools", "compacting", "terminated"];
 type KernelState = (typeof KERNEL_STATES)[number];
 
+/** INJ-00: 目标绑定当前句柄；session/租户/historyEpoch 由宿主校验。 */
+interface QueryInputTarget {
+    readonly turnId: string;
+}
+interface QueryInputSubmission {
+    readonly inputId: string;
+    readonly text: string;
+    readonly target?: QueryInputTarget;
+}
+type QueryInputRejectCode = 'invalid_input' | 'turn_mismatch' | 'input_conflict' | 'injection_limit' | 'turn_closed';
+type QueryInputReason = TerminalReason | 'input_cancelled' | 'iterator_closed';
+interface QueryInputReceipt {
+    readonly inputId: string;
+    readonly turnId: string;
+    readonly ordinal: number;
+    readonly revision: number;
+    readonly source: 'legacy' | 'strict';
+    /** consumed 仅证明已加入历史，不证明模型收到/回答或历史已经耐久写入。 */
+    readonly state: 'reserved' | 'accepted' | 'consumed' | 'closed' | 'cancelled';
+    readonly reason?: QueryInputReason;
+}
+interface QueryInputReservation {
+    receipt(): QueryInputReceipt;
+    /** 同步内存接纳；宿主不得据此声称 durable。重复提交返回原状态。 */
+    commit(): QueryInputReceipt;
+    /** 只取消尚未 commit 的 reservation；已接纳输入由本轮正常消费/终止裁定。 */
+    cancel(): QueryInputReceipt;
+    /** consumed/closed/cancelled 的最终回执；不是整个查询的真实资源完成屏障。 */
+    readonly completion: Promise<QueryInputReceipt>;
+}
+type QueryInputReservationResult = {
+    readonly status: 'reserved';
+    readonly reservation: QueryInputReservation;
+} | {
+    readonly status: 'duplicate';
+    readonly receipt: QueryInputReceipt;
+    readonly completion: Promise<QueryInputReceipt>;
+} | {
+    readonly status: 'closed';
+    readonly code: QueryInputRejectCode;
+} | {
+    readonly status: 'rejected';
+    readonly code: QueryInputRejectCode;
+};
+
 /**
  * T-C1 — 查询环对外类型:runQuery 选项/句柄、四计数、ToolExecutor 执行缝。
  *
@@ -11642,7 +11687,7 @@ interface QueryCounters {
     toolRounds: number;
     /** 连续可恢复错误数(任何一次成功流式响应清零) */
     consecutiveErrors: number;
-    /** 注入屏障已消费的排队输入条数 */
+    /** 注入屏障已消费的旧 enqueue 输入条数；strict input 按回执独立核对，避免宿主 slice 错位。 */
     queueInjections: number;
     /**
      * CW11-W3(doc/58 W3 #7)— 触帽升档重试次数(遥测:每次废弃截断响应并
@@ -11666,6 +11711,12 @@ interface QueryHandle {
      * 的屏障点消费;终态后调用为无害空操作(运行时竞态,非编程错误)。
      */
     enqueueUserInput(text: string): void;
+    /** INJ-00 加法能力；旧句柄可缺席。目标为本轮，不隐式创建后续轮。 */
+    reserveUserInput?(input: QueryInputSubmission): QueryInputReservationResult;
+    inputReceipts?(): readonly QueryInputReceipt[];
+    inputTarget?(): QueryInputTarget & {
+        readonly open: boolean;
+    };
     /**
      * 立即中断;reason 缺省时按当下状态推导(streaming→aborted_streaming 等)。
      * 显式 reason = 「外部中止来源」注入缝(RFC-SC-1 R3,contract-v0.21):驱动层
@@ -12213,6 +12264,48 @@ declare class TodoStore {
      * 返回变更后快照。未知 id 缺 content/status 视为调用方契约错误,抛 TypeError。
      */
     merge(patches: readonly TodoPatch[]): TodoItem[];
+}
+
+interface SessionInputTarget {
+    readonly historyEpoch: string;
+    readonly turnId: string;
+}
+type SessionInputContent = {
+    readonly text: string;
+} | {
+    readonly blocks: readonly {
+        readonly t: 'text';
+        readonly text: string;
+    }[];
+};
+interface SessionInputSubmission {
+    readonly inputId: string;
+    readonly target: SessionInputTarget;
+    readonly content: SessionInputContent;
+    readonly ack?: 'memory' | 'durable';
+}
+interface SessionInputReceipt extends QueryInputReceipt {
+    readonly sessionId: string;
+    readonly historyEpoch: string;
+    readonly durability: 'memory';
+}
+type SessionInputRejectCode = QueryInputRejectCode | 'epoch_mismatch' | 'durable_unsupported' | 'content_unsupported' | 'input_unsupported';
+type SessionInputResult = {
+    readonly outcome: 'accepted';
+    readonly receipt: SessionInputReceipt;
+} | {
+    readonly outcome: 'closed' | 'rejected';
+    readonly code: SessionInputRejectCode;
+};
+interface SessionInputCapabilities {
+    readonly version: 1;
+    readonly text: boolean;
+    readonly textBlocks: boolean;
+    readonly image: false;
+    readonly memoryAck: boolean;
+    readonly durableAck: false;
+    readonly receiptRetention: 'current-and-last-turn';
+    readonly target: SessionInputTarget | null;
 }
 
 /**
@@ -20455,7 +20548,7 @@ declare const AppBundlePlanSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "active" | "grace" | "lapsed";
     expiresAt: string;
-    tier: "medium" | "small" | "test" | "large";
+    tier: "medium" | "small" | "large" | "test";
     caps: {
         concurrency: number;
         apps: number;
@@ -20463,11 +20556,11 @@ declare const AppBundlePlanSchema: z.ZodObject<{
         monthlyEndUsers: number | null;
         gatewayLane: boolean;
     };
-    lapsedFrom?: "medium" | "small" | "test" | "large" | undefined;
+    lapsedFrom?: "medium" | "small" | "large" | "test" | undefined;
 }, {
     status: "active" | "grace" | "lapsed";
     expiresAt: string;
-    tier: "medium" | "small" | "test" | "large";
+    tier: "medium" | "small" | "large" | "test";
     caps: {
         concurrency: number;
         apps: number;
@@ -20475,7 +20568,7 @@ declare const AppBundlePlanSchema: z.ZodObject<{
         monthlyEndUsers: number | null;
         gatewayLane: boolean;
     };
-    lapsedFrom?: "medium" | "small" | "test" | "large" | undefined;
+    lapsedFrom?: "medium" | "small" | "large" | "test" | undefined;
 }>;
 type AppBundlePlan = z.infer<typeof AppBundlePlanSchema>;
 /**
@@ -21581,6 +21674,8 @@ interface ClassifierLiveStages {
 interface ClassifierTranscriptRecorder {
     /** 轮起跑登记:覆盖式记录当前轮用户 prompt(截断 + 条数上限) */
     noteTurn(prompts: readonly string[]): void;
+    /** INJ：同轮真实用户补充；保留首条任务及最新意图，不重置轮。 */
+    noteInput(prompts: readonly string[]): void;
     /** 提供器(直接喂 PermissionClassifierConfig.transcript);空时 undefined */
     transcript(): ClassifierTranscript | undefined;
 }
@@ -22451,6 +22546,8 @@ declare function sliceHistoryPage(messages: readonly IRMessage[], offset: number
 declare function readHistoryPage(store: SessionStore, sessionId: string, options?: HistoryPageOptions): Promise<HistoryPage | null>;
 
 interface CreateSessionOptions {
+    /** Actual user input incorporation; not acceptance or a new turn. */
+    onInputsConsumed?: (texts: readonly string[]) => void;
     /**
      * 模型档(三档判定):
      * - 字符串(别名/ref)→ 托管模式(五层配置)或令牌模式(bundle 别名,
@@ -22809,6 +22906,7 @@ interface AgentSessionInit {
     checkpoints: ResolvedCheckpoints | null;
     /** 轮起跑回调(裁决人 transcript 记录器回填当前轮用户 prompt,T-K2) */
     onTurnStart?: (prompts: readonly string[]) => void;
+    onInputsConsumed?: (texts: readonly string[]) => void;
     /**
      * W-2:按新 cwd 重建执行器(装配层 rebindCwd:权限门 / hooks 同步换新,registry 与
      * 会话级执行态共享);setCwd 成功即以返回值替换 #executor。
@@ -22854,6 +22952,10 @@ declare class AgentSession {
     /** 当前模型档快照 */
     currentModel(): ResolvedModel;
     running(): boolean;
+    inputCapabilities(): SessionInputCapabilities;
+    getInputTarget(): SessionInputTarget | null;
+    submitInput(input: SessionInputSubmission): Promise<SessionInputResult>;
+    getInputStatus(inputId: string, target: SessionInputTarget): SessionInputReceipt | null;
     /** 会话历史快照(深拷贝;可直接作恢复/续跑的 initialMessages) */
     messages(): IRMessage[];
     /**
@@ -22867,7 +22969,7 @@ declare class AgentSession {
     history(options?: HistoryPageOptions): Promise<HistoryPage>;
     /**
      * 提交输入:空闲起新轮;运行中经内核注入屏障(下一 assembling 前消费,
-     * 终态未消费的注入结转为下一轮开场输入)。close 后调用属编程错误,
+     * 自然终态未消费的旧注入结转为下一轮开场输入；中断/硬限制不结转)。close 后调用属编程错误,
      * 结构化 throw(不静默吞输入)。
      */
     send(prompt: string): void;
@@ -23649,4 +23751,4 @@ declare function createApplicationPromptRefresher(options: {
 }): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
 
 export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionLifecycleFailure, SessionLifecyclePhase, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
