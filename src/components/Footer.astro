@@ -1,7 +1,7 @@
 ---
 /**
  * 页脚覆写:沿 Starlight 默认(编辑链接 / 最近更新 / 上下页),末尾加法律条目行:
- * 服务条款 · 隐私政策(门户既有页)· ICP 备案号(操作者填)· 版权。
+ * 服务条款 · 隐私政策(门户既有页)· ICP 备案号(用户给定 2026-09-11,链工信部备案系统,与门户页脚同值同链)· 版权。
  */
 import EditLink from '@astrojs/starlight/components/EditLink.astro';
 import LastUpdated from '@astrojs/starlight/components/LastUpdated.astro';
@@ -20,8 +20,9 @@ const legal = [
   { href: 'https://www.tansr.com/terms', label: t.terms },
   { href: 'https://www.tansr.com/privacy', label: t.privacy },
 ];
-/** 页脚展示文本;门户页脚已有则同值(操作者项) */
-const ICP = '{ICP 备案号待填}';
+/** ICP 备案号(用户给定 2026-09-11;与门户 www.tansr.com 页脚同值),按工信部要求链到备案系统首页 */
+const ICP = '浙ICP备2025206744号-4';
+const ICP_HREF = 'https://beian.miit.gov.cn/';
 ---
 
 <footer class="sl-flex">
@@ -33,7 +34,7 @@ const ICP = '{ICP 备案号待填}';
   <div class="legal">
     <nav aria-label={t.nav} class="legal-links">
       {legal.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
-      <span class="icp">{ICP}</span>
+      <a class="icp" lang="zh-CN" href={ICP_HREF} target="_blank" rel="noopener noreferrer">{ICP}</a>
     </nav>
     <p class="copyright">© {year} tansr · {t.copyright}</p>
   </div>
