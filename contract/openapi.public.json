@@ -9291,9 +9291,6 @@
         "security": [
           {
             "bearerAuth": []
-          },
-          {
-            "adminKey": []
           }
         ],
         "parameters": [
@@ -9444,9 +9441,6 @@
           {},
           {
             "bearerAuth": []
-          },
-          {
-            "adminKey": []
           }
         ],
         "parameters": [
@@ -10366,11 +10360,6 @@
         "type": "http",
         "scheme": "bearer",
         "description": "PAT(tansr_sk_…)或登录 access token"
-      },
-      "adminKey": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-tansr-admin-key"
       },
       "appKeyId": {
         "type": "apiKey",

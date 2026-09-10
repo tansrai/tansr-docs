@@ -45,6 +45,88 @@ test('openapi-public:OPTIONS 预检不出公开面(资料站 P2 A-L1:/v1/docs/fe
   }
 });
 
+test('openapi-public:adminKey 鉴权替代项不出公开面(用户拍板 2026-09-10 ④)—— 假契约:含 adminKey 的替代项剔除、匿名 {} 与其余替代项保留、替代项全为 adminKey 的 op 整条不出并计 droppedBySecurity、只剩被剔 op 的路径整条不出、无 / 空 security 的 op 不动、securitySchemes 自然落掉 adminKey', () => {
+  const src = {
+    openapi: '3.1.0',
+    info: { title: 't' },
+    paths: {
+      '/v1/mixed': { post: { tags: ['control'], security: [{ bearerAuth: [] }, { adminKey: [] }], responses: {} } },
+      '/v1/anon-mixed': { get: { tags: ['control'], security: [{}, { bearerAuth: [] }, { adminKey: [] }], responses: {} } },
+      '/v1/admin-only-op': {
+        post: { tags: ['control'], security: [{ adminKey: [] }], responses: {} },
+        get: { tags: ['control'], security: [{ bearerAuth: [] }], responses: {} },
+      },
+      '/v1/admin-only-path': { post: { tags: ['control'], security: [{ adminKey: [] }, { adminKey: [], bearerAuth: [] }], responses: {} } },
+      '/v1/no-security': { get: { tags: ['control'], responses: {} } },
+      '/v1/empty-security': { get: { tags: ['control'], security: [], responses: {} } },
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: { type: 'http', scheme: 'bearer' },
+        adminKey: { type: 'apiKey', in: 'header', name: 'x-tansr-admin-key' },
+        appKey: { type: 'apiKey', in: 'header', name: 'x-tansr-key' },
+      },
+    },
+  };
+  const { doc, stats } = filterPublic(src);
+  assert.deepEqual(doc.paths['/v1/mixed'].post.security, [{ bearerAuth: [] }], '只剩 bearerAuth');
+  assert.deepEqual(doc.paths['/v1/anon-mixed'].get.security, [{}, { bearerAuth: [] }], '匿名 {} 保留、序不变');
+  assert.equal(doc.paths['/v1/admin-only-op'].post, undefined, '替代项全为 adminKey 的 op 不出');
+  assert.ok(doc.paths['/v1/admin-only-op'].get, '同路径其余 op 仍在');
+  assert.equal(doc.paths['/v1/admin-only-path'], undefined, '只剩被剔 op 的路径整条不出');
+  assert.equal(doc.paths['/v1/no-security'].get.security, undefined, '无 security 的 op 不动');
+  assert.deepEqual(doc.paths['/v1/empty-security'].get.security, [], 'security: [] 原样');
+  assert.equal(stats.strippedAdminKey, 2, '剔除替代项后仍出公开面的 op 数');
+  assert.equal(stats.droppedBySecurity, 2, '整条不出的 op 数(admin-only-op POST + admin-only-path POST)');
+  assert.equal(stats.operations, 5);
+  assert.deepEqual(Object.keys(doc.components.securitySchemes), ['bearerAuth'], 'securitySchemes 只留被公开 op 引用者');
+  assert.equal(JSON.stringify(doc).includes('adminKey'), false, '公开副本全文不得含 adminKey');
+});
+
+test('openapi-public:顶层 security 同法 —— 含 adminKey 的替代项剔除;顶层全为 adminKey 时,未自带 security 的 op 继承的即纯管理鉴权,整条不出并计 droppedBySecurity', () => {
+  const base = {
+    openapi: '3.1.0',
+    info: { title: 't' },
+    components: { securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer' }, adminKey: { type: 'apiKey', in: 'header', name: 'x-tansr-admin-key' } } },
+  };
+  const mixedTop = filterPublic({
+    ...base,
+    security: [{ bearerAuth: [] }, { adminKey: [] }],
+    paths: { '/v1/inherit': { get: { tags: ['control'], responses: {} } }, '/v1/own': { get: { tags: ['control'], security: [{ adminKey: [] }], responses: {} } } },
+  });
+  assert.deepEqual(mixedTop.doc.security, [{ bearerAuth: [] }], '顶层只剩 bearerAuth');
+  assert.ok(mixedTop.doc.paths['/v1/inherit'].get, '继承混合鉴权的 op 仍在');
+  assert.equal(mixedTop.doc.paths['/v1/own'], undefined);
+  assert.equal(mixedTop.stats.droppedBySecurity, 1);
+  assert.equal(mixedTop.stats.strippedAdminKey, 0, '顶层剔除不计入 op 数');
+  assert.deepEqual(Object.keys(mixedTop.doc.components.securitySchemes), ['bearerAuth']);
+  assert.equal(JSON.stringify(mixedTop.doc).includes('adminKey'), false);
+
+  const adminTop = filterPublic({
+    ...base,
+    security: [{ adminKey: [] }],
+    paths: { '/v1/inherit': { get: { tags: ['control'], responses: {} } }, '/v1/own': { get: { tags: ['control'], security: [{ bearerAuth: [] }], responses: {} } } },
+  });
+  assert.deepEqual(adminTop.doc.security, [], '顶层剔空 → 公开面缺省无鉴权(剩余 op 皆自带 security)');
+  assert.equal(adminTop.doc.paths['/v1/inherit'], undefined, '继承纯管理鉴权的 op 不出');
+  assert.deepEqual(adminTop.doc.paths['/v1/own'].get.security, [{ bearerAuth: [] }]);
+  assert.equal(adminTop.stats.droppedBySecurity, 1);
+  assert.equal(JSON.stringify(adminTop.doc).includes('adminKey'), false);
+});
+
+test('openapi-public:真契约锁卷 —— 公开 json 全文不含 adminKey;POST /v1/adjudicators/{id}/evaluation-report 只剩 bearerAuth、GET /v1/adjudicator-pool/artifact 保留匿名 {} + bearerAuth;strippedAdminKey 2 · droppedBySecurity 0;securitySchemes 无 adminKey', () => {
+  const { doc, stats } = filterPublic(source);
+  assert.equal(JSON.stringify(doc).includes('adminKey'), false, '公开副本全文不得含 adminKey');
+  assert.deepEqual(doc.paths['/v1/adjudicators/{id}/evaluation-report']?.post?.security, [{ bearerAuth: [] }]);
+  assert.deepEqual(doc.paths['/v1/adjudicator-pool/artifact']?.get?.security, [{}, { bearerAuth: [] }]);
+  assert.equal(stats.strippedAdminKey, 2);
+  assert.equal(stats.droppedBySecurity, 0, '现实契约里没有替代项全为 adminKey 的公开 op');
+  assert.ok(!('adminKey' in doc.components.securitySchemes));
+  assert.ok('adminKey' in source.components.securitySchemes, '源契约仍定义 adminKey(只在管理面用)');
+  // 在库副本同样零残留(再生零 diff 由末例守;这里直接看落盘文本,防生成器与在库件脱节)
+  assert.equal(readFileSync(join(root, OUT_REL), 'utf8').includes('adminKey'), false, `${OUT_REL} 在库文本不得含 adminKey`);
+});
+
 test('openapi-public:锁卷 —— /admin 0 · /webhooks 0 · /metrics 0;全部路径落在白名单前缀', () => {
   const { doc } = filterPublic(source);
   const paths = Object.keys(doc.paths);
