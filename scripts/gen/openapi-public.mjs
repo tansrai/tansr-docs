@@ -12,6 +12,10 @@
  *   4. `components` 只留公开操作可达的 schema(`$ref` 闭包)与被公开操作 `security` 引用的 securityScheme;
  *   5. `tags` 只留公开操作用到的;`servers` 去掉本机 / 私网地址;`info.title` 改「tansr 平台 REST API(公开面)」,
  *      `info.description` 改为公开面口径(原文提及管理面)。
+ *   6. 鉴权(用户拍板 2026-09-10):管理密钥 `adminKey`(头 `x-tansr-admin-key`)只在管理面使用,公开面不出——
+ *      每个公开操作的 `security` 剔除含 SECURITY_SCHEME_BLOCKLIST 键的替代项(匿名 `{}` 与其余替代项原样保留、序不变);
+ *      替代项**全部**命中的操作整条不出公开面(droppedBySecurity;只剩这类操作的路径整条不出);顶层 `security`(若有)同法,
+ *      顶层剔空时未自带 `security` 的操作继承的即纯管理鉴权,同样不出;`securitySchemes` 沿 4 的「被引用才保留」自然落掉 adminKey。
  * 输出键序沿源;JSON 两空格缩进、LF、末行换行;再生零 diff 是门。
  *
  *   node scripts/gen/openapi-public.mjs [--check]
@@ -34,6 +38,8 @@ export const PUBLIC_DESCRIPTION =
 const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
 /** 公开面不列的方法:CORS 预检(OPTIONS)是浏览器自动发的握手,不是开发者可调用的接口(api 侧为覆盖律必须入册 openapi,资料站 P2 A-L1)。 */
 export const METHOD_BLOCKLIST = new Set(['options']);
+/** 公开面不出的鉴权方案:`adminKey`(头 `x-tansr-admin-key`)是平台管理密钥,开发者拿不到;含它的 security 替代项从公开操作剔除(规则 6)。 */
+export const SECURITY_SCHEME_BLOCKLIST = new Set(['adminKey']);
 
 function pathAllowed(path) {
   return PATH_PREFIX_ALLOWLIST.some((p) => path === p || path.startsWith(p + '/'));
@@ -55,6 +61,16 @@ function stripOpExtensions(op) {
     out[k] = v;
   }
   return out;
+}
+
+/**
+ * security 数组(OpenAPI Security Requirement 列表:各元素为一个「替代项」,键 = 方案名,`{}` = 匿名)剔除含黑名单方案的替代项。
+ * 返回 `{ kept, stripped }`:kept 为剩余替代项(序不变),stripped 为剔除个数。非数组原样视为「无声明」。
+ */
+export function stripBlockedSecurity(security) {
+  if (!Array.isArray(security)) return { kept: security, stripped: 0 };
+  const kept = security.filter((alt) => !(alt && typeof alt === 'object' && Object.keys(alt).some((k) => SECURITY_SCHEME_BLOCKLIST.has(k))));
+  return { kept, stripped: security.length - kept.length };
 }
 
 function collectRefs(value, into) {
@@ -79,7 +95,11 @@ function opText(op) {
 /** 纯函数:源文档 → 公开子集文档 + 统计。 */
 export function filterPublic(source) {
   const paths = {};
-  const dropped = { prefix: [], tag: [], method: [] };
+  const dropped = { prefix: [], tag: [], method: [], security: [] };
+  const strippedAdminKey = [];
+  // 顶层 security 同法剔除;顶层剔空(原有替代项全部命中黑名单)时,未自带 security 的操作继承的就是纯管理鉴权
+  const topSecurity = stripBlockedSecurity(source.security);
+  const inheritedBlocked = Array.isArray(topSecurity.kept) && topSecurity.stripped > 0 && topSecurity.kept.length === 0;
   for (const [path, item] of Object.entries(source.paths ?? {})) {
     if (!pathAllowed(path)) {
       dropped.prefix.push(path);
@@ -95,16 +115,37 @@ export function filterPublic(source) {
         dropped.method.push(`${k.toUpperCase()} ${path}`);
         continue;
       }
-      out[k] = METHODS.has(k) ? stripOpExtensions(v) : v;
+      if (!METHODS.has(k)) {
+        out[k] = v;
+        continue;
+      }
+      const op = stripOpExtensions(v);
+      const label = `${k.toUpperCase()} ${path}`;
+      if (Array.isArray(op.security)) {
+        const { kept, stripped } = stripBlockedSecurity(op.security);
+        if (stripped > 0 && kept.length === 0) {
+          dropped.security.push(label); // 替代项全为管理鉴权:开发者无法调用,整条不出
+          continue;
+        }
+        if (stripped > 0) {
+          strippedAdminKey.push(label);
+          op.security = kept;
+        }
+      } else if (inheritedBlocked) {
+        dropped.security.push(label);
+        continue;
+      }
+      out[k] = op;
     }
-    if (opsOf(out).length === 0) continue; // 只剩预检的路径整条不出公开面
+    if (opsOf(out).length === 0) continue; // 只剩预检 / 管理鉴权操作的路径整条不出公开面
     paths[path] = out;
   }
 
   const ops = Object.values(paths).flatMap((item) => opsOf(item).map(([, op]) => op));
   const usedTags = new Set(ops.flatMap((op) => op.tags ?? []));
+  // 剔除之后再收集引用集:adminKey 不再被任何公开操作 / 顶层引用,securitySchemes 便自然落掉它
   const usedSecurity = new Set(ops.flatMap((op) => (op.security ?? []).flatMap((s) => Object.keys(s))));
-  for (const s of source.security ?? []) for (const k of Object.keys(s)) usedSecurity.add(k);
+  for (const s of topSecurity.kept ?? []) for (const k of Object.keys(s)) usedSecurity.add(k);
 
   // $ref 闭包:从公开路径出发,直到不再新增
   const schemas = source.components?.schemas ?? {};
@@ -146,6 +187,8 @@ export function filterPublic(source) {
       out.tags = (v ?? []).filter((t) => usedTags.has(t.name));
     } else if (k === 'paths') {
       out.paths = paths;
+    } else if (k === 'security') {
+      out.security = topSecurity.kept;
     } else if (k === 'components') {
       out.components = components;
     } else if (k === 'x-tansr-error-codes') {
@@ -168,6 +211,10 @@ export function filterPublic(source) {
       droppedByPrefix: dropped.prefix.length,
       droppedByTag: dropped.tag.length,
       droppedByMethod: dropped.method.length,
+      /** 剔除了 adminKey 替代项但仍出公开面的操作数(现实契约 2:evaluation-report POST · adjudicator-pool/artifact GET) */
+      strippedAdminKey: strippedAdminKey.length,
+      /** 替代项全为 adminKey(或继承剔空的顶层 security)而整条不出的操作数(现实契约 0;锁卷守) */
+      droppedBySecurity: dropped.security.length,
     },
   };
 }
@@ -236,7 +283,7 @@ if (isMainModule(import.meta.url)) {
     generate: (root) => {
       const outputs = generate(root);
       const s = outputs[0].stats;
-      console.log(`[gen] openapi.public: paths=${s.paths} operations=${s.operations} schemas=${s.schemas} errorCodes=${s.errorCodes} tags=${s.tags} droppedByPrefix=${s.droppedByPrefix} droppedByTag=${s.droppedByTag}`);
+      console.log(`[gen] openapi.public: paths=${s.paths} operations=${s.operations} schemas=${s.schemas} errorCodes=${s.errorCodes} tags=${s.tags} droppedByPrefix=${s.droppedByPrefix} droppedByTag=${s.droppedByTag} droppedByMethod=${s.droppedByMethod} strippedAdminKey=${s.strippedAdminKey} droppedBySecurity=${s.droppedBySecurity}`);
       return outputs;
     },
     SCRIPT,

@@ -1,6 +1,6 @@
 /**
- * Lighthouse CI 配置卷(资料站 DS-21):lighthouserc.json 与 .github/workflows/lighthouse.yml 的形不走样。
- * 只查形(阈值 · url 三条 · 移动端 · 不外传 · actions pin sha · @lhci/cli 固定版本);分数本身由 CI / 本机 `npx @lhci/cli autorun` 出。
+ * Lighthouse CI 配置卷(资料站 DS-21;DS-37 加「3 次取中位」):lighthouserc.json 与 .github/workflows/lighthouse.yml 的形不走样。
+ * 只查形(阈值 · url 三条 · 移动端 · 3 次 + median · 不外传 · actions pin sha · @lhci/cli 固定版本);分数本身由 CI / 本机 `npx @lhci/cli autorun` 出。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,18 +13,24 @@ const rc = JSON.parse(readFileSync(join(root, 'lighthouserc.json'), 'utf8'));
 const wf = readFileSync(join(root, '.github', 'workflows', 'lighthouse.yml'), 'utf8');
 const ci = readFileSync(join(root, '.github', 'workflows', 'ci.yml'), 'utf8');
 
-test('lighthouserc:staticDistDir dist · 三条 url · numberOfRuns 1 · 移动端模拟', () => {
+test('lighthouserc:staticDistDir dist · 三条 url · numberOfRuns 3(单次噪声实证:同一提交首页 0.86 / 0.87 → 重跑 0.99)· 移动端模拟', () => {
   assert.equal(rc.ci.collect.staticDistDir, 'dist');
   assert.deepEqual(rc.ci.collect.url, ['/', '/errors/codes/', '/support/']);
-  assert.equal(rc.ci.collect.numberOfRuns, 1);
+  assert.equal(rc.ci.collect.numberOfRuns, 3);
   assert.equal(rc.ci.collect.settings.formFactor, 'mobile');
   assert.equal(rc.ci.collect.settings.screenEmulation.mobile, true);
 });
 
-test('lighthouserc:阈值 performance ≥ 0.9,accessibility / best-practices / seo ≥ 0.95,全部 error 级', () => {
+test('lighthouserc:阈值 performance ≥ 0.9,accessibility / best-practices / seo ≥ 0.95,全部 error 级;四条断言各显式 aggregationMethod median(LHCI 缺省 optimistic = 取最好一次,不得依赖缺省)', () => {
   const a = rc.ci.assert.assertions;
-  assert.deepEqual(a['categories:performance'], ['error', { minScore: 0.9 }]);
-  for (const c of ['accessibility', 'best-practices', 'seo']) assert.deepEqual(a[`categories:${c}`], ['error', { minScore: 0.95 }], c);
+  assert.deepEqual(Object.keys(a).sort(), ['categories:accessibility', 'categories:best-practices', 'categories:performance', 'categories:seo'], '恰四条 categories:* 断言');
+  assert.deepEqual(a['categories:performance'], ['error', { minScore: 0.9, aggregationMethod: 'median' }]);
+  for (const c of ['accessibility', 'best-practices', 'seo']) assert.deepEqual(a[`categories:${c}`], ['error', { minScore: 0.95, aggregationMethod: 'median' }], c);
+  for (const [k, [level, opts]] of Object.entries(a)) {
+    assert.equal(level, 'error', k);
+    assert.equal(opts.aggregationMethod, 'median', `${k} 须显式 median`);
+  }
+  assert.equal(rc.ci.assert.aggregationMethod, undefined, '不在 assert 顶层另设 aggregationMethod(逐条显式即够,避免两处口径)');
 });
 
 test('lighthouserc:报告只落本地文件系统,不外传', () => {
