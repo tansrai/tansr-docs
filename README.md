@@ -20,6 +20,8 @@ pnpm vendor --api <tansr-api 检出> --cli <tansr-cli 检出>   # 更新 contrac
 
 搜索运行时取证(REL-04-DOC-02):`db64cf84` 主线 CI 曾出现一次构建后模块编译 `Unexpected end of input`，目前未确认唯一根因。搜索核验失败现保留原始 `cause`，附加 import/options/init/search/data 阶段、Node 版本与入口模块的失败后指纹，不重试或回落。构建前的 dist 缺席跳过不能作为构建后验收；状态、原红与上游候选边界见[任务回执](doc/report/REL-04-DOC-02-搜索运行时诊断回执-2026-09-10.md)。
 
+索引写入完成屏障(REL-04-DOC-03):Starlight 0.42.0 的固定版本补丁通过 Pagefind `getFiles()` 取出原索引字节，再逐文件等待 Node 写入完成，最后关闭索引后台进程。索引配置、搜索 UI、排名规则和依赖版本保持不变；补丁由 pnpm 锁定，不能直接编辑 node_modules。`8b96ebd8` 的元数据后台拒绝与此前编译红均保留原失败，不据本地通过断言唯一根因。升级 Starlight 时须复核补丁及完成屏障测试，见[修复回执](doc/report/REL-04-DOC-03-Pagefind写入完成屏障-2026-09-10.md)。
+
 ## 目录
 
 ```

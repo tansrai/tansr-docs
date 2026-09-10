@@ -1,0 +1,28 @@
+diff --git a/dist/integrations/pagefind.js b/dist/integrations/pagefind.js
+index 1e01e4d8b933933f5a8c67e969c0958a732d3335..85764d3036cc0dc449a6fc890c62f221a42d4ae5 100644
+--- a/dist/integrations/pagefind.js
++++ b/dist/integrations/pagefind.js
+@@ -1,4 +1,6 @@
+ import { fileURLToPath } from "node:url";
++import { mkdir, writeFile } from "node:fs/promises";
++import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+ import * as pagefind from "pagefind";
+ //#region src/integrations/pagefind.ts
+ /** Run Pagefind to generate search index files based on the build output directory. */
+@@ -14,7 +16,15 @@ async function starlightPagefind({ dir, logger: starlightLogger }) {
+ 		const { index } = assertPagefindResponse(await pagefind.createIndex(), options);
+ 		const { page_count } = assertPagefindResponse(await index.addDirectory({ path: fileURLToPath(dir) }), options);
+ 		logger.info(`Found ${page_count} HTML files.`);
+-		assertPagefindResponse(await index.writeFiles({ outputPath: fileURLToPath(new URL("./pagefind/", dir)) }), options);
++		const outputPath = fileURLToPath(new URL("./pagefind/", dir));
++		const { files } = assertPagefindResponse(await index.getFiles(), options);
++		for (const file of files) {
++			const target = resolve(outputPath, file.path);
++			const within = relative(outputPath, target);
++			if (!within || isAbsolute(within) || within === ".." || within.startsWith(`..${sep}`)) throw new Error("Pagefind file is outside the output directory.");
++			await mkdir(dirname(target), { recursive: true });
++			await writeFile(target, file.content);
++		}
+ 		const pagefindTime = performance.now() - now;
+ 		logger.info(`Finished building search index in ${pagefindTime < 750 ? `${Math.round(pagefindTime)}ms` : `${(pagefindTime / 1e3).toFixed(2)}s`}.`);
+ 	} catch (cause) {

@@ -1,3 +1,5 @@
 allowBuilds:
   esbuild: true
   sharp: true
+patchedDependencies:
+  '@astrojs/starlight@0.42.0': patches/@astrojs__starlight@0.42.0.patch
