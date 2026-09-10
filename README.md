@@ -34,6 +34,20 @@ scripts/deploy/        rsync + 原子切换
 
 GitHub Actions `deploy.yml`:main 推送 → `pnpm gate` → 构建 → `scripts/deploy/publish.sh dist docs-upload docs-switch <sha>`:以专用用户 `docsdeploy` 的两把受限键,`rsync` 到 ECS `/srv/tansr-docs/releases/<sha>/`(上传键只能做这一件事),再 `ssh docs-switch switch <sha>` 原子切 `current`(切换键只能做这一件事;零停机、零 reload;只留最近 3 份;回滚 = `switch <旧 sha>`)。secrets:`DOCS_DEPLOY_KEY`(上传键私钥)· `DOCS_SWITCH_KEY`(切换键私钥)· `DOCS_HOST`(`docsdeploy@api.tansr.com`)· `DOCS_HOST_KEY`(known_hosts 行,可选)。nginx 与两条强制命令在 `tansr-deploy` 仓(`nginx/conf.d/docs.conf` · `scripts/docs-rsync-only.sh` · `scripts/docs-switch.sh` · `scripts/docs-init.sh`)。
 
+### 上游接线
+
+`vendor.yml`:上游变更 → 自动 vendor。触发有二:`repository_dispatch`(事件 `upstream-updated`,`client_payload.api_ref` / `cli_ref` 可选)与手动 `workflow_dispatch`(inputs `api_ref` 缺省 `master`、`cli_ref` 缺省 `main`)。流程 = 检出两私有仓 `cpple/tansr-api`@api_ref 与 `cpple/tansr`@cli_ref → cli 检出 `pnpm install --frozen-lockfile` → `scripts/vendor/auto.sh`(`pnpm vendor` → `pnpm gen` → 无变化退 0 不提交;有变化先 `pnpm gate`,红即退 1 不提交——上游出新版本段而 `contract/release-notes.json` 缺该版本的用户口吻条正是预期的红,补条后重跑;绿则以 `github-actions[bot]` 提交 `chore(vendor): tansr-api@<sha12> · tansr-cli@<sha12> —— N 文件再生` 推 main,再 `gh workflow run deploy.yml --ref main`——Actions 里用 `GITHUB_TOKEN` 做的 push 不触发 `on: push`,显式派发 `workflow_dispatch` 才会真跑)。本地同一链:`pnpm vendor:auto <tansr-api 检出> <tansr-cli 检出>`(会真提交、真推、真派发,不要在脏工作区跑)。
+
+secret 只有一把 `UPSTREAM_READ_TOKEN`(能读两私有仓的 token);未交割时工作流只打 `::notice::` 成功空跑、不标红,交割后自动生效;推 main 与派发 deploy 用 `GITHUB_TOKEN`(`contents: write` · `actions: write`),不另配。同组并发 `vendor-main` 排队、不取消在途。
+
+兄弟仓侧(候拍,本仓不改兄弟仓):tansr-api / tansr-cli 各在 CI 成功后追加一步
+
+```bash
+gh api repos/cpple/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'   # cli 仓用 client_payload[cli_ref]
+```
+
+需各仓一把能对 `cpple/tansr-docs` 发 dispatch 的 secret `DOCS_DISPATCH_TOKEN`(`GH_TOKEN` 传入;仓库自带的 `GITHUB_TOKEN` 不能跨仓派发)。两把 token 均未创建、未配置,等拍。
+
 ## 许可
 
 站点代码 MIT(见 LICENSE);文档内容 © tansr,保留所有权利,未经许可不得转载。

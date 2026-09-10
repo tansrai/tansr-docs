@@ -16,6 +16,7 @@
     "gen:check": "node scripts/gen/index.mjs --check",
     "vendor": "node scripts/vendor/index.mjs",
     "vendor:check": "node scripts/vendor/index.mjs --check",
+    "vendor:auto": "bash scripts/vendor/auto.sh",
     "lint:text": "node scripts/check/lint-text.mjs",
     "links": "node scripts/check/links.mjs",
     "frontmatter": "node scripts/check/frontmatter.mjs",
