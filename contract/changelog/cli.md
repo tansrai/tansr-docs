@@ -10,6 +10,19 @@
 迁移方式」并括注卡号(FX-X-nn)与波次(W1–W4);事实源 = 各波收编回执 `doc/report/十王修案-W{1,2,3,4}-收编回执-*.md` §一与泳道终报。
 0.2.0 之前的历史见 git(`git log -- packages/cli`)。
 
+## 未发布(核心组件设计审查整改;版本号与发版节奏待用户拍板)
+
+- **五入口进程生命周期统一**(RF-03,RV-5-02 / RV-4-03):TUI / headless / `acp` / `mcp-serve` / `serve` 全部经共享组件 `assembly/process-lifecycle.ts` 处理 SIGINT / SIGTERM / SIGHUP / SIGBREAK——首枚信号触发一次幂等有界收口(headless / acp / mcp-serve 沿各自既有预算;TUI 10 s;serve `drainTimeoutMs + 15 s`),预算到点在 stderr 留一行结构化 `process.hard_exit` 后 exit 2;**第二枚信号立即 exit 2**(此前 acp / mcp-serve 第二枚被吞、headless 只认 SIGINT、TUI 对 TERM / HUP 零处理);SIGHUP 独立紧急预算 ≤ 3 s。退出码统一取 `exit-code.ts` 表(2 = 中断 / 外部信号 / 停机;TUI 未捕获异常仍为 1)。**迁移**:依赖「第二枚 Ctrl+C 无效、必等 drain」的脚本请改为只发一枚或等待退出码 2。
+- **TUI Ctrl+C 与终端复位**(RF-03,RV-5-07):Ctrl+C 自管双击语义——运行中一枚 = 中断本轮并提示,空闲一枚 = 提示,1.5 s 窗内二枚 = 同 `/quit`(ink `exitOnCtrlC` 关闭,signal-exit 退为兜底);SIGTERM / SIGHUP 到来时在飞轮以 `emergency_seal` 内部记录幂等紧急封口(已流出文本作 `partialText` 留档、不伪造轮末、resume 自动跳过),随既有收口链释放 MCP 子进程与会话锁;bracketed paste 在任何退出路径(含未捕获异常)先复位再退出。无需迁移。
+- **`tansr bg kill` 身份核对**(RF-03,RV-5-01):后台任务记录新增运行器身份(本机 IPC 端点 + 发车端随机令牌,令牌恒不出现在 `bg list / show / --json` 输出);`bg kill` 先核身份再动作——相符 → 停止请求(POSIX SIGTERM / Windows 端点 stop)→ 宽限 5 s → 复核后才 KILL,`--json` 多 `stopped: graceful | exited | forced`;pid 被复用的陌生进程 / 端点不可达 → 显示 `stale`、拒杀、退出码 1 携 `runner_identity_mismatch | runner_unreachable | runner_identity_unverifiable`。**迁移**:升级前发起、无身份块的旧记录 `bg kill` 一律拒杀(`bg list` 仍按 pid 展示),需要时用 OS 手段结束;`bg` 热路径不再派生 PowerShell。
+- **`tansr serve` 每轮墙钟缺省 30 min**(RF-03,§3 代拍 #9 = A):`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms,显式 `0` = 停用;停机 `closeAll` 有界 5 s(`server.close_timeout` warn 后继续)。详见 `packages/server/CHANGELOG.md`。
+- **关键状态文件原子写**(RF-07,RV-5-05):`credentials.json`(v2 / v3)、bundle 缓存、init-state 指针改为「同目录临时文件 + fsync + rename」——登录 / 派生键轮换 / 缓存刷新途中断电或进程被杀,文件要么是旧的完整档要么是新的完整档,不再出现读取报 `parse_failed` 的半截档。bundle 缓存文件按 0600 落盘(Windows 上权限位无效,文件保护依赖用户目录 ACL,与凭据档同口径)。无迁移动作。
+- **凭据解密单点**(RF-07,RV-5-09):远程装配与裁决人池共享同一进程内凭据读取器,一次启动只解密一次;Windows DPAPI 档(PAT + 派生键)合并为**单次** `powershell.exe` 冷启(此前每处消费方各起一到两次)。行为不变,启动更快;凭据文件被改写(另一进程 login / logout)后自动重读。
+- **`tansr logout` 连清 bundle 缓存**(RF-07,RV-5-10;行为变化):此前只有 v2 应用键档登出会清该键缓存,v3(PAT + 派生键)档登出后远端组织配置缓存留在磁盘;现在不分版本一律清除配置根 `bundle-cache/*.json`(含其他 v2 档案簿键的缓存)与活动身份仓 `bundle-cache.json`。缓存恒可重建,重登首拉即复原;会话 / 记忆等身份仓数据仍不删。
+- **SEA 自更新换装耐久 + 备份只留 1 份**(RF-07,RV-5-06 fsync / 备份部分):staging 写后先 fsync 再进入 rename 换装;换装成功后同名可执行的历史备份 `<exe>.old-<版本>` 只保留本次这一份(更早的自动修剪,不同名文件不触及)。此前每次升级多留一份旧档。
+- **`tansr doctor` 只读**(RF-07,RV-5-10):会话存储可写性探针不再 `mkdir -p sessions/`——改在最近已存在的祖先目录写后即删;doctor 不再创建任何目录,存储根被文件占位仍如实报 `session_store_unwritable`。
+- **更新签名指针单调序号(防回放)**(RF-07b,RV-5-06 时效性;代拍 #7 结论 B⁺):官方 SEA 签名指针在被签的指针体内新增加法字段 `sequence`(每通道单调)与信息性 `issuedAt`;客户端在 `${TANSR_CONFIG_DIR || ~/.tansr}/update-state.json` 按「分发点 origin + 通道」记住最近一次完整核验通过的序号——收到更小序号的封套(合法签名的旧封套被重放 / 回滚)拒绝并报 `pointer_sequence_rollback`(文案携两侧序号);无序号旧形封套按迁移律**「视为 0 并警告」**:视 `sequence = 0` 参与比对,本机已核验过序号 > 0 时报 `pointer_sequence_missing`,否则(从未见过带序号封套,或水位恰为 0)放行、不建立水位,成功通知末尾附一行「该源暂无防回放」提示(旧分发点 / 企业自托管平滑迁移)。签名 / 未签名钉死 / semver 降级守卫不变;**不引入 `expires`**(签名私钥不远端托管),`issuedAt` 陈旧不拒绝、只由 `tansr doctor` 呈现封套年龄(超 90 天出提示行,JSON 新增可选 `updateSource` 段)。发布侧:`sign-release.mjs --latest` 写入 `sequence`(`TANSR_RELEASE_SEQUENCE` 或墙钟毫秒),`publish-oss.mjs --yes` 真传前对远端现行封套核序号前进(回退 / 同号异版拒发)。迁移:无需动作;如分发点合法重建序号,删除 `update-state.json` 即重置本机水位。
+
 ## 0.6.0 — 2026-09-10
 
 - 汇总此前未发布的 0.5.0 候选能力、AP-SP 应用提示词、ARC 核心治理，以及同轮文本追加（INJ）；旧 v0.5.0 本地候发标签继续保留在原源码，不移动。

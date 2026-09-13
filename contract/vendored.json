@@ -6,28 +6,28 @@
     "vendoredAt": "2026-09-10"
   },
   "serve.env.example": {
-    "source": "tansr-cli@1f74efd58f9e:packages/server/.env.example",
-    "revision": 0,
-    "sha256": "bd3baf476c2e89f98848923661161684179b4b457ff72818e5482d942e350120",
-    "vendoredAt": "2026-09-08"
+    "source": "tansr-cli@c5219e025989:packages/server/.env.example",
+    "revision": 1,
+    "sha256": "cce07d7ebde406d874babd6bd4b998e0af4c1ec7a5573f71e77db3618c62e8f2",
+    "vendoredAt": "2026-09-13"
   },
   "changelog/cli.md": {
-    "source": "tansr-cli@5d235a7e40bd:CHANGELOG.md",
-    "revision": 2,
-    "sha256": "69934c5e1407393d56c60acfa4737fe62b79725282fc13f9dbdd6bf1bb1c561e",
-    "vendoredAt": "2026-09-10"
+    "source": "tansr-cli@c5219e025989:CHANGELOG.md",
+    "revision": 3,
+    "sha256": "59ea37b9f77a494291cc20ac9922561c5be4921988724026886d9b6d710b1be9",
+    "vendoredAt": "2026-09-13"
   },
   "changelog/sdk.md": {
-    "source": "tansr-cli@5d235a7e40bd:packages/sdk/CHANGELOG.md",
-    "revision": 6,
-    "sha256": "5355db07c778b08aaa43a7db88bacb90ef3cdca9f4f1262008f00a68dbe9bcd3",
-    "vendoredAt": "2026-09-10"
+    "source": "tansr-cli@c5219e025989:packages/sdk/CHANGELOG.md",
+    "revision": 7,
+    "sha256": "3486241ff2cc7d4196e63eb3f2fc34279b1a28722040ef957471560edca4eee1",
+    "vendoredAt": "2026-09-13"
   },
   "changelog/serve.md": {
-    "source": "tansr-cli@5d235a7e40bd:packages/server/CHANGELOG.md",
-    "revision": 5,
-    "sha256": "1e67aba1c8a0f25191816086aa6dd5c99e1099e9d4e4abbb9b80ef6e7b6efeac",
-    "vendoredAt": "2026-09-10"
+    "source": "tansr-cli@c5219e025989:packages/server/CHANGELOG.md",
+    "revision": 6,
+    "sha256": "bda31a5c16244300534b10b315caedaa61cf36a2a2282a67fc6b6a87ea153b60",
+    "vendoredAt": "2026-09-13"
   },
   "cli-help.json": {
     "source": "tansr-cli@5d235a7e40bd:dist/tansr.mjs",
@@ -36,9 +36,9 @@
     "vendoredAt": "2026-09-10"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@b91277e5a056:packages/sdk/dist/index.d.ts",
-    "revision": 7,
-    "sha256": "6526dc231749eaa035b7b39083bf80facd804917dd14ce683f6da8c73996d703",
-    "vendoredAt": "2026-09-10"
+    "source": "tansr-cli@c5219e025989:packages/sdk/dist/index.d.ts",
+    "revision": 8,
+    "sha256": "8a2a49b23b7ac50ebb3fe89892ba15db46808d7d2eaa9face0c1756a94dd07e4",
+    "vendoredAt": "2026-09-13"
   }
 }

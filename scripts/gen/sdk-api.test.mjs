@@ -9,8 +9,14 @@ const root = repoRootFrom(import.meta.url);
 const vendored = JSON.parse(readFileSync(join(root, 'contract', 'vendored.json'), 'utf8'));
 const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
 
-/** 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(INJ 在 ARC-01 的499上新增7个 SessionInput 类型)。 */
-export const EXPECTED_EXPORTS = 506;
+/**
+ * 导出数卷锁:与 sdk-index.d.ts 尾部 export 行对表(INJ 在 ARC-01 的 499 上新增 7 个 SessionInput 类型 = 506;
+ * tansr-cli@c5219e02 再 vendor(sdk 0.14.0 候选)新增 5 值 + 14 类型 = 525:值 AppConfigRequestError / applicationPromptFailureMessage /
+ * countSpeechCharacters / describeApplicationPromptFailure / planSpeechInput;类型 ApplicationPromptFailure(+Reason / Retry)/ ContextBudgetState /
+ * ModelTransitionBackup / SendBlocksResult / SessionBudgetOptions / SessionContextState / SessionModelState / SessionUserBlock /
+ * SpeechInputPlan(+Result)/ SwitchModelOptions / SwitchModelResult;零删除)。
+ */
+export const EXPECTED_EXPORTS = 525;
 
 function fm(content) {
   const lines = content.split('\n');
@@ -19,9 +25,9 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 506(值193 · 类型313)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 525(值198 · 类型327)', () => {
   const c = countExports(dts);
-  assert.deepEqual(c, { values: 193, types: 313, total: EXPECTED_EXPORTS });
+  assert.deepEqual(c, { values: 198, types: 327, total: EXPECTED_EXPORTS });
   const typeExports = dts.match(/^export type \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(typeExports, '须保留独立的类型导出行');
   assert.deepEqual(typeExports.filter((name) => name.startsWith('SessionInput')).sort(), [
@@ -89,13 +95,15 @@ test('sdk-api:generate → 每导出一页 + 总览;页数 = 有独立页导出 
   assert.deepEqual(again.map((o) => [o.rel, o.content]), outputs.map((o) => [o.rel, o.content]), '二次生成须逐字节相同(确定性)');
 });
 
-test('sdk-api:z.infer 别名预处理 → 52 条别名求出真实结构;引用处保留别名名字;别名页显示结构;全站无 z.infer 残留 / 无 : any 折塌', async () => {
+test('sdk-api:z.infer 别名预处理 → 53 条别名求出真实结构;引用处保留别名名字;别名页显示结构;全站无 z.infer 残留 / 无 : any 折塌', async () => {
   const outputs = await generate(root);
   const index = outputs.find((o) => o.rel === join(OUT_DIR, 'index.md'));
-  assert.equal(index.stats.inferAliasesResolved, 52, '50 条 `type X = z.infer<typeof XSchema>` + 2 条 NonNullable<z.infer<…>>');
+  assert.equal(index.stats.inferAliasesResolved, 53, '51 条 `type X = z.infer<typeof XSchema>` + 2 条 NonNullable<z.infer<…>>(tansr-cli@c5219e02 起 +1)');
   const session = outputs.find((o) => o.rel === join(OUT_DIR, 'classes', 'AgentSession.md'));
   assert.match(session.content, /get events\(\): AsyncIterable<KernelEvent>;/, '引用处须是别名名字而非整段内联');
-  assert.ok(session.content.split('\n').length < 800, 'AgentSession 页不应再被事件联合撑成 1600+ 行');
+  // 回归护栏:事件联合被内联时该页曾达 1600+ 行;正常成员增长(tansr-cli@c5219e02 起 +5 成员 → 804 行)不应触发。
+  assert.ok(session.content.split('\n').length < 1000, 'AgentSession 页不应再被事件联合撑成 1600+ 行');
+  assert.equal(session.content.split('\n').filter((l) => /^\s+type: "/.test(l)).length, 0, 'AgentSession 页不应出现内联的事件联合成员');
   const kernelEvent = outputs.find((o) => o.rel === join(OUT_DIR, 'type-aliases', 'KernelEvent.md'));
   assert.match(kernelEvent.content, /type KernelEvent = \{\n\s+seq: number;/, '别名页显示求出的结构(包络 & 负载联合)');
   assert.match(kernelEvent.content, /type: "session\.created";/);

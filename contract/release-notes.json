@@ -1,5 +1,25 @@
 {
   "cli": {
+    "未发布(核心组件设计审查整改;版本号与发版节奏待用户拍板)": {
+      "added": [
+        "项目层 hooks 信任门：仓库 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks 跟随工作区信任记录（`~/.tansr/trust.json`）——已信任照常执行；无记录或记为不信任 → 零执行并在 stderr 留一行说明（用户层 / 托管层 hooks 不受影响）。TUI 首开未信任目录时，项目层 `SessionStart` 等你选「信任」后再补发恰一次。headless / `serve` / `acp` / `mcp serve` 四入口只认 TUI 落盘的记录；无记录而确需本次执行，加 `--trust-project-hooks` 或设 `TANSR_TRUST_PROJECT_HOOKS=1`（只在无记录时生效、不写入 trust.json、压不过已记录的不信任）。判据锚定启动目录上溯最近含 `.tansr` 的祖先并按真实路径归一；项目层 http hook 请求头里的 `${VAR}` 不展开。",
+        "更新签名指针新增单调序号 `sequence`（每通道单调）与信息性 `issuedAt`：收到更小序号的封套（合法签名的旧封套被重放 / 回滚）拒绝并报 `pointer_sequence_rollback`；无序号的旧形封套视为 `0` 并警告，本机已核验过序号 > 0 时报 `pointer_sequence_missing`。不引入过期时间，`issuedAt` 陈旧只由 `tansr doctor` 呈现封套年龄（超 90 天提示行；JSON 新增可选 `updateSource` 段）。迁移：无需动作；分发点合法重建序号时删除 `update-state.json` 即重置本机水位。",
+        "`tansr bg kill` 先核对运行器身份再动作：后台任务记录新增运行器身份（本机端点 + 随机令牌，令牌恒不出现在 `bg list / show / --json`）；相符 → 停止请求 → 宽限 5 s → 复核后才强杀，`--json` 多 `stopped: graceful | exited | forced`；pid 被复用的陌生进程 / 端点不可达 → 显示 `stale`、拒杀、退出码 1 并携 `runner_identity_mismatch | runner_unreachable | runner_identity_unverifiable`。迁移：升级前发起、无身份块的旧记录一律拒杀（`bg list` 仍按 pid 展示），需要时用操作系统手段结束。"
+      ],
+      "changed": [
+        "五个入口（TUI / headless / `acp` / `mcp-serve` / `serve`）统一处理 SIGINT / SIGTERM / SIGHUP / SIGBREAK：首枚信号触发一次幂等有界收口（TUI 10 s；`serve` 为 drain 预算 + 15 s），预算到点在 stderr 留一行 `process.hard_exit` 后以退出码 2 退出；第二枚信号立即退出码 2；SIGHUP 独立紧急预算 ≤ 3 s。迁移：依赖「第二枚 Ctrl+C 无效、必等 drain」的脚本改为只发一枚或等待退出码 2。",
+        "TUI Ctrl+C 双击语义：运行中一枚 = 中断本轮并提示，空闲一枚 = 提示，1.5 s 内两枚 = 同 `/quit`；SIGTERM / SIGHUP 到来时在飞轮紧急封口（已流出文本作 `partialText` 留档、不伪造轮末、resume 自动跳过）；bracketed paste 在任何退出路径（含未捕获异常）先复位再退出。无需迁移。",
+        "`tansr serve` 每轮墙钟缺省 30 分钟：`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用；停机 `closeAll` 有界 5 s。单轮预期超过 30 分钟的部署需显式设更大值或 `0`。",
+        "`tansr logout` 不分凭据版本一律清除配置根 `bundle-cache/*.json`（含其他应用键档的缓存）与活动身份仓 `bundle-cache.json`；缓存恒可重建，重登首拉即复原，会话 / 记忆等身份仓数据不删。",
+        "单文件可执行版自更新换装先 fsync 再 rename；换装成功后同名可执行的历史备份 `<exe>.old-<版本>` 只保留本次这一份，更早的自动修剪。",
+        "`tansr doctor` 恒只读：会话存储可写性探针不再创建 `sessions/` 目录，改在最近已存在的祖先目录写后即删；存储根被文件占位仍如实报 `session_store_unwritable`。"
+      ],
+      "fixed": [
+        "`credentials.json`、bundle 缓存、init-state 指针改为原子写（同目录临时文件 + fsync + rename）：登录 / 派生键轮换 / 缓存刷新途中断电或进程被杀，文件要么是旧的完整档要么是新的完整档，不再出现读取报 `parse_failed` 的半截档。bundle 缓存按 0600 落盘（Windows 上权限位无效，保护依赖用户目录 ACL）。",
+        "凭据解密单点：远程装配与裁决人池共享同一进程内凭据读取器，一次启动只解密一次；Windows DPAPI 档（PAT + 派生键）合并为单次 `powershell.exe` 冷启。凭据文件被另一进程 login / logout 改写后自动重读。"
+      ],
+      "note": "候选，尚未发版；版本号与发版节奏待定。项目层 hooks 信任门的判据、边界与 SDK 侧对应选项见「安全与隐私」页。"
+    },
     "0.6.0": {
       "added": [
         "任务执行中可追加文本要求：TUI 补充入口、ACP 扩展与 headless 控制帧共用同一目标轮；不隐式中断或另开一轮。",
@@ -85,6 +105,39 @@
     }
   },
   "sdk": {
+    "0.14.0": {
+      "added": [
+        "`createSession({ trustProjectHooks })`：项目层 hooks 信任门。缺省 `false` = 工作区 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks 零执行、零 `hook.*` 事件（用户层 / 托管层 hooks 照常）；`true` = 宿主代表用户为该工作区授信。SDK 不持久化信任、不读 `tansr` 命令行的信任记录；门住的项目层 hooks 在场时经 `onWarning` 通报一次 `project_hooks_untrusted`（`detail` 携 `cwd` 与登记到的层），缺席回落事件流 `turn.error { scope: 'sdk.notice', recoverable: true }`。**行为收紧**：此前克隆仓库、`createSession` 一起就会跑起来的项目层 hooks 缺省不再执行；已向用户确认工作区可信的宿主传 `trustProjectHooks: true`。单轮 `query()` 暂无授信位，项目层 hooks 在其中恒不启用。",
+        "`createSession({ hostShell: 'posix' | 'powershell' })`：权限引擎解析 Shell 命令的词法方言。缺席随平台（与内置 Shell 工具实际派生的 shell 一致，零现状变化）；显式值供测试或跨平台演练，与真实执行 shell 错配会让词法守卫与执行环境脱节，生产宿主不应设置。三档皆生效。",
+        "`createSession({ budget })`：会话预算闸，形 `{ maxUsd?, maxTotalTokens?, onExceeded?: 'block' | 'warn' }`，与配置文件 `budget` 段同形、与 `tansr` 命令行各形态走同一闸门语义。触顶时 `'block'`（缺省）在下一次模型调用前终止本轮（`turn.aborted { reason: 'budget_exceeded' }`，会话保持打开、后续轮同拦），`'warn'` 每次查询至多一条 `turn.error { scope: 'budget', recoverable: true }` 后继续；两上限都缺席 = 不接闸。`maxTotalTokens` = 输入 + 输出 + 缓存读 + 缓存写（思考 token 按模型能力位并入输出、不重复计）；`maxUsd` 只对以 USD 计价的模型出数（托管 / 注入档内置价目为 CNY、不设防），币种无关兜底用 `maxTotalTokens`。非法取值在任何 IO 前以 `invalid_options` 拒绝；不新增事件类型。新导出类型 `SessionBudgetOptions`。",
+        "会话事件积压有界：首订阅者到来前的积压受 `createSession({ events: { maxBacklogEvents, maxBacklogBytes } })` 条数 / 近似字节双上界约束，缺省 1000 条 / 2 MiB（正数或 `Infinity`）；越界丢最旧、最新一条恒保留，队首以恰一条一等事件 `session.events_dropped { scope: 'sdk.events', droppedCount, reason: 'count_limit' | 'bytes_limit', droppedBytes, firstDroppedSeq, lastDroppedSeq, maxEvents?, maxBytes? }` 通报（contract-v0.27，RFC-RF-1；契约清单 revision 6 → 7，事件型表 54 → 55）。`SessionView` 把它归入 `notices`（`code: 'session.events_dropped'`、无 `message`），Narrator 出一行 `events dropped [scope]: N event(s) dropped (reason)`。对你意味着：长跑会话即便忘记订阅也不会耗尽内存；在 `send()` 前挂上订阅者的既有代码零改动；按 `type` 判别通报的宿主改判 `session.events_dropped`。",
+        "`drain({ force: true })` / `closeAsync({ force: true })` / 单轮 `cleanup.drain({ force: true })`：违约适配器（`settle()` 回 `pending > 0` 或超时）不再让收尾永久悬挂——预算耗尽后释放屏障，对仍在飞的收尾记 `query_settlement_forced` / `compaction_settlement_forced`，随后直接释放自有资源（会话级 MCP host 的 `close` 被调用）并以同一预算等待完成，结果恒 `status: 'failed'` 携结构化失败。对未关闭会话无效。缺省 `drain()` 只观察不释放，语义不变。",
+        "`token` 接受 `() => string` getter：bundle / heartbeat、模型直连、媒体工具、`session.platform` 直连客户端、提示词刷新器五类平台请求发起时取现值，令牌轮换后无需重建会话；getter 须回非空字符串。`query()` 同律。",
+        "`query()` 收尾失败 / 超时时的 `SdkLifecycleError` 新增 `error.result`（已完成的 `QueryResult`，`onLifecycleError` 同携）；需要终态文本的调用方读 `error.result?.finalText`。",
+        "`QueryCounters` 新增只读计数 `apiRounds`（模型派发总数，恒不退还）与 `recoveryAttempts`（同轮恢复重试次数）；`modelTurns` 仍是预算口径。用 `deepEqual` 锁定整个计数对象的测试需补这两个字段。"
+      ],
+      "changed": [
+        "`SessionNotice.message` 变为可选：`turn.error { recoverable: true }` 归约仍带 `message`，`session.events_dropped` 归约不带。迁移：宿主按 `code` 渲染、`message` 只作兜底（如 `notice.message ?? notice.code`）。",
+        "`close()` 后 `setModel` / `setThinking` / `interrupt` 一律 throw `session_closed`（此前静默改状态 / 空操作），`setModel(alias)` 先于别名解析拒绝；只读方法照旧可读。迁移：改为在 close 前调用或捕获 `session_closed`。",
+        "`AgentSession.pushBody` 自公开类型声明剥离（运行时对象保留一个版本周期，close 后调用 throw `session_closed`）；它从未是承诺面，外部代码请勿依赖。",
+        "`createSession` / `query` 的 `env` 决定出网代理：`HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` 参与 WebFetch / Http 工具与 hooks http 的代理决策，`process.env` 不再被读取（缺席仍为进程级单例）。迁移：依赖 `process.env` 代理却传了自定义 `env` 的宿主，把代理三变量并入所传 `env`。",
+        "查询事件流关闭即取消：对 `events` 调 `return()` / `throw()`（含 `for await` 提前 `break`）现在会取消本轮，在飞模型流与工具经 `signal` 见到中止（`'iterator_closed'`），不再签发终局事件；`compactNow()` 对已关闭查询立即以 `query_closed` 返回。依赖「退出循环后在飞工具仍会跑完」的调用方需改为消费到终局事件再退出。",
+        "会话预算的 `totalTokens` 口径由内核单点给出：思考 token 视为输出的子集不再叠加计入；已配置 `budget.maxTotalTokens` 的会话可能比此前更晚触顶，属口径修正。",
+        "工具入参由调度器按 `Tool.inputSchema` 中央校验（只作门、原参下行）：不合法即以 `tool.failed { errorType: 'invalid_args' }` + `isError` 结果回喂模型，`execute` 不被调用、不触发权限裁决。",
+        "`signal` 的 abort 监听在 `close()` 时解除，多会话共享 shutdown signal 时已关闭会话可被回收；`createSession({ fork })` 的新会话记录改在装配成功后落 store，失败时不留孤儿记录。无需迁移。"
+      ],
+      "fixed": [],
+      "note": "候选，尚未发版；版本号与发版节奏待定。本段合并了同期登记的两个待发小段（查询计数与事件流关闭语义、工具入参中央校验）。"
+    },
+    "0.13.1": {
+      "date": "2026-09-11",
+      "added": [],
+      "changed": [
+        "统一四类媒体系统工具的说明与缺少平台连接时的错误提示，补齐 `tools.builtin` 中英文示例，明确平台提供方授权与工具归属的区别。",
+        "旧 `tools.platform` 兼容别名、错误码、授权字段、默认显式选择与计费行为保持，无需迁移现有调用；公共声明注释整理不新增导出、不改签名。"
+      ],
+      "fixed": []
+    },
     "0.13.0": {
       "added": [
         "AgentSession 新增同轮文本投递、目标与能力发现、状态查询接口；accepted 表示内存接纳，consumed 表示已进入历史，均不代表模型完成。",
@@ -156,6 +209,39 @@
     }
   },
   "serve": {
+    "Unreleased": {
+      "added": [
+        "非活跃会话的 `lastSeq` 返回真值：`GET /v2/sessions/:id`、`GET /v2/sessions` 列表项与 `GET …/history` 对不在内存的会话，`lastSeq` 自此为存储里落盘的水位（此前恒 `0`；旧卷无水位记录仍为 `0`，无元信息仍 404，活跃径不变）。对你意味着：客户端（含 Android / iOS）不得再以 `lastSeq === 0` 判「无事件」，请按值作 `Last-Event-ID` 续传起点；判休眠看 `live: false`。自实现存储读取器不回填该值时仍为 `0`。",
+        "`server.replay.gap` 帧形态进入契约门：事件名、载荷键集与 `reason` 词表（`'evicted'` / `'ahead_of_log'`）单一事实源，公共类型 `ReplayGapNotice` 字段与可选性不变；SDK 契约清单 `MANIFEST.json` revision 6 → 7（事件型表 54 → 55，新增的 `session.events_dropped` 为 SDK 专属事件，见下方说明）。",
+        "`TANSR_SERVE_HOST_SHELL=posix|powershell`：权限引擎解析 Shell 命令的词法方言，缺席随平台（Windows → powershell，其余 posix），既有部署零改动；只改判定方言，执行器实际派生的 shell 仍随平台。库面同缝新增可选字段 `hostShell?`。",
+        "停机 `closeAll` 有界：`StartServerOptions.closeAllTimeoutMs`（缺省 5 000 ms；`Infinity` = 旧的无界等待）到点记一条 `server.close_timeout` 警告并继续停监听；`closeAll()` 返回 `{ timedOut, pending }`。对你意味着：一个永不落定的会话泵不再能拖住整机停机；依赖「必等全部落定」的宿主显式传 `Infinity`。",
+        "`tansr serve` 信号矩阵：SIGINT / SIGTERM / SIGHUP / SIGBREAK 首枚触发一次幂等有界 drain（预算 `drainTimeoutMs + 15 s`，到点记 `process.hard_exit` 后退出码 2），第二枚立即退出码 2；SIGHUP 独立紧急预算 ≤ 3 s。",
+        "`tansr serve --v2` 建店接入存储告警：`store_unknown_kinds` / `store_prefix_mismatch` / `store_pending_rewrite` / `store_seal_failed` 以 `warn` 级复用既有 `store.error` 日志事件出线，不再静默；自托管 `@tansr/serve` 宿主可经 `createServeAgentSessionStore({ onStoreWarning })` 接进自己的 logger。",
+        "会话级预算跨重启：带 `init.budget` 的会话每轮末随历史在存储里落一条累计用量快照（不进消息面 / 不进 SSE 历史页），`resume` 后自快照续算；快照落后于历史（进程在轮末快照前终止）时，resume 首连重放多一帧 `server.platform.warning { code: 'usage_snapshot_stale' }`（消息携落后数），只丢末轮用量、不静默低报。自实现存储需自行保存 / 返回 `usageSnapshot` 才能续算，否则退化为每次 resume 从 0 起算即此前行为。",
+        "`ServeSessionDriverOptions.toolResultBudget?`：工具结果超帽时落会话目录 `spill/` 全文、历史里存根替身，压缩前快照落 `checkpoints/` 并签发 `session.checkpointed`；`tansr serve` / `tansr acp` 自此与 TUI / headless 同款接线，不传者零变化。"
+      ],
+      "changed": [
+        "resume 后的 seq 不再从 `0` 起：新纪元起点 = 存储里落盘的水位 + 1（正常关闭封印的会话恰为 `lastSeq + 1`，旧游标 `Last-Event-ID` 续传零 gap；异常收口 / 旧记录取 `max(lastSeq + 1, now − createdAt 毫秒)` 守卫地板）。旧游标早于起点 → gap `reason: 'evicted'`；`Last-Event-ID` 缺席恒全量重放。`POST /v2/sessions` 的 resume 响应 `lastSeq` 由恒 `0` 变为新纪元水位（客户端 L3 恒弃游标经 history 重建，不读该值）。对你意味着：多设备 / 冷启动持旧游标重连不再必然重建。自实现存储可选实现 `recordSeqWatermark`（缺席 = 不封印、按守卫地板起新纪元，仍安全）。",
+        "SSE 有界写：`maxSubscriberBufferBytes`（缺省 2 MiB）自此同时是每次 socket 写的字节上界——attach 重放段分片交付、突发批量分片写出，帧文本与顺序逐字节不变、小流量零分片。曾依赖「非 paused 期队列无界」吞下超 2 MiB 突发的慢客户端，此后可能被判慢消费者并按 `Last-Event-ID` 重连重放。",
+        "音频直连两端点的错误信封：平台上游 401 / 403 / 5xx 与网络故障归一为 `503 upstream_unavailable` 固定词条 + `Retry-After`，上游状态与原文只进结构化日志事件 `upstream.rejected`；业务 4xx（`asr_not_configured`、`insufficient_balance` 等）维持原码透传。对你意味着：端侧不再因平台侧 401 误判本地令牌失效；此前依赖 403 `model_not_authorized` / 502 原样到端的调用方改读日志。",
+        "`tansr serve` 每轮墙钟缺省 30 分钟：`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用（不再被判为非法值告警）。此前缺省无墙钟，一轮可无限期占用会话并发槽；单轮预期超过 30 分钟的部署需显式设更大值或 `0`。仅 `tansr serve` 装配面，库 `startServer` 不受影响。",
+        "会话预算账本按行归账（contract-v0.27，RFC-RF-3 阶段 2）：带 `init.budget` 的会话按每一行的（供应商，模型）取能力位 `quirks.reasoningTokens` 处置思考 token——`'separate'` 行的思考量并入该行输出计量与计价，缺省 `'subset_of_output'` 照旧不叠加；会话内切换模型与子代理另选模型各按自身能力位。当前内置表零 `'separate'` 行，已部署会话的用量与金额逐字节零变化。",
+        "客户端申报工具（`clientTools`）不受内核中央入参校验影响：本地 schema 只是申报投影，调度器不剥参、不改权限 `digest` 输入，坏参仍由既有路径以 `tool.completed { isError: true }` 出线。无需迁移。"
+      ],
+      "fixed": [
+        "/v1 优雅关闭期的 `retry:` 帧经 writer 记账，`sseStats().frames / writes` 自此计入；行为不变。"
+      ],
+      "note": "候选，尚未发版；版本号与发版节奏待定（下一版至少 minor）。SDK 专属事件 `session.events_dropped`（contract-v0.27，RFC-RF-1）只在 `@tansr/sdk` 进程内事件积压越界时出现，`@tansr/serve` 恒不发出、不进 `/v2` 事件流 / 重放窗 / journal，客户端无需为它写分支。"
+    },
+    "0.8.1": {
+      "date": "2026-09-11",
+      "added": [],
+      "changed": [
+        "统一系统媒体工具与平台提供方的说明，明确移动端媒体工具在会话服务执行，用户主动转写 / 朗读与模型工具调用分别保留。",
+        "同步 SDK 媒体说明修正；不改变会话协议、能力授权、媒体产物、工具执行或计费行为，不新增公共导出。"
+      ],
+      "fixed": []
+    },
     "0.8.0": {
       "added": [
         "`/v2` 新增输入能力发现、严格同轮文本投递与状态查询接口，绑定会话、历史代际和目标轮；旧 messages 接口保持兼容。",

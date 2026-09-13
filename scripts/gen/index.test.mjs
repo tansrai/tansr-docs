@@ -40,12 +40,14 @@ function assertContract(content, { title, category, source, script }) {
 const h = (md, level) => [...md.matchAll(new RegExp(`^${'#'.repeat(level)} (.+)$`, 'gm'))].map((m) => m[1]);
 
 // ———— serve-env ————
-test('serve-env:解析 .env.example 注释形 → 30 键、组 / 类型 / 缺省 / 敏感齐;头注键数对表', () => {
+// 31 键:tansr-cli@c5219e02 起新增 TANSR_SERVE_HOST_SHELL(session.hostShell);此前 30 键。
+test('serve-env:解析 .env.example 注释形 → 31 键、组 / 类型 / 缺省 / 敏感齐;头注键数对表', () => {
   const text = readFileSync(join(root, 'contract', 'serve.env.example'), 'utf8');
   const parsed = serveEnv.parseEnvExample(text);
   const keys = parsed.groups.flatMap((g) => g.keys);
-  assert.equal(keys.length, 30);
-  assert.equal(parsed.declaredCount, 30);
+  assert.equal(keys.length, 31);
+  assert.equal(parsed.declaredCount, 31);
+  assert.ok(keys.some((k) => k.key === 'TANSR_SERVE_HOST_SHELL' && k.path === 'session.hostShell'), 'RF-08c 新键须带运行时路径');
   assert.ok(parsed.groups.length >= 5);
   for (const k of keys) {
     assert.match(k.key, /^TANSR_SERVE_[A-Z0-9_]+$/);
@@ -57,17 +59,17 @@ test('serve-env:解析 .env.example 注释形 → 30 键、组 / 类型 / 缺省
   assert.ok(parsed.outside.includes('TANSR_SERVE_TOKEN'), '头注点名的入口级键须被识别(供 #tansr_serve_token 锚点)');
 });
 
-test('serve-env:页面 frontmatter 契约、键锚点 = 小写键名且唯一、总表 30 行', () => {
+test('serve-env:页面 frontmatter 契约、键锚点 = 小写键名且唯一、总表 31 行', () => {
   const [{ content, stats }] = serveEnv.generate(root);
   assertContract(content, { title: 'serve 环境变量', category: 'serve', source: 'serve.env.example', script: 'scripts/gen/serve-env.mjs' });
-  assert.equal(stats.keys, 30);
+  assert.equal(stats.keys, 31);
   const h3 = h(content, 3);
   assert.equal(new Set(h3).size, h3.length);
-  assert.equal(h3.filter((x) => x.startsWith('TANSR_SERVE_')).length, 30 + stats.outside);
+  assert.equal(h3.filter((x) => x.startsWith('TANSR_SERVE_')).length, 31 + stats.outside);
   assert.ok(h3.includes('TANSR_SERVE_TOKEN'));
   assert.equal(slug('TANSR_SERVE_TOKEN'), 'tansr_serve_token');
   const rows = content.split('\n').filter((l) => /^\| \[`TANSR_SERVE_/.test(l));
-  assert.equal(rows.length, 30);
+  assert.equal(rows.length, 31);
   for (const l of [...content.matchAll(/\]\(#([^)]+)\)/g)].map((m) => m[1])) {
     assert.ok(h3.map(slug).includes(l) || h(content, 2).map(slug).includes(l), `#${l} 无对应标题`);
   }
