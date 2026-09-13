@@ -6,7 +6,8 @@
  * 页形(自 DS-23 起):
  *   1. 顶部「用户口吻层」——按 CHANGELOG 的版本段顺序,每版一节 `## <version>(<日期> | 未发)`,
  *      正文取 `contract/release-notes.json`(手维护)的 added / changed / fixed 三段(空段不出),零内部卡号;
- *      三段皆空时须有 `note`(如「无用户可见变更」),`note` 在场则作末段说明。「未发」照 CHANGELOG 版本段首段引言的「未发」字样标。
+ *      三段皆空时须有 `note`(如「无用户可见变更」),`note` 在场则作末段说明。「未发」按三种信号之一标:
+ *      候选段标题 `## <version> — 候选…`、版本名 `Unreleased` / `未发布…`、或版本段首段引言含「未发」;未发版本恒不带日期。
  *   2. `<details><summary>工程变更原文(CHANGELOG)</summary> … </details>` 折叠段——CHANGELOG 去 H1 后逐字放入,
  *      仅把标题层级整体下调两级(`##` → `####`),免得折叠段的版本标题挤进本页目录(Starlight 目录只取 h2 / h3);
  *      折叠段以 `<!-- internal-changelog -->` / `<!-- /internal-changelog -->` 包夹,内部编号门(scripts/check/release-notes.mjs)据此跳过。
@@ -53,16 +54,26 @@ export function countVersionSections(body) {
   return [...body.matchAll(/^## .+$/gm)].length;
 }
 
+/** 版本名本身即宣告未发:`Unreleased` / `未发布…`(上游 CHANGELOG 的两种候选段命名) */
+export const UNRELEASED_VERSION = /^(?:unreleased|未发布)/i;
+
 /**
- * 解析 CHANGELOG 版本段:兼容裸版本 / 圆括号日期,以及 `## <version> — YYYY-MM-DD`。
+ * 解析 CHANGELOG 版本段:兼容裸版本 / 圆括号日期、`## <version> — YYYY-MM-DD`,以及候选段 `## <version> — 候选…`。
  * 返回 [{ version, heading, date, unreleased, body }];`date` 取 em-dash 后的 ISO 日期或标题括注里的首个 YYYY-MM-DD(无则 undefined);
- * `unreleased` = 段体首个引言块(`> …`)含「未发」。
+ * `unreleased` = 候选段标题、版本名为 `Unreleased` / `未发布…`,或段体首个引言块(`> …`)含「未发」。
+ * 候选段(`— 候选`)恒不取日期:候选只写「候选」不写发布日期,标题里的日期是候选登记日,不是发版日。
  */
 export function parseVersionSections(body) {
   const lines = body.split('\n');
   const out = [];
   let cur = null;
   for (const line of lines) {
+    const c = /^## (\S+)\s+—\s+候选.*$/.exec(line);
+    if (c) {
+      cur = { version: c[1], heading: line.slice(3).trim(), date: undefined, unreleased: true, candidate: true, body: [] };
+      out.push(cur);
+      continue;
+    }
     const h = /^## (\S+)(?:\s+\((.*)\)|\s+—\s+(\d{4}-\d{2}-\d{2}))?\s*$/.exec(line);
     const isoDate = h?.[3];
     const timestamp = isoDate === undefined ? undefined : Date.parse(`${isoDate}T00:00:00.000Z`);
@@ -76,7 +87,7 @@ export function parseVersionSections(body) {
   }
   for (const s of out) {
     const firstQuote = s.body.find((l) => /^\s*>/.test(l)) ?? '';
-    s.unreleased = /未发/.test(firstQuote);
+    s.unreleased = s.candidate === true || UNRELEASED_VERSION.test(s.version) || /未发/.test(firstQuote);
     s.body = s.body.join('\n').replace(/^\n+/, '').replace(/\n+$/, '');
   }
   return out;
@@ -102,6 +113,7 @@ export function demoteHeadings(md, by = 2) {
 
 function versionHeading(section, entry) {
   const date = entry?.date ?? section.date;
+  // 未发版本恒不带日期,一律以「(未发)」后缀标注(含版本名本身为 Unreleased / 未发布… 的段,形制统一)。
   if (section.unreleased) return `## ${section.version}(未发)`;
   return date ? `## ${section.version}(${date})` : `## ${section.version}`;
 }

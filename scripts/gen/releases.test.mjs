@@ -34,6 +34,34 @@ test('releases keeps bare/unreleased and parenthesized headings compatible', () 
   ]);
 });
 
+// Exact candidate / unreleased headings from tansr-cli main c5219e02's three release changelogs.
+test('releases candidate heading (`— 候选…`) is a version section without a date', () => {
+  const sections = parseVersionSections('## 0.14.0 — 候选(未发版;版本号与发版节奏待用户拍板)— 2026-09-11\n\n- 候选内容。\n\n## 0.13.1 — 2026-09-11\n\n- 已定版内容。\n');
+  assert.deepEqual(sections.map(({ version, date, unreleased }) => ({ version, date, unreleased })), [
+    { version: '0.14.0', date: undefined, unreleased: true },
+    { version: '0.13.1', date: '2026-09-11', unreleased: false },
+  ]);
+  const visible = renderUserSection(sections[0], { added: ['候选能力。'], changed: [], fixed: [] });
+  assert.ok(visible.startsWith('## 0.14.0(未发)\n\n> 本版尚未发布;'));
+  assert.ok(!visible.includes('2026-09-11'), 'candidate sections never show a date');
+  // A hand-maintained date on a candidate entry is ignored as well: candidates only say 候选, never a release date.
+  assert.ok(renderUserSection(sections[0], { date: '2026-09-11', added: ['x'], changed: [], fixed: [] }).startsWith('## 0.14.0(未发)'));
+});
+
+test('releases `Unreleased` / `未发布…` version names are unreleased without a quote marker', () => {
+  const sections = parseVersionSections('## Unreleased\n\n- 候选内容。\n\n## 未发布(核心组件设计审查整改;版本号与发版节奏待用户拍板)\n\n- 候选内容。\n\n## 0.8.1 — 2026-09-11\n\n- 已定版。\n');
+  assert.deepEqual(sections.map(({ version, date, unreleased }) => ({ version, date, unreleased })), [
+    { version: 'Unreleased', date: undefined, unreleased: true },
+    { version: '未发布(核心组件设计审查整改;版本号与发版节奏待用户拍板)', date: undefined, unreleased: true },
+    { version: '0.8.1', date: '2026-09-11', unreleased: false },
+  ]);
+  const visible = renderUserSection(sections[0], { added: [], changed: ['候选变更。'], fixed: [] });
+  assert.ok(visible.startsWith('## Unreleased(未发)\n\n> 本版尚未发布;'));
+  assert.ok(renderUserSection(sections[1], { added: [], changed: [], fixed: [], note: '候选。' }).startsWith(`## ${sections[1].version}(未发)\n\n> 本版尚未发布;`));
+  // Headings with inner whitespace (`## 未发布(RF-06;… → …)`) are not version sections: they fold into the previous section as before.
+  assert.equal(parseVersionSections('## 0.14.0 — 候选(x)\n\n- a\n\n## 未发布(X;`Y` 签名变化 → 下一版至少 minor)\n\n- b\n').length, 1);
+});
+
 test('releases em-dash extension rejects non-ISO and impossible dates without guessing prose', () => {
   for (const suffix of ['2026/09/10', '2026-9-10', '2026-00-10', '2026-13-10', '2026-02-30', '2026-09-31', '2026-09-10 extra']) {
     assert.deepEqual(parseVersionSections(`## 0.13.0 — ${suffix}\n\n- 内容。\n`), [], suffix);
