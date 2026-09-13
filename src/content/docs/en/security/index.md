@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-13'
 ---
 
 This page covers only **what you can do**: know where traffic goes, put credentials in the right place, know where data is kept, and rotate. tansr's internal defenses (permission engine, protected paths, hard security red lines, audit chain) are laid out in the guides for each form; here they are cited only where they touch your own actions.
@@ -61,6 +61,17 @@ Two user-visible defenses already in place: a single command that both reference
 Three red lines worth repeating: the appkey never leaves your backend; the `app_user` token never leaves the session service; the session id is not an authentication factor.
 
 The CLI adds one more layer of redaction discipline as a safety net: keys in reports, logs and exported transcripts are always redacted to the form `sk-...` plus the last 4 characters; the output of `tansr sessions export` can go straight into a ticket.
+
+## The trust gate for project-level hooks: zero execution by default
+
+**Coming with the next release candidate of the tansr CLI (not yet published).** A repository's `.tansr/settings.json` / `.tansr/settings.local.json` may declare `command` and `http` hooks — code that could run just because you cloned a repository — so the CLI places project-level hooks behind the **workspace trust gate** and does not run them by default:
+
+- **The trust record lives in the user layer**, `~/.tansr/trust.json`; there is no separate grant file. Workspace recorded as trusted → project-level hooks run as usual; no record, or recorded as untrusted → project-level `command` / `http` hooks are **never executed** (zero `hook.*` events) and stderr gets a one-line notice; user-level and managed-level hooks are unaffected.
+- **TUI**: the first time you open a directory without a record, user-level / managed-level `SessionStart` hooks still fire before the first screen, while the project-level `SessionStart` is deferred until you choose "Trust" in the trust dialog and then fires exactly once (Decline / Esc: not fired, and the session enters the tightened mode).
+- **The four unattended entry points** (headless `-p`, `tansr serve`, `tansr acp`, `tansr mcp serve`) have no interactive surface and honour only the record the TUI persisted: a repository you trusted in the TUI gets its project hooks automatically when CI or an editor connects. If there is no record and you really need them for this run, pass `--trust-project-hooks` (same flag name on all four entry points) or set `TANSR_TRUST_PROJECT_HOOKS=1` (other values are ignored). It applies **only when there is no record**, only to this run, is **never written** to `trust.json`, and **cannot override** a recorded distrust.
+- **The criterion is the configuration anchor chain, not the current directory**: the anchor is the nearest ancestor of the start directory that contains `.tansr`; if the anchor or any of its ancestors is recorded as untrusted, hooks stay at zero execution even when a subdirectory is recorded as trusted, and neither the flag nor the variable can override that. Trust keys are normalised by real path (realpath): a junction, symlink, `subst` drive, 8.3 short name or mapped drive pointing at the same workspace is the same record; if the real path cannot be resolved the literal path is used and is **not treated as trusted** — a trust recorded historically under an alias path has to be granted once more. Neither TUI `/cd` nor a mid-session cwd switch over `/v2` re-adjudicates.
+- In project-level `http` hooks the whole-value `${VAR}` form in request headers is **not expanded and is sent literally** (repository configuration never reads your environment; the request is still sent, not rejected); user-level / managed-level hooks expand as before. Hooks shipped by project-level plugins have already passed per-plugin trust and are not gated again.
+- **SDK embedders** (`@tansr/sdk` 0.14.0 candidate): `createSession({ trustProjectHooks: true })` means the host grants trust on the user's behalf; the default `false` means project-level hooks are never executed and emit zero `hook.*` events. The SDK never reads the CLI's `trust.json` and never persists trust — the embedder owns that responsibility. When trust is not granted but the project does declare hooks, `onWarning` receives one `project_hooks_untrusted` (`detail` carries `cwd` and the layers found, `projectShared` / `projectLocal`); without `onWarning` it falls back to a recoverable `turn.error { scope: 'sdk.notice' }`. Single-turn `query()` has no trust bit, so project-level hooks are never enabled there.
 
 ## Data retention: where, how long, who deletes
 

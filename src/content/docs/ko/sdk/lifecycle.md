@@ -10,16 +10,17 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
-이 페이지는 `@tansr/sdk@0.13.0`과 `@tansr/serve@0.8.0`을 기준으로 하며, 해당 버전은 npm에 게시되었습니다. 업무 이벤트의 종료와 리소스의 실제 종료는 서로 다른 시점입니다. 아래 인터페이스에는 해당 호환 버전이 필요합니다.
+이 페이지는 `@tansr/sdk@0.13.0`과 `@tansr/serve@0.8.0`을 기준으로 하며, 해당 버전은 npm에 게시되었습니다. "0.14.0 후보"로 표시한 부분은 아직 게시되지 않았습니다. 업무 이벤트의 종료와 리소스의 실제 종료는 서로 다른 시점입니다. 아래 인터페이스에는 해당 호환 버전이 필요합니다.
 
 | 작업 | 용도 |
 | --- | --- |
 | `idle()`, `close()`, `session.ended` | 기존 업무 종료 상태를 유지. 저장소와 하위 리소스의 완료를 증명하지 않음 |
 | `session.drain(options?)` | 현재 쿼리, 유휴 작업, 커밋, 이미 시작된 정리를 기다림. 세션은 닫지 않음 |
 | `session.closeAsync(options?)` | 먼저 논리적으로 닫은 뒤, 같은 예산으로 실제 정리를 기다림 |
+| `drain({ force: true })` / `closeAsync({ force: true })` | **0.14.0 후보**: 예산을 다 쓴 뒤 정리 배리어를 풀고 자체 리소스를 직접 해제. 계약을 어긴 어댑터가 정리를 영원히 붙잡아 둘 수 없게 됨. 결과는 항상 `status: 'failed'` |
 | `host.dispose()` | 앱이 대여한 모든 세션이 완료된 뒤 공유 MCP host를 닫음 |
 
 ```ts
@@ -40,6 +41,8 @@ if (result.status !== 'completed') {
 `status`는 `completed`, `failed`, `timeout` 또는 `cancelled`입니다. `pending`은 각 단계의 수량이고, `failures`는 크기가 제한된 진단 창이며, 누적 수는 `failureCount` / `omittedFailures`에 있습니다. 원시 `cause`에는 민감한 정보가 들어 있을 수 있으므로 웹 페이지, renderer, 로그에 직접 보내지 마세요.
 
 관찰 기본값은 30초입니다. `0`은 현재 상태만 읽고, `Infinity`는 호스트가 실제 의존성 체인을 명확히 관리할 때만 사용합니다. 시간 초과나 `signal`은 이번 대기만 끝내며, 하위 작업은 계속되고 다른 대기자는 영향을 받지 않습니다. `flushStore`의 기본값은 false이며, SDK는 대여한 store를 닫지 않습니다. `retryPersistence: true`는 복구 대기 중인 최신 전체 기록 커밋을 명시적으로 재시도하되 업무 콜백은 재생하지 않습니다. 성공하면 이전 오류는 유지되면서 `recovered`로 표시됩니다. `onHistoryCommit` 안에서 같은 세션의 `drain()`을 기다리지 마세요.
+
+**`force`(`@tansr/sdk` 0.14.0 후보, 미게시)**: 기본 `drain()`은 관찰만 하고 자체 리소스를 해제하지 않으므로, 계약을 어긴 저장소 / MCP 어댑터(`settle()`가 `pending > 0`을 반환하거나 시간 초과)를 만나면 정리가 계속 매달려 있게 됩니다. `drain({ force: true })` / `closeAsync({ force: true })` / 단일 턴 `cleanup.drain({ force: true })`는 예산을 다 쓴 뒤 배리어를 풀고, 아직 진행 중인 정리에 `query_settlement_forced` / `compaction_settlement_forced`를 기록한 다음, 자체 리소스를 직접 해제(세션 수준 MCP host의 `close` 호출)하고 같은 예산으로 완료를 기다립니다. 결과는 항상 `status: 'failed'`이며 구조화된 실패를 동반합니다. 아직 닫히지 않은 세션에는 효과가 없습니다. 먼저 `close()`를 호출하거나 `closeAsync({ force: true })`를 사용하세요. 같은 후보에서 `query()` 정리 실패 시의 `SdkLifecycleError`에 `error.result`(완료된 `QueryResult`, `onLifecycleError`에도 전달)가 추가되어, 최종 텍스트가 필요한 호출자는 `error.result?.finalText`를 읽습니다.
 
 ## 세션 저장소를 삭제하거나 이전하기 전에
 

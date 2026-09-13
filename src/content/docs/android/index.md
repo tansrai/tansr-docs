@@ -15,7 +15,7 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-13'
 ---
 
 Android SDK（Maven 坐标 `com.tansr.sdk:core` / `:client` / `:compose`，包名前缀 `com.tansr.sdk`）是会话服务 `/v2` 协议的薄客户端。这一篇讲快速开始之后你会遇到的全部设计点：事件怎么变成 UI 状态、断线怎么恢复、前后台怎么处理、错误怎么呈现、工具与对话框怎么接、语音与推送怎么接。
@@ -44,7 +44,7 @@ session.view            // StateFlow<SessionViewState>(reducer 投影,conflated)
 session.connectionState // StateFlow<ConnectionState>
 ```
 
-- `events` 是原始内核事件，与服务端 SSE 一帧一条；未知类型解码为 `Unknown(type, raw)` 恒不抛，坏 JSON 只计数上报诊断位、不断流。
+- `events` 是原始内核事件，与服务端 SSE 一帧一条；未知类型解码为 `Unknown(type, raw)` 恒不抛，坏 JSON 只计数上报诊断位、不断流。契约 revision 7 登记 55 型事件，SDK 解码其中 47 型；新增的 SDK 专属事件 `session.events_dropped`（contract-v0.27，Node SDK 进程内背压兜底）serve 恒不发出、`/v2` 流恒无，即便出现也按 `Unknown` 容忍，端侧零渲染义务。
 - `view` 是**已归约的视图状态**：消息列表（用户 / 助手 / 工具卡）、待办、用量、`lastError`、`notices`。多数 UI 直接订阅它，不要自己拼 `msg.text.delta`。reducer 与 TS / Swift 实现共用同一份金样夹具，三端投影语义一致。
 - 呈现档 `SessionViewOptions(delivery = …)`：文本与思考各自选 `stream` / `final`（思考另有 `off`），运行中 `setDelivery` 块粒度切换。
 
@@ -63,9 +63,11 @@ Live → Recovering(拉 /history 重建)→ Live                        // L2:�
 |---|---|---|
 | L1 | 闪断 / 网络切换 / 回前台 | 自动重连携 `Last-Event-ID=<最后消费 seq>`，收帧按 seq 去重 |
 | L2 | 重连首帧收到 `server.replay.gap` | 弃当前投影 → `GET /v2/sessions/:id` → `GET …/history` → `viewStateFromHistory` 重建 → 自 `lastSeq` 续订 |
-| L3 | 元信息 404 或 `live = false`，或冷启动只持 sessionId | `POST /v2/sessions { resume }` → `resumed = true, lastSeq = 0` → 弃旧游标按 L2 重建 |
+| L3 | 元信息 404 或 `live = false`，或冷启动只持 sessionId | `POST /v2/sessions { resume }` → `resumed = true, lastSeq = <新纪元起点水位>` → 弃旧游标按 L2 重建（锚取 `history.lastSeq`，不读该响应值） |
 
 全程业务零码。冷启动接着上次聊：`CreateSessionRequest(resumeSessionId = savedId)`——SDK 缺省 **attach-first**：先 GET 元信息探针，活跃则 attach（零上游成本），不活跃才 resume 重灌，store 无档才新建。会话终结（`Closed`）后不会自动复活。
+
+**`lastSeq` 恒按值续传，休眠判据恒 `live = false`**——恒不是 `lastSeq == 0`。`@tansr/serve` 下一版候选起（尚未发版），休眠会话的元信息 `lastSeq` 是 store 落盘的真值水位、resume 后的新纪元自该水位 + 1 续起（0.8.x 两处恒 `0`）；SDK 的 L3 本就弃旧游标、以 `history.lastSeq` 为锚，两版行为无需端上适配。`live = true` 且 `lastSeq == 0` 只走 L2、恒不 resume。
 
 **401 收敛条**：事件流 401 → 经 `authProvider` 重取令牌再连，**每连接至多 2 次**（第 1 次退避 0 ms、第 2 次 1000 ms；`AgentSessionConfig.authRetry` 可配但恒有限）；仍 401 即 `connectionState = Failed(Unauthorized)` + `view.lastError { code: 'unauthorized', scope: 'client.auth', recoverable: false, detail: { attempts: 2 } }`，泵停、恒不再自动重连，须宿主修好登录态后显式 `start()`。令牌刷了再 401 就是吊销或配置错，不是抖动。
 
@@ -121,7 +123,7 @@ val transcript = client.audio.transcribe(session.sessionId, bytes, mime = "audio
 val speech = client.audio.speak(session.sessionId, assistantText)                       // url ?: b64;URL 约 24 h 有效
 ```
 
-走 `POST /v2/sessions/:id/audio/transcriptions` / `…/audio/speech`，服务端代打平台语音面，受能力位 `platform.speechToText` / `textToSpeech` 与配额同闸；失败抛 `TansrAgentException` 携服务端 `code`（`capability_disabled` / `asr_not_configured` / `tts_quota_exceeded` / `bad_request` / `upstream_error` 等）。`:compose` 零播放器零权限：录音 / 播放归宿主，sample 的 `AudioRecorderController` / `AudioPlayerController` 是参考实现；录音需 `RECORD_AUDIO` 运行时权限。
+走 `POST /v2/sessions/:id/audio/transcriptions` / `…/audio/speech`，服务端代打平台语音面，受能力位 `platform.speechToText` / `textToSpeech` 与配额同闸；失败抛 `TansrAgentException` 携服务端 `code`（`capability_disabled` / `asr_not_configured` / `tts_quota_exceeded` / `bad_request` / `upstream_error` 等；下一版候选起平台上游 401 / 403 / 5xx 与网络故障归一为 `503 upstream_unavailable` 携 `Retry-After`，业务 4xx 仍原码透传）。`:compose` 零播放器零权限：录音 / 播放归宿主，sample 的 `AudioRecorderController` / `AudioPlayerController` 是参考实现；录音需 `RECORD_AUDIO` 运行时权限。
 
 ## 推送唤醒：自接
 

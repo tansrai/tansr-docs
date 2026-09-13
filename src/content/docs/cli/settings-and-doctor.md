@@ -12,7 +12,7 @@ related:
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-13'
 ---
 
 命令行的行为由三处决定：配置文件（五层 `settings.json`）、环境变量、命令行旗标。`tansr doctor` 把这三处合并后的装配结果零网络地打印出来，是排障的第一步。
@@ -33,7 +33,7 @@ lastVerified: '2026-09-08'
 
 合并与容错：常规键深合并，高层胜；**`permissions` / `hooks` / `mcpServers` 三段不走深合并**，由内核逐层抽取并保留层归因。单键取值非法 → 剔除该键并回退更低层的值；未知键 → 告警忽略；整文件语法错误 → 该层整体跳过。一切损坏都不阻止启动，`/config` 可看诊断计数。`$schemaVersion` 当前为 `1`。
 
-项目层**只能收权，不能扩权**：`defaultMode: auto / acceptEdits / bypassPermissions` 三种扩权模式在项目层声明被忽略并告警；项目层 `allow` 规则冻结不进引擎（经 `/grants` 确认后才升为仓库授权）；`deny` / `ask` 照常即时生效。克隆一个仓库不能给自己授权。**即将随 tansr 命令行 0.5.0 提供**更严的层律：`sandbox` / `update` / `http` 三段只认 user 与 managed 层，managed 层是地板、环境变量对它只能收紧，组织在控制台锁定的键压过一切本地层与环境变量。
+项目层**只能收权，不能扩权**：`defaultMode: auto / acceptEdits / bypassPermissions` 三种扩权模式在项目层声明被忽略并告警；项目层 `allow` 规则冻结不进引擎（经 `/grants` 确认后才升为仓库授权）；`deny` / `ask` 照常即时生效。克隆一个仓库不能给自己授权。**即将随 tansr 命令行下一版候选提供（尚未发版）**：项目层 `hooks` 段跟随工作区信任——`~/.tansr/trust.json` 无记录或记为不信任时项目层 `command` / `http` hooks 零执行，无人值守入口可用 `--trust-project-hooks` / `TANSR_TRUST_PROJECT_HOOKS=1` 仅在无记录时本次放行，判据与边界见[安全与隐私](/security/#项目层-hooks-的信任门缺省零执行)。**即将随 tansr 命令行 0.5.0 提供**更严的层律：`sandbox` / `update` / `http` 三段只认 user 与 managed 层，managed 层是地板、环境变量对它只能收紧，组织在控制台锁定的键压过一切本地层与环境变量。
 
 ## 常用配置键
 
@@ -69,6 +69,7 @@ lastVerified: '2026-09-08'
 | `TANSR_EFFORT` / `TANSR_OUTPUT_STYLE` | 思考档位 / 输出风格 |
 | `TANSR_SANDBOX` | `=1` 开沙箱、`=required` 硬要求 |
 | `TANSR_ISOLATED` | `=1` 声明运行环境已隔离，只压制 doctor 的无人值守提示，不改运行时行为 |
+| `TANSR_TRUST_PROJECT_HOOKS` | `=1` 在工作区**无信任记录**时本次启用项目层 hooks（等价旗标 `--trust-project-hooks`；不写 `trust.json`、压不过已记录的不信任；其余取值不生效）。下一版候选，尚未发版 |
 | `TANSR_UPDATE_CHANNEL` / `TANSR_UPDATE_PINNED_VERSION` / `TANSR_NO_UPDATE_CHECK` / `TANSR_UPDATE_MANIFEST_URL` | 更新通道 / 组织锁定版本 / 个人退出检查 / 自托管清单 |
 | `TANSR_WEBSEARCH_ENDPOINT` / `TANSR_WEBSEARCH_API_KEY` | WebSearch 自带端点（显式设置恒压过登录态平台搜索） |
 | `TANSR_IMAGEGEN_*` / `TANSR_ASR_*` / `TANSR_TTS_*` | 媒体工具自带端点三件（`_ENDPOINT` / `_API_KEY` / `_MODEL`,+ `TANSR_TTS_VOICE`） |

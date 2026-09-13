@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes the `/v2` multi-session REST + SSE protocol surface; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance.
@@ -152,6 +152,8 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Last-Event-ID: 42"
 ```
+
+`lastSeq` is a resume anchor — always resume **by value**: a new session returns `0`; for a dormant session (`live: false`) `GET /v2/sessions/:id` returns the persisted watermark, and the new epoch after a resume continues from that watermark + 1 (both are candidate behaviour of the next `@tansr/serve` release, not yet published; 0.8.x returns `0` in both places). Detect dormancy with `live`, never with `lastSeq === 0`. Reconnecting with a stale `Last-Event-ID` yields a `server.replay.gap` frame (`reason: 'evicted'`): drop the projection and rebuild from `/history` — see the three-level recovery chain in [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
 
 ## serve in CLI form
 

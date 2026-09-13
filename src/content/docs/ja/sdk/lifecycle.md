@@ -10,16 +10,17 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
-このページは `@tansr/sdk@0.13.0` と `@tansr/serve@0.8.0` に対応し、これらのバージョンは npm に公開済みです。業務イベントの終了とリソースの実際の終了は別の時点です。以下のインターフェースには対応するバージョンが必要です。
+このページは `@tansr/sdk@0.13.0` と `@tansr/serve@0.8.0` に対応し、これらのバージョンは npm に公開済みです。「0.14.0 候補」と記した部分はまだ公開されていません。業務イベントの終了とリソースの実際の終了は別の時点です。以下のインターフェースには対応するバージョンが必要です。
 
 | 操作 | 用途 |
 | --- | --- |
 | `idle()`、`close()`、`session.ended` | 従来の業務上の終端状態を維持する。ストレージと下層リソースの完了は証明しない |
 | `session.drain(options?)` | 現在のクエリ、アイドル操作、コミット、すでに開始されたクリーンアップを待つ。セッションは閉じない |
 | `session.closeAsync(options?)` | まず論理的に閉じ、次に同じ予算で実際のクリーンアップを待つ |
+| `drain({ force: true })` / `closeAsync({ force: true })` | **0.14.0 候補**：予算を使い切った後に終了処理のバリアを解放し、自前のリソースを直接解放する。契約違反のアダプタが終了処理を永久に吊るしたままにできなくなる。結果は常に `status: 'failed'` |
 | `host.dispose()` | アプリが、借用しているすべてのセッションの完了後に共有 MCP host を閉じる |
 
 ```ts
@@ -40,6 +41,8 @@ if (result.status !== 'completed') {
 `status` は `completed`、`failed`、`timeout`、`cancelled` のいずれかです。`pending` は各段階の件数、`failures` は上限付きの診断ウィンドウで、累計は `failureCount` / `omittedFailures` にあります。生の `cause` には機密情報が含まれる可能性があるため、Web ページ、renderer、ログに直接送らないでください。
 
 観察のデフォルトは 30 秒です。`0` は現在の状態を読むだけ、`Infinity` はホストが実際の依存チェーンを明確に管理している場合にだけ使います。タイムアウトや `signal` は今回の待機だけを終了させ、下層の作業は続行し、他の待機者には影響しません。`flushStore` のデフォルトは false で、SDK は借用した store を閉じません。`retryPersistence: true` は修復待ちの最新の完全な履歴コミットを明示的に再試行しますが、業務コールバックは再実行しません。成功すると古いエラーは保持されたまま `recovered` とマークされます。`onHistoryCommit` の中で同じセッションの `drain()` を待たないでください。
+
+**`force`（`@tansr/sdk` 0.14.0 候補、未公開）**：デフォルトの `drain()` は観察のみで、自前のリソースを解放しません。そのため契約違反のストレージ / MCP アダプタ（`settle()` が `pending > 0` を返す、またはタイムアウト）に当たると、終了処理が吊るされたままになります。`drain({ force: true })` / `closeAsync({ force: true })` / 単一ターンの `cleanup.drain({ force: true })` は、予算を使い切った後にバリアを解放し、まだ飛んでいる終了処理に `query_settlement_forced` / `compaction_settlement_forced` を記録し、続いて自前のリソースを直接解放（セッションレベルの MCP host の `close` が呼ばれる）して同じ予算で完了を待ちます。結果は常に `status: 'failed'` で、構造化された失敗を伴います。まだ閉じていないセッションには効きません。先に `close()` するか、`closeAsync({ force: true })` を使ってください。同じ候補では、`query()` の終了処理に失敗したときの `SdkLifecycleError` に `error.result`（完了済みの `QueryResult`。`onLifecycleError` にも渡る）が追加され、最終テキストが必要な呼び出し側は `error.result?.finalText` を読みます。
 
 ## セッションストレージを削除または移行する前に
 

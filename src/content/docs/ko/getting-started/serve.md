@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
 `@tansr/serve`는 tansr의 **Agent 세션 엔진**입니다. npm 패키지 하나로 당신의 Node 서비스에 내장되어, 밖으로는 `/v2` 다중 세션 REST + SSE 프로토콜 면을 노출하고, 안으로는 당신의 앱 키로 tansr 플랫폼에 연결해 실제로 모델을 호출합니다. 이것은 **게이트웨이가 아닙니다.** 사용자가 어떻게 로그인하고, 어떻게 속도를 제한하고, 어떻게 과금하는지는 모두 당신의 체계에 속합니다. 엔진은 전송, 프로토콜, 세션 거버넌스만 담당합니다.
@@ -152,6 +152,8 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Last-Event-ID: 42"
 ```
+
+`lastSeq`는 복구 앵커이며, 단말은 항상 **값 그대로 이어서** 구독합니다. 새 세션은 `0`을 반환하고, 휴면 세션(`live: false`)에 대한 `GET /v2/sessions/:id`는 저장소에 기록된 실제 수위를 반환하며, resume 뒤의 새 기원(epoch)은 그 수위 + 1부터 이어집니다(이 두 가지는 `@tansr/serve` 다음 릴리스 후보 동작으로 아직 게시되지 않았습니다. 0.8.x는 두 곳 모두 `0`을 반환합니다). 휴면 판정은 `live`로 하고, `lastSeq === 0`으로 판정하지 마세요. 너무 오래된 `Last-Event-ID`로 재연결하면 `server.replay.gap` 프레임(`reason: 'evicted'`)을 받습니다. 이때는 투영을 버리고 `/history`에서 다시 구축합니다. 3단계 복구 체인은 [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/)을 참고하세요.
 
 ## CLI 형태의 serve
 

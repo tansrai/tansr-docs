@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露 `/v2` 多会话 REST + SSE 协议面，对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。
@@ -152,6 +152,8 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Last-Event-ID: 42"
 ```
+
+`lastSeq` 是恢复锚，端侧恒**按值续传**：新建会话返回 `0`；`GET /v2/sessions/:id` 对休眠会话（`live: false`）返回落盘的真值水位，resume 重灌后的新纪元自该水位 + 1 起（这两处为 `@tansr/serve` 下一版候选行为，尚未发版；0.8.x 恒返回 `0`）。判休眠看 `live`，不看 `lastSeq === 0`。携过旧的 `Last-Event-ID` 重连会收到 `server.replay.gap` 帧（`reason: 'evicted'`），此时弃投影、拉 `/history` 重建——三级恢复链见[v2 协议与 webhook](/serve/v2-and-webhooks/)。
 
 ## 命令行形态的 serve
 

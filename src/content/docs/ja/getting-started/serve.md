@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
 `@tansr/serve` は tansr の **Agent セッションエンジン**です。npm パッケージとしてあなた自身の Node サービスに組み込み、外向きには `/v2` のマルチセッション REST + SSE プロトコル面を公開し、内向きにはあなたのアプリキーで tansr プラットフォームに接続して実際にモデルを呼び出します。これは**ゲートウェイではありません**——ユーザーのログイン方法、レート制限、課金はすべてあなた自身の仕組みに属し、エンジンはトランスポート、プロトコル、セッションのガバナンスだけを担います。
@@ -152,6 +152,8 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Last-Event-ID: 42"
 ```
+
+`lastSeq` は復旧のアンカーで、端末側は常に**値のまま続きから購読**します。新規セッションは `0` を返し、休眠中のセッション（`live: false`）に対する `GET /v2/sessions/:id` は永続化された実際の水位を返し、resume 後の新しい紀元はその水位 + 1 から続きます（この 2 点は `@tansr/serve` 次期リリース候補の挙動で、まだ公開されていません。0.8.x はどちらも `0` を返します）。休眠判定は `live` で行い、`lastSeq === 0` で判定しないでください。古すぎる `Last-Event-ID` で再接続すると `server.replay.gap` フレーム（`reason: 'evicted'`）を受け取ります。その場合は投影を捨て、`/history` から再構築します。3 段階の復旧チェーンは[v2 プロトコルと webhook](/ja/serve/v2-and-webhooks/)を参照。
 
 ## CLI 形態の serve
 

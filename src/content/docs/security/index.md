@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-13'
 ---
 
 这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。
@@ -61,6 +61,17 @@ lastVerified: '2026-09-08'
 三处红线值得反复说：appkey 恒不出你的服务端；`app_user` 令牌恒不出会话服务；会话 id 不是鉴权因子。
 
 命令行还有一层脱敏纪律替你兜底：报告、日志、导出转录里的密钥一律按 `sk-...尾4位` 形态脱敏；`tansr sessions export` 的产物可直接进工单。
+
+## 项目层 hooks 的信任门：缺省零执行
+
+**即将随 tansr 命令行下一版候选提供（尚未发版）。** 仓库里的 `.tansr/settings.json` / `.tansr/settings.local.json` 可以声明 `command` / `http` 两类 hooks——它们是「克隆一个仓库就可能被执行的代码」，所以命令行把项目层 hooks 放在**工作区信任门**之后，缺省不执行：
+
+- **信任记录在用户层** `~/.tansr/trust.json`，不另设授信文件。工作区已记信任 → 项目层 hooks 照常执行；无记录或记为不信任 → 项目层 `command` / `http` hooks **零执行**（零 `hook.*` 事件），stderr 留一行说明；用户层与托管层 hooks 不受影响。
+- **TUI**：首次打开无记录的目录时，用户层 / 托管层的 `SessionStart` hooks 照常在首屏前触发，项目层 `SessionStart` 等你在信任对话框选「信任」之后再补发恰一次（拒绝 / Esc 不补发并进入收紧模式）。
+- **无人值守四入口**（headless `-p`、`tansr serve`、`tansr acp`、`tansr mcp serve`）没有交互面，只认 TUI 已落盘的记录：你在 TUI 信任过的仓库，CI / 编辑器接入时项目 hooks 自动生效。无记录而确需本次执行，加 `--trust-project-hooks`（四入口同名旗标）或设 `TANSR_TRUST_PROJECT_HOOKS=1`（其余取值不生效）：只在**无记录**时生效、只对本次运行生效、**不写入** `trust.json`，且**压不过**已记录的不信任。
+- **判据是配置锚链，不是当前目录**：锚点 = 从启动目录向上最近的含 `.tansr` 的祖先；锚点或其任一祖先被记为不信任，即使子目录被记为信任也零执行，旗标 / 环境变量同样压不过。信任键按真实路径（realpath）归一：junction / 符号链接 / `subst` / 8.3 短名 / 映射盘指向同一工作区即同一条记录；真实路径解析失败时按字面路径处理、**不视为信任**——历史上按别名字面路径记的信任需重新授信一次。TUI `/cd`、`/v2` 会话中途切 cwd 都不重新裁决。
+- 项目层 `http` hook 的请求头里 `${VAR}` 整值写法**不展开、按字面量原样发送**（仓库配置永不读取你的环境变量；请求照发不拒发），用户层 / 托管层照常展开。项目层插件自带的 hooks 已过逐插件授信，不再重复受此门。
+- **SDK 嵌入方**（`@tansr/sdk` 0.14.0 候选）：`createSession({ trustProjectHooks: true })` 即宿主替用户授信，缺省 `false` = 项目层 hooks 零执行、零 `hook.*` 事件；SDK 恒不读命令行的 `trust.json`、恒不持久化信任，授信责任由嵌入方自持。未授信而项目里确有 hooks 时经 `onWarning` 收到一条 `project_hooks_untrusted`（`detail` 携 `cwd` 与登记到的层 `projectShared` / `projectLocal`），无 `onWarning` 时回落为可恢复的 `turn.error { scope: 'sdk.notice' }`；单轮 `query()` 无信任位，项目层 hooks 恒不启用。
 
 ## 数据留存：在哪、多久、谁删
 

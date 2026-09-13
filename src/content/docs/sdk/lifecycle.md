@@ -10,16 +10,17 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 与 `@tansr/serve@0.8.0`。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 与 `@tansr/serve@0.8.0`；标注「0.14.0 候选」的部分尚未发版。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
 
 | 操作 | 用途 |
 | --- | --- |
 | `idle()`、`close()`、`session.ended` | 保留原业务终态；不证明存储和底层资源完成 |
 | `session.drain(options?)` | 等待当前查询、空闲操作、提交与已发起清理；不关闭会话 |
 | `session.closeAsync(options?)` | 先逻辑关闭，再按同一预算等待真实收尾 |
+| `drain({ force: true })` / `closeAsync({ force: true })` | **0.14.0 候选**：预算耗尽后释放收尾屏障并直接释放自有资源，违约适配器不再让收尾永久悬挂；结果恒 `status: 'failed'` |
 | `host.dispose()` | 应用在全部借用会话完成后，关闭共享 MCP host |
 
 ```ts
@@ -40,6 +41,8 @@ if (result.status !== 'completed') {
 `status` 是 `completed`、`failed`、`timeout` 或 `cancelled`。`pending` 是各阶段数量，`failures` 是有界诊断窗口，累计数在 `failureCount` / `omittedFailures`。原始 `cause` 可能含敏感信息，不直接发给网页、renderer 或日志。
 
 观察默认 30 秒，`0` 只读当前状态，`Infinity` 只在宿主明确管理真实依赖链时使用。超时或 `signal` 只终止本次等待，底层工作仍继续，其他等待者不受影响。`flushStore` 默认 false；SDK 不关闭借用的 store。`retryPersistence: true` 显式重试待修复的最新完整历史提交，不重放业务回调；成功后旧错误保留并标记 `recovered`。不要在 `onHistoryCommit` 内等待同一会话的 `drain()`。
+
+**`force`（`@tansr/sdk` 0.14.0 候选，尚未发版）**：缺省 `drain()` 只观察、不释放自有资源；遇到违约的存储 / MCP 适配器（`settle()` 回 `pending > 0` 或超时）时，收尾会一直悬挂。`drain({ force: true })` / `closeAsync({ force: true })` / 单轮 `cleanup.drain({ force: true })` 在预算耗尽后释放屏障，对仍在飞的收尾记 `query_settlement_forced` / `compaction_settlement_forced`，随后直接释放自有资源（会话级 MCP host 的 `close` 被调用）并以同一预算等待完成，结果恒 `status: 'failed'` 携结构化失败。它对未关闭的会话无效——先 `close()`，或直接用 `closeAsync({ force: true })`。同一候选段里，`query()` 的收尾失败 `SdkLifecycleError` 新增 `error.result`（已完成的 `QueryResult`，`onLifecycleError` 同携），需要终态文本的调用方读 `error.result?.finalText`。
 
 ## 删除或迁移会话存储前
 

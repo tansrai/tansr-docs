@@ -10,16 +10,17 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-13'
 ---
 
-This guide covers `@tansr/sdk@0.13.0` and `@tansr/serve@0.8.0`. These versions are published on npm. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
+This guide covers `@tansr/sdk@0.13.0` and `@tansr/serve@0.8.0`. These versions are published on npm; anything marked "0.14.0 candidate" is not yet published. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
 
 | Operation | Contract |
 | --- | --- |
 | `idle()`, `close()`, `session.ended` | Existing business lifecycle; does not prove storage or resource completion |
 | `session.drain(options?)` | Observe current queries, idle operations, commits and cleanup without closing an open session |
 | `session.closeAsync(options?)` | Close logically, then wait within the same observation budget |
+| `drain({ force: true })` / `closeAsync({ force: true })` | **0.14.0 candidate**: once the budget is exhausted, release the settlement barrier and free owned resources directly, so a misbehaving adapter can no longer hang cleanup forever; the result is always `status: 'failed'` |
 | `host.dispose()` | Close an application-owned MCP host after all borrowing sessions have finished |
 
 ```ts
@@ -40,6 +41,8 @@ if (result.status !== 'completed') {
 The status is `completed`, `failed`, `timeout` or `cancelled`. Pending counts identify unfinished phases. `failures` is a bounded diagnostic window; `failureCount` and `omittedFailures` retain cumulative counts. Original causes can contain sensitive information: do not send them directly to logs, browsers or Electron renderers.
 
 The default observation budget is 30 seconds. Zero reads the current state; explicit Infinity is for a host-managed completion chain. A timeout or signal ends only that observation, leaving the underlying work and other waiters intact. Store flushing is opt-in; the SDK never closes a borrowed store. Explicit `retryPersistence: true` retries the latest complete history commit without replaying application callbacks. Recovered failures remain visible with `recovered: true`. Never await the same session's drain inside its history callback.
+
+**`force` (`@tansr/sdk` 0.14.0 candidate, not yet published)**: by default `drain()` only observes and never frees owned resources, so a misbehaving storage or MCP adapter (`settle()` returning `pending > 0`, or timing out) can hang cleanup indefinitely. `drain({ force: true })`, `closeAsync({ force: true })` and the single-turn `cleanup.drain({ force: true })` release the barrier once the budget is exhausted, record `query_settlement_forced` / `compaction_settlement_forced` for settlements still in flight, then free owned resources directly (the session-level MCP host's `close` is called) and wait for completion within the same budget; the result is always `status: 'failed'` with structured failures. It has no effect on a session that is still open — call `close()` first, or use `closeAsync({ force: true })`. In the same candidate, a failed `query()` settlement (`SdkLifecycleError`) now carries `error.result` (the completed `QueryResult`; `onLifecycleError` receives it too), so callers that need the final text read `error.result?.finalText`.
 
 ## Before deleting or moving session storage
 
