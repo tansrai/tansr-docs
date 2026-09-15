@@ -16,7 +16,7 @@ generated: true
 ### 新增
 
 - `planSpeechInput` 新增可选的原子输入限制 `inputLimit`（`{ max, unit }`，单位为 Unicode 码点、UTF-16 码元或 UTF-8 字节三者之一），与原有加权字数帽同时预检；整批预检时纯空白分段以新拒绝原因 `empty_segment` 拒绝——不自动删除空白、不自动拆分、不重试收费请求。迁移：对 `SpeechInputPlanResult.reason` 做穷举判别的宿主补齐 `empty_segment`。
-- `AudioTtsConstraints.inputLimit`：客户端声明特性 `tts-input-limit-v1` 后，平台在语音模型约束里下发厂商的原子输入上限；未声明的旧客户端继续拿到保守的加权字数投影。加权 `maxChars` 帽与原子帽同时成立，自定义策略不能放宽厂商上限。平台侧的下发随平台 API 上线；`inputLimit` 缺席时 `planSpeechInput` 仍按原有加权字数单帽预检。
+- `AudioTtsConstraints.inputLimit`：客户端声明特性 `tts-input-limit-v1` 后，平台在语音模型约束里下发厂商的原子输入上限；未声明的旧客户端继续拿到保守的加权字数投影。加权 `maxChars` 帽与原子帽同时成立，自定义策略不能放宽厂商上限。平台侧的下发已于 2026-09-15 上线；模型约束里 `inputLimit` 缺席时 `planSpeechInput` 仍按原有加权字数单帽预检。
 
 ### 变更
 
