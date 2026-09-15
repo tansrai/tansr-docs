@@ -17,7 +17,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。
@@ -26,7 +26,7 @@ lastVerified: '2026-09-10'
 
 移动端的系统提示词在平台应用配置或 serve 宿主中设置，不放入 `/v2` 的 `prompt`。省略 `platform.system` 使用平台默认；代码管理的业务段放 `platform.system`，宿主补充说明放 `platform.systemAppend`。默认 `fallback` 允许显式业务段（包括 `[]`）替代平台段；`prepend` 保留平台段在前，即使 SDK 段是 `[]`。
 
-这些新增选项尚待 API 与 serve 配套发布。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
+这些选项自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
 
 ## 鉴权：三层，各归各位
 
@@ -102,7 +102,7 @@ process.on('SIGINT', shutdown);
 | SSE 背压 | [`TANSR_SERVE_SSE_MAX_BUFFER_BYTES`](/serve/env#tansr_serve_sse_max_buffer_bytes) · [`TANSR_SERVE_SSE_SLOW_POLICY`](/serve/env#tansr_serve_sse_slow_policy)（`disconnect` 缺省 / `drop-oldest`）· [`TANSR_SERVE_SSE_RETRY_MS`](/serve/env#tansr_serve_sse_retry_ms) |
 | 重放窗字节帽 | [`TANSR_SERVE_EVENT_BUFFER_MAX_BYTES`](/serve/env#tansr_serve_event_buffer_max_bytes)（部署建议 4 MiB / 会话） |
 
-准入拒绝恒 `503 overloaded` 携 `Retry-After`（「本机忙，稍后再来」）；平台铸令牌撞 429 / 5xx / 网络错则 `503 upstream_unavailable`（「上游坏，加压无益」），两者刻意分开。缺省全部不设硬帽。
+准入拒绝恒 `503 overloaded` 携 `Retry-After`（「本机忙，稍后再来」）；平台铸令牌撞 429 / 5xx / 网络错则 `503 upstream_unavailable`（「上游坏，加压无益」），两者刻意分开。缺省全部不设硬帽——唯一例外是每轮墙钟：**`tansr serve` 命令行形态自 0.9.0 起缺省 30 分钟**（`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用），单轮预期超过 30 分钟的部署需显式设更大值或 `0`；库 `startServer` 与 `resolveServeRuntimeOptions` 不带此缺省，仍是缺席即不设墙钟（且不接受 `0`）。
 
 每条 SSE 占 1 个文件句柄，Linux 缺省 `nofile 1024` 会把并发订阅者卡在一千出头并报 `EMFILE`——按目标并发 ≥ 2× 抬。容量参考（本机现状档，不外推）：单进程 ≈ 2500 活跃 SSE 连接时事件循环延迟 p99 ≈ 190 ms；≈ 35 KiB 堆 / 会话。
 

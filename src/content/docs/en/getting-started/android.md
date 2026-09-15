@@ -15,7 +15,7 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-15'
 ---
 
 The Android and iOS SDKs are both **thin protocol clients** of the tansr session service (`/v2` protocol): they send input, render the event stream, run the local tools you explicitly register, and respond to permission and question dialogs. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential at all. Both platforms share one contract and one set of view-reduction golden samples. This article is Android-first, with the iOS equivalents in the last section.
@@ -24,7 +24,7 @@ The Android and iOS SDKs are both **thin protocol clients** of the tansr session
 
 `CreateSessionRequest(prompt=...)` and `session.send(...)` send ordinary user messages. Android / iOS do not submit `system` through `/v2`. Manage the shared role in platform application settings, a code-managed role in serve `platform.system`, and host notes in `platform.systemAppend`.
 
-The new prompt and policy features await compatible API / serve releases. Default `fallback` lets explicit SDK `system` (including an empty array) replace the platform segment; `prepend` retains the platform segment first. Platform prompts and policies refresh before a subsequent turn, while an executing turn keeps its configuration. Foreground reconnects, SSE recovery, and live attach preserve the session and history without reopening to get an update. Application managers must resolve conflicting business instructions, and permissions remain separate. See [Application system prompts](/en/sdk/system-prompts/).
+The prompt and policy features are available since `@tansr/serve` 0.8.0; the platform side has been live since 2026-09-14. Default `fallback` lets explicit SDK `system` (including an empty array) replace the platform segment; `prepend` retains the platform segment first. Platform prompts and policies refresh before a subsequent turn, while an executing turn keeps its configuration. Foreground reconnects, SSE recovery, and live attach preserve the session and history without reopening to get an update. Application managers must resolve conflicting business instructions, and permissions remain separate. See [Application system prompts](/en/sdk/system-prompts/).
 
 ## Prerequisites
 

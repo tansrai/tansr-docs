@@ -14,7 +14,7 @@ sources:
   - tansr-ios:README.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 iOS SDK 是 Android SDK 的 Swift 镜像，三端同律：同一份 `/v2` 契约常量对表、同一份视图归约金样、同一份帧序夹具。这一篇按与 Android 指南相同的顺序展开，方便双端团队对照；差异点（SwiftUI 接线、乐观落帐、Info.plist 声明、Windows 构建）单独标出。
@@ -23,7 +23,7 @@ iOS SDK 是 Android SDK 的 Swift 镜像，三端同律：同一份 `/v2` 契约
 
 `CreateSessionRequest(prompt=...)` 与 `session.send(...)` 都发送普通用户消息；Android / iOS 不经 `/v2` 传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
 
-提示词与策略的新功能尚待 API / serve 配套发布；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史，无需重开来取得更新。请由应用管理员消除业务段冲突，权限仍走独立机制。详见[应用系统提示词](/sdk/system-prompts/)。
+提示词与策略功能自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史，无需重开来取得更新。请由应用管理员消除业务段冲突，权限仍走独立机制。详见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 模块切层
 
@@ -52,7 +52,7 @@ SwiftUI 宿主用 `TansrSessionObserver(session:)` 把 `view` / `connectionState
 
 与 Android 完全一致：L1 SSE 断连携 `Last-Event-ID` 重连、收帧按 seq 去重；L2 重连首帧收到 gap → 弃投影 → 元信息 → `/history` → `viewStateFromHistory` 重建 → 自 `lastSeq` 续订；L3 元信息 404 或 `live == false` 或冷启动只持 sessionId → `CreateSessionRequest(resumeSessionId: savedId)` resume 重灌，弃旧游标、以 `history.lastSeq` 为锚（不读 resume 响应的 `lastSeq`）。断线恒不浮到业务码。
 
-`lastSeq` 恒按值续传，休眠判据恒 `live == false`、恒不是 `lastSeq == 0`。`@tansr/serve` 下一版候选起（尚未发版），休眠会话的元信息 `lastSeq` 是 store 落盘的真值水位、resume 后的新纪元自该水位 + 1 续起而非从 `0` 起（0.8.x 两处恒 `0`）；两版行为端上都无需适配。`live == true` 且 `lastSeq == 0` 只走 L2、恒不 resume。契约 revision 7 登记 55 型事件，`TansrCore` 解码其中 47 型；SDK 专属事件 `session.events_dropped`（contract-v0.27）serve 恒不发出、`/v2` 流恒无，即便出现也归 `Unknown` 容忍。
+`lastSeq` 恒按值续传，休眠判据恒 `live == false`、恒不是 `lastSeq == 0`。`@tansr/serve` 0.9.0 起，休眠会话的元信息 `lastSeq` 是 store 落盘的真值水位、resume 后的新纪元自该水位 + 1 续起而非从 `0` 起（0.8.x 两处恒 `0`）；两版行为端上都无需适配。`live == true` 且 `lastSeq == 0` 只走 L2、恒不 resume。契约 revision 7 登记 55 型事件，`TansrCore` 解码其中 47 型；SDK 专属事件 `session.events_dropped`（contract-v0.27）serve 恒不发出、`/v2` 流恒无，即便出现也归 `Unknown` 容忍。
 
 401 收敛条同律：经 `authProvider` 重取令牌至多 2 次，仍 401 进入 `failed(unauthorized)` 终态，`view.lastError { code: 'unauthorized', scope: 'client.auth', recoverable: false, detail: { attempts: 2 } }`，泵停，须宿主修好登录态后显式 `start()`。终态是 `failed` 不是 `closed`——会话未终结，服务端仍持有。
 
@@ -112,7 +112,7 @@ let speech = try await client.audio.speak(sessionId: session.sessionId, text: re
 speech.url ?? speech.b64
 ```
 
-纯 HTTP 往返，恒不进历史；是否把转写文本作为下一条用户输入归 App。服务端代打平台 `/t1/asr` / `/t1/tts`，受能力位 `platform.speechToText` / `textToSpeech` 与配额同闸；下一版候选起平台上游 401 / 403 / 5xx 与网络故障归一为 `503 upstream_unavailable` 携 `Retry-After`（业务 4xx 如 `asr_not_configured` 仍原码透传），端侧按整秒 `Retry-After` 退避即可。
+纯 HTTP 往返，恒不进历史；是否把转写文本作为下一条用户输入归 App。服务端代打平台 `/t1/asr` / `/t1/tts`，受能力位 `platform.speechToText` / `textToSpeech` 与配额同闸；`@tansr/serve` 0.9.0 起平台上游 401 / 403 / 5xx 与网络故障归一为 `503 upstream_unavailable` 携 `Retry-After`（业务 4xx 如 `asr_not_configured` 仍原码透传），端侧按整秒 `Retry-After` 退避即可。
 
 **麦克风权限声明**:App target 的 Info.plist 必须携 `NSMicrophoneUsageDescription`，缺失时 iOS 在首次访问麦克风即终止进程。本仓是 SwiftPM 包，`executableTarget` 没有 Info.plist 语义——示例 `Examples/OrderAssistant/Info.plist` 在 `Package.swift` 里显式 `exclude`,iOS 经 Xcode 建 App 工程挂本包时把它设为 App target 的 Info.plist（或逐键并入）；macOS `swift run` 用 `-Xlinker -sectcreate -Xlinker __TEXT -Xlinker __info_plist -Xlinker <path>` 嵌入。仓内刻意不用 `linkerSettings.unsafeFlags`（作为依赖时会被 SwiftPM 拒收）。
 

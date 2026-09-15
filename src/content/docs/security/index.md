@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。
@@ -37,7 +37,7 @@ lastVerified: '2026-09-13'
 
 无人值守部署（`tansr serve` / headless 放权到 `auto`）的推荐基线是**网络出口白名单**：仅放行模型 API 等必要目的，DNS 与已建连接之外缺省拒绝；配合容器或最小权限专用用户、文件系统写面限工作目录。参考模板在仓内 `deploy/serve/`。
 
-已在场的两道用户可见防线：同一条命令里既引用秘密文件（`.env`、密钥、`.aws/credentials`）又带外发动作（`curl` / `scp` / `git push` …）恒被拒绝，任何模式与规则压不过；会话一旦读过秘密文件，其后的外发动作一律转为询问（会话污点）。**即将随 tansr 命令行 0.5.0 提供**：全部出网（WebFetch / Http / hooks / 音频下载）改经统一出口，DNS 解析后再判私网、环回、链路本地地址，指向内网或元数据地址的抓取被拒并给出原因；Http 工具与 hooks 可引用的凭据环境变量收敛到白名单 `http.allowedAuthEnvVars`，名单外不发请求。
+已在场的两道用户可见防线：同一条命令里既引用秘密文件（`.env`、密钥、`.aws/credentials`）又带外发动作（`curl` / `scp` / `git push` …）恒被拒绝，任何模式与规则压不过；会话一旦读过秘密文件，其后的外发动作一律转为询问（会话污点）。**tansr 命令行 0.6.0 起**：全部出网（WebFetch / Http / hooks / 音频下载）改经统一出口，DNS 解析后再判私网、环回、链路本地地址，指向内网或元数据地址的抓取被拒并给出原因；Http 工具与 hooks 可引用的凭据环境变量收敛到白名单 `http.allowedAuthEnvVars`，名单外不发请求。
 
 ### SDK 与会话服务会连什么
 
@@ -64,14 +64,15 @@ lastVerified: '2026-09-13'
 
 ## 项目层 hooks 的信任门：缺省零执行
 
-**即将随 tansr 命令行下一版候选提供（尚未发版）。** 仓库里的 `.tansr/settings.json` / `.tansr/settings.local.json` 可以声明 `command` / `http` 两类 hooks——它们是「克隆一个仓库就可能被执行的代码」，所以命令行把项目层 hooks 放在**工作区信任门**之后，缺省不执行：
+**tansr 命令行 0.7.0 起提供。** 仓库里的 `.tansr/settings.json` / `.tansr/settings.local.json` 可以声明 `command` / `http` 两类 hooks——它们是「克隆一个仓库就可能被执行的代码」，所以命令行把项目层 hooks 放在**工作区信任门**之后，缺省不执行：
 
 - **信任记录在用户层** `~/.tansr/trust.json`，不另设授信文件。工作区已记信任 → 项目层 hooks 照常执行；无记录或记为不信任 → 项目层 `command` / `http` hooks **零执行**（零 `hook.*` 事件），stderr 留一行说明；用户层与托管层 hooks 不受影响。
 - **TUI**：首次打开无记录的目录时，用户层 / 托管层的 `SessionStart` hooks 照常在首屏前触发，项目层 `SessionStart` 等你在信任对话框选「信任」之后再补发恰一次（拒绝 / Esc 不补发并进入收紧模式）。
 - **无人值守四入口**（headless `-p`、`tansr serve`、`tansr acp`、`tansr mcp serve`）没有交互面，只认 TUI 已落盘的记录：你在 TUI 信任过的仓库，CI / 编辑器接入时项目 hooks 自动生效。无记录而确需本次执行，加 `--trust-project-hooks`（四入口同名旗标）或设 `TANSR_TRUST_PROJECT_HOOKS=1`（其余取值不生效）：只在**无记录**时生效、只对本次运行生效、**不写入** `trust.json`，且**压不过**已记录的不信任。
 - **判据是配置锚链，不是当前目录**：锚点 = 从启动目录向上最近的含 `.tansr` 的祖先；锚点或其任一祖先被记为不信任，即使子目录被记为信任也零执行，旗标 / 环境变量同样压不过。信任键按真实路径（realpath）归一：junction / 符号链接 / `subst` / 8.3 短名 / 映射盘指向同一工作区即同一条记录；真实路径解析失败时按字面路径处理、**不视为信任**——历史上按别名字面路径记的信任需重新授信一次。TUI `/cd`、`/v2` 会话中途切 cwd 都不重新裁决。
 - 项目层 `http` hook 的请求头里 `${VAR}` 整值写法**不展开、按字面量原样发送**（仓库配置永不读取你的环境变量；请求照发不拒发），用户层 / 托管层照常展开。项目层插件自带的 hooks 已过逐插件授信，不再重复受此门。
-- **SDK 嵌入方**（`@tansr/sdk` 0.14.0 候选）：`createSession({ trustProjectHooks: true })` 即宿主替用户授信，缺省 `false` = 项目层 hooks 零执行、零 `hook.*` 事件；SDK 恒不读命令行的 `trust.json`、恒不持久化信任，授信责任由嵌入方自持。未授信而项目里确有 hooks 时经 `onWarning` 收到一条 `project_hooks_untrusted`（`detail` 携 `cwd` 与登记到的层 `projectShared` / `projectLocal`），无 `onWarning` 时回落为可恢复的 `turn.error { scope: 'sdk.notice' }`；单轮 `query()` 无信任位，项目层 hooks 恒不启用。
+- **项目层 MCP 服务器与插件同律**（0.7.0 起）：无人值守四入口对仓库声明的 MCP 服务器与插件同样只认 TUI 落盘的授信记录，顺序为**落盘拒绝（按定义指纹匹配）> 落盘允许 > `TANSR_TRUST_PROJECT_MCP=1` / `TANSR_TRUST_PROJECT_PLUGINS=1` 仅在无记录或指纹失配时放行 > 待授信**；MCP 定义变化视为失配，旧的字面路径记录只认拒绝、不借用放行。此前只靠环境变量越过落盘拒绝的部署自 0.7.0 起被拒——在 TUI 重新授信，或删除该拒绝记录。`tansr acp` 的插件发现 / 授信 / 验签与其他入口共用一套，未授信插件零加载、提示走 stderr（stdout 只写协议帧）。
+- **SDK 嵌入方**（`@tansr/sdk` 0.14.0 起）：`createSession({ trustProjectHooks: true })` 即宿主替用户授信，缺省 `false` = 项目层 hooks 零执行、零 `hook.*` 事件；SDK 恒不读命令行的 `trust.json`、恒不持久化信任，授信责任由嵌入方自持。未授信而项目里确有 hooks 时经 `onWarning` 收到一条 `project_hooks_untrusted`（`detail` 携 `cwd` 与登记到的层 `projectShared` / `projectLocal`），无 `onWarning` 时回落为可恢复的 `turn.error { scope: 'sdk.notice' }`；单轮 `query()` 无信任位，项目层 hooks 恒不启用。
 
 ## 数据留存：在哪、多久、谁删
 
@@ -86,7 +87,7 @@ lastVerified: '2026-09-13'
 ### 会话服务（`@tansr/serve`）
 
 - 会话历史落在你配置的 `store` 目录 `<dir>/agent-sessions/<endUserKey>/sessions/<sessionId>/`,`endUserKey` 是终端用户 id 的哈希，不是身份；可挂冷层到你的对象存储，段是明文 JSONL（压缩）——**加密、密钥管理、驻留地、访问控制归你**（`policy.transform` 挂点）。
-- 内存态短窗：终结记录保留 30 min，闲置 24 h 落盘；`DELETE /v2/sessions/:id` 是关闭不是删除。**今天的 store 缺省永存**；存储保留期扫描（按天龄与每用户条数删休眠会话）**即将随 @tansr/serve 0.7.0 提供**。真删除走 `store.delete`。
+- 内存态短窗：终结记录保留 30 min，闲置 24 h 落盘；`DELETE /v2/sessions/:id` 是关闭不是删除。**未配置保留期时 store 缺省永存**；存储保留期扫描（按天龄与每用户条数删休眠会话）**@tansr/serve 0.8.0 起提供**（工厂选项 `sessions.retention` 或两个环境变量，见[保留期与治理](/serve/retention-and-governance/#存储保留期扫描)）。真删除走 `store.delete`。
 - 结构化日志字段恒不含令牌与消息内容；指标标签恒不含 sessionId / endUserId。
 - 下行到终端的权限请求帧恒不携完整工具参数，只有目标摘要；webhook 载荷恒不携消息内容与凭据。
 

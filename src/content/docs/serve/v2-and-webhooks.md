@@ -18,7 +18,7 @@ sources:
   - tansr-cli:packages/server/.env.example
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-android:README.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 `/v2` 是 `@tansr/serve` 对外的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS SDK 已把这套协议全部封装；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。
@@ -27,7 +27,7 @@ lastVerified: '2026-09-13'
 
 移动端的系统提示词在平台应用配置或 serve 宿主中设置，不放入 `/v2` 的 `prompt`。省略 `platform.system` 使用平台默认；代码管理的业务段放 `platform.system`，宿主补充说明放 `platform.systemAppend`。默认 `fallback` 允许显式业务段（包括 `[]`）替代平台段；`prepend` 保留平台段在前，即使 SDK 段是 `[]`。
 
-这些新增选项尚待 API 与 serve 配套发布。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
+这些选项自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
 
 ## 总纪律
 
@@ -78,7 +78,7 @@ lastVerified: '2026-09-13'
 | `cwd_not_allowed` / `cwd_invalid` / `cwd_unavailable` | 400 / 400 / 409 | 工作目录被策略拒 / 形态非法 / resume 时存储目录已失 |
 | `overloaded` | 503 | 本机准入或过载拒绝；恒携 `Retry-After` |
 | `draining` | 503 | 服务端优雅关闭期；恒携 `Retry-After`，在场 SSE 同时收到长 `retry:` 帧 |
-| `upstream_unavailable` | 503 | 平台铸令牌 / 配置拉取暂不可用；恒携 `Retry-After`。下一版候选：音频直连两端点的上游 401 / 403 / 5xx / 网络故障也收敛到此码（业务 4xx 如 `asr_not_configured` 仍原样透传） |
+| `upstream_unavailable` | 503 | 平台铸令牌 / 配置拉取暂不可用；恒携 `Retry-After`。0.9.0 起音频直连两端点的上游 401 / 403 / 5xx / 网络故障也收敛到此码（业务 4xx 如 `asr_not_configured` 仍原样透传；上游状态与原文只进结构化日志事件 `upstream.rejected`） |
 | `rate_limited` | 429 | 宿主限流缝拒绝，或平台套餐配额（`detail: { scope: 'plan' }`）；恒携 `Retry-After` |
 | `internal_error` | 500 | 路由层统一错误边界兜底，进程恒不退出 |
 | `store_corrupted` | 500 | 会话存储损坏，恒不静默回残缺历史 |
@@ -89,8 +89,8 @@ lastVerified: '2026-09-13'
 
 - **内核事件帧**：`id: <seq>` + `data: <KernelEvent JSON>`,**不带 `event:` 名**——客户端单一 message 监听、按 `type` 判别。包络 `sessionId / turnId? / seq / ts / v / source` 恒全保。
 - **控制帧**：`event: server.<族>.<名>` + `id: <seq>` + `data`，带 id 进环形缓冲（业务往返断线必须重见）。七名：`server.tool.request` / `server.tool.cancel` / `server.permission.request` / `server.permission.closed` / `server.question.request` / `server.question.closed` / `server.platform.warning`。
-- **gap 帧**：`event: server.replay.gap`，恒不带 id；`data` 携 `{ type, sessionId, requestedAfterSeq, oldestRetainedSeq?, droppedEvents, reason? }`。本次丢了多少 = `oldestRetainedSeq − requestedAfterSeq − 1`;`droppedEvents` 是缓冲累计逐出数，不是本次。`reason` 二值：`'evicted'`（游标早于缓冲 / 纪元起点）、`'ahead_of_log'`（游标超前日志末序——下一版候选起只见于伪造 / 越界游标与无 store 重启）。帧形单一事实源在契约 `ReplayGapNotice`，随 MANIFEST 门禁演进。
-- **慢消费者**：单条连接的待写队列超 `maxSubscriberBufferBytes`（缺省 2 MiB）或持续 paused 超 `slowSubscriberGraceMs`（10 s）按部署策略处置——缺省 `disconnect`（断连，端侧凭 `Last-Event-ID` 走 L1）；可配 `drop-oldest`（保连接、丢该连接最旧的帧，并主动下发一帧 `requestedAfterSeq: -1` 的 gap，`oldestRetainedSeq` 缺席）。客户端恒不得假定 gap 帧只在重连首帧出现。下一版候选起 `maxSubscriberBufferBytes` 同时是每次 socket 写的字节上界（大重放分片交付；帧文本与顺序逐字节不变）。
+- **gap 帧**：`event: server.replay.gap`，恒不带 id；`data` 携 `{ type, sessionId, requestedAfterSeq, oldestRetainedSeq?, droppedEvents, reason? }`。本次丢了多少 = `oldestRetainedSeq − requestedAfterSeq − 1`;`droppedEvents` 是缓冲累计逐出数，不是本次。`reason` 二值：`'evicted'`（游标早于缓冲 / 纪元起点）、`'ahead_of_log'`（游标超前日志末序——0.9.0 起只见于伪造 / 越界游标与无 store 重启）。帧形单一事实源在契约 `ReplayGapNotice`，随 MANIFEST 门禁演进。
+- **慢消费者**：单条连接的待写队列超 `maxSubscriberBufferBytes`（缺省 2 MiB）或持续 paused 超 `slowSubscriberGraceMs`（10 s）按部署策略处置——缺省 `disconnect`（断连，端侧凭 `Last-Event-ID` 走 L1）；可配 `drop-oldest`（保连接、丢该连接最旧的帧，并主动下发一帧 `requestedAfterSeq: -1` 的 gap，`oldestRetainedSeq` 缺席）。客户端恒不得假定 gap 帧只在重连首帧出现。0.9.0 起 `maxSubscriberBufferBytes` 同时是每次 socket 写的字节上界（大重放分片交付；帧文本与顺序逐字节不变）。
 - **`session.events_dropped` 恒不出现在 `/v2`**：这是 contract-v0.27 新增的 SDK 专属事件（`scope: 'sdk.events'`，SDK 进程内事件背压的兜底），serve 恒不发出、不进 SSE 流、不进重放窗、不进 journal；客户端不需要为它写分支。契约事件表随此由 54 型增至 55 型（MANIFEST revision 7）。
 - 首帧 `retry: 3000`（可含抖动，客户端恒按实际值重连）；每 15 s 一条 `: hb` 心跳；`?exclude=hook,mcp` 可按前缀过滤内核事件（控制帧与 gap 帧恒不受过滤，被滤事件仍占 seq）。
 - 环形缓冲缺省 1024 条，可另配字节帽。
@@ -111,14 +111,18 @@ lastVerified: '2026-09-13'
 
 运行中轮崩溃恒丢本轮（store 轮粒度提交）。resume 目标仍活跃时按 attach 返回 200，零重灌成本——端侧恒「持有上次 sessionId → 先试恢复 → 恢复不了才新建」。
 
-### `lastSeq` 的值语义：按值续传（下一版候选）
+### `lastSeq` 的值语义：按值续传（0.9.0 起）
 
-以下为 `@tansr/serve` 下一版候选行为（尚未发版；0.8.x 的非活跃径与 resume 响应 `lastSeq` 恒 `0`）。端侧只要一直「按值续传」——把 `lastSeq` 当恢复锚而不是布尔位——两版行为都能正确处理。
+以下为 `@tansr/serve` 0.9.0（2026-09-14 发布）起的行为；0.8.x 的非活跃径与 resume 响应 `lastSeq` 恒 `0`。端侧只要一直「按值续传」——把 `lastSeq` 当恢复锚而不是布尔位——两版行为都能正确处理。
 
 - **休眠径读真值**：`GET /v2/sessions/:id`、`GET /v2/sessions` 列表项与 `GET …/history` 对不在内存的会话，`lastSeq` 取 store 元信息里落盘的水位（老卷无该元信息仍为 `0`）。`lastSeq === 0` 不再等价于「无事件」；判休眠的依据恒是 `live: false`，不是 `lastSeq`。
 - **seq 跨纪元单调**：resume 重灌后的新纪元不再从 `0` 起，而是从落盘水位 + 1 起——上一纪元已封印（`seqSealed: true`，正常轮末落盘）时精确等于 `lastSeq + 1`；未封印（进程被杀等异常收口）时取 `max(lastSeq + 1, now − createdAt 毫秒)`，保证新事件的 seq 恒大于旧纪元任何游标。`201` 响应里的 `lastSeq` 即新纪元起点水位，端侧自它续订。
 - **旧游标恒有明确回应**：携早于纪元起点的 `Last-Event-ID` 重连，服务端回 gap 帧 `reason: 'evicted'`，端侧走 L2；缺 `Last-Event-ID` 或值为 `-1` = 自缓冲最早处全量重放。fork 出的会话自 `lastSeq: 1` 起。
 - **用量快照落后的告知**：resume 后的首个连接若发现用量快照落后于历史（进程被杀在轮末与快照之间），重放开头多一帧 `server.platform.warning { code: 'usage_snapshot_stale' }`，`message` 携快照之后落盘的消息条数；只丢末轮用量、不静默低报，历史与 seq 不受影响。端侧按咨询类弱提示处理即可。
+
+### 历史里的媒体产物（0.10.0 起）
+
+`GET /v2/sessions/:id/history` 的工具结果自 `@tansr/serve` 0.10.0 起携 `artifact`（图像 / 视频 / 语音工具的产物），热 / 冷恢复与检查点一并保留，端侧恢复后可重建媒体工具卡；HTTP 路径与事件包络不变，旧的纯文本历史不自动补媒体。含产物的会话存储升为版本 2：旧版本程序不能继续写已升级的卷，升级前备份并把写同一存储的 writer（`tansr serve` / 自托管 `@tansr/serve` / SDK 宿主）统一升级。
 
 ## 轮末出站 webhook
 

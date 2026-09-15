@@ -14,7 +14,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。
@@ -23,11 +23,11 @@ lastVerified: '2026-09-10'
 
 平台应用的 `systemPrompt` 用于共享角色，SDK 的 `system` 用于代码管理的业务段；默认 `fallback` 下显式 `system`（包括 `[]`）替代平台段。平台选择 `prepend` 后先保留平台段，再追加 SDK 段，`[]` 也保留平台段。宿主环境说明放 `systemAppend`，不触发默认覆盖。
 
-Windows Electron 仍由主进程运行 SDK，renderer 发送的是用户输入。应用提示词及策略功能尚待配套版本发布；支持版本可通过只读 `session.applicationPrompt` 核对来源与策略，不会返回正文。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；原会话与历史保留，无需重开。完整真值表、平台 PUT / GET 与可运行示例见[应用系统提示词](/sdk/system-prompts/)。
+Windows Electron 仍由主进程运行 SDK，renderer 发送的是用户输入。应用提示词及策略功能自 `@tansr/sdk` 0.13.0 起提供（平台侧已于 2026-09-14 上线）；可通过只读 `session.applicationPrompt` 核对来源与策略，不会返回正文。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；原会话与历史保留，无需重开。完整真值表、平台 PUT / GET 与可运行示例见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 前提
 
-任务运行中需要补充要求时，使用 [同轮追加输入](/sdk/midturn-input/) 的 `getInputTarget` / `submitInput` 与回执查询；无需中断当前执行或新建会话。首期仅 memory 文本，需配套版本发布。
+任务运行中需要补充要求时，使用 [同轮追加输入](/sdk/midturn-input/) 的 `getInputTarget` / `submitInput` 与回执查询；无需中断当前执行或新建会话。首期仅 memory 文本，自 `@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0 / 命令行 0.6.0 起提供。
 
 | 要求 | 值 |
 |---|---|

@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/serve`는 tansr의 **Agent 세션 엔진**입니다. npm 패키지 하나로 당신의 Node 서비스에 내장되어, 밖으로는 `/v2` 다중 세션 REST + SSE 프로토콜 면을 노출하고, 안으로는 당신의 앱 키로 tansr 플랫폼에 연결해 실제로 모델을 호출합니다. 이것은 **게이트웨이가 아닙니다.** 사용자가 어떻게 로그인하고, 어떻게 속도를 제한하고, 어떻게 과금하는지는 모두 당신의 체계에 속합니다. 엔진은 전송, 프로토콜, 세션 거버넌스만 담당합니다.
@@ -27,7 +27,7 @@ Android / iOS SDK가 연결하는 것이 바로 이 서비스입니다.
 
 모바일의 시스템 프롬프트는 플랫폼 앱 설정 또는 serve 호스트에서 설정하며, `/v2`의 `prompt`에 넣지 않습니다. `platform.system`을 생략하면 플랫폼 기본값을 사용합니다. 코드로 관리하는 업무 세그먼트는 `platform.system`에, 호스트 보충 설명은 `platform.systemAppend`에 둡니다. 기본값 `fallback`은 명시적인 업무 세그먼트(`[]` 포함)가 플랫폼 세그먼트를 대체하도록 허용합니다. `prepend`는 SDK 세그먼트가 `[]`여도 플랫폼 세그먼트를 앞에 유지합니다.
 
-이 새 옵션들은 API와 serve의 호환 릴리스를 기다리고 있습니다. 이들은 텍스트 조합만 제어하며 권한을 대체하지 않습니다. 플랫폼 프롬프트와 정책은 다음 새 턴 전에 새로 고쳐지고, 현재 실행 중인 턴은 기존 설정을 유지합니다. 기존 세션, attach, 기록은 계속 사용할 수 있으며, 역할을 바꾸기 위해 세션을 다시 열 필요가 없습니다. [애플리케이션 시스템 프롬프트와 SDK 결합 정책](/ko/sdk/system-prompts/)의 serve 전체 예시를 참고하세요.
+이 옵션들은 `@tansr/serve` 0.8.0부터 제공되며, 플랫폼 측은 2026-09-14에 프로덕션에 공개되었습니다. 이들은 텍스트 조합만 제어하며 권한을 대체하지 않습니다. 플랫폼 프롬프트와 정책은 다음 새 턴 전에 새로 고쳐지고, 현재 실행 중인 턴은 기존 설정을 유지합니다. 기존 세션, attach, 기록은 계속 사용할 수 있으며, 역할을 바꾸기 위해 세션을 다시 열 필요가 없습니다. [애플리케이션 시스템 프롬프트와 SDK 결합 정책](/ko/sdk/system-prompts/)의 serve 전체 예시를 참고하세요.
 
 ## 전제 조건
 
@@ -153,11 +153,11 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Last-Event-ID: 42"
 ```
 
-`lastSeq`는 복구 앵커이며, 단말은 항상 **값 그대로 이어서** 구독합니다. 새 세션은 `0`을 반환하고, 휴면 세션(`live: false`)에 대한 `GET /v2/sessions/:id`는 저장소에 기록된 실제 수위를 반환하며, resume 뒤의 새 기원(epoch)은 그 수위 + 1부터 이어집니다(이 두 가지는 `@tansr/serve` 다음 릴리스 후보 동작으로 아직 게시되지 않았습니다. 0.8.x는 두 곳 모두 `0`을 반환합니다). 휴면 판정은 `live`로 하고, `lastSeq === 0`으로 판정하지 마세요. 너무 오래된 `Last-Event-ID`로 재연결하면 `server.replay.gap` 프레임(`reason: 'evicted'`)을 받습니다. 이때는 투영을 버리고 `/history`에서 다시 구축합니다. 3단계 복구 체인은 [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/)을 참고하세요.
+`lastSeq`는 복구 앵커이며, 단말은 항상 **값 그대로 이어서** 구독합니다. 새 세션은 `0`을 반환하고, 휴면 세션(`live: false`)에 대한 `GET /v2/sessions/:id`는 저장소에 기록된 실제 수위를 반환하며, resume 뒤의 새 기원(epoch)은 그 수위 + 1부터 이어집니다(이 두 가지는 `@tansr/serve` 0.9.0부터의 동작입니다. 0.8.x는 두 곳 모두 `0`을 반환합니다). 휴면 판정은 `live`로 하고, `lastSeq === 0`으로 판정하지 마세요. 너무 오래된 `Last-Event-ID`로 재연결하면 `server.replay.gap` 프레임(`reason: 'evicted'`)을 받습니다. 이때는 투영을 버리고 `/history`에서 다시 구축합니다. 3단계 복구 체인은 [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/)을 참고하세요.
 
 ## CLI 형태의 serve
 
-`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로, **tansr CLI 0.6.0에서 사용할 수 있습니다**. 위의 `@tansr/serve@0.8.0` npm 내장 형태도 계속 사용할 수 있습니다.
+`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로, **tansr CLI 0.6.0부터 사용할 수 있습니다**. 위의 `@tansr/serve` npm 내장 형태(0.8.0 이상, 현재 0.11.0)도 계속 사용할 수 있습니다.
 
 ## 다음 단계
 

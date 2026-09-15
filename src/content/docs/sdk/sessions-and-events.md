@@ -15,14 +15,14 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 SDK 的一句话分工：**智能体循环归 SDK，交互体验归你**。你提供 UI（或没有 UI）、业务函数、权限确认交互；SDK 提供模型接入、工具执行、事件流与状态投影。这一篇讲事件流这条主干。
 
 ## system 与普通输入的边界
 
-`query.prompt` 与 `session.send()` 是用户消息，不修改系统角色。支持新提示词功能的构建在装配时按平台 `fallback` / `prepend` 策略选择平台段和 SDK `system`，再追加 `systemAppend` 与适用指南；该功能尚待配套发布。
+`query.prompt` 与 `session.send()` 是用户消息，不修改系统角色。支持新提示词功能的构建在装配时按平台 `fallback` / `prepend` 策略选择平台段和 SDK `system`，再追加 `systemAppend` 与适用指南；该功能自 `@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线。
 
 `session.applicationPrompt` 是只读的 `{ source, policy }` 摘要，没有正文，也不把 `systemAppend` 算作业务来源。平台提示词与策略在后续新一轮前刷新，当前执行轮保持配置，原实例和历史保留；宿主 system / systemAppend 仍由代码与会话配置管理。注入档 query 与低阶 runAgent 不自动拉平台配置，应手动使用 `resolveApplicationSystem`。完整代码见[应用系统提示词](/sdk/system-prompts/)。
 
@@ -81,14 +81,14 @@ await pump;
 - `initialMessages`：历史预载（恢复场景；低阶径，不过配对治理）。
 - `onHistoryCommit(history, meta)`：每轮终态携全量历史深拷贝回调；`meta.rewritten === true` 表示历史前缀被就地改写（压缩折叠 / 存根化），落盘方必须整卷轮换。多数场景直接用 `store` 字段，由内置实现代劳，见[检查点与恢复](/sdk/checkpoints/)。
 
-`@tansr/sdk` **0.14.0 候选**（尚未发版；版本号与发版节奏待定）在 `createSession` 上新增四个可选键，全部纯加法、不传即零变化：
+`@tansr/sdk` **0.14.0 起**（2026-09-14 发布）在 `createSession` 上新增四个可选键，全部纯加法、不传即零变化：
 
 - `trustProjectHooks?: boolean`：项目层 hooks 信任门。缺省 `false` = 工作区 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks **零执行、零 `hook.*` 事件**（用户层 / 托管层 hooks 照常）；显式 `true` = 宿主代表用户为该工作区授信，项目层 hooks 照跑。SDK 恒不持久化信任、恒不读 `tansr` 命令行的 `trust.json`，授信事实由你逐次向用户确认后传入。门住的项目层 hooks 在场时经 `onWarning` 通报一次 `SdkWarning { code: 'project_hooks_untrusted', detail: { cwd, registered: { projectShared?, projectLocal? } } }`，无 `onWarning` 时回落事件流 `turn.error { scope: 'sdk.notice', recoverable: true }`。**行为收紧**：此前克隆仓库、`createSession` 一起就会跑起来的项目层 hooks，现在缺省不再执行。单轮 `query()` 共用同一装配、同受此门，且暂无授信位——项目层 hooks 在 `query()` 内恒不启用。命令行侧的同一道门见[安全与隐私](/security/#项目层-hooks-的信任门缺省零执行)。
 - `hostShell?: 'posix' | 'powershell'`：权限引擎解析 Shell 命令的词法方言。缺省随宿主平台自动探测（与内置 Shell 工具实际派生的 shell 一致）；显式值供测试或跨平台演练（如在 Windows 上按 posix 词法演练规则）。与真实执行 shell 错配会让词法守卫与执行环境脱节，**生产宿主不要设置**。三档皆生效。
 - `budget?: { maxUsd?, maxTotalTokens?, onExceeded?: 'block' | 'warn' }`：会话预算闸，与命令行配置文件的 `budget` 段同形，TUI / headless / serve / acp / SDK 五形态自此走同一闸门语义。会话累计消耗触顶时，`'block'`（缺省）在下一次模型调用前终止本轮——事件流 `turn.aborted { reason: 'budget_exceeded' }`，会话保持打开、后续轮同拦；`'warn'` 每次查询至多一条 `turn.error { scope: 'budget', recoverable: true }` 后照常继续。两个上限都缺席 = 不接闸。`maxTotalTokens` = 输入 + 输出 + 缓存读 + 缓存写（思考 token 按各模型能力位并入输出、不重复计）；`maxUsd` 只对以 USD 计价的模型出数——令牌档按平台 bundle 计价，托管 / 注入档当前内置价目为 CNY、`maxUsd` 不设防，币种无关的兜底用 `maxTotalTokens`。非法取值（非正数 / 非正整数 / 词表外）在任何 IO 前以 `invalid_options` 拒绝。与 `thinking.budget`（单轮思考预算）无关；不新增事件类型，恢复会话不回填历史用量。
 - `events?: { maxBacklogEvents, maxBacklogBytes }`：事件积压上界。首订阅者到来前的积压受条数 / 近似字节双上界约束，缺省 1000 条 / 2 MiB（正数或 `Infinity`，否则 `invalid_options`）；越界丢最旧、最新一条恒保留，并在队首以恰一条一等事件 `session.events_dropped { scope: 'sdk.events', droppedCount, reason: 'count_limit' | 'bytes_limit', droppedBytes, firstDroppedSeq, lastDroppedSeq, maxEvents?, maxBytes? }` 通报，被丢事件不可重取。上界以内「晚到的首订阅者收到全量积压」不变；在 `send()` 前挂上订阅者的既有代码零改动。直播后订阅者全部离场期间推送的事件**不保留**（零语义裁剪，不计丢弃、不通报；再晚到的订阅者自当前起）——长跑会话请在 `send()` 前挂上订阅者，或按需调大上界。
 
-同一候选段还有几处值得知道的收边：`token` 接受 `() => string` getter（五类平台请求发起时取现值，令牌轮换无需重建会话）；`close()` 后 `setModel` / `setThinking` / `interrupt` 一律 throw `session_closed`；`AgentSession.pushBody` 自公开类型剥离（从未是承诺面）；`SessionNotice.message` 变为可选，宿主按 `code` 渲染、`message` 只作兜底；等待收尾的 `drain({ force: true })` 见[关闭会话与等待资源收尾](/sdk/lifecycle/)。
+同一版本还有几处值得知道的收边：`token` 接受 `() => string` getter（五类平台请求发起时取现值，令牌轮换无需重建会话）；`close()` 后 `setModel` / `setThinking` / `interrupt` 一律 throw `session_closed`；`AgentSession.pushBody` 自公开类型剥离（从未是承诺面）；`SessionNotice.message` 变为可选，宿主按 `code` 渲染、`message` 只作兜底；等待收尾的 `drain({ force: true })` 见[关闭会话与等待资源收尾](/sdk/lifecycle/)。
 
 会话缺省纯内存；平台不存终端会话内容，只计量。
 
@@ -98,10 +98,10 @@ await pump;
 
 | 族 | 事件 | 什么时候看它 |
 |---|---|---|
-| session | `session.created` `session.resumed` `session.compacted` `session.checkpointed` `session.restored` `session.locale.changed` `session.ended` `session.events_dropped` | 生命周期与历史改写；`session.events_dropped`（contract-v0.27，SDK 0.14.0 候选）是 SDK 进程内事件积压越界的通报，`@tansr/serve` 恒不发出、`/v2` 流恒无 |
+| session | `session.created` `session.resumed` `session.compacted` `session.checkpointed` `session.restored` `session.locale.changed` `session.ended` `session.events_dropped` | 生命周期与历史改写；`session.events_dropped`（contract-v0.27，SDK 0.14.0 起）是 SDK 进程内事件积压越界的通报，`@tansr/serve` 恒不发出、`/v2` 流恒无 |
 | turn | `turn.started` `turn.completed` `turn.aborted` `turn.error` | 一轮的边界；`turn.error` 带 `recoverable` 位 |
 | msg | `msg.block.start` `msg.text.delta` `msg.thinking.delta` `msg.block.end` `msg.retracted` | 流式正文与思考；`msg.retracted` 表示已流出的块被撤回（如触输出帽后干净重试） |
-| tool | `tool.proposed` `tool.permission.requested` `tool.permission.decided` `tool.started` `tool.progress` `tool.output.delta` `tool.completed` `tool.failed` | 工具全生命周期；媒体工具的供应商失败以 `tool.completed.isError` 出线 |
+| tool | `tool.proposed` `tool.permission.requested` `tool.permission.decided` `tool.started` `tool.progress` `tool.output.delta` `tool.completed` `tool.failed` | 工具全生命周期；媒体工具的供应商失败以 `tool.completed.isError` 出线；入参不合工具 `inputSchema` 的调用自 0.14.0 起在执行前被调度器拒绝，以 `tool.failed { errorType: 'invalid_args' }` 出线且无 `tool.started` / `tool.completed`（不进执行、不触发权限裁决） |
 | agent | `agent.spawned` `agent.progress` `agent.completed` | Task 子代理 |
 | hook | `hook.triggered` `hook.completed` `hook.blocked` | 你配置的钩子 |
 | cost | `cost.usage.updated` `cost.provider.switched` | 逐请求用量；供应商 fallback 切换 |
@@ -119,7 +119,9 @@ await pump;
 
 呈现档可选：`{ delivery: { text: 'stream' | 'final', thinking: 'stream' | 'final' | 'off' } }`——文本与思考各自选流式或整段一次性上屏，思考可整体关显；`view.setDelivery(delivery)` 运行中块粒度即时切换。生成面的思考预算走 `createSession({ thinking: { budget } })` 与 `session.setThinking(...)`，与呈现档正交。
 
-可恢复的咨询类 `turn.error`（`recoverable: true`，例如持久化失败）进 `SessionView.notices`（FIFO，上限 20），不污染 `lastError`;`ErrorView.recoverable` 是必填字段，自定义投影请补齐。0.14.0 候选起 `session.events_dropped` 也归入 `notices`（`code: 'session.events_dropped'`、无 `message`、`detail` = 载荷去 `type` / `scope`），Narrator 出一行 `events dropped [scope]: N event(s) dropped (reason)`；因此 `SessionNotice.message` 变为可选，请按 `code` 渲染、`message` 只作兜底（如 `notice.message ?? notice.code`）。
+可恢复的咨询类 `turn.error`（`recoverable: true`，例如持久化失败）进 `SessionView.notices`（FIFO，上限 20），不污染 `lastError`;`ErrorView.recoverable` 是必填字段，自定义投影请补齐。0.14.0 起 `session.events_dropped` 也归入 `notices`（`code: 'session.events_dropped'`、无 `message`、`detail` = 载荷去 `type` / `scope`），Narrator 出一行 `events dropped [scope]: N event(s) dropped (reason)`；因此 `SessionNotice.message` 变为可选，请按 `code` 渲染、`message` 只作兜底（如 `notice.message ?? notice.code`）。同版起 Narrator 对 `turn.error { recoverable: true }` 的一行文案为 `… — recoverable, session continues`——SDK 只担保会话仍开，是否重试由你决定；按 `notices[].code` / `scope` 判别的代码零变化。
+
+0.15.0 起图像 / 视频 / 语音工具的产物（`artifact`）随会话历史保留，`resume` / 检查点恢复后 `SessionView` 可重建对应工具卡的预览；历史携产物但预览无法安全恢复时工具卡置 `artifactUnavailable: true`（不改变工具完成状态，旧的无产物历史不设置）。含产物的会话存储自此使用版本 2，升级须整体进行，见[检查点与恢复](/sdk/checkpoints/)。
 
 ## 权限：ask 桥到你的 UI
 

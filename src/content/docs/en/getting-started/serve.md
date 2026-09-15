@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes the `/v2` multi-session REST + SSE protocol surface; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance.
@@ -27,7 +27,7 @@ The Android / iOS SDKs connect to this service.
 
 Configure mobile system prompts in the platform application or serve host, not in a `/v2` `prompt`. Omit `platform.system` to use the platform default. Use `platform.system` for code-managed business instructions and `platform.systemAppend` for host notes. Default `fallback` lets explicit business segments (including `[]`) replace the platform segment; `prepend` keeps the platform segment first, including when the SDK supplies `[]`.
 
-These additions await compatible API and serve releases. They control text composition, not permissions. Platform prompts and policies refresh before a subsequent turn; the executing turn keeps its configuration. Existing sessions, live attach, and conversation history remain usable without reopening to change the role. See the complete serve example in [Application system prompts](/en/sdk/system-prompts/).
+These options are available since `@tansr/serve` 0.8.0; the platform side has been live since 2026-09-14. They control text composition, not permissions. Platform prompts and policies refresh before a subsequent turn; the executing turn keeps its configuration. Existing sessions, live attach, and conversation history remain usable without reopening to change the role. See the complete serve example in [Application system prompts](/en/sdk/system-prompts/).
 
 ## Prerequisites
 
@@ -153,11 +153,11 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Last-Event-ID: 42"
 ```
 
-`lastSeq` is a resume anchor — always resume **by value**: a new session returns `0`; for a dormant session (`live: false`) `GET /v2/sessions/:id` returns the persisted watermark, and the new epoch after a resume continues from that watermark + 1 (both are candidate behaviour of the next `@tansr/serve` release, not yet published; 0.8.x returns `0` in both places). Detect dormancy with `live`, never with `lastSeq === 0`. Reconnecting with a stale `Last-Event-ID` yields a `server.replay.gap` frame (`reason: 'evicted'`): drop the projection and rebuild from `/history` — see the three-level recovery chain in [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
+`lastSeq` is a resume anchor — always resume **by value**: a new session returns `0`; for a dormant session (`live: false`) `GET /v2/sessions/:id` returns the persisted watermark, and the new epoch after a resume continues from that watermark + 1 (both since `@tansr/serve` 0.9.0; 0.8.x returns `0` in both places). Detect dormancy with `live`, never with `lastSeq === 0`. Reconnecting with a stale `Last-Event-ID` yields a `server.replay.gap` frame (`reason: 'evicted'`): drop the projection and rebuild from `/history` — see the three-level recovery chain in [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
 
 ## serve in CLI form
 
-`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2`, which mounts the `/v2` surface in the CLI form as well, is **available in tansr CLI 0.6.0**. The `@tansr/serve@0.8.0` npm embedding above remains available.
+`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2`, which mounts the `/v2` surface in the CLI form as well, is **available since tansr CLI 0.6.0**. The `@tansr/serve` npm embedding above remains available (0.8.0 and later, currently 0.11.0).
 
 ## Next steps
 

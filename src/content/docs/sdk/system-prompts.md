@@ -20,10 +20,10 @@ sources:
   - tansr-cli:packages/sdk/src/run-agent.ts
   - tansr-cli:packages/server/src/v2/agent-session-factory.ts
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-15'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 与 `@tansr/serve@0.8.0`。应用提示词还需要支持 `systemPromptPolicy` 的 API；SDK / serve 须同时支持 `systemAppend` 与 `applicationPrompt`。旧版本可能忽略平台段或不支持策略，不能仅凭平台已配置判断客户端支持。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及以后（现行 0.16.0）与 `@tansr/serve@0.8.0` 及以后（现行 0.11.0）；tansr 命令行自 0.6.0 起同源。平台侧 `systemPrompt` / `systemPromptPolicy`（API 与控制台）已于 2026-09-14 上线。更早的 SDK / serve 版本可能忽略平台段或不支持策略，不能仅凭平台已配置判断客户端支持。
 
 应用管理员可以在控制台「应用 → 概览 → 应用系统提示词」集中维护角色、回答风格和业务指引。开发者也可以在 SDK 中传入 `system`。两种来源可以独立使用，或由平台设置选择拼接。
 
@@ -229,6 +229,6 @@ const build = createAgentSessionFactory({
 
 刷新预检支持取消，并在 30 秒超时后结束本轮；超时的 `turn.aborted.reason` 为 `timeout`。取消或超时后迟到的配置响应不会启动模型。`applicationPrompt` 在成功选定并开始使用新配置后更新；刷新失败时读取它仍是上次成功的来源摘要。
 
-此功能需要兼容的 SDK / serve 构建，本文不表示已发布；旧版本不能因平台字段存在就自动具备刷新能力。验收应覆盖平台文本变更、清空、策略切换、304、运行中改配置、刷新失败与重试、取消与超时，以及刷新前后消息和摘要保持。
+此刷新路径自 `@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0 起提供；更早版本不能因平台字段存在就自动具备刷新能力。验收应覆盖平台文本变更、清空、策略切换、304、运行中改配置、刷新失败与重试、取消与超时，以及刷新前后消息和摘要保持。
 
 排查时先核对 `session.applicationPrompt` 的 source / policy，再核对平台应用配置与宿主代码；该摘要只确认装配来源，不保证模型回答符合全部指令。不要用聊天框里的“你现在是……”来验证系统配置是否已更新。

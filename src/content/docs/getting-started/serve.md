@@ -16,7 +16,7 @@ sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-13'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露 `/v2` 多会话 REST + SSE 协议面，对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。
@@ -27,7 +27,7 @@ Android / iOS SDK 连的就是这个服务。
 
 移动端的系统提示词在平台应用配置或 serve 宿主中设置，不放入 `/v2` 的 `prompt`。省略 `platform.system` 使用平台默认；代码管理的业务段放 `platform.system`，宿主补充说明放 `platform.systemAppend`。默认 `fallback` 允许显式业务段（包括 `[]`）替代平台段；`prepend` 保留平台段在前，即使 SDK 段是 `[]`。
 
-这些新增选项尚待 API 与 serve 配套发布。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
+这些选项自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线。它们只控制文本组合，不替代权限。平台提示词与策略在后续新一轮前刷新，当前执行轮保持既有配置；已有会话、attach 和历史可继续使用，无需为了改角色重开会话。参见[应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/)中的 serve 完整示例。
 
 ## 前提
 
@@ -153,11 +153,11 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
   -H "Last-Event-ID: 42"
 ```
 
-`lastSeq` 是恢复锚，端侧恒**按值续传**：新建会话返回 `0`；`GET /v2/sessions/:id` 对休眠会话（`live: false`）返回落盘的真值水位，resume 重灌后的新纪元自该水位 + 1 起（这两处为 `@tansr/serve` 下一版候选行为，尚未发版；0.8.x 恒返回 `0`）。判休眠看 `live`，不看 `lastSeq === 0`。携过旧的 `Last-Event-ID` 重连会收到 `server.replay.gap` 帧（`reason: 'evicted'`），此时弃投影、拉 `/history` 重建——三级恢复链见[v2 协议与 webhook](/serve/v2-and-webhooks/)。
+`lastSeq` 是恢复锚，端侧恒**按值续传**：新建会话返回 `0`；`GET /v2/sessions/:id` 对休眠会话（`live: false`）返回落盘的真值水位，resume 重灌后的新纪元自该水位 + 1 起（这两处自 `@tansr/serve` 0.9.0 起生效；0.8.x 恒返回 `0`）。判休眠看 `live`，不看 `lastSeq === 0`。携过旧的 `Last-Event-ID` 重连会收到 `server.replay.gap` 帧（`reason: 'evicted'`），此时弃投影、拉 `/history` 重建——三级恢复链见[v2 协议与 webhook](/serve/v2-and-webhooks/)。
 
 ## 命令行形态的 serve
 
-`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面也挂进命令行形态，**tansr 命令行 0.6.0 已提供**；也可继续使用上文的 `@tansr/serve@0.8.0` npm 嵌入形。
+`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面也挂进命令行形态，**tansr 命令行 0.6.0 起提供**；也可继续使用上文的 `@tansr/serve` npm 嵌入形（0.8.0 起，现行 0.11.0）。
 
 ## 下一步
 

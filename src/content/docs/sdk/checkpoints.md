@@ -12,7 +12,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-15'
 ---
 
 会话缺省只在内存里。要让它在进程重启后还能接着聊，你需要两件事：一个 `SessionStore`（存到哪），以及 `createSession` 的 `store` / `resume` 两个字段（什么时候存、什么时候取）。上下文压缩之后原文不再在历史里，所以又有了快照（checkpoint）：某时刻完整上下文的自包含只读拷贝，可列举、可恢复、可删除。
@@ -81,6 +81,10 @@ async function openOrResume(lastId: string | undefined) {
 `createFileSessionStore({ dir, segmentation? })` 在 `<dir>/sessions/<sessionId>/` 下写 `journal.jsonl`（活段）+ `meta.json` + `attachments/`。长会话按阈值动态封段为 `segments/000001.jsonl…` + `manifest.json`（缺省 16 MiB / 5000 记录启用；`segmentation: { enabled: false }` 恒单卷）。旧目录（无 manifest）零迁移可读；整卷轮换恒回到单活段，**压缩前消息恒不复活**；轮换中途崩溃由下次访问自动补齐，恒不见半卷。
 
 快照目录三选一，缺省一律显式：缺席 = 与会话同居 `<sessionDir>/checkpoints/`（随 `store.delete` 一并消失）；`checkpoints: { dir }` = 独立目录、独立生命周期；`checkpoints: { store }` = 自建 `CheckpointStore`（`put` / `get` / `list` / `delete` 四方法）。
+
+**媒体产物与存储版本 2**（`@tansr/sdk` 0.15.0 / `@tansr/serve` 0.10.0 起）：图像 / 视频 / 语音工具的产物（`tool_result.artifact`）随会话历史保留，热 / 冷恢复与检查点一并保留，`resume` 后 `SessionView` 可重建工具卡预览（无法安全恢复预览时置 `artifactUnavailable: true`）；模型仍只消费原 `content`。**首次写入产物的会话卷升为存储版本 2**：旧版本的 writer 不能继续写已升级的目录——升级前备份，并把写同一会话存储的所有程序（SDK 宿主 / `tansr serve` / 命令行）一起升级；回退到旧版本须用原备份或改用独立目录。旧的纯文本历史不自动补媒体。
+
+**有界容错读取**（0.15.0 起，缺省关闭）：`createFileSessionStore({ recovery: { mode: 'verified-ir', quarantineDir?, onRecovery? } })` 在完整校验链内隔离确定无效的消息记录，原始证据写到会话目录之外（缺省同级 `.session-recovery-quarantine`），并以 `SessionRecoveryReport`（数量、位置与内容指纹，不含正文）回调宿主；`onRecovery` 抛错会使本次读取失败，不会静默降级。启用前以 `SESSION_RECOVERY_VERSION` 核对已装运行包的能力，防旧包静默忽略该选项。缺省仍为严格读取——损坏恒结构化 throw。
 
 ## 手动压缩与快照
 

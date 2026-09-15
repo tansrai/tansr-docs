@@ -14,7 +14,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-15'
 ---
 
 `@tansr/sdk`는 tansr 커널의 headless 언어 바인딩입니다. prompt가 들어가면 이벤트가 흘러나오며, UI 의존성은 없습니다. 쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축은 모두 커널에서 오며 컴파일 시 인라인되어 있습니다. 당신이 얻는 것은 `tansr` CLI와 같은 런타임을 라이브러리 형태로 당신의 앱에 내장한 것입니다.
@@ -23,11 +23,11 @@ lastVerified: '2026-09-10'
 
 플랫폼 앱의 `systemPrompt`는 공유 역할에, SDK의 `system`은 코드로 관리하는 업무 세그먼트에 사용합니다. 기본값 `fallback`에서는 명시적인 `system`(`[]` 포함)이 플랫폼 세그먼트를 대체합니다. 플랫폼에서 `prepend`를 선택하면 플랫폼 세그먼트를 먼저 유지한 뒤 SDK 세그먼트를 추가하며, `[]`여도 플랫폼 세그먼트는 유지됩니다. 호스트 환경 설명은 `systemAppend`에 두면 기본 덮어쓰기가 발생하지 않습니다.
 
-Windows Electron에서도 SDK는 메인 프로세스에서 실행되며, renderer가 보내는 것은 사용자 입력입니다. 애플리케이션 프롬프트와 정책 기능은 호환 버전 릴리스를 기다리고 있습니다. 지원 버전에서는 읽기 전용 `session.applicationPrompt`로 출처와 정책을 확인할 수 있으며, 본문은 반환하지 않습니다. 플랫폼 프롬프트와 정책은 다음 새 턴 전에 새로 고쳐지고, 현재 실행 중인 턴은 고정됩니다. 기존 세션과 기록은 유지되므로 다시 열 필요가 없습니다. 전체 진리표, 플랫폼 PUT / GET, 실행 가능한 예시는 [애플리케이션 시스템 프롬프트](/ko/sdk/system-prompts/)를 참고하세요.
+Windows Electron에서도 SDK는 메인 프로세스에서 실행되며, renderer가 보내는 것은 사용자 입력입니다. 애플리케이션 프롬프트와 정책 기능은 `@tansr/sdk` 0.13.0부터 제공됩니다(플랫폼 측은 2026-09-14에 프로덕션 공개). 읽기 전용 `session.applicationPrompt`로 출처와 정책을 확인할 수 있으며, 본문은 반환하지 않습니다. 플랫폼 프롬프트와 정책은 다음 새 턴 전에 새로 고쳐지고, 현재 실행 중인 턴은 고정됩니다. 기존 세션과 기록은 유지되므로 다시 열 필요가 없습니다. 전체 진리표, 플랫폼 PUT / GET, 실행 가능한 예시는 [애플리케이션 시스템 프롬프트](/ko/sdk/system-prompts/)를 참고하세요.
 
 ## 전제 조건
 
-작업 실행 중에 요구 사항을 보충해야 할 때는 [같은 턴에 입력 추가](/ko/sdk/midturn-input/)의 `getInputTarget` / `submitInput`과 영수증 조회를 사용하세요. 현재 실행을 중단하거나 새 세션을 만들 필요가 없습니다. 첫 단계에서는 memory 텍스트만 지원하며, 호환 버전 릴리스가 필요합니다.
+작업 실행 중에 요구 사항을 보충해야 할 때는 [같은 턴에 입력 추가](/ko/sdk/midturn-input/)의 `getInputTarget` / `submitInput`과 영수증 조회를 사용하세요. 현재 실행을 중단하거나 새 세션을 만들 필요가 없습니다. 첫 단계에서는 memory 텍스트만 지원하며, `@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0 / CLI 0.6.0부터 제공됩니다.
 
 | 요구 사항 | 값 |
 |---|---|

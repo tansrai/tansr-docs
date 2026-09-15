@@ -20,10 +20,10 @@ sources:
   - tansr-cli:packages/sdk/src/run-agent.ts
   - tansr-cli:packages/server/src/v2/agent-session-factory.ts
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-15'
 ---
 
-This guide covers `@tansr/sdk@0.13.0` and `@tansr/serve@0.8.0`. These versions are published on npm. Application prompts also require an API that supports `systemPromptPolicy`, and SDK / serve builds that support `systemAppend` and `applicationPrompt`. Older consumers may ignore the platform prompt or lack the policy. Configuring a prompt on the platform alone does not establish client support.
+This guide covers `@tansr/sdk@0.13.0` and later (currently 0.16.0) with `@tansr/serve@0.8.0` and later (currently 0.11.0), all published on npm; the tansr CLI shares the same behaviour since 0.6.0. The platform side (`systemPrompt` / `systemPromptPolicy` in the API and console) has been live since 2026-09-14. Older SDK / serve consumers may ignore the platform prompt or lack the policy. Configuring a prompt on the platform alone does not establish client support.
 
 Application managers maintain a shared role, response style, and business guidance in **Applications → Overview → Application system prompt**. Developers can also supply `system` in code. The platform policy decides how those sources combine.
 
@@ -229,6 +229,6 @@ If refresh receives an HTTP error or invalid configuration, the turn does not ca
 
 Refresh preflight supports cancellation and ends the turn after a 30-second timeout; the timeout's `turn.aborted.reason` is `timeout`. A late configuration response after cancellation or timeout cannot start the model. `applicationPrompt` updates when fresh configuration is successfully selected and starts being used; after a refresh failure it still describes the previous successful selection.
 
-This feature requires compatible SDK / serve builds; this guide does not announce a release. The presence of platform fields does not give older consumers refresh support. Acceptance should cover text edits, clearing, policy changes, HTTP 304, edits during an executing turn, refresh failures and retries, cancellation and timeout, and preservation of messages and summaries.
+This refresh path is available since `@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0. The presence of platform fields does not give older consumers refresh support. Acceptance should cover text edits, clearing, policy changes, HTTP 304, edits during an executing turn, refresh failures and retries, cancellation and timeout, and preservation of messages and summaries.
 
 For diagnosis, inspect `session.applicationPrompt` source / policy, then compare the application configuration and host code. The summary confirms assembly choices, not whether a model obeys every instruction. A user's chat message saying “you are now…” is not a test of updated system configuration.
