@@ -10,7 +10,28 @@
 (sdk 面见 `packages/sdk/CHANGELOG.md`)。版本号 = `packages/server/package.json`(包目录 `server`,发布名 `@tansr/serve`);
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.6.0 之前的历史见 git(`git log -- packages/server`)。
 
-## Unreleased
+## 0.11.0 — 2026-09-15
+
+REL-07 将 AUDIO-01 增量以独立 minor 和 contract-v0.29 发布；实际发布状态以对应 doc/release 操作回执为准。已发 SDK 0.15.0 / serve 0.10.0 及其 tag 保持不变。
+
+- `planSpeechInput` 支持可选原子 `inputLimit`，整批预检拒绝纯空白分段（`empty_segment`）；不自动删除空白、不自动拆分或重试收费请求。宿主的拒绝原因穷举须补齐新值。
+- SDK 新增 `AudioTtsConstraints.inputLimit` 与 `tts-input-limit-v1` 协商；旧客户端继续使用保守加权投影。Electron / serve 示例兼容已发布包，遇到无法表达的原子限制时明确要求升级。
+- SDK 0.16.0 / serve 0.11.0 承载本次公开签名变化，原子单位支持码点、UTF-16 码元和 UTF-8 字节；旧加权 maxChars 帽与原子帽同时成立，不允许自定义策略放宽厂商上限。详见 `doc/rfc/contract-v0.29.md`。
+
+## 0.10.0 — 2026-09-14
+
+MEDIA-03 已发布；正式源码、门禁及 npm 操作结果见 `doc/release/serve-0.10.0.md`。
+
+历史接口透传 tool_result.artifact，热/冷恢复与 checkpoint 保留媒体产物。含产物存储提升版本 2，旧程序不能继续写升级卷；请备份并统一升级会话 writer。HTTP 路径和事件包络不变，旧文本历史不自动补媒体。发布状态以实际回执为准。
+
+## 0.9.0 — 2026-09-14
+
+REL-06 按 DEC-RF-24 候选版本重新编译；实际发布状态以 `doc/release/serve-0.9.0.md` 操作回执为准。核心组件设计审查整改波(RF-03 / RF-05a / RF-05b / RF-06b / RF-08b / RF-08c / RF-P3a / RF-S1 等,2026-09-11 … 13)。导出集相对
+`@tansr/serve@0.8.1`(404 项)→ **413 项**(`exports.snapshot.json` 为准;+9 零删:`AgentStoredSeqWatermark` / `CloseAllOptions` / `CloseAllReport` /
+`MemorySessionEventLogOptions` / `V2SessionMediaView` 与 0.8.1 后并入的语音输入规划 `SpeechInputPlan` / `SpeechInputPlanResult` / `countSpeechCharacters` /
+`planSpeechInput`;gate ④ 至少 minor)。
+
+- **TypeScript 成品声明可直接检查**(REL-06-03)：从 `index.d.ts` 移除误混入的 `createRequire` 运行时垫片，修复未开启 `skipLibCheck` 的 NodeNext 消费方所遇 TS1046 / TS1254。JavaScript 垫片仍保留，运行时与公开类型签名不变；无需迁移。
 
 - /v2 非活跃会话 `lastSeq` 真值 + `tansr serve` 店告警接线(RF-S1,核心组件设计审查 DEC-RF-30 / 48;doc/98 §二-⑥ / ⑧ · §三-2 改笔;导出集零漂移):GET ⑥ 会话详情 / ⑦ 列表 / ⑧ history 对**非活跃**(不在内存)会话返回的 `lastSeq` 自此 = store meta 持久化水位(RF-05b 落盘的 `lastSeq`:正常关闭封印值或最近轮末 / 改写检查点值),此前恒 0;旧卷 / 无水位记录仍 0,无 meta 记录仍 404,活跃径不变。wire 形 / 键集 / 键序 / 公共类型零变化——`StoredSessionMeta` 形不变,`createAgentSessionFactory` 的 storeReader 以内部加法位回填(自实现 `AgentStoreReader` 不回填 = 仍 0;坏形值按 0);⑧ 非活跃径为取水位在历史在场后多一次 `store.getMeta`(历史缺席 404 先于之;meta 读抛错与既有读拒绝同码 500 `store_corrupted`,原文只进 `store.error` 日志)。对你意味着:客户端(含 Android / iOS)不得再以 `lastSeq === 0` 判「无事件」,应按值作 `Last-Event-ID` 续传起点(封印记录恰续;未封印记录可能收 gap `evicted` 后 L2 重建)。同笔 `tansr serve --v2` 宿主建店接 `onStoreWarning`:店核警告(`store_unknown_kinds` / `store_prefix_mismatch` / `store_pending_rewrite` / `store_seal_failed`)自此不再静默,以 `warn` 级复用既有 `store.error` 事件出线 `{code,message,sessionId?,count?,kinds?}`(`TANSR_SERVE_LOG_FORMAT=json` 一行 JSON 落 stderr;text 形态回落 stderr 同形 JSON 行);`LOG_EVENT` 不加键、字段恒不含消息内容。自托管 `@tansr/serve` 宿主如需同样可观测,自行 `createServeAgentSessionStore({ onStoreWarning })` 接进自己的 logger。
 - SSE 有界写(RF-05a,核心组件设计审查 RV-4-01):`maxBufferBytes`(doc/98 §六 2 MiB)自此是**每次 `res.write` 的字节上界**——attach 重放段惰性分片交付(`SseSubscriber.replay?` 可选面;`SubscriberWriter.replay` 必有)、同 tick 批量入队越界即刻分片写出、`flush()` / `end()` 不再整队一次写出;socket 拒收后残量按既有慢消费者判据裁决(`disconnect` / `drop-oldest` 语义、两参数值不变)。帧文本与顺序逐字节不变,小流量零分片。对你意味着:大重放 / 突发不再一次把数 MiB 塞进 socket 缓冲;曾靠「非 paused 期队列无界」吞下超 2 MiB 突发的慢客户端此后可能被判慢消费者并按 `Last-Event-ID` 重连重放。`SubscriberWriterStats` 加 `replaying`。
@@ -26,12 +47,12 @@
 - /v2 客户端申报工具不受 kernel 中央入参校验影响(RF-08b,核心组件设计审查 RV-2-06;导出集零变化、wire 零变化):申报工具与 MCP 桥同律声明 `argsValidation: 'remote'`——本地 schema 只是申报投影(无 `parameters` 时为空对象 schema),调度器不剥参、不改权限 `digest` 输入,坏参仍由既有 `execute` 内自校以 `tool.completed { isError: true }`(`invalid <name> args: …`)出线,`tool.request` 照旧不下发。无需迁移。
 - /v2 平台会话预算账本思考路逐行归账(RF-P3a,contract-v0.27 RFC-RF-3 阶段 2;导出集零变化、wire 零变化):`init.budget` 在场的会话账本自此按**每一行**的 (provider, model) 取 providers 内置能力表 `quirks.reasoningTokens` 处置思考 token——`'separate'` 行的思考量并入该行输出计量与计价,缺席 / `'subset_of_output'` 行照旧(思考 ⊆ 输出,不叠加);会话内模型切换 / 子代理另选模型的行各按自身能力位,工厂不再持会话级能力位(RFC-RF-3 §6 serve 三径「休眠键」闭合)。当前内置表零 `'separate'` 行,已部署会话的 `totalTokens` / 金额逐字节零变化;`server.platform.*` 帧、`GET /v2/sessions/:id` 面不变。无需迁移。
 
-## 未发布(RF-06b;五个导出签名变化 → 下一版至少 minor,版本号由发版时定)
+**会话级预算跨重启(RF-06b;五个导出签名变化)**:
 
 - 会话级预算跨重启:`init.budget` 在场的会话每轮末随历史在 store 里落一条**累计用量快照**(内部事件记录,不进消息面 / 不进 SSE 历史页);`resume` 时内层追踪器自该快照续算,闸门读到的是历史消耗而非 0——「会话级预算」在进程重启 / 多实例接管后仍成立。预算缺席的会话零变化(不写、不读、不提示)。
 - 快照落后于历史(进程在轮末快照前终止)时,resume 首连重放里多一帧 `server.platform.warning{code:'usage_snapshot_stale'}`(消息携落后消息数,`server.v2.warning.usage_snapshot_stale`);只丢末轮用量,不静默低报。
 - 公共面加法字段(既有实现无需迁移;自实现 `ServeAgentSessionStore` 的宿主若想续算需自行保存 / 返回快照,否则退化为「每次 resume 从 0 起算」即此前行为):`AgentStoreCommitMeta.usageSnapshot?`(`UsageSnapshotRecordPayload`,来自 `@tansr/kernel`)、`AgentStoredSessionRecord.usageSnapshot?`(`RestoredUsageSnapshot`:`payload` + `staleMessages`)、`ServeSessionExtras.usageSnapshot?`(`CostSnapshot`,内层工厂续算起点)、`ServeTurnEndInfo.costSnapshot?`(内层预算在场时附带的轮末累计快照)、`V2_CTX_PERSIST_MESSAGE_KEY.usageSnapshotStale`。
-- 内置文件 store:带预算的卷因尾部含非消息记录,历史分页不再走「尾部纯消息」快路而全读回退——结果不变,只有大卷下 `GET /v2/sessions/:id/history` 的读放大;无预算卷不受影响。
+- 内置文件 store:带预算的卷尾部含非消息记录(用量快照),历史分页在 RF-06b 时曾因此退出「尾部纯消息」快路全读回退;**RF-P3b 已闭合**(核 commit 的链尾见证 `lastHash + recordCount + messages` 与 `readTail` 吻合即取见证的消息数,快照记录在后缀与被跳过段里自然跳过,不再退全量读),只有无可信见证的旧卷 / 被外部写者动过的卷仍退全量读求精确——结果恒不变,`GET /v2/sessions/:id/history` 大卷读放大只余该兜底径(RF-Z ㉑ 复核)。
 
 ## 0.8.1 — 2026-09-11
 

@@ -485,6 +485,18 @@
         "tags": [
           "auth"
         ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -598,6 +610,18 @@
         "tags": [
           "auth"
         ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -637,6 +661,18 @@
         "summary": "微信扫码授权码换 token(subject=unionid||openid,首次即注册)",
         "tags": [
           "auth"
+        ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -9562,18 +9598,17 @@
     },
     "/v1/site-config": {
       "get": {
-        "summary": "站点公开配置(匿名;平台配置中心 site.beian.* 白名单投影:icp=ICP 备案号字符串,gongan={code,text} 公安备案;shadow 条目不生效,类型不符按缺席出 null 恒 200;平台层专属,org/team/user 层同名键不投影)",
+        "summary": "站点公开配置(匿名;平台配置中心 site.beian.* 与 site.experience 白名单投影;含 SDK MIT 开源承诺日期、中英文定位文案及联系二维码;缺席或 shadow 使用平台缺省,畸形生效配置返回 experience:null;平台层专属,org/team/user 层同名键不投影;no-store)",
         "tags": [
           "control"
         ],
         "responses": {
           "200": {
-            "description": "{beian:{icp,gongan}}",
+            "description": "备案与平台体验配置",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/SiteConfigResponse"
                 }
               }
             }
@@ -9904,6 +9939,16 @@
               "type": "string"
             },
             "description": "org 作用域声明(org 公开 id);服务端校验成员资格与角色,非成员恒 404、角色不够 403"
+          },
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
           }
         ],
         "requestBody": {
@@ -11888,6 +11933,38 @@
                         "maxChars": {
                           "description": "单请求输入字符帽(计费字符口径:1 汉字计 2,其余计 1;平台缺省 2000)",
                           "type": "number"
+                        },
+                        "inputLimit": {
+                          "additionalProperties": false,
+                          "description": "已确认的单段原子输入限制；两种帽同时生效，仅协商 tts-input-limit-v1 的音频客户端接收",
+                          "type": "object",
+                          "required": [
+                            "max",
+                            "unit"
+                          ],
+                          "properties": {
+                            "max": {
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "type": "integer"
+                            },
+                            "unit": {
+                              "anyOf": [
+                                {
+                                  "const": "unicode_code_points",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "utf16_code_units",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "utf8_bytes",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
                         }
                       }
                     },
@@ -13932,12 +14009,97 @@
         "type": "object",
         "required": [
           "windows",
+          "csharp",
+          "go",
+          "rust",
+          "cpp",
           "android",
           "ios",
+          "harmony",
           "revision"
         ],
         "properties": {
           "windows": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "csharp": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "go": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "rust": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "cpp": {
             "additionalProperties": false,
             "type": "object",
             "required": [
@@ -14021,9 +14183,244 @@
               }
             }
           },
+          "harmony": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "serverDemo",
+              "clientDemo"
+            ],
+            "properties": {
+              "serverDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
           "revision": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "SiteExperience": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "openSource",
+          "positioning",
+          "contact"
+        ],
+        "properties": {
+          "openSource": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "enabled",
+              "date",
+              "repositoryUrl"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "date": {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              "repositoryUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "positioning": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "developerChoice",
+              "shortestPath",
+              "leadership"
+            ],
+            "properties": {
+              "developerChoice": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "shortestPath": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "leadership": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "contact": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "customerServiceQrUrl",
+              "officialAccountQrUrl"
+            ],
+            "properties": {
+              "customerServiceQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "officialAccountQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "SiteConfigResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beian",
+          "experience"
+        ],
+        "properties": {
+          "beian": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "icp",
+              "gongan"
+            ],
+            "properties": {
+              "icp": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "gongan": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "code",
+                      "text"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "pattern": "^\\d{6,32}$"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "experience": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteExperience"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -24513,9 +24910,13 @@
       "user.credit_adjust",
       "model_catalog.create",
       "model_catalog.update",
-      "model_catalog.profile_update",
+      "model_catalog.vendor_profile_version",
+      "model_catalog.custom_profile_update",
+      "model_catalog.profile_observation",
+      "pricing.official_publish",
+      "pricing.purchase_policy_update",
+      "pricing.sale_policy_update",
       "model_catalog.purge",
-      "model_catalog.face_cache_update",
       "model_endpoint.create",
       "model_endpoint.update",
       "model_endpoint.delete",

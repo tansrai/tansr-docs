@@ -9,10 +9,31 @@
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.11.0 之前的历史见 git(`git log -- packages/sdk`)。
 `tansr` 命令行 / `serve` 宿主面分别见仓根 `CHANGELOG.md` 与 `packages/server/CHANGELOG.md`(三包同律,`doc/release/README.md`)。
 
-## 0.14.0 — 候选(未发版;版本号与发版节奏待用户拍板)— 2026-09-11
+## 0.16.0 — 2026-09-15
 
-SDK 资源生命周期整改(RF-04,含代拍 #3 A / #4 B)+ contract-v0.27 换形(RF-P1)。导出集 506 项名单零增删,7 项签名变化(`AgentSession` /
-`CreateSessionOptions` / `ManagedQueryOptions` / `SessionDrainOptions` / `SdkCleanupHandle` / `SdkLifecycleError` / `SessionNotice`),按 0.x 规则至少 minor。
+REL-07 将 AUDIO-01 增量以独立 minor 和 contract-v0.29 发布；实际发布状态以对应 doc/release 操作回执为准。已发 SDK 0.15.0 / serve 0.10.0 及其 tag 保持不变。
+
+- `planSpeechInput` 支持可选原子 `inputLimit`，整批预检拒绝纯空白分段（`empty_segment`）；不自动删除空白、不自动拆分或重试收费请求。宿主的拒绝原因穷举须补齐新值。
+- SDK 新增 `AudioTtsConstraints.inputLimit` 与 `tts-input-limit-v1` 协商；旧客户端继续使用保守加权投影。Electron / serve 示例兼容已发布包，遇到无法表达的原子限制时明确要求升级。
+- SDK 0.16.0 / serve 0.11.0 承载本次公开签名变化，原子单位支持码点、UTF-16 码元和 UTF-8 字节；旧加权 maxChars 帽与原子帽同时成立，不允许自定义策略放宽厂商上限。详见 `doc/rfc/contract-v0.29.md`。
+
+## 0.15.0 — 2026-09-14
+
+MEDIA-03 已发布；正式源码、门禁及 npm 操作结果见 `doc/release/sdk-0.15.0.md`。
+
+历史媒体产物随 tool_result 保留，恢复后可重建图像、视频、语音工具卡。新增 artifactUnavailable 表达预览缺失；模型仍只消费原 content。含产物的会话存储使用版本 2，升级后不得用旧 writer 写同一目录。详见 doc/rfc/contract-v0.28.md；发布与安装物见本节正式回执。
+
+## 0.14.0 — 2026-09-14
+
+REL-06 按 DEC-RF-24 候选版本重新编译；实际发布状态以 `doc/release/sdk-0.14.0.md` 操作回执为准。核心组件设计审查整改波(RF-01 … RF-11 / RF-P1 … RF-P3 / RF-S1 / RF-Z,2026-09-11 … 13):SDK 资源生命周期整改(RF-04,含代拍 #3 A / #4 B)、
+contract-v0.27 换形(RF-P1)、查询计数与事件流关闭即取消(RF-06)、工具入参中央校验(RF-08b)、会话预算闸(RF-P3a)等。导出集相对
+`@tansr/sdk@0.13.1`(506 项)→ **525 项**(`exports.snapshot.json` 为准;+19 零删,gate ④ 至少 minor):RF-04 名单零增删、7 项签名变化
+(`AgentSession` / `CreateSessionOptions` / `ManagedQueryOptions` / `SessionDrainOptions` / `SdkCleanupHandle` / `SdkLifecycleError` / `SessionNotice`);
++1 `SessionBudgetOptions`(RF-P3a,下文);其余 +18 为 0.13.1 之后并入主线、此前未在本表登记的媒体 / 应用提示词 / 上下文状态面加法
+(`AppConfigRequestError` / `ApplicationPromptFailure` / `ApplicationPromptFailureReason` / `ApplicationPromptRetry` / `ContextBudgetState` /
+`ModelTransitionBackup` / `SendBlocksResult` / `SessionContextState` / `SessionModelState` / `SessionUserBlock` / `SpeechInputPlan` /
+`SpeechInputPlanResult` / `SwitchModelOptions` / `SwitchModelResult` / `applicationPromptFailureMessage` / `countSpeechCharacters` /
+`describeApplicationPromptFailure` / `planSpeechInput`;能力见 `examples/electron-chat/README.md` 与仓根 `CHANGELOG.md`)。
 
 - **会话事件积压有界**:首订阅者到来前的积压受 `CreateSessionOptions.events` 的条数 / 近似字节双上界约束,缺省 1000 条 / 2 MiB;
   超界丢最旧、最新一条恒保留,队首以恰一条一等事件 `session.events_dropped { scope: 'sdk.events', droppedCount, reason: 'count_limit' | 'bytes_limit',
@@ -67,14 +88,17 @@ SDK 资源生命周期整改(RF-04,含代拍 #3 A / #4 B)+ contract-v0.27 换形
   `maxUsd` 只对以 USD 计价的模型出数——令牌档按平台 bundle 计价,托管 / 注入档当前内置价目为 CNY,`maxUsd` 不设防,币种无关兜底用 `maxTotalTokens`。
   选项非法(非正数 / 非正整数 / 词表外)在任何 IO 前以 `TansrSdkError('invalid_options')` 拒绝。与 `thinking.budget`(单轮思考 token 预算)无关。
   可观测面只走既有 `turn.aborted` / `turn.error` 通道,不新增事件类型(DEC-RF-48)。无需迁移:不传 `budget` 零变化。
+- **Narrator 咨询帧文案(RF-Z ⑯;仅 `SessionView` 的 `narrate()` 文本,事件形零变化)**:`turn.error { recoverable: true }` 一行由
+  `turn notice [scope]: … — recoverable, you can retry` 改为 `… — recoverable, session continues`——SDK 只能担保会话仍开、可继续发送,
+  「可重试」是宿主的决定,不再替宿主承诺。按该文案做字符串匹配的宿主(不建议)需改判;按 `notices[].code` / `scope` 判别者零变化。
 
-## 未发布(RF-06;`QueryCounters` 签名变化 → 下一版至少 minor,版本号由发版时定)
+**查询计数与事件流关闭(RF-06;`QueryCounters` 签名变化)**:
 
 - `QueryCounters` 新增两个可选计数字段 `apiRounds`(模型派发总数,恒不退还)与 `recoveryAttempts`(同轮恢复重试:可恢复错误重发 / 上下文溢出压缩重试 / 输出触帽升档重发);`modelTurns` 仍是预算口径(可恢复错误重试退还),语义不变。只读计数、加法字段,既有消费方无需迁移;用 `deepEqual` 锁定整个计数对象的测试需补这两个字段。
 - 查询事件流关闭即取消:对 `events` 调 `return()` / `throw()`(含 `for await` 提前 `break`)现在会取消本轮——在飞模型流与工具经 `signal` 见到中止(reason 为 `'iterator_closed'`),句柄进入终态,不再有事件产出,也不签发终局事件。此前提前退出只在下一个屏障点停下,在飞的模型流 / 工具会不受打扰地跑完。`compactNow()` 对已关闭的查询立即以新增的拒绝原因 `query_closed` 返回(此前可能悬挂到屏障点)。依赖「退出循环后在飞工具仍会跑完」的调用方需改为消费到终局事件再退出。
 - 会话预算的 `totalTokens` 口径由 kernel 单点 `budgetSpendOf` 给出:思考(reasoning)token 视为输出的子集不再叠加计入(此前 CLI / serve 装配层各自相加导致重复计费口径);已配置 `budget.maxTotalTokens` 的会话可能比此前更晚触顶,属口径修正。
 
-## 未发布(RF-08b;`Tool` 签名变化 → 下一版至少 minor,版本号由发版时定)
+**工具入参中央校验(RF-08b;`Tool` 签名变化)**:
 
 - **工具入参由调度器中央校验(只作门、原参下行)**:`Tool.inputSchema` 成为被兑现的契约——每次工具调用执行前,调度器按 `inputSchema`
   校验入参,不合法即以 `tool.failed { errorType: 'invalid_args' }` + `isError` 结果回喂模型;工具 `execute` 不被调用、不触发权限裁决、

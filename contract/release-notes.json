@@ -1,24 +1,47 @@
 {
   "cli": {
-    "未发布(核心组件设计审查整改;版本号与发版节奏待用户拍板)": {
+    "0.8.0": {
+      "date": "2026-09-15",
       "added": [
-        "项目层 hooks 信任门：仓库 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks 跟随工作区信任记录（`~/.tansr/trust.json`）——已信任照常执行；无记录或记为不信任 → 零执行并在 stderr 留一行说明（用户层 / 托管层 hooks 不受影响）。TUI 首开未信任目录时，项目层 `SessionStart` 等你选「信任」后再补发恰一次。headless / `serve` / `acp` / `mcp serve` 四入口只认 TUI 落盘的记录；无记录而确需本次执行，加 `--trust-project-hooks` 或设 `TANSR_TRUST_PROJECT_HOOKS=1`（只在无记录时生效、不写入 trust.json、压不过已记录的不信任）。判据锚定启动目录上溯最近含 `.tansr` 的祖先并按真实路径归一；项目层 http hook 请求头里的 `${VAR}` 不展开。",
-        "更新签名指针新增单调序号 `sequence`（每通道单调）与信息性 `issuedAt`：收到更小序号的封套（合法签名的旧封套被重放 / 回滚）拒绝并报 `pointer_sequence_rollback`；无序号的旧形封套视为 `0` 并警告，本机已核验过序号 > 0 时报 `pointer_sequence_missing`。不引入过期时间，`issuedAt` 陈旧只由 `tansr doctor` 呈现封套年龄（超 90 天提示行；JSON 新增可选 `updateSource` 段）。迁移：无需动作；分发点合法重建序号时删除 `update-state.json` 即重置本机水位。",
-        "`tansr bg kill` 先核对运行器身份再动作：后台任务记录新增运行器身份（本机端点 + 随机令牌，令牌恒不出现在 `bg list / show / --json`）；相符 → 停止请求 → 宽限 5 s → 复核后才强杀，`--json` 多 `stopped: graceful | exited | forced`；pid 被复用的陌生进程 / 端点不可达 → 显示 `stale`、拒杀、退出码 1 并携 `runner_identity_mismatch | runner_unreachable | runner_identity_unverifiable`。迁移：升级前发起、无身份块的旧记录一律拒杀（`bg list` 仍按 pid 展示），需要时用操作系统手段结束。"
+        "会话里图像 / 视频 / 语音工具产出的媒体产物随会话存储（热 / 冷）与检查点一并保留，`--resume` / `--restore` 之后可重建对应的工具卡预览；预览字段只给端上呈现，不送入模型。",
+        "朗读（TTS）按厂商的原子输入限制与原有加权字数双帽预检：可显式分段预检，纯空白分段直接拒绝而不发起收费请求；新旧客户端按各自声明的特性取得兼容的限制投影，不会放宽授权模型的上限。平台侧的原子上限下发随平台 API 上线；平台未下发原子上限时仍按原有加权字数单帽预检，行为与此前相同。"
       ],
       "changed": [
+        "会话存储版本 2：首次写入媒体产物的会话卷升为版本 2。迁移：升级前备份会话目录，并把写同一会话的所有程序（命令行 / `serve` / SDK 宿主）一起升级；回退到旧版本须用原备份或改用独立存储目录，旧程序不能继续写已升级的卷。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包（`@tansr/cli` 0.8.0）已于 2026-09-15 与 `@tansr/sdk` 0.16.0、`@tansr/serve` 0.11.0 同批发布；单文件可执行版另行登记。权限裁决与 SDK / `serve` 保持同源，本版没有把任何需要确认的操作放宽为自动放行。"
+    },
+    "0.7.0": {
+      "date": "2026-09-14",
+      "added": [
+        "项目层 hooks 信任门：仓库 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks 跟随工作区信任记录（`~/.tansr/trust.json`）——已信任照常执行；无记录或记为不信任 → 零执行并在 stderr 留一行说明（用户层 / 托管层 hooks 不受影响）。TUI 首开未信任目录时，项目层 `SessionStart` 等你选「信任」后再补发恰一次。headless / `serve` / `acp` / `mcp serve` 四入口只认 TUI 落盘的记录；无记录而确需本次执行，加 `--trust-project-hooks` 或设 `TANSR_TRUST_PROJECT_HOOKS=1`（只在无记录时生效、不写入 trust.json、压不过已记录的不信任）。判据锚定启动目录上溯最近含 `.tansr` 的祖先并按真实路径归一；项目层 http hook 请求头里的 `${VAR}` 不展开。",
+        "会话预算闸：配置 `budget { maxUsd?, maxTotalTokens?, onExceeded?: 'block' | 'warn' }` 段在 TUI / headless / `serve` / `acp` 走同一闸门——累计消耗触顶时 `'block'`（缺省）在下一次模型调用前终止本轮（`turn.aborted { reason: 'budget_exceeded' }`，会话保持打开），`'warn'` 每轮至多一条 `turn.error { scope: 'budget', recoverable: true }` 后继续。`maxTotalTokens` = 输入 + 输出 + 缓存读 + 缓存写，思考 token 按各模型能力位并入输出、不重复计；`maxUsd` 只对以 USD 计价的模型出数。",
+        "无预算的会话也记录用量轨迹：`-p` / TUI / `serve` / `acp` 会话每轮末在会话卷落一条内部用量快照（按模型分桶：输入 / 输出 / 思考 / 金额；有新入账才写），`--resume` 后自快照续算；旧会话卷原样可读。",
+        "`serve` 与 `acp` 补齐与 TUI / headless 同款的会话工装：工具结果超帽时全文落会话目录 `spill/`、历史里以存根替身；压缩前在 `checkpoints/` 落检查点（`--checkpoints-dir` / `TANSR_CHECKPOINTS_DIR` 同效）并发出 `session.checkpointed`。`serve` 新旋钮 `TANSR_SERVE_HOST_SHELL=posix|powershell`（缺省随平台）。",
+        "更新签名指针新增单调序号 `sequence`（每通道单调）与信息性 `issuedAt`：收到更小序号的封套（合法签名的旧封套被重放 / 回滚）拒绝并报 `pointer_sequence_rollback`；无序号的旧形封套视为 `0` 并警告，本机已核验过序号 > 0 时报 `pointer_sequence_missing`。不引入过期时间，`issuedAt` 陈旧只由 `tansr doctor` 呈现封套年龄（超 90 天提示行；JSON 新增可选 `updateSource` 段）。迁移：无需动作；分发点合法重建序号时删除 `update-state.json` 即重置本机水位。",
+        "`tansr bg kill` 先核对运行器身份再动作：后台任务记录新增运行器身份（本机端点 + 随机令牌，令牌恒不出现在 `bg list / show / --json`）；相符 → 停止请求 → 宽限 5 s → 复核后才强杀，`--json` 多 `stopped: graceful | exited | forced`；pid 被复用的陌生进程 / 端点不可达 → 显示 `stale`、拒杀、退出码 1 并携 `runner_identity_mismatch | runner_unreachable | runner_identity_unverifiable`。`--force` 只对无身份块的旧记录与端点不可达两态生效，身份不符恒拒杀。迁移：升级前发起、无身份块的旧记录一律拒杀（`bg list` 仍按 pid 展示），需要时用操作系统手段结束。"
+      ],
+      "changed": [
+        "权限引擎对 Shell 命令的判定收紧：`bash -c` / `eval` / `iex` / `powershell -Command` 等嵌套载荷先还原为内层命令再判定（此前几例会询问的高危样本改为直接拒绝）；工作区外的目录列举（`ls ..` / `ls /etc` / `tree ~` / `du ../x`）不再自动放行、改为询问；WebFetch 跨主机跳转落在需询问的域时不再静默跟随，而是提示模型改走正常询问。命令词法随平台（Windows 按 PowerShell，其余按 POSIX）。迁移：依赖工作区外 `ls` 零询问的脚本请补 allow 规则。",
+        "工作区信任按真实路径判定：`trust.json` 记录按真实路径归一，别名 / junction 路径与真实路径各查一次，任一命中「不信任」即不信任；启动目录上溯最近含 `.tansr/` 的祖先作为配置锚，锚或其祖先不信任时项目层 hooks 恒不执行（旗标压不过）。已知边界：网络盘（UNC）路径的旧记录需重新授信；junction 落在未授信目录下时 TUI 每次再问。",
+        "无人值守入口（headless / `serve` / `acp`）的项目层 MCP 服务器与插件改为认 TUI 落盘的授信记录，顺序为：落盘拒绝（按定义指纹匹配）> 落盘允许 > `TANSR_TRUST_PROJECT_MCP=1` / `TANSR_TRUST_PROJECT_PLUGINS=1` 仅在无记录或指纹失配时放行 > 待授信；MCP 定义变化视为失配。迁移：此前只靠环境变量越过落盘拒绝的部署自此被拒，请在 TUI 重新授信或删除该拒绝记录。`tansr acp` 的插件发现 / 授信 / 验签 / hooks 合并与其他入口共用一套，未授信插件零加载、提示走 stderr（stdout 只写协议帧）。",
+        "工具入参在执行前由调度器按工具的 `inputSchema` 统一校验：坏参以 `tool.failed { errorType: 'invalid_args' }` 回喂模型，不进执行、不触发权限裁决、不计费；校验只作门，权限裁决与工具看到的仍是模型原参。`tansr mcp-serve` 面同样处理。迁移：按 `tool.completed.isError` 识别坏参的日志 / 渲染改看 `tool.failed`。",
         "五个入口（TUI / headless / `acp` / `mcp-serve` / `serve`）统一处理 SIGINT / SIGTERM / SIGHUP / SIGBREAK：首枚信号触发一次幂等有界收口（TUI 10 s；`serve` 为 drain 预算 + 15 s），预算到点在 stderr 留一行 `process.hard_exit` 后以退出码 2 退出；第二枚信号立即退出码 2；SIGHUP 独立紧急预算 ≤ 3 s。迁移：依赖「第二枚 Ctrl+C 无效、必等 drain」的脚本改为只发一枚或等待退出码 2。",
         "TUI Ctrl+C 双击语义：运行中一枚 = 中断本轮并提示，空闲一枚 = 提示，1.5 s 内两枚 = 同 `/quit`；SIGTERM / SIGHUP 到来时在飞轮紧急封口（已流出文本作 `partialText` 留档、不伪造轮末、resume 自动跳过）；bracketed paste 在任何退出路径（含未捕获异常）先复位再退出。无需迁移。",
-        "`tansr serve` 每轮墙钟缺省 30 分钟：`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用；停机 `closeAll` 有界 5 s。单轮预期超过 30 分钟的部署需显式设更大值或 `0`。",
+        "hooks 子进程超时 / 中止时整棵进程树一起结束（POSIX 按进程组，Windows `taskkill /T`），1 s 宽限后复核；插件 / 策略束归档解压上限 64 MiB / 10,000 条，越界以 `archive_too_large` 拒解；设备码登录的轮询间隔钳到 ≤ 60 s、有效期 ≤ 1800 s。",
+        "`tansr serve` 每轮墙钟缺省 30 分钟：`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用；停机 `closeAll` 有界 5 s。单轮预期超过 30 分钟的部署需显式设更大值或 `0`。`serve` 面其余变更（SSE 有界写、`/v2` seq 单调与真值 `lastSeq`、存储告警出线、会话级预算跨重启、音频面上游错误归一 503）见 `@tansr/serve` 0.9.0 发布说明。",
+        "会话卷里模型不可见的未知内部记录不再让整卷报 `JOURNAL_CORRUPTED`：`--resume` / `tansr sessions` / `serve` 读到时记录留档原位、不进消息，以 `unknownKinds` 与一条警告上报；模型可见的未知记录仍拒读（`detail.reason = 'unknown_kind_model_visible'`）。",
         "`tansr logout` 不分凭据版本一律清除配置根 `bundle-cache/*.json`（含其他应用键档的缓存）与活动身份仓 `bundle-cache.json`；缓存恒可重建，重登首拉即复原，会话 / 记忆等身份仓数据不删。",
         "单文件可执行版自更新换装先 fsync 再 rename；换装成功后同名可执行的历史备份 `<exe>.old-<版本>` 只保留本次这一份，更早的自动修剪。",
-        "`tansr doctor` 恒只读：会话存储可写性探针不再创建 `sessions/` 目录，改在最近已存在的祖先目录写后即删；存储根被文件占位仍如实报 `session_store_unwritable`。"
+        "`tansr doctor` 恒只读：会话存储可写性探针不再创建 `sessions/` 目录，改在最近已存在的祖先目录写后即删；存储根被文件占位仍如实报 `session_store_unwritable`。",
+        "命令行主束更小（发布束 3.95 MB → 3.78 MB），用户可见行为零变化。"
       ],
       "fixed": [
         "`credentials.json`、bundle 缓存、init-state 指针改为原子写（同目录临时文件 + fsync + rename）：登录 / 派生键轮换 / 缓存刷新途中断电或进程被杀，文件要么是旧的完整档要么是新的完整档，不再出现读取报 `parse_failed` 的半截档。bundle 缓存按 0600 落盘（Windows 上权限位无效，保护依赖用户目录 ACL）。",
         "凭据解密单点：远程装配与裁决人池共享同一进程内凭据读取器，一次启动只解密一次；Windows DPAPI 档（PAT + 派生键）合并为单次 `powershell.exe` 冷启。凭据文件被另一进程 login / logout 改写后自动重读。"
       ],
-      "note": "候选，尚未发版；版本号与发版节奏待定。项目层 hooks 信任门的判据、边界与 SDK 侧对应选项见「安全与隐私」页。"
+      "note": "本版 npm 包（`@tansr/cli` 0.7.0）已于 2026-09-14 与 `@tansr/sdk` 0.14.0、`@tansr/serve` 0.9.0、`@tansr/api-client` 0.2.0 同批发布；四包均可从官方 registry 独立安装。行为收紧项（权限判定、工作区信任、无人值守入口的授信记录）以 minor 版本标明。项目层 hooks 信任门的判据、边界与 SDK 侧对应选项见「安全与隐私」页。"
     },
     "0.6.0": {
       "added": [
@@ -105,19 +128,46 @@
     }
   },
   "sdk": {
+    "0.16.0": {
+      "date": "2026-09-15",
+      "added": [
+        "`planSpeechInput` 新增可选的原子输入限制 `inputLimit`（`{ max, unit }`，单位为 Unicode 码点、UTF-16 码元或 UTF-8 字节三者之一），与原有加权字数帽同时预检；整批预检时纯空白分段以新拒绝原因 `empty_segment` 拒绝——不自动删除空白、不自动拆分、不重试收费请求。迁移：对 `SpeechInputPlanResult.reason` 做穷举判别的宿主补齐 `empty_segment`。",
+        "`AudioTtsConstraints.inputLimit`：客户端声明特性 `tts-input-limit-v1` 后，平台在语音模型约束里下发厂商的原子输入上限；未声明的旧客户端继续拿到保守的加权字数投影。加权 `maxChars` 帽与原子帽同时成立，自定义策略不能放宽厂商上限。平台侧的下发随平台 API 上线；`inputLimit` 缺席时 `planSpeechInput` 仍按原有加权字数单帽预检。"
+      ],
+      "changed": [
+        "公开签名变化（契约 contract-v0.29）：`planSpeechInput` 选项与 `AudioTtsConstraints` 各携一个可选字段，不传即零变化；按 0.x 规则以 minor 发布。随附的 Electron / serve 示例已对齐本版，遇到无法表达的原子限制时会明确要求升级 SDK，而不是静默放行。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-09-15 发布（与 `@tansr/serve` 0.11.0、`@tansr/cli` 0.8.0 同批）；0.15.0 及其 tag 保持不变。"
+    },
+    "0.15.0": {
+      "date": "2026-09-14",
+      "added": [
+        "媒体产物随 `tool_result` 保留：图像 / 视频 / 语音工具的产物（`artifact`）进入会话历史，`resume` / 检查点恢复后可重建对应的工具卡；模型仍只消费原 `content`。`SessionView` 的工具调用卡新增 `artifactUnavailable`，表达历史携产物但预览无法安全恢复的情形（不改变工具完成状态；旧的无产物历史不设置）。",
+        "文件会话存储可选的有界容错读取：`createFileSessionStore({ recovery: { mode: 'verified-ir', quarantineDir?, onRecovery? } })` 在完整校验链内隔离确定无效的消息记录，原始证据写到会话目录之外的隔离目录（缺省同级 `.session-recovery-quarantine`），并以 `SessionRecoveryReport`（数量、位置与内容指纹，不含正文）通知宿主；缺省仍为严格读取。新导出 `SessionRecoveryPolicy` / `SessionRecoveryReport` / `SESSION_RECOVERY_VERSION`（启用前核对已装运行包的能力版本，防旧包静默忽略新选项）。"
+      ],
+      "changed": [
+        "含媒体产物的会话存储升为版本 2（契约 contract-v0.28）。迁移：升级后不得再用旧版本的 writer 写同一目录；升级前备份，并把写同一会话存储的所有宿主（SDK / `tansr serve` / 命令行）一起升级。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-09-14 发布（与 `@tansr/serve` 0.10.0 同批）。"
+    },
     "0.14.0": {
+      "date": "2026-09-14",
       "added": [
         "`createSession({ trustProjectHooks })`：项目层 hooks 信任门。缺省 `false` = 工作区 `.tansr/settings.json` / `settings.local.json` 声明的 `command` / `http` hooks 零执行、零 `hook.*` 事件（用户层 / 托管层 hooks 照常）；`true` = 宿主代表用户为该工作区授信。SDK 不持久化信任、不读 `tansr` 命令行的信任记录；门住的项目层 hooks 在场时经 `onWarning` 通报一次 `project_hooks_untrusted`（`detail` 携 `cwd` 与登记到的层），缺席回落事件流 `turn.error { scope: 'sdk.notice', recoverable: true }`。**行为收紧**：此前克隆仓库、`createSession` 一起就会跑起来的项目层 hooks 缺省不再执行；已向用户确认工作区可信的宿主传 `trustProjectHooks: true`。单轮 `query()` 暂无授信位，项目层 hooks 在其中恒不启用。",
         "`createSession({ hostShell: 'posix' | 'powershell' })`：权限引擎解析 Shell 命令的词法方言。缺席随平台（与内置 Shell 工具实际派生的 shell 一致，零现状变化）；显式值供测试或跨平台演练，与真实执行 shell 错配会让词法守卫与执行环境脱节，生产宿主不应设置。三档皆生效。",
         "`createSession({ budget })`：会话预算闸，形 `{ maxUsd?, maxTotalTokens?, onExceeded?: 'block' | 'warn' }`，与配置文件 `budget` 段同形、与 `tansr` 命令行各形态走同一闸门语义。触顶时 `'block'`（缺省）在下一次模型调用前终止本轮（`turn.aborted { reason: 'budget_exceeded' }`，会话保持打开、后续轮同拦），`'warn'` 每次查询至多一条 `turn.error { scope: 'budget', recoverable: true }` 后继续；两上限都缺席 = 不接闸。`maxTotalTokens` = 输入 + 输出 + 缓存读 + 缓存写（思考 token 按模型能力位并入输出、不重复计）；`maxUsd` 只对以 USD 计价的模型出数（托管 / 注入档内置价目为 CNY、不设防），币种无关兜底用 `maxTotalTokens`。非法取值在任何 IO 前以 `invalid_options` 拒绝；不新增事件类型。新导出类型 `SessionBudgetOptions`。",
-        "会话事件积压有界：首订阅者到来前的积压受 `createSession({ events: { maxBacklogEvents, maxBacklogBytes } })` 条数 / 近似字节双上界约束，缺省 1000 条 / 2 MiB（正数或 `Infinity`）；越界丢最旧、最新一条恒保留，队首以恰一条一等事件 `session.events_dropped { scope: 'sdk.events', droppedCount, reason: 'count_limit' | 'bytes_limit', droppedBytes, firstDroppedSeq, lastDroppedSeq, maxEvents?, maxBytes? }` 通报（contract-v0.27，RFC-RF-1；契约清单 revision 6 → 7，事件型表 54 → 55）。`SessionView` 把它归入 `notices`（`code: 'session.events_dropped'`、无 `message`），Narrator 出一行 `events dropped [scope]: N event(s) dropped (reason)`。对你意味着：长跑会话即便忘记订阅也不会耗尽内存；在 `send()` 前挂上订阅者的既有代码零改动；按 `type` 判别通报的宿主改判 `session.events_dropped`。",
+        "会话事件积压有界：首订阅者到来前的积压受 `createSession({ events: { maxBacklogEvents, maxBacklogBytes } })` 条数 / 近似字节双上界约束，缺省 1000 条 / 2 MiB（正数或 `Infinity`）；越界丢最旧、最新一条恒保留，队首以恰一条一等事件 `session.events_dropped { scope: 'sdk.events', droppedCount, reason: 'count_limit' | 'bytes_limit', droppedBytes, firstDroppedSeq, lastDroppedSeq, maxEvents?, maxBytes? }` 通报（contract-v0.27；契约清单 revision 6 → 7，事件型表 54 → 55）。`SessionView` 把它归入 `notices`（`code: 'session.events_dropped'`、无 `message`），Narrator 出一行 `events dropped [scope]: N event(s) dropped (reason)`。对你意味着：长跑会话即便忘记订阅也不会耗尽内存；在 `send()` 前挂上订阅者的既有代码零改动；按 `type` 判别通报的宿主改判 `session.events_dropped`。",
         "`drain({ force: true })` / `closeAsync({ force: true })` / 单轮 `cleanup.drain({ force: true })`：违约适配器（`settle()` 回 `pending > 0` 或超时）不再让收尾永久悬挂——预算耗尽后释放屏障，对仍在飞的收尾记 `query_settlement_forced` / `compaction_settlement_forced`，随后直接释放自有资源（会话级 MCP host 的 `close` 被调用）并以同一预算等待完成，结果恒 `status: 'failed'` 携结构化失败。对未关闭会话无效。缺省 `drain()` 只观察不释放，语义不变。",
         "`token` 接受 `() => string` getter：bundle / heartbeat、模型直连、媒体工具、`session.platform` 直连客户端、提示词刷新器五类平台请求发起时取现值，令牌轮换后无需重建会话；getter 须回非空字符串。`query()` 同律。",
         "`query()` 收尾失败 / 超时时的 `SdkLifecycleError` 新增 `error.result`（已完成的 `QueryResult`，`onLifecycleError` 同携）；需要终态文本的调用方读 `error.result?.finalText`。",
-        "`QueryCounters` 新增只读计数 `apiRounds`（模型派发总数，恒不退还）与 `recoveryAttempts`（同轮恢复重试次数）；`modelTurns` 仍是预算口径。用 `deepEqual` 锁定整个计数对象的测试需补这两个字段。"
+        "`QueryCounters` 新增只读计数 `apiRounds`（模型派发总数，恒不退还）与 `recoveryAttempts`（同轮恢复重试次数）；`modelTurns` 仍是预算口径。用 `deepEqual` 锁定整个计数对象的测试需补这两个字段。",
+        "补登 0.13.1 之后并入、此前未在发布说明列出的 18 项导出（均为加法）：应用提示词失败呈现 `ApplicationPromptFailure` / `ApplicationPromptFailureReason` / `ApplicationPromptRetry` / `describeApplicationPromptFailure` / `applicationPromptFailureMessage` 与 `AppConfigRequestError`；上下文与模型状态 `SessionContextState` / `SessionModelState` / `ContextBudgetState` / `SwitchModelOptions` / `SwitchModelResult` / `ModelTransitionBackup`；同轮投递 `SendBlocksResult` / `SessionUserBlock`；语音输入规划 `planSpeechInput` / `countSpeechCharacters` / `SpeechInputPlan` / `SpeechInputPlanResult`。导出集相对 0.13.1 由 506 项增至 525 项，零删除。"
       ],
       "changed": [
         "`SessionNotice.message` 变为可选：`turn.error { recoverable: true }` 归约仍带 `message`，`session.events_dropped` 归约不带。迁移：宿主按 `code` 渲染、`message` 只作兜底（如 `notice.message ?? notice.code`）。",
+        "`SessionView` 的 `narrate()` 对 `turn.error { recoverable: true }` 的一行文案由 `… — recoverable, you can retry` 改为 `… — recoverable, session continues`：SDK 只担保会话仍开、可继续发送，是否重试由宿主决定。按该文案做字符串匹配的宿主（不建议）需改判；按 `notices[].code` / `scope` 判别者零变化。事件形不变。",
         "`close()` 后 `setModel` / `setThinking` / `interrupt` 一律 throw `session_closed`（此前静默改状态 / 空操作），`setModel(alias)` 先于别名解析拒绝；只读方法照旧可读。迁移：改为在 close 前调用或捕获 `session_closed`。",
         "`AgentSession.pushBody` 自公开类型声明剥离（运行时对象保留一个版本周期，close 后调用 throw `session_closed`）；它从未是承诺面，外部代码请勿依赖。",
         "`createSession` / `query` 的 `env` 决定出网代理：`HTTPS_PROXY` / `HTTP_PROXY` / `NO_PROXY` 参与 WebFetch / Http 工具与 hooks http 的代理决策，`process.env` 不再被读取（缺席仍为进程级单例）。迁移：依赖 `process.env` 代理却传了自定义 `env` 的宿主，把代理三变量并入所传 `env`。",
@@ -127,7 +177,7 @@
         "`signal` 的 abort 监听在 `close()` 时解除，多会话共享 shutdown signal 时已关闭会话可被回收；`createSession({ fork })` 的新会话记录改在装配成功后落 store，失败时不留孤儿记录。无需迁移。"
       ],
       "fixed": [],
-      "note": "候选，尚未发版；版本号与发版节奏待定。本段合并了同期登记的两个待发小段（查询计数与事件流关闭语义、工具入参中央校验）。"
+      "note": "本版 npm 包已于 2026-09-14 发布（与 `@tansr/serve` 0.9.0、`@tansr/cli` 0.7.0、`@tansr/api-client` 0.2.0 同批）。本段合并了同期登记的两个小段（查询计数与事件流关闭语义、工具入参中央校验）。"
     },
     "0.13.1": {
       "date": "2026-09-11",
@@ -209,7 +259,31 @@
     }
   },
   "serve": {
-    "Unreleased": {
+    "0.11.0": {
+      "date": "2026-09-15",
+      "added": [
+        "`planSpeechInput`（经 `@tansr/serve` 再导出）新增可选的原子输入限制 `inputLimit`（`{ max, unit }`，单位为 Unicode 码点、UTF-16 码元或 UTF-8 字节三者之一），与原有加权字数帽同时预检；整批预检时纯空白分段以新拒绝原因 `empty_segment` 拒绝——不自动删除空白、不自动拆分、不重试收费请求。迁移：对拒绝原因做穷举判别的宿主补齐 `empty_segment`。",
+        "TTS 原子输入限制协商：客户端声明特性 `tts-input-limit-v1` 后，语音模型约束 `AudioTtsConstraints.inputLimit` 下发厂商的原子上限；未声明的旧客户端继续拿到保守的加权字数投影。加权 `maxChars` 帽与原子帽同时成立，自定义策略不能放宽厂商上限。平台侧的下发随平台 API 上线；`inputLimit` 缺席时仍按原有加权字数单帽预检。"
+      ],
+      "changed": [
+        "公开签名变化（契约 contract-v0.29）随 0.x 规则以 minor 发布；不传新字段零变化。HTTP 路径与事件包络不变。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-09-15 发布（与 `@tansr/sdk` 0.16.0、`@tansr/cli` 0.8.0 同批）；0.10.0 及其 tag 保持不变。"
+    },
+    "0.10.0": {
+      "date": "2026-09-14",
+      "added": [
+        "历史接口透传媒体产物：`GET /v2/sessions/:id/history` 的工具结果携 `artifact`，热 / 冷恢复与检查点一并保留，端侧恢复后可重建图像 / 视频 / 语音工具卡。HTTP 路径与事件包络不变；旧的纯文本历史不自动补媒体。"
+      ],
+      "changed": [
+        "含媒体产物的会话存储升为版本 2；旧版本程序不能继续写已升级的卷。迁移：升级前备份，并把写同一会话存储的 writer（`tansr serve` / 自托管 `@tansr/serve` / SDK 宿主）统一升级。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-09-14 发布（与 `@tansr/sdk` 0.15.0 同批）。"
+    },
+    "0.9.0": {
+      "date": "2026-09-14",
       "added": [
         "非活跃会话的 `lastSeq` 返回真值：`GET /v2/sessions/:id`、`GET /v2/sessions` 列表项与 `GET …/history` 对不在内存的会话，`lastSeq` 自此为存储里落盘的水位（此前恒 `0`；旧卷无水位记录仍为 `0`，无元信息仍 404，活跃径不变）。对你意味着：客户端（含 Android / iOS）不得再以 `lastSeq === 0` 判「无事件」，请按值作 `Last-Event-ID` 续传起点；判休眠看 `live: false`。自实现存储读取器不回填该值时仍为 `0`。",
         "`server.replay.gap` 帧形态进入契约门：事件名、载荷键集与 `reason` 词表（`'evicted'` / `'ahead_of_log'`）单一事实源，公共类型 `ReplayGapNotice` 字段与可选性不变；SDK 契约清单 `MANIFEST.json` revision 6 → 7（事件型表 54 → 55，新增的 `session.events_dropped` 为 SDK 专属事件，见下方说明）。",
@@ -225,13 +299,15 @@
         "SSE 有界写：`maxSubscriberBufferBytes`（缺省 2 MiB）自此同时是每次 socket 写的字节上界——attach 重放段分片交付、突发批量分片写出，帧文本与顺序逐字节不变、小流量零分片。曾依赖「非 paused 期队列无界」吞下超 2 MiB 突发的慢客户端，此后可能被判慢消费者并按 `Last-Event-ID` 重连重放。",
         "音频直连两端点的错误信封：平台上游 401 / 403 / 5xx 与网络故障归一为 `503 upstream_unavailable` 固定词条 + `Retry-After`，上游状态与原文只进结构化日志事件 `upstream.rejected`；业务 4xx（`asr_not_configured`、`insufficient_balance` 等）维持原码透传。对你意味着：端侧不再因平台侧 401 误判本地令牌失效；此前依赖 403 `model_not_authorized` / 502 原样到端的调用方改读日志。",
         "`tansr serve` 每轮墙钟缺省 30 分钟：`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用（不再被判为非法值告警）。此前缺省无墙钟，一轮可无限期占用会话并发槽；单轮预期超过 30 分钟的部署需显式设更大值或 `0`。仅 `tansr serve` 装配面，库 `startServer` 不受影响。",
-        "会话预算账本按行归账（contract-v0.27，RFC-RF-3 阶段 2）：带 `init.budget` 的会话按每一行的（供应商，模型）取能力位 `quirks.reasoningTokens` 处置思考 token——`'separate'` 行的思考量并入该行输出计量与计价，缺省 `'subset_of_output'` 照旧不叠加；会话内切换模型与子代理另选模型各按自身能力位。当前内置表零 `'separate'` 行，已部署会话的用量与金额逐字节零变化。",
+        "会话预算账本按行归账（contract-v0.27）：带 `init.budget` 的会话按每一行的（供应商，模型）取能力位 `quirks.reasoningTokens` 处置思考 token——`'separate'` 行的思考量并入该行输出计量与计价，缺省 `'subset_of_output'` 照旧不叠加；会话内切换模型与子代理另选模型各按自身能力位。当前内置表零 `'separate'` 行，已部署会话的用量与金额逐字节零变化。",
         "客户端申报工具（`clientTools`）不受内核中央入参校验影响：本地 schema 只是申报投影，调度器不剥参、不改权限 `digest` 输入，坏参仍由既有路径以 `tool.completed { isError: true }` 出线。无需迁移。"
       ],
       "fixed": [
+        "TypeScript 成品声明可直接检查：`index.d.ts` 移除误混入的 `createRequire` 运行时垫片，未开启 `skipLibCheck` 的 NodeNext 消费方不再遇到 TS1046 / TS1254；运行时与公开类型签名不变，无需迁移。",
+        "内置文件存储：带预算的会话卷因尾部含用量快照记录而退出「尾部纯消息」快路、`GET /v2/sessions/:id/history` 对大卷全量读的问题已闭合——按提交链尾的见证取消息数，快照记录自然跳过；只有无可信见证的旧卷或被外部写者动过的卷仍退全量读以求精确。结果恒不变。",
         "/v1 优雅关闭期的 `retry:` 帧经 writer 记账，`sseStats().frames / writes` 自此计入；行为不变。"
       ],
-      "note": "候选，尚未发版；版本号与发版节奏待定（下一版至少 minor）。SDK 专属事件 `session.events_dropped`（contract-v0.27，RFC-RF-1）只在 `@tansr/sdk` 进程内事件积压越界时出现，`@tansr/serve` 恒不发出、不进 `/v2` 事件流 / 重放窗 / journal，客户端无需为它写分支。"
+      "note": "本版 npm 包已于 2026-09-14 发布（与 `@tansr/sdk` 0.14.0、`@tansr/cli` 0.7.0 同批）；导出集相对 0.8.1 由 404 项增至 413 项，零删除。SDK 专属事件 `session.events_dropped`（contract-v0.27）只在 `@tansr/sdk` 进程内事件积压越界时出现，`@tansr/serve` 恒不发出、不进 `/v2` 事件流 / 重放窗 / journal，客户端无需为它写分支。"
     },
     "0.8.1": {
       "date": "2026-09-11",

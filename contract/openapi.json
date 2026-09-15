@@ -517,6 +517,18 @@
         "tags": [
           "auth"
         ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -630,6 +642,18 @@
         "tags": [
           "auth"
         ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -669,6 +693,18 @@
         "summary": "微信扫码授权码换 token(subject=unionid||openid,首次即注册)",
         "tags": [
           "auth"
+        ],
+        "parameters": [
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -9696,18 +9732,17 @@
     },
     "/v1/site-config": {
       "get": {
-        "summary": "站点公开配置(匿名;平台配置中心 site.beian.* 白名单投影:icp=ICP 备案号字符串,gongan={code,text} 公安备案;shadow 条目不生效,类型不符按缺席出 null 恒 200;平台层专属,org/team/user 层同名键不投影)",
+        "summary": "站点公开配置(匿名;平台配置中心 site.beian.* 与 site.experience 白名单投影;含 SDK MIT 开源承诺日期、中英文定位文案及联系二维码;缺席或 shadow 使用平台缺省,畸形生效配置返回 experience:null;平台层专属,org/team/user 层同名键不投影;no-store)",
         "tags": [
           "control"
         ],
         "responses": {
           "200": {
-            "description": "{beian:{icp,gongan}}",
+            "description": "备案与平台体验配置",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/SiteConfigResponse"
                 }
               }
             }
@@ -10041,6 +10076,16 @@
               "type": "string"
             },
             "description": "org 作用域声明(org 公开 id);服务端校验成员资格与角色,非成员恒 404、角色不够 403"
+          },
+          {
+            "name": "x-tansr-growth-capture",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "description": "GR-34 Growth Ed25519 来源/当前访问凭证。API在接收时本地验签并记录捕获时间；缺失、过期或无效仅阻止媒体归因，不阻塞登录或建单。首次注册冻结来源，订单使用当次访问凭证；不接受浏览器自报账户、点击ID或捕获时刻。"
           }
         ],
         "requestBody": {
@@ -10279,6 +10324,74 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DemoDownloadsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "非法配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "权限不足",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "版本冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/site-experience": {
+      "get": {
+        "summary": "读取平台体验配置及修订号（ADMIN_READ）",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "平台体验配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExperienceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "运营原子修订 SDK 开源承诺、定位文案及二维码（ADMIN_OPS），版本 CAS 与审计",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "修订后配置",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteExperienceResponse"
                 }
               }
             }
@@ -11038,7 +11151,7 @@
     },
     "/admin/v1/model-catalog/{id}/profile": {
       "put": {
-        "summary": "Profile 全量替换(doc/27 §7;ADMIN_OPS):TypeBox validateModelProfile 校验 + 镜像结构化列(kind / family / lifecycle / limits 三列)+ 服务端盖 calibratedAt(采集同步见章即不再覆盖);机器维护段 face / gate / upstreamCost 保全(payload 未显式给出则沿旧值);写恒审计 model_catalog.profile_update + bundle 失效",
+        "summary": "旧整档人工写入口已冻结(ADMIN_OPS)，恒409；厂商事实只读，自定义使用custom-profile。",
         "tags": [
           "admin"
         ],
@@ -11054,23 +11167,64 @@
           }
         },
         "responses": {
+          "409": {
+            "description": "profile_write_replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/model-catalog/{id}/face-cache": {
+      "put": {
+        "summary": "旧缓存实证人工写入口已冻结(ADMIN_OPS)，恒409；真实探针写独立observation并核验厂商版本/实际端点。",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "profile_write_replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/model-catalog/{id}/profile-domains": {
+      "get": {
+        "summary": "Profile分域只读(ADMIN_READ)：vendor版本与来源、独立custom、observation/current、有效约束及customBase；allowedConstraints为同源封闭路径/类型/单位/可编辑注册表；未知旧档标legacy_unverified，GET不迁移写库。",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
           "200": {
-            "description": "目录行(serializeCatalog)",
+            "description": "{catalogId,migrationState,checkedAt,vendor,custom,observation,effective,customBase,allowedConstraints}",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "bad_request(profile invalid: …)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -11088,36 +11242,26 @@
         }
       }
     },
-    "/admin/v1/model-catalog/{id}/face-cache": {
+    "/admin/v1/model-catalog/{id}/custom-profile": {
       "put": {
-        "summary": "face.cache 子键人工写面(doc/110 B1;ADMIN_OPS;FX-A-14(b) M-15 泛型操作台 op:体 = FaceCache 同源 schema):FaceCacheSchema 校验 + mergeFaceDomain(cache)分域合并(思考域 / 未知子键逐字保留)+ 整档再过 validateModelProfile;恒不盖 profile 级 calibratedAt;等值 no-op {changed:false};evidence 无 [auto-probe] 前缀 = 受校准恒胜保护;写恒审计 model_catalog.face_cache_update + bundle 失效",
+        "summary": "独立自定义Profile(ADMIN_OPS)：{expectedVendorRevision,expectedCustomRevision,profile:{schemaVersion:1,constraints:[]},reason}；双revision CAS，只准注册路径内收紧，不改厂商档；同事务审计与失效outbox，返回distribution pending/sent。",
         "tags": [
           "admin"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "目录行公开 id"
-          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FaceCache"
+                "type": "object",
+                "additionalProperties": true
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "{changed, handle, cache}",
+            "description": "Profile分域读面+changed+distribution",
             "content": {
               "application/json": {
                 "schema": {
@@ -11128,7 +11272,7 @@
             }
           },
           "400": {
-            "description": "bad_request(face.cache invalid / 合并后 profile invalid)",
+            "description": "bad_request(未知路径/单位/扩帽)",
             "content": {
               "application/json": {
                 "schema": {
@@ -11137,8 +11281,8 @@
               }
             }
           },
-          "404": {
-            "description": "not_found",
+          "409": {
+            "description": "profile_revision_conflict(保留原草稿及revision)",
             "content": {
               "application/json": {
                 "schema": {
@@ -11147,8 +11291,7 @@
               }
             }
           }
-        },
-        "x-tansr-console": "generic"
+        }
       }
     },
     "/admin/v1/model-catalog/{id}/probe-face": {
@@ -11212,7 +11355,7 @@
         ],
         "responses": {
           "202": {
-            "description": "{started:true, requestId, note}",
+            "description": "{started:true, requestId, job, statusUrl}; 同未完成请求合并，终态后显式POST才创建新窗口",
             "content": {
               "application/json": {
                 "schema": {
@@ -11269,18 +11412,49 @@
     },
     "/admin/v1/model-catalog/probe-face-caches": {
       "post": {
-        "summary": "缓存判形探针批量扫描(ADMIN_OPS;202 异步 + 月频窗断点续扫);完成后审计 model_catalog.face_cache_probe_sweep;结果经 GET face-probe-runs?kind=cache 对账",
+        "summary": "缓存判形探针批量扫描请求(ADMIN_OPS):Redis请求指针、face-cache-probe.sweep调度任务与持久心跳；同未完成请求合并，原非force及月频/金额费控不变；请求审计及精确任务窗口跟踪",
         "tags": [
           "admin"
         ],
         "responses": {
           "202": {
-            "description": "{started:true, note}",
+            "description": "{started:true, requestId, job, statusUrl}",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/model-catalog/probe-sweeps/{kind}/{requestId}": {
+      "get": {
+        "summary": "批量探针精确窗口状态(ADMIN_READ)：kind=face|cache，requestId=[A-Za-z0-9_-]{1,128}；保留字current只读当前指针并回真实requestId，不能据此证明丢失回执的原POST成功。按(job,windowKey)查DB，无记录不是完成，心跳超过10分钟为interrupted，不自动创建新请求",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "{requestId,job,status:queued|running|ok|failed|interrupted|unknown,startedAt,heartbeatAt,finishedAt,summary:null|{scanned?,applied?,skipped?,errors?}}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad_request(kind/requestId)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -12014,7 +12188,7 @@
     },
     "/admin/v1/model-sync/ucloud-official": {
       "post": {
-        "summary": "官方价目同步(ucloud 定名兼容径 = POST /admin/v1/suppliers/{id}/sync-official 同一 handleOfficialSync;ADMIN_OPS):抓官方价页 → upstreamCost 采集证据入 profile → 价目审批流(price-sync runs);响应同步报告",
+        "summary": "官方同步后台任务(ucloud兼容径，ADMIN_OPS)：dryRun:true受理冻结预览；确认仅携previewId，30分钟有效，同原确认不重写。以任务GET查询实际结果，不将202当完成。",
         "tags": [
           "admin"
         ],
@@ -12023,26 +12197,131 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "dryRun"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "dryRun": {
+                        "const": true
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "previewId"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "previewId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "同步报告",
+          "202": {
+            "description": "已受理任务或原幂等任务",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true
+                  "required": [
+                    "taskId",
+                    "statusUrl",
+                    "status",
+                    "startedAt",
+                    "finishedAt"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "statusUrl": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "ok",
+                        "failed",
+                        "interrupted"
+                      ]
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "previewId": {
+                      "type": "string"
+                    },
+                    "previewTaskId": {
+                      "type": "string",
+                      "description": "确认任务持久window中的原previewId，未完成和失败态亦返回"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "adapter",
+                        "fixture",
+                        "inline"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "baseline": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "report": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
                 }
               }
             }
           },
-          "502": {
-            "description": "upstream_error",
+          "400": {
+            "description": "bad_request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict(预览过期或不可确认)",
             "content": {
               "application/json": {
                 "schema": {
@@ -12108,7 +12387,7 @@
     },
     "/admin/v1/suppliers/{id}/sync-official": {
       "post": {
-        "summary": "按采购商官方价目同步(ADMIN_OPS;/admin/v1/model-sync/ucloud-official 同一实现)",
+        "summary": "按采购商受理官方同步后台任务(ADMIN_OPS)：预览冻结采集及售价变化，确认只用previewId；供应商事实与自定义域独立，执行后的部分失败/通知pending在report中逐项返回。",
         "tags": [
           "admin"
         ],
@@ -12117,20 +12396,125 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "dryRun"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "dryRun": {
+                        "const": true
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "previewId"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "previewId": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "同步报告",
+          "202": {
+            "description": "已受理任务或原幂等任务",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true
+                  "required": [
+                    "taskId",
+                    "statusUrl",
+                    "status",
+                    "startedAt",
+                    "finishedAt"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "statusUrl": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "ok",
+                        "failed",
+                        "interrupted"
+                      ]
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "previewId": {
+                      "type": "string"
+                    },
+                    "previewTaskId": {
+                      "type": "string",
+                      "description": "确认任务持久window中的原previewId，未完成和失败态亦返回"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "adapter",
+                        "fixture",
+                        "inline"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "baseline": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "report": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad_request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -12145,8 +12529,210 @@
               }
             }
           },
-          "502": {
-            "description": "upstream_error",
+          "409": {
+            "description": "conflict(预览过期或不可确认)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/model-sync/tasks/{id}": {
+      "get": {
+        "summary": "查询官方同步任务(ADMIN_OPS)：精确任务ID；心跳超过5分钟为interrupted，不能推断未写入。不返回私有冻结输入。",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "持久任务实际状态",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "taskId",
+                    "statusUrl",
+                    "status",
+                    "startedAt",
+                    "finishedAt"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "statusUrl": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "ok",
+                        "failed",
+                        "interrupted"
+                      ]
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "previewId": {
+                      "type": "string"
+                    },
+                    "previewTaskId": {
+                      "type": "string",
+                      "description": "确认任务持久window中的原previewId，未完成和失败态亦返回"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "adapter",
+                        "fixture",
+                        "inline"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "baseline": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "report": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/model-sync/tasks/{id}/confirmation": {
+      "get": {
+        "summary": "确认POST回执丢失时按原previewId只读定位原确认任务(ADMIN_OPS)：所有状态含previewTaskId以核对归属；未知404不表示未执行，禁止自动重提。",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "原确认任务；taskId是确认任务ID，后续按该ID查询",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "taskId",
+                    "statusUrl",
+                    "status",
+                    "startedAt",
+                    "finishedAt"
+                  ],
+                  "additionalProperties": true,
+                  "properties": {
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "statusUrl": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "ok",
+                        "failed",
+                        "interrupted"
+                      ]
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "finishedAt": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      ]
+                    },
+                    "previewId": {
+                      "type": "string"
+                    },
+                    "previewTaskId": {
+                      "type": "string",
+                      "description": "确认任务持久window中的原previewId，未完成和失败态亦返回"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "adapter",
+                        "fixture",
+                        "inline"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "baseline": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "report": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "error": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "原预览或确认回执未找到，执行状态不能据此推断",
             "content": {
               "application/json": {
                 "schema": {
@@ -12462,24 +13048,55 @@
     },
     "/admin/v1/price-tables/{id}/activate": {
       "post": {
-        "summary": "价格表激活(单活跃原子切换,旧表 retired,重复激活幂等;pricingGuard 逐条校验,越界表进不了 active)",
+        "summary": "兼容退役写口：保留ops鉴权，409要求独立采购/售价政策预演；旧原值、历史价表仍可查询",
         "tags": [
           "admin"
         ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "原资源id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "已激活",
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           },
-          "400": {
-            "description": "pricing_guard_tripped(单价 ≤0 或超上限 1.000000 元/1K token)",
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "pricing_policy_preview_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -12574,9 +13191,20 @@
     },
     "/admin/v1/price-tables/{id}/reactivate": {
       "post": {
-        "summary": "价格表一键回滚(CW8 B9,§5.8:旧表条目克隆进新版 \"{源版}-rb\" 草稿 → pricingGuard → 原子切换 = 旧版重激活为新版恒向前,历史表恒不物理删;现 active 表未覆盖条目 carry-over 原样搬入——回滚恒不掉价掉服务;体携 confirmRead:true(护栏已读确认,可配);ADMIN_OPS,审计 price_table.reactivate)",
+        "summary": "兼容退役写口：保留ops鉴权，409要求独立采购/售价政策预演；旧原值、历史价表仍可查询",
         "tags": [
           "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "原资源id"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -12590,19 +13218,18 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "已切换({table, itemsCloned, carriedOver})",
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           },
-          "400": {
-            "description": "bad_request(confirmRead 缺席)/ pricing_guard_tripped",
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
             "content": {
               "application/json": {
                 "schema": {
@@ -12612,7 +13239,7 @@
             }
           },
           "409": {
-            "description": "conflict(already_active / empty_table)",
+            "description": "pricing_policy_preview_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -12653,7 +13280,7 @@
         ],
         "responses": {
           "200": {
-            "description": "总览({platform, impact, models[]})",
+            "description": "总览({platform, impact, models[], baseline:{activeTableId,markupFingerprint}})",
             "content": {
               "application/json": {
                 "schema": {
@@ -12668,7 +13295,7 @@
     },
     "/admin/v1/pricing/markups/platform": {
       "put": {
-        "summary": "平台级销售系数变更(CW9-A5:体携 {saleMarkup, confirmRead:true};系数取值域 >0 ≤1000 至多 3 位小数 DECIMAL 串禁浮点;先演算后落库 fail-closed——全部未忽略平台的在售模型按现役 spec 顶档基价 × 新生效乘数重派生进新版价表 \"{现役版}-mk\"(P0-4 恒不原地改写,pricingGuard 双检,原子切换,忽略平台者/spec 缺席者原样搬入恒不动;逐值零漂移 = 零写入零切换幂等),演算/护栏不过则配置不落;审计 pricing.markup_platform_update(携 before/after/reprice)+ 切换后 bundle 失效;ADMIN_OPS)",
+        "summary": "平台级销售系数确认：必须携预演 baseline、saleMarkup、confirmRead:true。完整重派生和护栏校验后，在同一事务校验活动价表及政策指纹并写政策、新价表、激活、审计；零价格漂移不切表。publication.distribution=pending 表示价格已保存、通知等待重试，不能重提价格。系数仍为 >0 ≤1000、最多3位小数的DECIMAL串；ADMIN_OPS。",
         "tags": [
           "admin"
         ],
@@ -12678,7 +13305,44 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "required": [
+                  "saleMarkup",
+                  "baseline"
+                ],
+                "properties": {
+                  "saleMarkup": {
+                    "type": "string"
+                  },
+                  "confirmRead": {
+                    "type": "boolean"
+                  },
+                  "baseline": {
+                    "type": "object",
+                    "required": [
+                      "activeTableId",
+                      "markupFingerprint",
+                      "pricingFingerprint"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "activeTableId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      },
+                      "markupFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "pricingFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -12696,7 +13360,17 @@
             }
           },
           "400": {
-            "description": "bad_request(系数非法 / confirmRead 缺席 / reprice_precision_overflow 超精度 / pricing_guard_tripped)",
+            "description": "bad_request(系数非法 / price_preview_required 缺baseline / confirmRead缺席 / 超精度 / 护栏拒绝)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "price_publication_conflict：预演基线过期，必须重新预演",
             "content": {
               "application/json": {
                 "schema": {
@@ -12710,7 +13384,7 @@
     },
     "/admin/v1/pricing/models/{id}/markup": {
       "put": {
-        "summary": "单模型销售系数变更(CW9-A5:体携 {markup: string|null, ignorePlatform?: boolean, confirmRead:true};生效乘数三态 = 未配置→平台系数 / 配置且忽略→单模型系数 / 配置且不忽略→平台×单模型(相对上浮);markup null + ignorePlatform false = 清除配置回跟平台(行删除);ignorePlatform 无系数 400 ignore_without_markup;该模型即时按现役 spec 重派生新版价表(在售且可派生才换表,未定价 = 配置落库候下次定价,reprice 计数如实);审计 pricing.markup_model_update + 切换后 bundle 失效;ADMIN_OPS)",
+        "summary": "单模型销售系数确认：必须携预演 baseline、markup:string|null、ignorePlatform?、confirmRead:true。三态乘数与原规则一致；完整预演、CAS、政策/价表/激活/审计同事务。publication.distribution=pending 为已保存待通知；ADMIN_OPS。",
         "tags": [
           "admin"
         ],
@@ -12720,7 +13394,50 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "required": [
+                  "markup",
+                  "baseline"
+                ],
+                "properties": {
+                  "markup": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "ignorePlatform": {
+                    "type": "boolean"
+                  },
+                  "confirmRead": {
+                    "type": "boolean"
+                  },
+                  "baseline": {
+                    "type": "object",
+                    "required": [
+                      "activeTableId",
+                      "markupFingerprint",
+                      "pricingFingerprint"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "activeTableId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      },
+                      "markupFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "pricingFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -12756,6 +13473,16 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "price_publication_conflict：预演基线过期，必须重新预演",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -12779,7 +13506,7 @@
         },
         "responses": {
           "200": {
-            "description": "预演({model, current, proposed, sale})",
+            "description": "预演({model, current, proposed, sale, baseline})；业务零写，读取审计照常",
             "content": {
               "application/json": {
                 "schema": {
@@ -12831,7 +13558,7 @@
         },
         "responses": {
           "200": {
-            "description": "预演({change:{kind, before/current, after/proposed, …}, impact:{windowDays, window, scannedRequests, truncated, models[], totals[], byDay[], skippedModels[], outOfScopeRequests, unattributedRequests, summary}})",
+            "description": "预演({change, impact, baseline:{activeTableId,markupFingerprint}})；业务零写，读取审计照常",
             "content": {
               "application/json": {
                 "schema": {
@@ -12866,7 +13593,7 @@
     },
     "/admin/v1/pricing/markups/import": {
       "post": {
-        "summary": "单模型系数批量导入(CW16-A5b 三旋钮:体携 {items:[{id: catalog public id|handle, markup: string|null, ignorePlatform?}], confirmRead:true, dryRun?:boolean},单批 ≤100 条;校验阶段 fail-closed——逐条校验模型存在性/系数值域(A5 同单点)/批内重复/重派生越护栏,任一条非法整批拒 400 batch_import_invalid 携逐条诊断 invalid[]{index,id,error} 零写入;写入阶段逐条走单模型 PUT 同一落笔(先演算后落库 + upsert/清除 + **每条一笔审计** pricing.markup_model_update 携 via=import,恒不静默批改);CW18-A5c dryRun:true = 演练位——校验面(批帽/fail-closed/已读确认)逐字节同走,全过后以真写径同一演算段(planRepriceActiveTable)逐条出影响预览走到写界即止,恒零写零审计,缺省 false 行为恒旧;ADMIN_OPS)",
+        "summary": "单模型系数批量导入：≤100条，整批校验、精度运算和完整价表护栏先行。dryRun:true返回baseline及影响，业务零写零变更审计；实际确认必须携同一baseline。政策、全量新价表、激活及每项审计在一个事务提交，任何提交失败整批回滚；旧基线409。publication.distribution=pending为价格已保存、通知待重试。ADMIN_OPS。",
         "tags": [
           "admin"
         ],
@@ -12880,7 +13607,53 @@
                   "items"
                 ],
                 "additionalProperties": false,
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "dryRun": {
+                          "const": true
+                        }
+                      },
+                      "required": [
+                        "dryRun"
+                      ]
+                    },
+                    "then": {},
+                    "else": {
+                      "required": [
+                        "baseline"
+                      ]
+                    }
+                  }
+                ],
                 "properties": {
+                  "baseline": {
+                    "type": "object",
+                    "required": [
+                      "activeTableId",
+                      "markupFingerprint",
+                      "pricingFingerprint"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "activeTableId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      },
+                      "markupFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "pricingFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
                   "items": {
                     "type": "array",
                     "minItems": 1,
@@ -12928,7 +13701,7 @@
         },
         "responses": {
           "200": {
-            "description": "已导入({imported, results[]:{model, markup, cleared, reprice}});dryRun:true 时为演练预览({dryRun:true, wouldImport, results[]:{model, markup, cleared, reprice:{affectedModels, repricedModels, skipped, wouldActivate}}},恒零写零审计)",
+            "description": "已导入({imported, results[], publication});dryRun:true 为预演({dryRun:true,wouldImport,results[],baseline})，业务零写零变更审计",
             "content": {
               "application/json": {
                 "schema": {
@@ -12940,6 +13713,16 @@
           },
           "400": {
             "description": "bad_request(batch_import_invalid 逐条诊断 / batch_too_large / confirmRead 缺席 / items 形态 / dryRun 非布尔)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "price_publication_conflict：预演基线过期，必须重新预演",
             "content": {
               "application/json": {
                 "schema": {
@@ -13014,6 +13797,898 @@
         }
       }
     },
+    "/admin/v1/pricing/models/{id}/policies": {
+      "get": {
+        "summary": "采购敏感读面：独立厂商成本版本、历史原值、采购政策、售价政策、有效值及三项CAS基线；未知来源不推断为厂商事实",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "目录 public id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{model,domains,activePrice,effective:{purchase,sale},baseline}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/pricing/models/{id}/purchase-policy-preview": {
+      "post": {
+        "summary": "采购独立政策预演：只读，完整币种/维度/计量单位及有效窗，不换算不按金额猜来源",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "目录 public id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "policy",
+                  "reason"
+                ],
+                "properties": {
+                  "policy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "contract"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "inherit_vendor",
+                          "contract"
+                        ]
+                      },
+                      "contract": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "spec",
+                              "sourceRef",
+                              "validFrom",
+                              "validUntil",
+                              "onExpiry"
+                            ],
+                            "properties": {
+                              "spec": {
+                                "type": "object",
+                                "description": "完整 UpstreamBillingSpecV2；服务端同时严格校验 schema、币种、维度单位和分档结构"
+                              },
+                              "sourceRef": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "validFrom": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "validUntil": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "onExpiry": {
+                                "enum": [
+                                  "inherit_vendor",
+                                  "unavailable"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{policy,baseline,saleDiff,effective:{purchase,sale},impact}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid policy or incomplete units/window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "baseline conflict: reload and preview again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/pricing/models/{id}/purchase-policy": {
+      "put": {
+        "summary": "采购独立政策确认：ops写，三CAS+reason+confirmRead；政策、兼容投影、售价表、审计、outbox同事务，分发失败明确pending",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "目录 public id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "policy",
+                  "reason",
+                  "baseline",
+                  "confirmRead"
+                ],
+                "properties": {
+                  "policy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "contract"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "inherit_vendor",
+                          "contract"
+                        ]
+                      },
+                      "contract": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "spec",
+                              "sourceRef",
+                              "validFrom",
+                              "validUntil",
+                              "onExpiry"
+                            ],
+                            "properties": {
+                              "spec": {
+                                "type": "object",
+                                "description": "完整 UpstreamBillingSpecV2；服务端同时严格校验 schema、币种、维度单位和分档结构"
+                              },
+                              "sourceRef": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "validFrom": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "validUntil": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "onExpiry": {
+                                "enum": [
+                                  "inherit_vendor",
+                                  "unavailable"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "baseline": {
+                    "type": "object",
+                    "required": [
+                      "activeTableId",
+                      "markupFingerprint",
+                      "pricingFingerprint"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "activeTableId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      },
+                      "markupFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "pricingFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "confirmRead": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{changed,publicationId,distribution,policy,effective:{purchase,sale},baseline}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid policy or incomplete units/window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "baseline conflict: reload and preview again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/pricing/models/{id}/sale-policy-preview": {
+      "post": {
+        "summary": "售价独立政策预演：只读，完整币种/维度/计量单位及有效窗，不换算不按金额猜来源",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "目录 public id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "policy",
+                  "reason"
+                ],
+                "properties": {
+                  "policy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "fixed"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "derived",
+                          "fixed"
+                        ]
+                      },
+                      "fixed": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "price",
+                              "validFrom",
+                              "validUntil",
+                              "onExpiry"
+                            ],
+                            "properties": {
+                              "price": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "currency",
+                                  "inPerM",
+                                  "outPerM",
+                                  "cacheRPerM",
+                                  "cacheWPerM",
+                                  "mediaUnits"
+                                ],
+                                "properties": {
+                                  "currency": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CNY",
+                                      "USD"
+                                    ]
+                                  },
+                                  "inPerM": {
+                                    "type": "string"
+                                  },
+                                  "outPerM": {
+                                    "type": "string"
+                                  },
+                                  "cacheRPerM": {
+                                    "type": "string"
+                                  },
+                                  "cacheWPerM": {
+                                    "type": "string"
+                                  },
+                                  "mediaUnits": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "dim",
+                                            "unit",
+                                            "price"
+                                          ],
+                                          "properties": {
+                                            "dim": {
+                                              "type": "string"
+                                            },
+                                            "unit": {
+                                              "type": "string"
+                                            },
+                                            "price": {
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "validFrom": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "validUntil": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "onExpiry": {
+                                "enum": [
+                                  "derived",
+                                  "unavailable"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{policy,baseline,saleDiff,effective:{purchase,sale},impact}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid policy or incomplete units/window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "baseline conflict: reload and preview again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/v1/pricing/models/{id}/sale-policy": {
+      "put": {
+        "summary": "售价独立政策确认：ops写，三CAS+reason+confirmRead；政策、兼容投影、售价表、审计、outbox同事务，分发失败明确pending",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "目录 public id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "policy",
+                  "reason",
+                  "baseline",
+                  "confirmRead"
+                ],
+                "properties": {
+                  "policy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "mode",
+                      "fixed"
+                    ],
+                    "properties": {
+                      "mode": {
+                        "enum": [
+                          "derived",
+                          "fixed"
+                        ]
+                      },
+                      "fixed": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "price",
+                              "validFrom",
+                              "validUntil",
+                              "onExpiry"
+                            ],
+                            "properties": {
+                              "price": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "currency",
+                                  "inPerM",
+                                  "outPerM",
+                                  "cacheRPerM",
+                                  "cacheWPerM",
+                                  "mediaUnits"
+                                ],
+                                "properties": {
+                                  "currency": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CNY",
+                                      "USD"
+                                    ]
+                                  },
+                                  "inPerM": {
+                                    "type": "string"
+                                  },
+                                  "outPerM": {
+                                    "type": "string"
+                                  },
+                                  "cacheRPerM": {
+                                    "type": "string"
+                                  },
+                                  "cacheWPerM": {
+                                    "type": "string"
+                                  },
+                                  "mediaUnits": {
+                                    "anyOf": [
+                                      {
+                                        "type": "null"
+                                      },
+                                      {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "additionalProperties": false,
+                                          "required": [
+                                            "dim",
+                                            "unit",
+                                            "price"
+                                          ],
+                                          "properties": {
+                                            "dim": {
+                                              "type": "string"
+                                            },
+                                            "unit": {
+                                              "type": "string"
+                                            },
+                                            "price": {
+                                              "type": "string"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              "validFrom": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "validUntil": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "onExpiry": {
+                                "enum": [
+                                  "derived",
+                                  "unavailable"
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "baseline": {
+                    "type": "object",
+                    "required": [
+                      "activeTableId",
+                      "markupFingerprint",
+                      "pricingFingerprint"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "activeTableId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      },
+                      "markupFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      },
+                      "pricingFingerprint": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "confirmRead": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{changed,publicationId,distribution,policy,effective:{purchase,sale},baseline}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid policy or incomplete units/window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "baseline conflict: reload and preview again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/v1/pricing/models/{id}/spec-preview": {
       "post": {
         "summary": "改价预演(CW8 B9,§5.7 编辑闸,纯读零写):体携 {spec}(UpstreamBillingSpecV2)→ 深校验(schema + 结构不变量,不合格 400 携首错)+ 人话渲染 bullets/details + 与现役结构 diff(price-sync 同款中文 changes)+ 近 30 天真实用量重演算影响面(replayPriceImpact,与审阅台报告同引擎);写径前置强制预览的数据面",
@@ -13058,9 +14733,20 @@
     },
     "/admin/v1/pricing/models/{id}/spec": {
       "put": {
-        "summary": "采购 spec 手动写径(CW8 B9:纯价目落笔,恒不动画像其余键/恒不 stamp calibratedAt;体携 {spec, confirmRead:true};深校验 + 快照落笔(billing_spec_snapshots,时间线自此全覆盖)+ 审计 pricing.spec_update(携新旧指纹与人话 changes)+ bundle 失效;ADMIN_OPS)",
+        "summary": "兼容退役写口：保留ops鉴权，409要求独立采购/售价政策预演；旧原值、历史价表仍可查询",
         "tags": [
           "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "原资源id"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -13074,19 +14760,18 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "已写({fingerprint, changed, purchase})",
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           },
-          "400": {
-            "description": "bad_request(spec 校验不过 / confirmRead 缺席)",
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13096,7 +14781,7 @@
             }
           },
           "409": {
-            "description": "conflict(profile_invalid:存量画像坏形,先校准)",
+            "description": "pricing_policy_preview_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -13110,9 +14795,20 @@
     },
     "/admin/v1/pricing/models/{id}/spec-rollback": {
       "post": {
-        "summary": "采购 spec 一键回滚(CW8 B9,§5.8:体携 {fingerprint, confirmRead:true},目标快照按指纹重激活为现役 = 恒向前,快照/审计恒不物理删;跨模型指纹 409 snapshot_model_mismatch,已是现役 409 spec_already_active,存量坏形快照深校验兜底 409 snapshot_invalid;审计 pricing.spec_rollback;ADMIN_OPS)",
+        "summary": "兼容退役写口：保留ops鉴权，409要求独立采购/售价政策预演；旧原值、历史价表仍可查询",
         "tags": [
           "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "原资源id"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -13126,19 +14822,18 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "已回滚({fingerprint, changed, reactivatedFrom})",
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           },
-          "404": {
-            "description": "not_found(模型/快照)",
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13148,7 +14843,7 @@
             }
           },
           "409": {
-            "description": "conflict(snapshot_model_mismatch / spec_already_active / snapshot_invalid)",
+            "description": "pricing_policy_preview_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -13162,9 +14857,20 @@
     },
     "/admin/v1/pricing/models/{id}/enroll": {
       "post": {
-        "summary": "单模型入活动价表(拍板 4 号 2026-08-25,doc/66 §7.2 缺口卡:手工挂载模型的定价入表管理径;体携 {confirmRead:true};新行四价 = 现役 spec 顶档 × 生效乘数(repriceItem 单点),现役表全量 carry-over + 新行 → 新版本表 -en 族后缀(恒不原地改 active,撞名 .2/.3… 顺延)→ pricingGuard 双检 → 原子切换;审计 pricing.model_enroll + bundle 失效;ADMIN_OPS)",
+        "summary": "兼容退役写口：保留ops鉴权，409要求独立采购/售价政策预演；旧原值、历史价表仍可查询",
         "tags": [
           "admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "原资源id"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -13178,19 +14884,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "已入表({model, markup, sale 四价, table, carriedOver})",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "bad_request(confirmRead 缺席 / spec_not_derivable:无可派生价先落 spec)",
+          "401": {
+            "description": "unauthorized(x-tansr-admin-key 缺失 / 无效 / 到期 / 停用)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13199,8 +14894,8 @@
               }
             }
           },
-          "404": {
-            "description": "not_found(模型)",
+          "403": {
+            "description": "forbidden(角色矩阵无此动作权限)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13210,7 +14905,7 @@
             }
           },
           "409": {
-            "description": "conflict(no_active_table / already_priced)",
+            "description": "pricing_policy_preview_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -22727,6 +24422,38 @@
                         "maxChars": {
                           "description": "单请求输入字符帽(计费字符口径:1 汉字计 2,其余计 1;平台缺省 2000)",
                           "type": "number"
+                        },
+                        "inputLimit": {
+                          "additionalProperties": false,
+                          "description": "已确认的单段原子输入限制；两种帽同时生效，仅协商 tts-input-limit-v1 的音频客户端接收",
+                          "type": "object",
+                          "required": [
+                            "max",
+                            "unit"
+                          ],
+                          "properties": {
+                            "max": {
+                              "minimum": 1,
+                              "maximum": 9007199254740991,
+                              "type": "integer"
+                            },
+                            "unit": {
+                              "anyOf": [
+                                {
+                                  "const": "unicode_code_points",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "utf16_code_units",
+                                  "type": "string"
+                                },
+                                {
+                                  "const": "utf8_bytes",
+                                  "type": "string"
+                                }
+                              ]
+                            }
+                          }
                         }
                       }
                     },
@@ -25120,6 +26847,86 @@
                   }
                 }
               },
+              "csharp": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "clientDemo"
+                ],
+                "properties": {
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "go": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "clientDemo"
+                ],
+                "properties": {
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "rust": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "clientDemo"
+                ],
+                "properties": {
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "cpp": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "clientDemo"
+                ],
+                "properties": {
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
               "android": {
                 "additionalProperties": false,
                 "type": "object",
@@ -25183,6 +26990,38 @@
                     ]
                   }
                 }
+              },
+              "harmony": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "serverDemo",
+                  "clientDemo"
+                ],
+                "properties": {
+                  "serverDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "clientDemo": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
               }
             }
           },
@@ -25198,12 +27037,97 @@
         "type": "object",
         "required": [
           "windows",
+          "csharp",
+          "go",
+          "rust",
+          "cpp",
           "android",
           "ios",
+          "harmony",
           "revision"
         ],
         "properties": {
           "windows": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "csharp": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "go": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "rust": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "clientDemo"
+            ],
+            "properties": {
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "cpp": {
             "additionalProperties": false,
             "type": "object",
             "required": [
@@ -25287,9 +27211,556 @@
               }
             }
           },
+          "harmony": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "serverDemo",
+              "clientDemo"
+            ],
+            "properties": {
+              "serverDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "clientDemo": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
           "revision": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "SiteExperience": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "openSource",
+          "positioning",
+          "contact"
+        ],
+        "properties": {
+          "openSource": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "enabled",
+              "date",
+              "repositoryUrl"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "date": {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              "repositoryUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "positioning": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "developerChoice",
+              "shortestPath",
+              "leadership"
+            ],
+            "properties": {
+              "developerChoice": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "shortestPath": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "leadership": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "contact": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "customerServiceQrUrl",
+              "officialAccountQrUrl"
+            ],
+            "properties": {
+              "customerServiceQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "officialAccountQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "SiteExperiencePutRequest": {
+        "$id": "SiteExperiencePutRequest",
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expectedRevision",
+          "experience",
+          "reason"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0,
+            "type": "integer"
+          },
+          "experience": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "openSource",
+              "positioning",
+              "contact"
+            ],
+            "properties": {
+              "openSource": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "enabled",
+                  "date",
+                  "repositoryUrl"
+                ],
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "date": {
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "type": "string"
+                  },
+                  "repositoryUrl": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "positioning": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "developerChoice",
+                  "shortestPath",
+                  "leadership"
+                ],
+                "properties": {
+                  "developerChoice": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "zh",
+                      "en"
+                    ],
+                    "properties": {
+                      "zh": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      },
+                      "en": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "shortestPath": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "zh",
+                      "en"
+                    ],
+                    "properties": {
+                      "zh": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      },
+                      "en": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "leadership": {
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "zh",
+                      "en"
+                    ],
+                    "properties": {
+                      "zh": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      },
+                      "en": {
+                        "minLength": 1,
+                        "maxLength": 160,
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "contact": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "customerServiceQrUrl",
+                  "officialAccountQrUrl"
+                ],
+                "properties": {
+                  "customerServiceQrUrl": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "officialAccountQrUrl": {
+                    "anyOf": [
+                      {
+                        "maxLength": 2048,
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "reason": {
+            "minLength": 1,
+            "maxLength": 500,
+            "type": "string"
+          }
+        }
+      },
+      "SiteExperienceResponse": {
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "openSource",
+          "positioning",
+          "contact",
+          "revision"
+        ],
+        "properties": {
+          "openSource": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "enabled",
+              "date",
+              "repositoryUrl"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "date": {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              "repositoryUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "positioning": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "developerChoice",
+              "shortestPath",
+              "leadership"
+            ],
+            "properties": {
+              "developerChoice": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "shortestPath": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              },
+              "leadership": {
+                "additionalProperties": false,
+                "type": "object",
+                "required": [
+                  "zh",
+                  "en"
+                ],
+                "properties": {
+                  "zh": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "en": {
+                    "minLength": 1,
+                    "maxLength": 160,
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "contact": {
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "customerServiceQrUrl",
+              "officialAccountQrUrl"
+            ],
+            "properties": {
+              "customerServiceQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "officialAccountQrUrl": {
+                "anyOf": [
+                  {
+                    "maxLength": 2048,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "SiteConfigResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "beian",
+          "experience"
+        ],
+        "properties": {
+          "beian": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "icp",
+              "gongan"
+            ],
+            "properties": {
+              "icp": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "gongan": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "code",
+                      "text"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "pattern": "^\\d{6,32}$"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "experience": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SiteExperience"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -38355,9 +40826,13 @@
       "user.credit_adjust",
       "model_catalog.create",
       "model_catalog.update",
-      "model_catalog.profile_update",
+      "model_catalog.vendor_profile_version",
+      "model_catalog.custom_profile_update",
+      "model_catalog.profile_observation",
+      "pricing.official_publish",
+      "pricing.purchase_policy_update",
+      "pricing.sale_policy_update",
       "model_catalog.purge",
-      "model_catalog.face_cache_update",
       "model_endpoint.create",
       "model_endpoint.update",
       "model_endpoint.delete",

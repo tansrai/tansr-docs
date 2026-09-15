@@ -129,6 +129,7 @@ declare const IRBlockSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         data: string;
     }>]>, "many">;
     isError: z.ZodOptional<z.ZodBoolean>;
+    artifact: z.ZodOptional<z.ZodUnknown>;
 }, "strip", z.ZodTypeAny, {
     t: "tool_result";
     callId: string;
@@ -141,6 +142,7 @@ declare const IRBlockSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         data: string;
     })[];
     isError?: boolean | undefined;
+    artifact?: unknown;
 }, {
     t: "tool_result";
     callId: string;
@@ -153,6 +155,7 @@ declare const IRBlockSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
         data: string;
     })[];
     isError?: boolean | undefined;
+    artifact?: unknown;
 }>, z.ZodObject<{
     t: z.ZodLiteral<"image">;
     mime: z.ZodString;
@@ -250,6 +253,7 @@ declare const IRMessageSchema: z.ZodObject<{
             data: string;
         }>]>, "many">;
         isError: z.ZodOptional<z.ZodBoolean>;
+        artifact: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         t: "tool_result";
         callId: string;
@@ -262,6 +266,7 @@ declare const IRMessageSchema: z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     }, {
         t: "tool_result";
         callId: string;
@@ -274,6 +279,7 @@ declare const IRMessageSchema: z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     }>, z.ZodObject<{
         t: z.ZodLiteral<"image">;
         mime: z.ZodString;
@@ -334,6 +340,7 @@ declare const IRMessageSchema: z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     } | {
         t: "image";
         mime: string;
@@ -373,6 +380,7 @@ declare const IRMessageSchema: z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     } | {
         t: "image";
         mime: string;
@@ -535,6 +543,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             }>]>, "many">;
             isError: z.ZodOptional<z.ZodBoolean>;
+            artifact: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
             t: "tool_result";
             callId: string;
@@ -547,6 +556,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         }, {
             t: "tool_result";
             callId: string;
@@ -559,6 +569,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         }>, z.ZodObject<{
             t: z.ZodLiteral<"image">;
             mime: z.ZodString;
@@ -619,6 +630,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -658,6 +670,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -770,6 +783,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -834,6 +848,7 @@ declare const IRRequestSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -1040,6 +1055,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
             data: string;
         }>]>, "many">;
         isError: z.ZodOptional<z.ZodBoolean>;
+        artifact: z.ZodOptional<z.ZodUnknown>;
     }, "strip", z.ZodTypeAny, {
         t: "tool_result";
         callId: string;
@@ -1052,6 +1068,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     }, {
         t: "tool_result";
         callId: string;
@@ -1064,6 +1081,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     }>, z.ZodObject<{
         t: z.ZodLiteral<"image">;
         mime: z.ZodString;
@@ -1108,6 +1126,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     } | {
         t: "image";
         mime: string;
@@ -1144,6 +1163,7 @@ declare const IRStreamEventSchema: z.ZodDiscriminatedUnion<"t", [z.ZodObject<{
             data: string;
         })[];
         isError?: boolean | undefined;
+        artifact?: unknown;
     } | {
         t: "image";
         mime: string;
@@ -3587,7 +3607,7 @@ declare const JournalKindSchema: z.ZodEnum<["user_prompt", "assistant_message", 
 type JournalKind = z.infer<typeof JournalKindSchema>;
 /** 日志记录统一包络:会话 / 分支 / 序号 / 种类 / 载荷 / 可见性 / 完整性链 / 尾行完整性标记。 */
 declare const JournalRecordSchema: z.ZodObject<{
-    schemaVersion: z.ZodLiteral<1>;
+    schemaVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     eventId: z.ZodString;
     sessionId: z.ZodString;
     /** 分支 id;主干为 "main" */
@@ -3635,7 +3655,7 @@ declare const JournalRecordSchema: z.ZodObject<{
     kind: "tool_result" | "event" | "user_prompt" | "assistant_message" | "queue_enqueue" | "queue_ack" | "compact_boundary" | "fork" | "file_checkpoint";
     sessionId: string;
     seq: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     eventId: string;
     branchId: string;
     parentEventId: string | null;
@@ -3656,7 +3676,7 @@ declare const JournalRecordSchema: z.ZodObject<{
     kind: "tool_result" | "event" | "user_prompt" | "assistant_message" | "queue_enqueue" | "queue_ack" | "compact_boundary" | "fork" | "file_checkpoint";
     sessionId: string;
     seq: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     eventId: string;
     branchId: string;
     parentEventId: string | null;
@@ -7193,7 +7213,7 @@ declare const SegmentEntrySchema: z.ZodObject<{
 type SegmentEntry = z.infer<typeof SegmentEntrySchema>;
 /** 清单 = 提交点(一卷一份;整体重写;CAS) */
 declare const SegmentManifestSchema: z.ZodObject<{
-    formatVersion: z.ZodLiteral<1>;
+    formatVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     sessionId: z.ZodString;
     /** sha256(endUserId) 前 16 hex(doc/98 §九);sdk 单租户形态 'local' */
     endUserKey: z.ZodString;
@@ -7318,7 +7338,7 @@ declare const SegmentManifestSchema: z.ZodObject<{
         platformSessionId: z.ZodOptional<z.ZodString>;
     }, z.ZodTypeAny, "passthrough">>>;
 }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
-    formatVersion: z.ZodLiteral<1>;
+    formatVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     sessionId: z.ZodString;
     /** sha256(endUserId) 前 16 hex(doc/98 §九);sdk 单租户形态 'local' */
     endUserKey: z.ZodString;
@@ -7443,7 +7463,7 @@ declare const SegmentManifestSchema: z.ZodObject<{
         platformSessionId: z.ZodOptional<z.ZodString>;
     }, z.ZodTypeAny, "passthrough">>>;
 }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
-    formatVersion: z.ZodLiteral<1>;
+    formatVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     sessionId: z.ZodString;
     /** sha256(endUserId) 前 16 hex(doc/98 §九);sdk 单租户形态 'local' */
     endUserKey: z.ZodString;
@@ -7675,6 +7695,18 @@ interface AudioAsrConstraints {
  * TTS(文字转语音)模型受理约束(doc/123 §3.4):音色表(voice 缺席 = defaultVoice;非表内
  * 音色 400 列出可选)/ 受理格式(家族不受理的格式按面档回落,如 dashscope 恒 wav)/ 字数帽。
  */
+/** 验证语音模型的原子输入上限及其计数单位，独立于加权字符预算。 */
+declare const AudioTtsInputLimitSchema: z.ZodObject<{
+    max: z.ZodNumber;
+    unit: z.ZodEnum<["unicode_code_points", "utf16_code_units", "utf8_bytes"]>;
+}, "strict", z.ZodTypeAny, {
+    max: number;
+    unit: "unicode_code_points" | "utf16_code_units" | "utf8_bytes";
+}, {
+    max: number;
+    unit: "unicode_code_points" | "utf16_code_units" | "utf8_bytes";
+}>;
+/** 语音模型的可用音色、格式、加权字符预算及原子输入上限。 */
 interface AudioTtsConstraints {
     voices: Array<{
         id: string;
@@ -7684,6 +7716,8 @@ interface AudioTtsConstraints {
     defaultVoice: string;
     formats: string[];
     maxChars: number;
+    /** 已确认单位的原子输入帽；缺席未知，在场坏形不可丢弃后放行。 */
+    inputLimit?: z.infer<typeof AudioTtsInputLimitSchema>;
 }
 /** 图片模型目录条目:通用描述符 + 图片受理约束。 */
 type ImageModelDescriptor = MediaModelDescriptor<ImageModelConstraints>;
@@ -12131,7 +12165,8 @@ interface QueryHandle {
  *   (引擎 decide 内先降、归因 'mode' 且保留 matchedRule),该模式下引擎不再
  *   产出 ask,本降级分支自然不触达——两机制叠加不冲突,降级保留为无询问面
  *   的兜底(hook 升格的 ask 等门面级 ask 仍经此路);
- * - 未注入 PermissionGate 时全放行(向后兼容既有测试与早期集成)。
+ * - 生产 DispatchingToolExecutor 构造时必须注入 PermissionGate;无门构造会抛错。
+ *   仅测试显式使用 createUnsafeExecutorWithoutGate,不能作为宿主默认装配。
  */
 
 /** 门面决策:decision 三态 + 决策来源(全部落审计,见 protocol DecisionSource) */
@@ -13898,6 +13933,33 @@ interface SessionStoreCoreWarning {
     detail?: Record<string, unknown>;
 }
 
+/** 宿主在启用策略前核对已装运行包能力,防旧包静默忽略新增 options。 */
+declare const SESSION_RECOVERY_VERSION = 1;
+/** 在完整校验链中隔离确定无效的消息,并保存原始证据与恢复通知。 */
+interface SessionRecoveryPolicy {
+    /** 首版仅容忍完整校验链中的确定坏 IR,不包含断链/缺段恢复。 */
+    mode: 'verified-ir';
+    /** 原始证据目录,必须位于会话目录之外;缺省为同级 .session-recovery-quarantine。 */
+    quarantineDir?: string;
+    /** 不含消息正文;回调抛错会使本次读取失败,不得静默失去降级通知。 */
+    onRecovery?: (report: SessionRecoveryReport) => void | Promise<void>;
+}
+/** 描述已隔离消息的数量、保全位置和内容指纹,不包含消息正文。 */
+interface SessionRecoveryReport {
+    mode: 'verified-ir';
+    sessionId: string;
+    reason: 'invalid_ir_message';
+    droppedMessages: number;
+    recoveredMessages: number;
+    synthesizedToolResults: number;
+    droppedRecords: Array<{
+        seq: number;
+        eventId: string;
+    }>;
+    quarantinePath: string;
+    fingerprint: string;
+}
+
 /**
  * 会话历史分层存储 · 调用契约(接口先冻)。
  *
@@ -13933,7 +13995,7 @@ declare class StoreError extends Error {
     readonly retryAfterMs: number | undefined;
     constructor(kind: StoreErrorKind, message: string, options?: StoreErrorOptions);
 }
-/** 任意异常 → StoreError(非 StoreError 一律 transient) */
+/** 任意异常 → StoreError;兼容 SDK/serve 独立打包产生的同契约错误类。 */
 declare function toStoreError(error: unknown): StoreError;
 /** 字节对象的元数据:体积、内容类型、sha256 内容寻址与可选的生命周期 / 标签 / CAS 令牌。 */
 interface BlobMeta {
@@ -14071,8 +14133,15 @@ interface SessionHistoryStore {
 }
 /** 可选的会话索引存储:为多副本共享元数据,或为不支持条件写的对象存储提供 CAS 提交点。 */
 interface SessionIndexStore {
-    /** expectedGeneration 不匹配须抛 precondition_failed */
-    upsert(meta: StoredSessionMeta, expectedGeneration?: number): Promise<void>;
+    /**
+     * expectedGeneration 不匹配须抛 precondition_failed。支持跨卷严格 CAS 的实现还须在同一提交点
+     * 核对 expectedIdentity;数字代际可随换卷重置,不能单独防止跨卷 ABA。
+     * 第三参为加法扩展,旧实现仍可忽略,其跨卷保证不因此自动增强。
+     */
+    upsert(meta: StoredSessionMeta, expectedGeneration?: number, expectedIdentity?: {
+        volumeId: string;
+        manifestKey?: string;
+    }): Promise<void>;
     get(endUserKey: string, sessionId: string): Promise<StoredSessionMeta | null>;
     list(endUserKey: string, cursor?: string): AsyncIterable<StoredSessionMeta>;
     remove(endUserKey: string, sessionId: string): Promise<void>;
@@ -14326,7 +14395,7 @@ declare const ContextCheckpointTriggerSchema: z.ZodEnum<["manual", "pre_compacti
 type ContextCheckpointTrigger = z.infer<typeof ContextCheckpointTriggerSchema>;
 /** 快照头部(旁挂 .meta.json 的全部内容 = 快照体去掉 messages) */
 declare const ContextCheckpointMetaSchema: z.ZodObject<{
-    schemaVersion: z.ZodLiteral<1>;
+    schemaVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     /** ULID(时间有序,列举即时间线);兼作文件名段 */
     checkpointId: z.ZodString;
     sessionId: z.ZodString;
@@ -14364,7 +14433,7 @@ declare const ContextCheckpointMetaSchema: z.ZodObject<{
     checkpointId: string;
     trigger: "manual" | "pre_compaction" | "pre_clear" | "pre_restore";
     messageCount: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     createdAt: string;
     compactionId?: string | undefined;
     label?: string | undefined;
@@ -14381,7 +14450,7 @@ declare const ContextCheckpointMetaSchema: z.ZodObject<{
     checkpointId: string;
     trigger: "manual" | "pre_compaction" | "pre_clear" | "pre_restore";
     messageCount: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     createdAt: string;
     compactionId?: string | undefined;
     label?: string | undefined;
@@ -14396,7 +14465,7 @@ declare const ContextCheckpointMetaSchema: z.ZodObject<{
 type ContextCheckpointMeta = z.infer<typeof ContextCheckpointMetaSchema>;
 /** 快照对象(逻辑形:messages 为可直接作 initialMessages 的内联 IR 历史) */
 declare const ContextCheckpointSchema: z.ZodObject<{
-    schemaVersion: z.ZodLiteral<1>;
+    schemaVersion: z.ZodUnion<[z.ZodLiteral<1>, z.ZodLiteral<2>]>;
     /** ULID(时间有序,列举即时间线);兼作文件名段 */
     checkpointId: z.ZodString;
     sessionId: z.ZodString;
@@ -14505,6 +14574,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             }>]>, "many">;
             isError: z.ZodOptional<z.ZodBoolean>;
+            artifact: z.ZodOptional<z.ZodUnknown>;
         }, "strip", z.ZodTypeAny, {
             t: "tool_result";
             callId: string;
@@ -14517,6 +14587,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         }, {
             t: "tool_result";
             callId: string;
@@ -14529,6 +14600,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         }>, z.ZodObject<{
             t: z.ZodLiteral<"image">;
             mime: z.ZodString;
@@ -14582,6 +14654,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -14621,6 +14694,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -14662,6 +14736,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -14677,7 +14752,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
     checkpointId: string;
     trigger: "manual" | "pre_compaction" | "pre_clear" | "pre_restore";
     messageCount: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     createdAt: string;
     compactionId?: string | undefined;
     label?: string | undefined;
@@ -14719,6 +14794,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
                 data: string;
             })[];
             isError?: boolean | undefined;
+            artifact?: unknown;
         } | {
             t: "image";
             mime: string;
@@ -14734,7 +14810,7 @@ declare const ContextCheckpointSchema: z.ZodObject<{
     checkpointId: string;
     trigger: "manual" | "pre_compaction" | "pre_clear" | "pre_restore";
     messageCount: number;
-    schemaVersion: 1;
+    schemaVersion: 1 | 2;
     createdAt: string;
     compactionId?: string | undefined;
     label?: string | undefined;
@@ -15614,6 +15690,7 @@ interface SpeechInputPlan {
     text: string;
     estimatedCharacters: number;
     maxCharacters: number;
+    inputLimit?: AudioTtsConstraints['inputLimit'];
     segments: string[];
 }
 /** 朗读准备结果；拒绝时返回原因、估算字符数及已知上限，不调用语音服务。 */
@@ -15622,13 +15699,14 @@ type SpeechInputPlanResult = {
     plan: SpeechInputPlan;
 } | {
     status: 'rejected';
-    reason: 'empty_input' | 'unknown_limit' | 'invalid_configuration' | 'input_too_large' | 'segmentation_required' | 'segment_limit';
+    reason: 'empty_input' | 'unknown_limit' | 'invalid_configuration' | 'input_too_large' | 'segmentation_required' | 'segment_limit' | 'empty_segment';
     estimatedCharacters: number;
     maxCharacters: number | null;
 };
 /** 去除首尾空白后校验朗读文本，仅显式允许时按 Unicode 码点完整分段；每段同时遵守模型加权帽与请求体的 20000 UTF-16 单元帽，不调用计费端点。 */
 declare function planSpeechInput(input: string, options?: {
     maxCharacters?: number;
+    inputLimit?: AudioTtsConstraints['inputLimit'];
     segment?: boolean;
     maxTotalCharacters?: number;
     maxSegments?: number;
@@ -19455,7 +19533,7 @@ interface DefineToolOptions<Args = Record<string, unknown>> {
     parameters?: Record<string, ToolParameterSpec>;
     /** zod 直给档(高级;与 parameters 互斥) */
     schema?: z.ZodType<Args>;
-    /** 只读声明(true = 可并发、plan 模式放行);缺省 false(保守按写工具对待) */
+    /** 只读事实声明;缺省 false。参与权限判定,不等于默认免询或允许并发;显式收紧仍优先。 */
     readOnly?: boolean;
     /**
      * 效应声明(应用协议 v1):`irreversible`(不可逆)/
@@ -21040,7 +21118,7 @@ declare const HEADER_CLIENT_FEATURES = "x-tansr-client-features";
  * 本 SDK 可理解的可选 bundle 扩展词表:
  * - `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`。
  */
-declare const CLIENT_FEATURES: readonly ["platform-audio"];
+declare const CLIENT_FEATURES: readonly ["platform-audio", "tts-input-limit-v1"];
 /** 客户端可选扩展词元(CLIENT_FEATURES 的元素类型) */
 type ClientFeature = (typeof CLIENT_FEATURES)[number];
 /** 环2 工具位键(`AppCapabilities.tools` 的键) */
@@ -23955,6 +24033,8 @@ declare function applicationPromptFailureMessage(error: unknown): string;
 
 /** `createFileSessionStore` 的选项:存储根目录 + 可选封段阈值、冷层分层存储与可观测回调 */
 interface CreateFileSessionStoreOptions {
+    /** 显式启用有界容错;缺省严格读取。onRecovery 缺省时输出开发者 warning。 */
+    recovery?: SessionRecoveryPolicy;
     /** 存储根目录(显式传入,恒不隐式扫用户目录;Electron 场景传 userData) */
     dir: string;
     /**
@@ -24093,6 +24173,8 @@ interface UIToolCallPart {
     readonly result?: unknown;
     /** tool.completed 的模型可见文本投影(ToolResult content) */
     readonly resultText?: string;
+    /** 历史携产物但无法安全恢复预览；不改变工具完成状态，旧无产物历史不设置。 */
+    readonly artifactUnavailable?: boolean;
     /** tool.failed 的错误分类(协议五枚举,原样透传) */
     readonly errorType?: string;
     readonly errorMessage?: string;
@@ -24287,7 +24369,7 @@ declare function markSourceFailure(state: SessionViewReducerState, error: unknow
  * 语义:治理后历史快照(IRMessage[],pairing 已保证配对完整)→ 定稿消息
  * 投影(无流式簿记):
  * - text/thinking 空文本不建 part(与 reducer「空块定稿即删」同律);
- * - tool_call 与 tool_result 按 callId 全卷配对(后写者胜):有 tool_result 按
+ * - tool_call 与 tool_result 按出现次序无歧义配对:有 tool_result 按
  *   isError 落 completed/failed,resultText = tool_result 的 text 项拼接(空则缺席);
  *   无 tool_result(断尾)落 aborted;
  * - 纯 tool_result 消息不落 user 气泡(tool_result 是协议载体不是用户话语);
@@ -24658,5 +24740,5 @@ declare function createApplicationPromptRefresher(options: {
     etag?: string;
 }): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
 
-export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppConfigRequestError, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, applicationPromptFailureMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, countSpeechCharacters, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, describeApplicationPromptFailure, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planSpeechInput, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptFailure, ApplicationPromptFailureReason, ApplicationPromptInfo, ApplicationPromptRetry, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, ContextBudgetState, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, ModelTransitionBackup, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SendBlocksResult, SequentialToolHandler, SequentialToolResult, SessionBudgetOptions, SessionCheckpointOptions, SessionContextState, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionModelState, SessionNotice, SessionRecord, SessionRecordMeta, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionUserBlock, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechInputPlan, SpeechInputPlanResult, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SwitchModelOptions, SwitchModelResult, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
+export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppConfigRequestError, AppPlatformSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformRequestError, QueueChannel, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SESSION_RECOVERY_VERSION, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, applicationPromptFailureMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, countSpeechCharacters, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, describeApplicationPromptFailure, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planSpeechInput, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdjudicator, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptFailure, ApplicationPromptFailureReason, ApplicationPromptInfo, ApplicationPromptRetry, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, ContextBudgetState, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, ModelTransitionBackup, Narrator, NarratorOptions, NarratorVerbosity, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformToolContext, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RenderPayloadOptions, RequestPlatformAudioOptions, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SendBlocksResult, SequentialToolHandler, SequentialToolResult, SessionBudgetOptions, SessionCheckpointOptions, SessionContextState, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionModelState, SessionNotice, SessionRecord, SessionRecordMeta, SessionRecoveryPolicy, SessionRecoveryReport, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionUserBlock, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechInputPlan, SpeechInputPlanResult, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SwitchModelOptions, SwitchModelResult, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility };
