@@ -10,6 +10,7 @@
  *      候选段标题 `## <version> — 候选…`、版本名 `Unreleased` / `未发布…`、或版本段首段引言含「未发」;未发版本恒不带日期。
  *   2. `<details><summary>工程变更原文(CHANGELOG)</summary> … </details>` 折叠段——CHANGELOG 去 H1 后逐字放入,
  *      仅把标题层级整体下调两级(`##` → `####`),免得折叠段的版本标题挤进本页目录(Starlight 目录只取 h2 / h3);
+ *      指向源码仓内文件的相对链接改为「label(`path`)」纯文本(资料站内解析不到,见 neutralizeRelativeLinks);
  *      折叠段以 `<!-- internal-changelog -->` / `<!-- /internal-changelog -->` 包夹,内部编号门(scripts/check/release-notes.mjs)据此跳过。
  *   CHANGELOG 首行 `# <包名> Changelog` 作为页题进 frontmatter。只加 frontmatter(契约 3)与生成头(契约 4)。
  *
@@ -111,6 +112,29 @@ export function demoteHeadings(md, by = 2) {
     .join('\n');
 }
 
+/**
+ * 折叠段内的仓内相对链接(`[label](doc/release/x.md)`,目标非 http(s):// 、非站内 `/`、非 `#` 锚、非 mailto:)改为
+ * 「label(`target`)」纯文本:CHANGELOG 里这类链接指向源码仓内文件,放进资料站会解析成站内死链(links 门 2026-09-15 实测)。
+ * 围栏代码块内不动;图片形 `![alt](path)` 同样处理。
+ */
+export function neutralizeRelativeLinks(md) {
+  let inFence = false;
+  const isExternal = (target) => /^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(target.trim());
+  return md
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      if (inFence) return line;
+      return line.replace(/!?\[([^\]\n]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (whole, label, target) =>
+        isExternal(target) ? whole : `${label}(\`${target}\`)`,
+      );
+    })
+    .join('\n');
+}
+
 function versionHeading(section, entry) {
   const date = entry?.date ?? section.date;
   // 未发版本恒不带日期,一律以「(未发)」后缀标注(含版本名本身为 Unreleased / 未发布… 的段,形制统一)。
@@ -173,11 +197,11 @@ export function render({ pkg, text, notes, lastVerified }) {
   out.push('<details>');
   out.push(`<summary>${DETAILS_SUMMARY}</summary>`);
   out.push('');
-  out.push('> 以下为工程变更原文,逐字取自包内 CHANGELOG(面向贡献者,含内部编号);仅标题层级整体下调两级。');
+  out.push('> 以下为工程变更原文,逐字取自包内 CHANGELOG(面向贡献者,含内部编号);仅标题层级整体下调两级,指向源码仓内文件的相对链接改为纯文本路径。');
   out.push('');
   out.push(INTERNAL_OPEN);
   out.push('');
-  out.push(demoteHeadings(body.replace(/\n+$/, '')));
+  out.push(demoteHeadings(neutralizeRelativeLinks(body.replace(/\n+$/, ''))));
   out.push('');
   out.push(INTERNAL_CLOSE);
   out.push('');

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { generate, PACKAGES, parseVersionSections, renderUserSection } from './releases.mjs';
+import { generate, neutralizeRelativeLinks, PACKAGES, parseVersionSections, renderUserSection } from './releases.mjs';
 import { runReleaseNotesCheck } from '../check/release-notes.mjs';
 
 // Exact headings from tansr-cli main 5d235a7e's three release changelogs.
@@ -67,6 +67,25 @@ test('releases em-dash extension rejects non-ISO and impossible dates without gu
     assert.deepEqual(parseVersionSections(`## 0.13.0 — ${suffix}\n\n- 内容。\n`), [], suffix);
   }
   assert.deepEqual(parseVersionSections('## 0.13.0 - 2026-09-10\n\n- 内容。\n'), []);
+});
+
+// Exact link shapes from tansr-cli main 76e3c0df's packages/cli/CHANGELOG.md (0.7.0 section, REL-06 line).
+test('releases folded CHANGELOG turns repo-relative links into plain text and leaves external / site / anchor links alone', () => {
+  const raw = '见 [CLI 回执](doc/release/cli-0.7.0.md)及 [四包发布登记](doc/release/README.md)，见[公开消费验收](doc/release/REL-06-npm公开发布验收-2026-09-14.md)。';
+  assert.equal(
+    neutralizeRelativeLinks(raw),
+    '见 CLI 回执(`doc/release/cli-0.7.0.md`)及 四包发布登记(`doc/release/README.md`)，见公开消费验收(`doc/release/REL-06-npm公开发布验收-2026-09-14.md`)。',
+  );
+  for (const keep of [
+    '[npm](https://www.npmjs.com/package/@tansr/cli)',
+    '[安全页](/security/#项目层-hooks)',
+    '[同页锚](#0-7-0)',
+    '[邮件](mailto:support@tansr.com)',
+  ]) assert.equal(neutralizeRelativeLinks(keep), keep, keep);
+  // Images and titled links are neutralized the same way; fenced code is untouched.
+  assert.equal(neutralizeRelativeLinks('![图](img/a.png "标题")'), '图(`img/a.png`)');
+  const fenced = '```md\n[x](doc/y.md)\n```\n[z](doc/z.md)';
+  assert.equal(neutralizeRelativeLinks(fenced), '```md\n[x](doc/y.md)\n```\nz(`doc/z.md`)');
 });
 
 test('releases generation and coverage gate include all three current versions and explicit historical candidates', () => {

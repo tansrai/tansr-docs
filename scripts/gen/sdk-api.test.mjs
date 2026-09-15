@@ -14,9 +14,11 @@ const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
  * tansr-cli@c5219e02 再 vendor(sdk 0.14.0 候选)新增 5 值 + 14 类型 = 525:值 AppConfigRequestError / applicationPromptFailureMessage /
  * countSpeechCharacters / describeApplicationPromptFailure / planSpeechInput;类型 ApplicationPromptFailure(+Reason / Retry)/ ContextBudgetState /
  * ModelTransitionBackup / SendBlocksResult / SessionBudgetOptions / SessionContextState / SessionModelState / SessionUserBlock /
- * SpeechInputPlan(+Result)/ SwitchModelOptions / SwitchModelResult;零删除)。
+ * SpeechInputPlan(+Result)/ SwitchModelOptions / SwitchModelResult;零删除);
+ * tansr-cli@76e3c0df 再 vendor(sdk 0.16.0 已发)新增 1 值 + 2 类型 = 528:值 SESSION_RECOVERY_VERSION;类型 SessionRecoveryPolicy /
+ * SessionRecoveryReport(0.15.0 文件存储有界容错读取);零删除。
  */
-export const EXPECTED_EXPORTS = 525;
+export const EXPECTED_EXPORTS = 528;
 
 function fm(content) {
   const lines = content.split('\n');
@@ -25,9 +27,11 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 525(值198 · 类型327)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 528(值199 · 类型329)', () => {
   const c = countExports(dts);
-  assert.deepEqual(c, { values: 198, types: 327, total: EXPECTED_EXPORTS });
+  assert.deepEqual(c, { values: 199, types: 329, total: EXPECTED_EXPORTS });
+  const valueExports = dts.match(/^export \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
+  assert.ok(valueExports?.includes('SESSION_RECOVERY_VERSION'), 'sdk 0.15.0 起导出 SESSION_RECOVERY_VERSION');
   const typeExports = dts.match(/^export type \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(typeExports, '须保留独立的类型导出行');
   assert.deepEqual(typeExports.filter((name) => name.startsWith('SessionInput')).sort(), [
