@@ -85,7 +85,7 @@ tansr doctor --json   # 机器可读
 
 **セッションサービス（`@tansr/serve`）**：まず `GET /readyz`（503 は `reasons` 付き）を見て、次に構造化ログの `request.completed` / `store.commit_failed` / `session.rejected` を見ます。レスポンスヘッダー `x-request-id` で関連付けます。`resume` が常に `409 resume_unavailable` = store を接続していない。`500 store_corrupted` は共有ストレージディレクトリ（安全でない構成）でよく起きます。セッション作成時の `503 upstream_unavailable` はプラットフォーム側のトークン発行が利用不可、`503 overloaded` はこのマシンの受け入れ上限、`503 draining` はグレースフルシャットダウン中です。
 
-**モバイル（Android / iOS）**：まず `connectionState` を見ます。`Retrying` は正常な L1 再接続、`Recovering` は L2 再構築。`AuthExpired → Failed(Unauthorized)` はトークンを 2 回更新してもまだ 401 で、ログイン状態を直してから明示的に `start()` します。接続するとすぐ 401 になるのは、通常 `authProvider` が渡すヘッダーをサーバー側の `authenticate` が認めていないためです。エミュレーターから接続できないのは、通常 Android で `10.0.2.2` ではなく `127.0.0.1` を使っているためです。
+**モバイル（Android / iOS / HarmonyOS）**：まず接続状態を見ます。Android / iOS では `connectionState` を見ます。`Retrying` は正常な L1 再接続、`Recovering` は L2 再構築。`AuthExpired → Failed(Unauthorized)` はトークンを 2 回更新してもまだ 401 で、ログイン状態を直してから明示的に `start()` します。HarmonyOS では `session.onState` の `retrying` / `recovering` / `failed` を見ます。接続するとすぐ 401 になるのは、通常認証ヘッダーをサーバー側の `authenticate` が認めていないためです。エミュレーターから接続できない場合、Android では `10.0.2.2` ではなく `127.0.0.1` を使っていることが多く、HarmonyOS のループバックはローカルデバッグだけであり、開発マシンのプライベートアドレスへ届くには `allowPrivateNetworkHttp` が必要です。
 
 ## これを持ってサポートに連絡する
 

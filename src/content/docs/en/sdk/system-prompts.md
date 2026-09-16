@@ -7,6 +7,7 @@ related:
   - getting-started/sdk
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - sdk/platform-bundle
   - sdk/sessions-and-events
   - security
@@ -185,9 +186,9 @@ export async function answer(
 
 `resolveApplicationSystem` only selects, copies, and concatenates segments. It performs no network request, permission check, or conflict resolution. If this low-level host needs tool guidance, assemble applicable instructions after the host notes yourself.
 
-## Android / iOS: configure the serve host
+## Android / iOS / HarmonyOS: configure the serve host
 
-Android and iOS are `/v2` thin clients; your `@tansr/serve` runs the main agent. `CreateSessionRequest(prompt=...)` and `session.send(...)` provide user messages. **They do not configure `system` or `systemAppend` through `/v2`.**
+Android, iOS and HarmonyOS are `/v2` thin clients; your `@tansr/serve` runs the main agent. Mobile clients send ordinary user messages and **do not configure `system` or `systemAppend` through `/v2`.** Android / iOS use `CreateSessionRequest(prompt=...)` and `session.send(...)`; HarmonyOS uses `createSession` and `session.send(...)`.
 
 Omit `platform.system` for a platform-managed role and put host notes in `platform.systemAppend`. Configure `platform.system` only for code-managed business guidance; the same truth table applies.
 
@@ -215,7 +216,7 @@ const build = createAgentSessionFactory({
 // 完整 authenticate 与启动示例见“会话服务 5 分钟跑通”。
 ```
 
-Continue with the [session-service quickstart](/en/getting-started/serve/) and [Android / iOS quickstart](/en/getting-started/android/). Appkeys and platform tokens remain in serve; the device uses your own application login state.
+Continue with the [session-service quickstart](/en/getting-started/serve/), [Android / iOS quickstart](/en/getting-started/android/), and [HarmonyOS SDK quickstart](/en/getting-started/harmony/). Appkeys and platform tokens remain in serve; the device uses your own application login state.
 
 ## When changes take effect
 

@@ -7,6 +7,7 @@ related:
   - getting-started/sdk
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - sdk/platform-bundle
   - sdk/sessions-and-events
   - security
@@ -185,9 +186,9 @@ export async function answer(
 
 `resolveApplicationSystem`은 세그먼트를 선택, 복사, 결합만 하며, 네트워크를 읽지 않고, 업무 권한을 검증하지 않고, 텍스트 충돌을 해결하지 않습니다. 호출자가 도구 지침을 원하면 호스트 지침 뒤에 해당 내용을 직접 어셈블리해야 합니다.
 
-## Android / iOS: serve 호스트에서 설정
+## Android / iOS / HarmonyOS: serve 호스트에서 설정
 
-Android / iOS는 `/v2` 얇은 클라이언트이며, 메인 에이전트는 당신의 `@tansr/serve`에서 실행됩니다. 모바일은 `CreateSessionRequest(prompt=...)`, `session.send(...)`로 일반 사용자 메시지를 보내며, **`/v2`를 통해 `system`이나 `systemAppend`를 설정하지 않습니다.**
+Android / iOS / HarmonyOS는 `/v2` 얇은 클라이언트이며, 메인 에이전트는 당신의 `@tansr/serve`에서 실행됩니다. 모바일은 일반 사용자 메시지를 보내며, **`/v2`를 통해 `system`이나 `systemAppend`를 설정하지 않습니다.** Android / iOS는 `CreateSessionRequest(prompt=...)`, `session.send(...)`를 쓰고, HarmonyOS는 `createSession`, `session.send(...)`를 씁니다.
 
 플랫폼 통일 역할을 사용할 때는 `platform.system`을 생략합니다. 호스트 설명은 `platform.systemAppend`에 둡니다. 코드로 관리하는 업무 역할이 필요할 때만 `platform.system`을 설정하며, 이것은 같은 진리표를 따릅니다.
 
@@ -215,7 +216,7 @@ const build = createAgentSessionFactory({
 // 完整 authenticate 与启动示例见“会话服务 5 分钟跑通”。
 ```
 
-[세션 서비스 빠른 시작](/ko/getting-started/serve/)과 [Android / iOS 빠른 시작](/ko/getting-started/android/)을 참고하세요. appkey와 플랫폼 단기 토큰은 serve에 남고, 기기는 당신의 업무 로그인 상태만 사용합니다.
+[세션 서비스 빠른 시작](/ko/getting-started/serve/), [Android / iOS 빠른 시작](/ko/getting-started/android/), [HarmonyOS SDK 빠른 시작](/ko/getting-started/harmony/)을 참고하세요. appkey와 플랫폼 단기 토큰은 serve에 남고, 기기는 당신의 업무 로그인 상태만 사용합니다.
 
 ## 수정 후 언제 적용되는가
 

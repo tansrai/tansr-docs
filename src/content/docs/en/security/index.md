@@ -93,7 +93,7 @@ The CLI adds one more layer of redaction discipline as a safety net: keys in rep
 
 ### On the device
 
-The Android / iOS SDKs cache no credentials; view state is in memory; whether to keep the sessionId locally (for resume after a cold start) is your decision — store only the id, not content, not credentials.
+The Android / iOS / HarmonyOS SDKs cache no credentials; view state is in memory; whether to keep the sessionId locally (for resume after a cold start) is your decision — store only the id, not content, not credentials.
 
 ## Rotation and revocation: how each credential is replaced
 

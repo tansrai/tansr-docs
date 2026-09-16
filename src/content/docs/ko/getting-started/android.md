@@ -7,6 +7,8 @@ related:
   - sdk/system-prompts
   - android
   - ios
+  - harmony
+  - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
 sources:
@@ -153,5 +155,5 @@ iOS 특유의 주의점 두 가지: 로컬 통합 테스트에서 평문 http를
 
 ## 다음 단계
 
-- [Android 연동 가이드](/ko/android/)와 [iOS 연동 가이드](/ko/ios/): 이벤트 리덕션, 오류 표시, 오프라인과 포그라운드 / 백그라운드, 음성 두 체인, 푸시 웨이크업.
+- [Android 연동 가이드](/ko/android/), [iOS 연동 가이드](/ko/ios/), [HarmonyOS 연동 가이드](/ko/harmony/): 이벤트 리덕션, 오류 표시, 오프라인과 포그라운드 / 백그라운드, 음성 두 체인, 푸시 웨이크업.
 - [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/): 서버 쪽 후반에서 턴 종료 알림을 당신의 푸시 백엔드에 넘기는 방법.

@@ -10,6 +10,7 @@ related:
   - serve/retention-and-governance
   - serve/env
   - getting-started/android
+  - getting-started/harmony
 sources:
   - tansr-cli:packages/server/README.md
   - tansr-cli:examples/serve-demo/README.md
@@ -21,7 +22,7 @@ lastVerified: '2026-09-15'
 
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes the `/v2` multi-session REST + SSE protocol surface; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance.
 
-The Android / iOS SDKs connect to this service.
+The Android / iOS / HarmonyOS SDKs connect to this service.
 
 ## Configure the application role on the platform or host
 
@@ -32,7 +33,7 @@ These options are available since `@tansr/serve` 0.8.0; the platform side has be
 ## Prerequisites
 
 - Node.js ≥ 22.19.
-- In the console, create a **mobile app** (for Android / iOS) or a server app and obtain `appid` and `appkey`.
+- In the console, create a **mobile app** (for Android / iOS / HarmonyOS) or a server app and obtain `appid` and `appkey`.
 - Your own login system: the engine needs you to map a request to an `endUserId`, nothing more.
 
 ## Install

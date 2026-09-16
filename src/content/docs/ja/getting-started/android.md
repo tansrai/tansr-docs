@@ -7,6 +7,8 @@ related:
   - sdk/system-prompts
   - android
   - ios
+  - harmony
+  - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
 sources:
@@ -153,5 +155,5 @@ iOS 特有の注意点は 2 つ：ローカルでの平文 http による結合�
 
 ## 次のステップ
 
-- [Android 導入ガイド](/ja/android/)と[iOS 導入ガイド](/ja/ios/)：イベントの還元、エラーの表示、オフラインとフォアグラウンド / バックグラウンド、音声の 2 つのチェーン、プッシュによる起動。
+- [Android 導入ガイド](/ja/android/)、[iOS 導入ガイド](/ja/ios/)、[HarmonyOS 導入ガイド](/ja/harmony/)：イベントの還元、エラーの表示、オフラインとフォアグラウンド / バックグラウンド、音声の 2 つのチェーン、プッシュによる起動。
 - [v2 プロトコルと webhook](/ja/serve/v2-and-webhooks/)：サーバー側の後半で、ターン終了時の通知をあなたのプッシュバックエンドに渡す方法。

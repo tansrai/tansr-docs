@@ -46,7 +46,7 @@ This page answers the most common account-side questions. Anything that requires
 
 **How is an app key different from a PAT?** An app key (appid / appkey) represents your **app**. You issue it on the console "Apps" page, keep it only on your backend, and use it to mint short-lived tokens for your end users; end users do not need a tansr account. A PAT represents you personally and is only for the CLI.
 
-**Which app type should I choose?** Desktop app (Electron and the like) / mobile app (Android / iOS, through the session service) / server app. One app per platform: several clients, several appids, so revocation and usage attribution stay separate.
+**Which app type should I choose?** Desktop app (Electron and the like) / mobile app (Android / iOS / HarmonyOS, through the session service) / server app. One app per platform: several clients, several appids, so revocation and usage attribution stay separate.
 
 **My appkey leaked.** Rotate it on the console "Apps" page, update the server's environment variable and restart; the old appkey is invalidated at once. You can also revoke a specific end user's existing tokens, or deactivate the whole app. An app can also be given an IP allowlist (requests from outside it get `app_ip_denied`).
 

@@ -1,6 +1,6 @@
 ---
 title: '빠른 시작: 길 하나를 골라 5분 안에 실행하기'
-description: 'tansr에는 다섯 가지 사용 형태가 있습니다. Node SDK, CLI, 자체 호스팅 세션 서비스, Android, iOS. 이 페이지는 어떤 문서부터 시작해야 하는지 판단하도록 돕고, 다섯 가지 길이 공유하는 계정과 자격 증명 모델을 설명합니다.'
+description: 'tansr에는 여섯 가지 사용 형태가 있습니다. Node SDK, CLI, 자체 호스팅 세션 서비스, Android, iOS, HarmonyOS. 이 페이지는 어떤 문서부터 시작해야 하는지 판단하도록 돕고, 여섯 가지 길이 공유하는 계정과 자격 증명 모델을 설명합니다.'
 zone: docs
 category: getting-started
 related:
@@ -8,13 +8,14 @@ related:
   - getting-started/cli
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - security
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-16'
 ---
 
 tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다.
@@ -28,13 +29,14 @@ tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구
 | 내 모바일 / 웹 사용자에게 에이전트를 제공하고 싶고, 다중 사용자 백엔드가 필요하다 | `@tansr/serve` 자체 호스팅 세션 서비스 | [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) |
 | Android 앱을 작성 중이며, 백엔드는 `@tansr/serve`를 사용한다(사용할 예정이다) | Kotlin SDK `com.tansr.sdk` | [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
 | iOS / macOS 앱을 작성 중이며, 백엔드는 위와 같다 | Swift 패키지 `tansr-ios` | 같은 문서의 "iOS도 같은 방법" 절 |
+| 네이티브 HarmonyOS 앱을 작성 중이며, 백엔드는 위와 같다 | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK 5분 안에 실행하기](/ko/getting-started/harmony/) |
 
 경험 법칙은 두 가지입니다.
 
 - **혼자 쓸 거면 CLI, 다른 사람에게 제공할 거면 SDK나 세션 서비스.** CLI는 개발자 본인을 위한 것이고, SDK와 세션 서비스는 당신 제품의 사용자를 위한 것입니다.
-- **모바일은 반드시 당신의 서버를 거칩니다.** Android / iOS SDK는 얇은 프로토콜 클라이언트로, 플랫폼 자격 증명을 전혀 가지지 않습니다. 에이전트 커널은 당신이 배포한 `@tansr/serve` 안에서 실행됩니다.
+- **모바일은 반드시 당신의 서버를 거칩니다.** Android / iOS / HarmonyOS SDK는 얇은 프로토콜 클라이언트로, 플랫폼 자격 증명을 전혀 가지지 않습니다. 에이전트 커널은 당신이 배포한 `@tansr/serve` 안에서 실행됩니다. Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 Android SDK를 사용합니다.
 
-## 다섯 가지 길이 공유하는 계정 모델
+## 여섯 가지 길이 공유하는 계정 모델
 
 어떤 길을 택하든 자격 증명은 세 층으로 나뉘며, 아래로 갈수록 밖으로 새면 안 됩니다.
 
@@ -46,10 +48,10 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 
 ## 모든 빠른 시작은 같은 뼈대
 
-형태별 문서 네 편(Android와 iOS는 한 편으로 합쳤습니다)은 같은 순서로 전개되므로 형태 간에 대조하기 쉽습니다.
+형태별 문서 다섯 편(Android와 iOS는 한 편으로 합쳤고, HarmonyOS는 따로 한 편입니다)은 같은 순서로 전개되므로 형태 간에 대조하기 쉽습니다.
 
 1. **전제 조건**: 실행 환경과 버전 요구 사항(Node ≥ 22.19가 공통 기준선).
-2. **설치**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, 또는 Maven / SwiftPM 좌표.
+2. **설치**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, 또는 Maven / SwiftPM / 로컬 HAR 좌표.
 3. **자격 증명**: 그 형태에 어느 층의 자격 증명이 필요하고, 어디에서 얻는지.
 4. **첫 세션**: 실행되는 가장 짧은 코드.
 5. **이벤트 보기**: 에이전트의 출력은 모두 이벤트 스트림(`msg.text.delta`, `tool.completed` 등)입니다. 이 단계에서 직접 눈으로 확인합니다.
@@ -64,6 +66,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 | `@tansr/serve` | Node.js ≥ 22.19. 서드파티 런타임 의존성은 `zod` 하나뿐 |
 | Android SDK | minSdk 26. Kotlin 코루틴 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+. SwiftPM |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20. Stage 모델. 로컬 HAR `@tansr/harmony` |
 
 ## 한 번 실행한 뒤 다음에 읽을 것
 

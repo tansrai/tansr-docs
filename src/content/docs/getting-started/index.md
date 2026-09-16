@@ -1,6 +1,6 @@
 ---
 title: 快速开始：选一条路，5 分钟跑通
-description: tansr 有五种接入方式——Node SDK、命令行、自托管会话服务、Android 与 iOS。这一页帮你判断该从哪一篇开始，并说明五条路共用的账号与凭据模型。
+description: tansr 有六种接入方式——Node SDK、命令行、自托管会话服务、Android、iOS 与鸿蒙。这一页帮你判断该从哪一篇开始，并说明六条路共用的账号与凭据模型。
 zone: docs
 category: getting-started
 related:
@@ -8,13 +8,14 @@ related:
   - getting-started/cli
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - security
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-08'
+lastVerified: '2026-09-16'
 ---
 
 tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。
@@ -28,13 +29,14 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 我要给自己的移动端或 Web 用户提供智能体，需要一个多用户的后端服务 | `@tansr/serve` 自托管会话服务 | [会话服务 5 分钟跑通](/getting-started/serve/) |
 | 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk` | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
 | 我在写 iOS / macOS App，后端同上 | Swift 包 `tansr-ios` | 同上一篇的「iOS 同法」一节 |
+| 我在写原生 HarmonyOS App，后端同上 | ArkTS HAR `@tansr/harmony` | [鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/) |
 
 两条经验法则：
 
 - **单人使用选命令行，给别人用选 SDK 或会话服务。** 命令行是给开发者自己的；SDK 和会话服务是给你的产品用户的。
-- **移动端永远经过你自己的服务端。** Android / iOS SDK 是薄协议客户端，不直接持有任何平台凭据；智能体内核跑在你部署的 `@tansr/serve` 里。
+- **移动端永远经过你自己的服务端。** Android / iOS / 鸿蒙 SDK 是薄协议客户端，不直接持有任何平台凭据；智能体内核跑在你部署的 `@tansr/serve` 里。兼容 Android 的旧鸿蒙设备继续用 Android SDK。
 
-## 五条路共用的账号模型
+## 六条路共用的账号模型
 
 不论走哪条路，凭据都分三层，越往下越不能外泄：
 
@@ -46,10 +48,10 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 
 ## 每一篇快速开始都是同一个骨架
 
-四篇形态文章（Android 与 iOS 合为一篇）按同一顺序展开，便于你在不同形态之间对照：
+五篇形态文章（Android 与 iOS 合为一篇，鸿蒙单独一篇）按同一顺序展开，便于你在不同形态之间对照：
 
 1. **前提**：运行环境与版本要求（Node ≥ 22.19 是共同基线）。
-2. **安装**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`，或 Maven / SwiftPM 坐标。
+2. **安装**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`，或 Maven / SwiftPM / 本地 HAR 坐标。
 3. **凭据**：该形态需要哪一层凭据，从哪里拿。
 4. **第一个会话**：最短的可运行代码。
 5. **看到事件**：智能体的一切输出都是事件流（`msg.text.delta`、`tool.completed` 等），这一步让你亲眼看到它。
@@ -64,6 +66,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
 | Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+;SwiftPM |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20；Stage 模型；本地 HAR `@tansr/harmony` |
 
 ## 一次跑通后，接下来看什么
 

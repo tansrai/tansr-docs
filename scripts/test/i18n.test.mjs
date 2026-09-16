@@ -1,5 +1,5 @@
 /**
- * 多语言首批译文卷(资料站 en 首批 + ja / ko 首批):13 篇 × { en, ja, ko } 与 zh-CN 源同 slug / 同扩展名 / 同 frontmatter 契约
+ * 多语言首批译文卷(资料站 en 首批 + ja / ko 首批):14 篇 × { en, ja, ko } 与 zh-CN 源同 slug / 同扩展名 / 同 frontmatter 契约
  * (zone · category · related · sources 逐字同),代码块与 zh-CN 源**逐字节相同**(含代码块内中文注释 / 提示词——用户拍板:代码块严守照抄),
  * 内链指 /<locale>/...(无译文的生成页 / 根路径例外)且目标存在;正文按语言各有「真译」守卫:
  *   en:零 CJK、零术语禁用变体;
@@ -7,7 +7,7 @@
  *   ko:零汉字、零假名、含谚文、不用全角标点(韩文用半角标点与空格惯例);
  *   ja / ko:正文不出现任何内部编号 / 流程词。
  * 先红再绿:红例用内置坏样本(CJK 残留 + 「session server」;日文残留简体字 / 半角句号;韩文残留汉字 / 全角句号);
- * 首次运行时 ja / ko 26 页缺失即红,补页后绿。
+ * 首次运行时 ja / ko 28 页缺失即红,补页后绿。
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,13 +22,14 @@ import { DOCS_DIR } from '../gen/lib.mjs';
 const root = repoRootFrom(import.meta.url);
 const docs = join(root, DOCS_DIR);
 
-/** 首批 13 篇(en / ja / ko 同集) */
+/** 首批 14 篇(en / ja / ko 同集) */
 export const FIRST_BATCH = Object.freeze([
   'getting-started/index.md',
   'getting-started/sdk.md',
   'getting-started/cli.md',
   'getting-started/serve.md',
   'getting-started/android.md',
+  'getting-started/harmony.md',
   'sdk/lifecycle.md',
   'sdk/midturn-input.md',
   'sdk/system-prompts.md',
@@ -162,12 +163,12 @@ test('术语表:zh / en / ja / ko 四列非空且 en 主形唯一;avoid 变体�
   assert.ok(GLOSSARY.some((t) => t.zh === '出网白名单' && t.en === 'egress allowlist'));
 });
 
-test('语言接线:EXTRA_LOCALES 含 en / ja / ko;11 类四语标签齐;astro.config 侧栏 translations 四语;组件不再有 isEn 二叉分支', () => {
+test('语言接线:EXTRA_LOCALES 含 en / ja / ko;12 类四语标签齐;astro.config 侧栏 translations 四语;组件不再有 isEn 二叉分支', () => {
   assert.deepEqual(EXTRA_LOCALES.en, { label: 'English', lang: 'en' });
   assert.deepEqual(EXTRA_LOCALES.ja, { label: '日本語', lang: 'ja' });
   assert.deepEqual(EXTRA_LOCALES.ko, { label: '한국어', lang: 'ko' });
   assert.deepEqual(Object.keys(EXTRA_LOCALES), TRANSLATED_LOCALES);
-  assert.equal(CATEGORIES.length, 11);
+  assert.equal(CATEGORIES.length, 12);
   for (const c of CATEGORIES) {
     for (const l of TRANSLATED_LOCALES) assert.ok(typeof c[l] === 'string' && c[l].length > 0, `${c.directory} 缺 ${l} 标签`);
     assert.doesNotMatch(c.ja, HANGUL);
@@ -261,7 +262,7 @@ for (const locale of TRANSLATED_LOCALES) {
   }
 }
 
-test('覆盖模型:首批 13 篇在 en / ja / ko 全部计入,无孤儿', () => {
+test('覆盖模型:首批 14 篇在 en / ja / ko 全部计入,无孤儿', () => {
   const want = FIRST_BATCH.map(fileToSlug);
   for (const l of TRANSLATED_LOCALES) {
     for (const s of want) assert.ok(coverage.rows.find((r) => r.slug === s)?.translated[l], `${s} 未计入 ${l} 覆盖`);

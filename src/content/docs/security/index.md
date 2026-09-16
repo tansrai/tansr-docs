@@ -93,7 +93,7 @@ lastVerified: '2026-09-15'
 
 ### 端侧
 
-Android / iOS SDK 不缓存凭据；视图状态在内存；是否把 sessionId 落本地（以便冷启 resume）由你决定——只存 id，不存内容，不存凭据。
+Android / iOS / 鸿蒙 SDK 不缓存凭据；视图状态在内存；是否把 sessionId 落本地（以便冷启 resume）由你决定——只存 id，不存内容，不存凭据。
 
 ## 轮换与吊销：每种凭据怎么换
 

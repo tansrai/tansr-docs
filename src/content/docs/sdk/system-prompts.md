@@ -7,6 +7,7 @@ related:
   - getting-started/sdk
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - sdk/platform-bundle
   - sdk/sessions-and-events
   - security
@@ -185,9 +186,9 @@ export async function answer(
 
 `resolveApplicationSystem` 只选择、复制与拼接段，不读取网络、不校验业务权限、不解决文本冲突。调用方若要工具指南，还需自行在宿主指南之后装配适用内容。
 
-## Android / iOS：在 serve 宿主设置
+## Android / iOS / 鸿蒙：在 serve 宿主设置
 
-Android / iOS 是 `/v2` 薄客户端，主智能体运行在你的 `@tansr/serve`。移动端调用 `CreateSessionRequest(prompt=...)`、`session.send(...)` 发送普通用户消息，**不经 `/v2` 设置 `system` 或 `systemAppend`**。
+Android / iOS / 鸿蒙 是 `/v2` 薄客户端，主智能体运行在你的 `@tansr/serve`。移动端发送普通用户消息，**不经 `/v2` 设置 `system` 或 `systemAppend`**。Android / iOS 用 `CreateSessionRequest(prompt=...)`、`session.send(...)`；鸿蒙用 `createSession`、`session.send(...)`。
 
 使用平台统一角色时省略 `platform.system`；宿主说明放在 `platform.systemAppend`。需要代码管理的业务角色时才配置 `platform.system`，它遵循同一张真值表。
 
@@ -215,7 +216,7 @@ const build = createAgentSessionFactory({
 // 完整 authenticate 与启动示例见“会话服务 5 分钟跑通”。
 ```
 
-见[会话服务快速入门](/getting-started/serve/)和[Android / iOS 快速入门](/getting-started/android/)。appkey 与平台短期令牌留在 serve；设备只使用你的业务登录态。
+见[会话服务快速入门](/getting-started/serve/)、[Android / iOS 快速入门](/getting-started/android/)和[鸿蒙 SDK 快速入门](/getting-started/harmony/)。appkey 与平台短期令牌留在 serve；设备只使用你的业务登录态。
 
 ## 修改后何时生效
 

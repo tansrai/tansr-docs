@@ -1,6 +1,6 @@
 ---
 title: 'Getting started: pick a path, run in 5 minutes'
-description: 'tansr can be used five ways: the Node SDK, the CLI, a self-hosted session service, Android and iOS. This page helps you decide where to start and explains the account and credential model shared by all five.'
+description: 'tansr can be used six ways: the Node SDK, the CLI, a self-hosted session service, Android, iOS and HarmonyOS. This page helps you decide where to start and explains the account and credential model shared by all six.'
 zone: docs
 category: getting-started
 related:
@@ -8,13 +8,14 @@ related:
   - getting-started/cli
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - security
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-09'
+lastVerified: '2026-09-16'
 ---
 
 tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run".
@@ -28,13 +29,14 @@ tansr is an agent runtime: one kernel (query loop, tool scheduling, permission e
 | I want to offer an agent to my own mobile or web users and need a multi-user backend | the `@tansr/serve` self-hosted session service | [Session service in 5 minutes](/en/getting-started/serve/) |
 | I am writing an Android app and the backend uses (or will use) `@tansr/serve` | Kotlin SDK `com.tansr.sdk` | [Android and iOS in 5 minutes](/en/getting-started/android/) |
 | I am writing an iOS / macOS app, backend as above | Swift package `tansr-ios` | the "Same on iOS" section of the same article |
+| I am writing a native HarmonyOS app, backend as above | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK in 5 minutes](/en/getting-started/harmony/) |
 
 Two rules of thumb:
 
 - **Solo use: the CLI. Building for others: the SDK or the session service.** The CLI is for you as a developer; the SDK and the session service are for your product's users.
-- **Mobile always goes through your own backend.** The Android / iOS SDKs are thin protocol clients that never hold any platform credential; the agent kernel runs inside the `@tansr/serve` you deploy.
+- **Mobile always goes through your own backend.** The Android / iOS / HarmonyOS SDKs are thin protocol clients that never hold any platform credential; the agent kernel runs inside the `@tansr/serve` you deploy. Devices that only run the Android-compatible HarmonyOS stack keep using the Android SDK.
 
-## The account model shared by all five paths
+## The account model shared by all six paths
 
 Whichever path you take, credentials come in three layers, and the further down the list, the less they may ever leak:
 
@@ -46,10 +48,10 @@ CLI users only need layer 1; SDK and session-service developers need layers 2 an
 
 ## Every getting-started article follows the same skeleton
 
-The four form articles (Android and iOS share one) unfold in the same order so you can compare forms side by side:
+The five form articles (Android and iOS share one; HarmonyOS has its own) unfold in the same order so you can compare forms side by side:
 
 1. **Prerequisites**: runtime and version requirements (Node ≥ 22.19 is the common baseline).
-2. **Install**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, or the Maven / SwiftPM coordinates.
+2. **Install**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, or the Maven / SwiftPM / local HAR coordinates.
 3. **Credentials**: which credential layer this form needs and where to get it.
 4. **First session**: the shortest runnable code.
 5. **See the events**: everything the agent produces is an event stream (`msg.text.delta`, `tool.completed`, …); this step lets you see it with your own eyes.
@@ -64,6 +66,7 @@ The four form articles (Android and iOS share one) unfold in the same order so y
 | `@tansr/serve` | Node.js ≥ 22.19; the only third-party runtime dependency is `zod` |
 | Android SDK | minSdk 26; Kotlin coroutines + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+; SwiftPM |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20; Stage model; local HAR `@tansr/harmony` |
 
 ## Once it runs, what to read next
 

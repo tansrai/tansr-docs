@@ -10,6 +10,7 @@ related:
   - serve/retention-and-governance
   - serve/env
   - getting-started/android
+  - getting-started/harmony
 sources:
   - tansr-cli:packages/server/README.md
   - tansr-cli:examples/serve-demo/README.md
@@ -21,7 +22,7 @@ lastVerified: '2026-09-15'
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露 `/v2` 多会话 REST + SSE 协议面，对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。
 
-Android / iOS SDK 连的就是这个服务。
+Android / iOS / 鸿蒙 SDK 连的就是这个服务。
 
 ## 在平台或宿主配置应用角色
 
@@ -32,7 +33,7 @@ Android / iOS SDK 连的就是这个服务。
 ## 前提
 
 - Node.js ≥ 22.19。
-- 在控制台创建一个**移动应用**（给 Android / iOS 用）或服务端应用，拿到 `appid` 与 `appkey`。
+- 在控制台创建一个**移动应用**（给 Android / iOS / 鸿蒙用）或服务端应用，拿到 `appid` 与 `appkey`。
 - 你自己的登录态体系：引擎需要你把一个请求映射成一个 `endUserId`，其余不管。
 
 ## 安装

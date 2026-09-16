@@ -1,6 +1,6 @@
 ---
 title: 'クイックスタート：道を 1 つ選び、5 分で動かす'
-description: 'tansr には 5 つの利用形態があります——Node SDK、CLI、セルフホストのセッションサービス、Android、iOS。このページでは、どの記事から始めるべきかを判断し、5 つの道が共有するアカウントと認証情報のモデルを説明します。'
+description: 'tansr には 6 つの利用形態があります——Node SDK、CLI、セルフホストのセッションサービス、Android、iOS、HarmonyOS。このページでは、どの記事から始めるべきかを判断し、6 つの道が共有するアカウントと認証情報のモデルを説明します。'
 zone: docs
 category: getting-started
 related:
@@ -8,13 +8,14 @@ related:
   - getting-started/cli
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - security
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-10'
+lastVerified: '2026-09-16'
 ---
 
 tansr はエージェントランタイムです。同じ 1 つのカーネル（クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮）を、いくつかの異なる形態で提供します。すべてを理解する必要はありません。「エージェントをどこで動かしたいか」に合わせて道を 1 つ選ぶだけです。
@@ -28,13 +29,14 @@ tansr はエージェントランタイムです。同じ 1 つのカーネル�
 | 自分のモバイル / Web ユーザーにエージェントを提供したい。マルチユーザーのバックエンドが必要 | `@tansr/serve` セルフホストのセッションサービス | [セッションサービスを 5 分で動かす](/ja/getting-started/serve/) |
 | Android アプリを書いていて、バックエンドは `@tansr/serve` を使う（予定） | Kotlin SDK `com.tansr.sdk` | [Android と iOS を 5 分で動かす](/ja/getting-started/android/) |
 | iOS / macOS アプリを書いていて、バックエンドは上と同じ | Swift パッケージ `tansr-ios` | 同じ記事の「iOS でも同じ手順」節 |
+| ネイティブ HarmonyOS アプリを書いていて、バックエンドは上と同じ | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK を 5 分で動かす](/ja/getting-started/harmony/) |
 
 経験則は 2 つです。
 
 - **自分ひとりで使うなら CLI、他人に使わせるなら SDK かセッションサービス。** CLI は開発者本人のためのもの、SDK とセッションサービスはあなたのプロダクトのユーザーのためのものです。
-- **モバイルは必ずあなた自身のサーバーを経由する。** Android / iOS SDK は薄いプロトコルクライアントで、プラットフォームの認証情報を一切持ちません。エージェントのカーネルは、あなたがデプロイした `@tansr/serve` の中で動きます。
+- **モバイルは必ずあなた自身のサーバーを経由する。** Android / iOS / HarmonyOS SDK は薄いプロトコルクライアントで、プラットフォームの認証情報を一切持ちません。エージェントのカーネルは、あなたがデプロイした `@tansr/serve` の中で動きます。Android 互換スタックだけの古い HarmonyOS 端末は引き続き Android SDK を使います。
 
-## 5 つの道が共有するアカウントモデル
+## 6 つの道が共有するアカウントモデル
 
 どの道を選んでも、認証情報は 3 層に分かれ、下に行くほど外に漏らしてはいけません。
 
@@ -46,10 +48,10 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 
 ## どのクイックスタートも同じ骨格
 
-4 本の形態別記事（Android と iOS は 1 本にまとめています）は同じ順序で展開するので、形態間で対照しやすくなっています。
+5 本の形態別記事（Android と iOS は 1 本にまとめています。HarmonyOS は独立した 1 本です）は同じ順序で展開するので、形態間で対照しやすくなっています。
 
 1. **前提**：実行環境とバージョン要件（Node ≥ 22.19 が共通のベースライン）。
-2. **インストール**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`、または Maven / SwiftPM の座標。
+2. **インストール**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`、または Maven / SwiftPM / ローカル HAR の座標。
 3. **認証情報**：その形態にどの層の認証情報が必要で、どこから取得するか。
 4. **最初のセッション**：動く最短のコード。
 5. **イベントを見る**：エージェントの出力はすべてイベントストリーム（`msg.text.delta`、`tool.completed` など）です。このステップで自分の目で確認します。
@@ -64,6 +66,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | `@tansr/serve` | Node.js ≥ 22.19。サードパーティのランタイム依存は `zod` のみ |
 | Android SDK | minSdk 26。Kotlin コルーチン + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+。SwiftPM |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20。Stage モデル。ローカル HAR `@tansr/harmony` |
 
 ## 一度動いたら、次に読むもの
 

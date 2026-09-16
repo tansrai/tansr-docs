@@ -10,6 +10,7 @@ related:
   - serve/retention-and-governance
   - serve/env
   - getting-started/android
+  - getting-started/harmony
 sources:
   - tansr-cli:packages/server/README.md
   - tansr-cli:examples/serve-demo/README.md
@@ -21,7 +22,7 @@ lastVerified: '2026-09-15'
 
 `@tansr/serve`는 tansr의 **Agent 세션 엔진**입니다. npm 패키지 하나로 당신의 Node 서비스에 내장되어, 밖으로는 `/v2` 다중 세션 REST + SSE 프로토콜 면을 노출하고, 안으로는 당신의 앱 키로 tansr 플랫폼에 연결해 실제로 모델을 호출합니다. 이것은 **게이트웨이가 아닙니다.** 사용자가 어떻게 로그인하고, 어떻게 속도를 제한하고, 어떻게 과금하는지는 모두 당신의 체계에 속합니다. 엔진은 전송, 프로토콜, 세션 거버넌스만 담당합니다.
 
-Android / iOS SDK가 연결하는 것이 바로 이 서비스입니다.
+Android / iOS / HarmonyOS SDK가 연결하는 것이 바로 이 서비스입니다.
 
 ## 플랫폼 또는 호스트에서 앱 역할 설정
 
@@ -32,7 +33,7 @@ Android / iOS SDK가 연결하는 것이 바로 이 서비스입니다.
 ## 전제 조건
 
 - Node.js ≥ 22.19.
-- 콘솔에서 **모바일 앱**(Android / iOS용) 또는 서버 앱을 만들어 `appid`와 `appkey`를 얻습니다.
+- 콘솔에서 **모바일 앱**(Android / iOS / HarmonyOS용) 또는 서버 앱을 만들어 `appid`와 `appkey`를 얻습니다.
 - 당신의 로그인 상태 체계: 엔진은 요청 하나를 `endUserId` 하나로 매핑해 주기만을 요구하며, 나머지는 관여하지 않습니다.
 
 ## 설치

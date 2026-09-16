@@ -10,6 +10,7 @@ related:
   - serve/retention-and-governance
   - serve/env
   - getting-started/android
+  - getting-started/harmony
 sources:
   - tansr-cli:packages/server/README.md
   - tansr-cli:examples/serve-demo/README.md
@@ -21,7 +22,7 @@ lastVerified: '2026-09-15'
 
 `@tansr/serve` は tansr の **Agent セッションエンジン**です。npm パッケージとしてあなた自身の Node サービスに組み込み、外向きには `/v2` のマルチセッション REST + SSE プロトコル面を公開し、内向きにはあなたのアプリキーで tansr プラットフォームに接続して実際にモデルを呼び出します。これは**ゲートウェイではありません**——ユーザーのログイン方法、レート制限、課金はすべてあなた自身の仕組みに属し、エンジンはトランスポート、プロトコル、セッションのガバナンスだけを担います。
 
-Android / iOS SDK が接続するのはこのサービスです。
+Android / iOS / HarmonyOS SDK が接続するのはこのサービスです。
 
 ## プラットフォームまたはホストでアプリの役割を設定する
 
@@ -32,7 +33,7 @@ Android / iOS SDK が接続するのはこのサービスです。
 ## 前提
 
 - Node.js ≥ 22.19。
-- コンソールで**モバイルアプリ**（Android / iOS 向け）またはサーバーアプリを作成し、`appid` と `appkey` を取得しておく。
+- コンソールで**モバイルアプリ**（Android / iOS / HarmonyOS 向け）またはサーバーアプリを作成し、`appid` と `appkey` を取得しておく。
 - あなた自身のログイン状態の仕組み：エンジンが必要とするのは、1 つのリクエストを 1 つの `endUserId` に対応付けることだけで、それ以外には関与しません。
 
 ## インストール

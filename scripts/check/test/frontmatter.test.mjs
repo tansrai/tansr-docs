@@ -34,6 +34,7 @@ sources:
   - tansr-api:openapi/openapi.json
   - tansr-android:README.md
   - tansr-ios:README.md
+  - tansr-harmony:README.md
 lastVerified: 2026-09-08
 ---
 

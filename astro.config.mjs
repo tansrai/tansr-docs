@@ -32,7 +32,7 @@ function sdkSidebarItems() {
 }
 
 /**
- * 11 类侧栏组(zh-CN 根;en 标签走 translations),顺序即侧栏顺序。
+ * 12 类侧栏组(zh-CN 根;en 标签走 translations),顺序即侧栏顺序。
  * 「REST 参考」位放 starlight-openapi 的占位组:插件的路由中间件在 /api/** 页面把它换成完整操作树(总览 + 各 tag 组 + 170 个操作);
  * 其余页面由 src/lib/rest-sidebar.mjs(下方 routeMiddleware,先于插件跑)换成「REST 参考 → 总览」一条——
  * 否则 170 条操作链接(每页 ~78 KB)会渲进全站每一页(getting-started 曾 123 KB,其中六成是它)。

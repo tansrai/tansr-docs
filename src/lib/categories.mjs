@@ -1,5 +1,5 @@
 /**
- * 11 类信息架构的单一事实源:astro.config.mjs(侧栏)与首页 / 帮助中心组件(卡片)共用。
+ * 12 类信息架构的单一事实源:astro.config.mjs(侧栏)与首页 / 帮助中心组件(卡片)共用。
  * 顺序即侧栏与卡片网格顺序;`zone` 标注该类属开发者文档区还是帮助中心区。
  */
 import { existsSync } from 'node:fs';
@@ -44,12 +44,13 @@ export function uiLocale(locale) {
 
 /** @type {readonly Category[]} */
 export const CATEGORIES = Object.freeze([
-  { directory: 'getting-started', zone: 'docs', label: '快速开始', en: 'Getting started', ja: 'クイックスタート', ko: '빠른 시작', description: '5 分钟跑通:SDK、CLI、会话服务、Android 与 iOS 各一篇。', icon: 'rocket' },
+  { directory: 'getting-started', zone: 'docs', label: '快速开始', en: 'Getting started', ja: 'クイックスタート', ko: '빠른 시작', description: '5 分钟跑通:SDK、CLI、会话服务、Android、iOS 与鸿蒙各一篇。', icon: 'rocket' },
   { directory: 'sdk', zone: 'docs', label: 'TS / Node SDK', en: 'TypeScript SDK', ja: 'TypeScript SDK', ko: 'TypeScript SDK', description: '安装、会话与事件流、检查点、平台装配、错误处理。', icon: 'seti:typescript' },
   { directory: 'serve', zone: 'docs', label: '会话服务 @tansr/serve', en: 'Session service (@tansr/serve)', ja: 'セッションサービス（@tansr/serve）', ko: '세션 서비스(@tansr/serve)', description: '自托管部署、鉴权、v2 接口、webhook、保留期与环境变量。', icon: 'server' },
   { directory: 'cli', zone: 'docs', label: 'CLI 手册', en: 'CLI manual', ja: 'CLI マニュアル', ko: 'CLI 매뉴얼', description: '安装、登录、会话、doctor、设置与命令参考。', icon: 'laptop' },
   { directory: 'android', zone: 'docs', label: 'Android SDK', en: 'Android SDK', ja: 'Android SDK', ko: 'Android SDK', description: '接入、事件归约、错误呈现与离线。', icon: 'mobile-android' },
   { directory: 'ios', zone: 'docs', label: 'iOS SDK', en: 'iOS SDK', ja: 'iOS SDK', ko: 'iOS SDK', description: '接入、事件归约、错误呈现与离线。', icon: 'apple' },
+  { directory: 'harmony', zone: 'docs', label: '鸿蒙 SDK', en: 'HarmonyOS SDK', ja: 'HarmonyOS SDK', ko: 'HarmonyOS SDK', description: '原生 ArkTS HAR：接入、会话视图、工具桥与媒体边界。', icon: 'puzzle' },
   { directory: 'api', zone: 'docs', label: 'REST 参考', en: 'REST reference', ja: 'REST リファレンス', ko: 'REST 참조', description: '公开 REST 接口参考(/v1 · /t1 · /healthz · /readyz)。', icon: 'open-book' },
   { directory: 'errors', zone: 'docs', label: '错误码与排障', en: 'Errors & troubleshooting', ja: 'エラーとトラブルシューティング', ko: '오류 및 문제 해결', description: '错误码表(HTTP 状态、可重试、说明)与排障文章。', icon: 'warning' },
   { directory: 'security', zone: 'docs', label: '安全与隐私', en: 'Security & privacy', ja: 'セキュリティとプライバシー', ko: '보안 및 개인정보', description: '出网白名单、凭据、数据留存与密钥轮换。', icon: 'padlock' },

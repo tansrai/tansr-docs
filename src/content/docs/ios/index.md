@@ -7,6 +7,7 @@ related:
   - sdk/system-prompts
   - getting-started/android
   - android
+  - harmony
   - serve/v2-and-webhooks
   - serve/deploy-and-auth
   - security

@@ -193,9 +193,9 @@ test('自指收敛:生成页写回后再算,行集与正文零 diff(修前红:�
   }
 });
 
-test('本仓:en 首批 10 篇计入覆盖;已提交生成页与 render 逐字节相同', () => {
+test('本仓:en 首批计入覆盖;已提交生成页与 render 逐字节相同', () => {
   const cov = buildCoverage(root);
-  const first10 = ['getting-started', 'getting-started/sdk', 'getting-started/cli', 'getting-started/serve', 'getting-started/android', 'support', 'support/account', 'support/troubleshooting', 'support/contact', 'security'];
+  const first10 = ['getting-started', 'getting-started/sdk', 'getting-started/cli', 'getting-started/serve', 'getting-started/android', 'getting-started/harmony', 'support', 'support/account', 'support/troubleshooting', 'support/contact', 'security'];
   for (const s of first10) {
     const row = cov.rows.find((r) => r.slug === s);
     assert.ok(row, `根页 ${s} 须存在`);

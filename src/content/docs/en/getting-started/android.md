@@ -7,6 +7,8 @@ related:
   - sdk/system-prompts
   - android
   - ios
+  - harmony
+  - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
 sources:
@@ -153,5 +155,5 @@ Two iOS-specific notes: cleartext http for local debugging must be allowed in th
 
 ## Next steps
 
-- [Android integration guide](/en/android/) and [iOS integration guide](/en/ios/): event reduction, error presentation, offline and foreground/background, the two voice links, push wake-up.
+- [Android integration guide](/en/android/), [iOS integration guide](/en/ios/) and [HarmonyOS integration guide](/en/harmony/): event reduction, error presentation, offline and foreground/background, the two voice links, push wake-up.
 - [v2 protocol and webhooks](/en/serve/v2-and-webhooks/): how the server side hands end-of-turn notifications to your push backend.

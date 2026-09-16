@@ -7,6 +7,8 @@ related:
   - sdk/system-prompts
   - android
   - ios
+  - harmony
+  - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
 sources:
@@ -153,5 +155,5 @@ iOS 特有的两处注意：本地联调明文 http 需在 App 的 Info.plist �
 
 ## 下一步
 
-- [Android 接入指南](/android/)与[iOS 接入指南](/ios/)：事件归约、错误呈现、离线与前后台、语音两条链、推送唤醒。
+- [Android 接入指南](/android/)、[iOS 接入指南](/ios/)与[鸿蒙接入指南](/harmony/)：事件归约、错误呈现、离线与前后台、语音两条链、推送唤醒。
 - [v2 协议与 webhook](/serve/v2-and-webhooks/)：服务端半场怎么把轮末通知交给你的推送后端。

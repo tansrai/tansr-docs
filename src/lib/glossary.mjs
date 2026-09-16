@@ -12,7 +12,7 @@ export const GLOSSARY = Object.freeze([
   // 产品面 / 形态
   { zh: '智能体', en: 'agent', ja: 'エージェント', ko: '에이전트' },
   { zh: '内核', en: 'kernel', ja: 'カーネル', ko: '커널', note: '查询环 / 工具调度 / 权限引擎 / 上下文压缩所在的运行时' },
-  { zh: '形态', en: 'form', ja: '形態', ko: '형태', note: '同一内核对外的五种形态:SDK · CLI · session service · Android · iOS', avoid: ['modality', 'form factor'] },
+  { zh: '形态', en: 'form', ja: '形態', ko: '형태', note: '同一内核对外的六种形态:SDK · CLI · session service · Android · iOS · HarmonyOS', avoid: ['modality', 'form factor'] },
   { zh: '命令行', en: 'CLI', ja: 'CLI', ko: 'CLI', note: '包 `@tansr/cli`,命令 `tansr`;泛指时可写 the command line', avoid: ['commandline', 'command-line tool'] },
   { zh: '交互式终端', en: 'interactive terminal (TUI)', ja: '対話型ターミナル（TUI）', ko: '대화형 터미널(TUI)' },
   { zh: '无头模式', en: 'headless mode', ja: 'ヘッドレスモード', ko: '헤드리스 모드' },
@@ -24,6 +24,7 @@ export const GLOSSARY = Object.freeze([
   { zh: '开发者文档', en: 'developer docs', ja: '開発者ドキュメント', ko: '개발자 문서' },
   { zh: '帮助中心', en: 'help center', ja: 'ヘルプセンター', ko: '도움말 센터', avoid: ['support center', 'help desk'] },
   { zh: '资料站', en: 'docs site', ja: 'ドキュメントサイト', ko: '문서 사이트' },
+  { zh: '鸿蒙 SDK', en: 'HarmonyOS SDK', ja: 'HarmonyOS SDK', ko: 'HarmonyOS SDK', note: '原生 ArkTS HAR `@tansr/harmony`;兼容 Android 的旧鸿蒙设备继续用 Android SDK', avoid: ['Harmony SDK', 'OpenHarmony SDK'] },
 
   // 凭据
   { zh: '密钥', en: 'key', ja: 'キー', ko: '키', note: '泛指;具体形态见下四条', avoid: ['secret key'] },

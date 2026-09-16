@@ -85,7 +85,7 @@ tansr doctor --json   # 机器可读
 
 **会话服务（`@tansr/serve`）**：先看 `GET /readyz`（503 带 `reasons`）；再看结构化日志的 `request.completed` / `store.commit_failed` / `session.rejected`，用响应头 `x-request-id` 关联。`resume` 恒 `409 resume_unavailable` = 没接 store；`500 store_corrupted` 常见于共享存储目录（不安全配置）；建会话 `503 upstream_unavailable` 是平台侧铸令牌不可用，`503 overloaded` 是本机准入帽，`503 draining` 是正在优雅关闭。
 
-**移动端（Android / iOS）**：先看 `connectionState`。`Retrying` 是正常的 L1 重连；`Recovering` 是 L2 重建；`AuthExpired → Failed(Unauthorized)` 是令牌刷了 2 次仍 401，修登录态后显式 `start()`。一连就 401 通常是 `authProvider` 给的头不被服务端 `authenticate` 认可；模拟器连不上通常是 Android 用了 `127.0.0.1` 而非 `10.0.2.2`。
+**移动端（Android / iOS / 鸿蒙）**：先看连接态。Android / iOS 看 `connectionState`：`Retrying` 是正常的 L1 重连；`Recovering` 是 L2 重建；`AuthExpired → Failed(Unauthorized)` 是令牌刷了 2 次仍 401，修登录态后显式 `start()`。鸿蒙看 `session.onState`：`retrying` / `recovering` / `failed`。一连就 401 通常是认证头不被服务端 `authenticate` 认可。模拟器连不上：Android 用了 `127.0.0.1` 而非 `10.0.2.2`；鸿蒙回环仅本地调试，连开发机私网须 `allowPrivateNetworkHttp`。
 
 ## 拿着这些去联系支持
 

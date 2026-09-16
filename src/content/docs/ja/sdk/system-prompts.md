@@ -7,6 +7,7 @@ related:
   - getting-started/sdk
   - getting-started/serve
   - getting-started/android
+  - getting-started/harmony
   - sdk/platform-bundle
   - sdk/sessions-and-events
   - security
@@ -185,9 +186,9 @@ export async function answer(
 
 `resolveApplicationSystem` はセグメントの選択、コピー、結合だけを行い、ネットワークを読まず、業務権限を検証せず、テキストの矛盾も解決しません。呼び出し側がツールガイドを必要とする場合は、ホストガイドの後に該当する内容を自分でアセンブリする必要もあります。
 
-## Android / iOS：serve ホストで設定する
+## Android / iOS / HarmonyOS：serve ホストで設定する
 
-Android / iOS は `/v2` の薄いクライアントで、メインエージェントはあなたの `@tansr/serve` で動きます。モバイル側は `CreateSessionRequest(prompt=...)`、`session.send(...)` で通常のユーザーメッセージを送信し、**`/v2` 経由で `system` や `systemAppend` を設定しません**。
+Android / iOS / HarmonyOS は `/v2` の薄いクライアントで、メインエージェントはあなたの `@tansr/serve` で動きます。モバイル側は通常のユーザーメッセージを送信し、**`/v2` 経由で `system` や `systemAppend` を設定しません**。Android / iOS は `CreateSessionRequest(prompt=...)`、`session.send(...)` を使い、HarmonyOS は `createSession`、`session.send(...)` を使います。
 
 プラットフォーム共通の役割を使うときは `platform.system` を省略します。ホストの説明は `platform.systemAppend` に置きます。コードで管理する業務上の役割が必要なときだけ `platform.system` を設定し、これは同じ真理値表に従います。
 
@@ -215,7 +216,7 @@ const build = createAgentSessionFactory({
 // 完整 authenticate 与启动示例见“会话服务 5 分钟跑通”。
 ```
 
-[セッションサービスのクイックスタート](/ja/getting-started/serve/)と[Android / iOS のクイックスタート](/ja/getting-started/android/)を参照してください。appkey とプラットフォームの短期トークンは serve に留まり、デバイスはあなたの業務ログイン状態だけを使います。
+[セッションサービスのクイックスタート](/ja/getting-started/serve/)、[Android / iOS のクイックスタート](/ja/getting-started/android/)、[HarmonyOS SDK のクイックスタート](/ja/getting-started/harmony/)を参照してください。appkey とプラットフォームの短期トークンは serve に留まり、デバイスはあなたの業務ログイン状態だけを使います。
 
 ## 変更後、いつ有効になるか
 

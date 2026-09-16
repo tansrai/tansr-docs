@@ -3,7 +3,7 @@
  * 只用 node 内建能力,不 import astro。
  */
 
-/** 11 类(与 src/lib/categories.mjs 的 directory 一一对应) */
+/** 12 类(与 src/lib/categories.mjs 的 directory 一一对应) */
 export const CATEGORY_VALUES = Object.freeze([
   'getting-started',
   'sdk',
@@ -11,6 +11,7 @@ export const CATEGORY_VALUES = Object.freeze([
   'cli',
   'android',
   'ios',
+  'harmony',
   'api',
   'errors',
   'security',
@@ -21,7 +22,7 @@ export const CATEGORY_VALUES = Object.freeze([
 export const ZONE_VALUES = Object.freeze(['docs', 'support']);
 
 /** 可作 `sources` 前缀的事实源仓(`<仓>:<仓内路径>`);`contract/` 走本仓 vendored 副本 */
-export const SOURCE_REPOS = Object.freeze(['tansr-cli', 'tansr-api', 'tansr-android', 'tansr-ios']);
+export const SOURCE_REPOS = Object.freeze(['tansr-cli', 'tansr-api', 'tansr-android', 'tansr-ios', 'tansr-harmony']);
 
 /** `sources` 形:`contract/<path>` 或 `<仓>:<path>`(仓 ∈ SOURCE_REPOS);`contract/` 核存在,仓前缀只校形 */
 export const SOURCE_PATTERN = new RegExp(`^(contract/[^\\s]+|(${SOURCE_REPOS.join('|')}):[^\\s]+)$`);

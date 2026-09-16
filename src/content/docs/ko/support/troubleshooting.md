@@ -85,7 +85,7 @@ tansr doctor --json   # 机器可读
 
 **세션 서비스(`@tansr/serve`)**: 먼저 `GET /readyz`(503이면 `reasons` 포함)를 보고, 그다음 구조화 로그의 `request.completed` / `store.commit_failed` / `session.rejected`를 보며, 응답 헤더 `x-request-id`로 연관시킵니다. `resume`이 항상 `409 resume_unavailable` = store를 연결하지 않음. `500 store_corrupted`는 공유 저장소 디렉터리(안전하지 않은 구성)에서 흔합니다. 세션 생성 시 `503 upstream_unavailable`은 플랫폼 쪽 토큰 발급 불가, `503 overloaded`는 이 컴퓨터의 허용 상한, `503 draining`은 정상 종료 진행 중입니다.
 
-**모바일(Android / iOS)**: 먼저 `connectionState`를 봅니다. `Retrying`은 정상적인 L1 재연결, `Recovering`은 L2 재구축. `AuthExpired → Failed(Unauthorized)`는 토큰을 2번 새로 받았는데도 여전히 401인 것으로, 로그인 상태를 고친 뒤 명시적으로 `start()`합니다. 연결하자마자 401은 보통 `authProvider`가 준 헤더를 서버 쪽 `authenticate`가 인정하지 않는 것이고, 에뮬레이터에서 연결이 안 되는 것은 보통 Android에서 `10.0.2.2` 대신 `127.0.0.1`을 쓴 것입니다.
+**모바일(Android / iOS / HarmonyOS)**: 먼저 연결 상태를 봅니다. Android / iOS는 `connectionState`를 봅니다. `Retrying`은 정상적인 L1 재연결, `Recovering`은 L2 재구축. `AuthExpired → Failed(Unauthorized)`는 토큰을 2번 새로 받았는데도 여전히 401인 것으로, 로그인 상태를 고친 뒤 명시적으로 `start()`합니다. HarmonyOS는 `session.onState`의 `retrying` / `recovering` / `failed`를 봅니다. 연결하자마자 401은 보통 인증 헤더를 서버 쪽 `authenticate`가 인정하지 않는 것입니다. 에뮬레이터에서 연결이 안 되는 경우, Android는 `10.0.2.2` 대신 `127.0.0.1`을 쓴 경우가 많고, HarmonyOS 루프백은 로컬 디버그만이며 개발 머신 사설 주소에 닿으려면 `allowPrivateNetworkHttp`가 필요합니다.
 
 ## 이것을 가지고 지원팀에 문의
 
