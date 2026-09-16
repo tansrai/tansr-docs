@@ -51,7 +51,7 @@ CLI users only need layer 1; SDK and session-service developers need layers 2 an
 The five form articles (Android and iOS share one; HarmonyOS has its own) unfold in the same order so you can compare forms side by side:
 
 1. **Prerequisites**: runtime and version requirements (Node ≥ 22.19 is the common baseline).
-2. **Install**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, or the Maven / SwiftPM / local HAR coordinates.
+2. **Install**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, or the Maven / SwiftPM / independently published HAR coordinates.
 3. **Credentials**: which credential layer this form needs and where to get it.
 4. **First session**: the shortest runnable code.
 5. **See the events**: everything the agent produces is an event stream (`msg.text.delta`, `tool.completed`, …); this step lets you see it with your own eyes.
@@ -66,7 +66,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | `@tansr/serve` | Node.js ≥ 22.19; the only third-party runtime dependency is `zod` |
 | Android SDK | minSdk 26; Kotlin coroutines + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+; SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20; Stage model; local HAR `@tansr/harmony` |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20; Stage model; independently published HAR `@tansr/harmony` 0.1.0 |
 
 ## Once it runs, what to read next
 

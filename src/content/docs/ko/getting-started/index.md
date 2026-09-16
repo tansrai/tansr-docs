@@ -51,7 +51,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 형태별 문서 다섯 편(Android와 iOS는 한 편으로 합쳤고, HarmonyOS는 따로 한 편입니다)은 같은 순서로 전개되므로 형태 간에 대조하기 쉽습니다.
 
 1. **전제 조건**: 실행 환경과 버전 요구 사항(Node ≥ 22.19가 공통 기준선).
-2. **설치**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, 또는 Maven / SwiftPM / 로컬 HAR 좌표.
+2. **설치**: `npm i -g @tansr/cli`, `npm install @tansr/sdk`, `npm install @tansr/serve`, 또는 Maven / SwiftPM / 독립 배포 HAR 좌표.
 3. **자격 증명**: 그 형태에 어느 층의 자격 증명이 필요하고, 어디에서 얻는지.
 4. **첫 세션**: 실행되는 가장 짧은 코드.
 5. **이벤트 보기**: 에이전트의 출력은 모두 이벤트 스트림(`msg.text.delta`, `tool.completed` 등)입니다. 이 단계에서 직접 눈으로 확인합니다.
@@ -66,7 +66,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 | `@tansr/serve` | Node.js ≥ 22.19. 서드파티 런타임 의존성은 `zod` 하나뿐 |
 | Android SDK | minSdk 26. Kotlin 코루틴 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+. SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20. Stage 모델. 로컬 HAR `@tansr/harmony` |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20. Stage 모델. 독립 배포 HAR `@tansr/harmony` 0.1.0 |
 
 ## 한 번 실행한 뒤 다음에 읽을 것
 

@@ -614,7 +614,7 @@ generated: true
 | 开发者文档 | developer docs |  |
 | 帮助中心 | help center |  |
 | 资料站 | docs site |  |
-| 鸿蒙 SDK | HarmonyOS SDK | 原生 ArkTS HAR `@tansr/harmony`;兼容 Android 的旧鸿蒙设备继续用 Android SDK |
+| 鸿蒙 SDK | HarmonyOS SDK | 原生 ArkTS HAR `@tansr/harmony`;独立发布版本化字节码 HAR 0.1.0,尚未上架 OHPM;兼容 Android 的旧鸿蒙设备继续用 Android SDK |
 | 密钥 | key | 泛指;具体形态见下四条 |
 | 个人访问令牌 | personal access token (PAT) |  |
 | 应用密钥 | app key (appid / appkey) | 代表应用;只在服务端 |

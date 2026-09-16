@@ -20,9 +20,9 @@ sources:
 lastVerified: '2026-09-16'
 ---
 
-鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前本地开发版本 0.1.0）是会话服务 `/v2` 的原生 ArkTS 薄客户端。最低 HarmonyOS 6.0 / API 20，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。
+鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前独立发布版本 0.1.0）是会话服务 `/v2` 的原生 ArkTS 薄客户端。最低 HarmonyOS 6.0 / API 20，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。
 
-兼容 Android 的旧鸿蒙设备继续使用 [Android SDK](/android/)。HarmonyOS 5.x 原生兼容是后续工作，当前不宣称可用。OHPM 发布尚未开放，以本地 HAR 接入；签名安装与真机矩阵不在本文范围。
+兼容 Android 的旧鸿蒙设备继续使用 [Android SDK](/android/)。HarmonyOS 5.x 原生兼容是后续工作，当前不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR，尚未上架公共 OHPM；签名安装与真机矩阵不在本文范围。接入步骤见[鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/)。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 

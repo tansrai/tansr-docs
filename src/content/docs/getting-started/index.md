@@ -51,7 +51,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 五篇形态文章（Android 与 iOS 合为一篇，鸿蒙单独一篇）按同一顺序展开，便于你在不同形态之间对照：
 
 1. **前提**：运行环境与版本要求（Node ≥ 22.19 是共同基线）。
-2. **安装**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`，或 Maven / SwiftPM / 本地 HAR 坐标。
+2. **安装**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`，或 Maven / SwiftPM / 独立发布 HAR 坐标。
 3. **凭据**：该形态需要哪一层凭据，从哪里拿。
 4. **第一个会话**：最短的可运行代码。
 5. **看到事件**：智能体的一切输出都是事件流（`msg.text.delta`、`tool.completed` 等），这一步让你亲眼看到它。
@@ -66,7 +66,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
 | Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+;SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20；Stage 模型；本地 HAR `@tansr/harmony` |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20；Stage 模型；独立发布 HAR `@tansr/harmony` 0.1.0 |
 
 ## 一次跑通后，接下来看什么
 

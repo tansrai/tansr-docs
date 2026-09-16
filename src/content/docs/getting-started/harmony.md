@@ -1,6 +1,6 @@
 ---
 title: 鸿蒙 SDK 5 分钟跑通
-description: 在原生 HarmonyOS 应用里接入 @tansr/harmony——用本地 HAR 依赖、提供你自己的登录凭据、创建第一个会话并把事件流归约成 SessionView。
+description: 在原生 HarmonyOS 应用里接入 @tansr/harmony——用独立发布的版本化 HAR、提供你自己的登录凭据、创建第一个会话并把事件流归约成 SessionView。
 zone: docs
 category: getting-started
 related:
@@ -19,7 +19,7 @@ lastVerified: '2026-09-16'
 
 `@tansr/harmony` 是会话服务 `/v2` 的**原生 ArkTS 薄客户端**（HAR）：发送输入、归约事件流、执行你显式注册的本地工具、应答权限与提问。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve`；手机上没有任何平台凭据。视图归约与 Android / iOS 共用同一份金样。HAR **不包含 ArkUI 页面**，录音 / 播放 / 列表虚拟化由宿主自己接。
 
-兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前最低 HarmonyOS 6.0 / API 20（Stage 模型）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。包尚未发布 OHPM，以本地 HAR 接入。
+兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前最低 HarmonyOS 6.0 / API 20（Stage 模型）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR（0.1.0），尚未上架公共 OHPM，不会从公共渠道自动取最新版。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
@@ -35,13 +35,13 @@ lastVerified: '2026-09-16'
 
 ## 安装
 
-在 SDK 仓用 DevEco 或 `./scripts/native.ps1 -Action har` 产出 `tansr/build/default/outputs/default/tansr.har`，复制到业务模块 `libs/tansr.har` 后：
+从你收到的独立 SDK 包取出 `libs/tansr-harmony-0.1.0.har`，先核对同目录 `SHA256SUMS`。HAR 含官方 ABC 与类型声明，不含 SDK 实现 ETS；字节码不构成绝对保密承诺。复制到业务模块后：
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
 ```
 
-执行 `ohpm install`。SDK 没有外部运行依赖，不包含 Node.js、React Native、WebView 或 Android 兼容运行时。HAR 独立工程消费即可验证接线，不必把 Demo HAP 嵌进你的应用。
+在应用 `app.products[].buildOption.strictMode` 设置 `useNormalizedOHMUrl: true`，再执行 `ohpm install`。升级时替换整套版本包并重新核对摘要，不要只替换 HAR 或改摘要跳过校验。SDK 没有外部运行依赖，不包含 Node.js、React Native、WebView 或 Android 兼容运行时。收到独立包即可接入，不必编译 SDK 源码，也不必把 Demo HAP 嵌进你的应用。
 
 ## 凭据：只有你自己的登录态
 

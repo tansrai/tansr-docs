@@ -1,6 +1,6 @@
 ---
 title: HarmonyOS SDK 5분 안에 실행하기
-description: '네이티브 HarmonyOS 앱에 @tansr/harmony를 연결합니다. 로컬 HAR 의존성을 넣고, 자신의 로그인 자격 증명을 제공하고, 첫 세션을 만든 뒤 이벤트 스트림을 SessionView로 리덕션합니다.'
+description: '네이티브 HarmonyOS 앱에 @tansr/harmony를 연결합니다. 독립 배포된 버전 HAR를 의존하고, 자신의 로그인 자격 증명을 제공하고, 첫 세션을 만든 뒤 이벤트 스트림을 SessionView로 리덕션합니다.'
 zone: docs
 category: getting-started
 related:
@@ -19,7 +19,7 @@ lastVerified: '2026-09-16'
 
 `@tansr/harmony`는 세션 서비스 `/v2`의 **네이티브 ArkTS 얇은 프로토콜 클라이언트**(HAR)입니다. 입력을 보내고, 이벤트 스트림을 리덕션하고, 당신이 명시적으로 등록한 로컬 도구를 실행하며, 권한과 질문에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve`에서 실행되고, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 뷰 리덕션은 Android / iOS와 같은 골든 샘플을 공유합니다. HAR는 **ArkUI 페이지를 포함하지 않습니다**. 녹음, 재생, 리스트 가상화는 호스트가 담당합니다.
 
-Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 현재 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 패키지는 OHPM에 게시되지 않았고, 로컬 HAR로 연결합니다.
+Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 현재 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 현재 산출물은 독립 배포된 버전 release 바이트코드 HAR(0.1.0)입니다. 공개 OHPM에는 없고, 공개 채널에서 최신판을 자동으로 가져오지 않습니다.
 
 ## 휴대폰은 사용자 메시지를 보내고, 서버가 시스템 프롬프트를 설정한다
 
@@ -35,13 +35,13 @@ Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](
 
 ## 설치
 
-SDK 저장소에서 DevEco 또는 `./scripts/native.ps1 -Action har`가 `tansr/build/default/outputs/default/tansr.har`를 만듭니다. 업무 모듈의 `libs/tansr.har`로 복사한 뒤:
+받은 독립 배포 SDK 패키지에서 `libs/tansr-harmony-0.1.0.har`를 꺼내고, 같은 디렉터리의 `SHA256SUMS`를 먼저 대조합니다. HAR에는 공식 ABC 바이트코드와 타입 선언이 들어 있고 SDK 구현 ETS는 없습니다. 바이트코드가 절대 비밀을 보장하지는 않습니다. 업무 모듈로 복사한 뒤:
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
 ```
 
-`ohpm install`을 실행합니다. SDK에는 외부 런타임 의존성이 없고 Node.js, React Native, WebView, Android 호환 런타임도 포함하지 않습니다. 별도 프로젝트에서 HAR만 소비해도 배선을 확인할 수 있으며, Demo HAP를 앱에 넣을 필요는 없습니다.
+앱의 `app.products[].buildOption.strictMode`에 `useNormalizedOHMUrl: true`를 설정한 다음 `ohpm install`을 실행합니다. 업그레이드할 때는 버전 패키지 전체를 교체하고 요약을 다시 대조하세요. HAR만 바꾸거나 요약을 고쳐 검사를 건너뛰지 마세요. SDK에는 외부 런타임 의존성이 없고 Node.js, React Native, WebView, Android 호환 런타임도 포함하지 않습니다. 독립 패키지만 있으면 연결할 수 있으며, SDK 소스를 빌드할 필요도, Demo HAP를 앱에 넣을 필요도 없습니다.
 
 ## 자격 증명: 당신 자신의 로그인 상태만
 

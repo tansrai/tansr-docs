@@ -51,7 +51,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 5 本の形態別記事（Android と iOS は 1 本にまとめています。HarmonyOS は独立した 1 本です）は同じ順序で展開するので、形態間で対照しやすくなっています。
 
 1. **前提**：実行環境とバージョン要件（Node ≥ 22.19 が共通のベースライン）。
-2. **インストール**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`、または Maven / SwiftPM / ローカル HAR の座標。
+2. **インストール**：`npm i -g @tansr/cli`、`npm install @tansr/sdk`、`npm install @tansr/serve`、または Maven / SwiftPM / 独立公開 HAR の座標。
 3. **認証情報**：その形態にどの層の認証情報が必要で、どこから取得するか。
 4. **最初のセッション**：動く最短のコード。
 5. **イベントを見る**：エージェントの出力はすべてイベントストリーム（`msg.text.delta`、`tool.completed` など）です。このステップで自分の目で確認します。
@@ -66,7 +66,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | `@tansr/serve` | Node.js ≥ 22.19。サードパーティのランタイム依存は `zod` のみ |
 | Android SDK | minSdk 26。Kotlin コルーチン + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+。SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20。Stage モデル。ローカル HAR `@tansr/harmony` |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20。Stage モデル。独立公開 HAR `@tansr/harmony` 0.1.0 |
 
 ## 一度動いたら、次に読むもの
 

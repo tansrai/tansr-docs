@@ -1,6 +1,6 @@
 ---
 title: HarmonyOS SDK in 5 minutes
-description: 'Integrate @tansr/harmony in a native HarmonyOS app: depend on a local HAR, provide your own login credential, create the first session and reduce the event stream into SessionView.'
+description: 'Integrate @tansr/harmony in a native HarmonyOS app: depend on the independently published versioned HAR, provide your own login credential, create the first session and reduce the event stream into SessionView.'
 zone: docs
 category: getting-started
 related:
@@ -19,7 +19,7 @@ lastVerified: '2026-09-16'
 
 `@tansr/harmony` is a **native ArkTS thin client** (HAR) of the session service `/v2` protocol: it sends input, reduces the event stream, runs the local tools you explicitly register, and answers permission and question prompts. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential. View reduction shares the same golden samples as Android / iOS. The HAR **does not include ArkUI pages**; recording, playback and list virtualization belong to the host.
 
-Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The current minimum is HarmonyOS 6.0 / API 20 (Stage model). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The package is not published to OHPM; integrate a local HAR.
+Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The current minimum is HarmonyOS 6.0 / API 20 (Stage model). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The current delivery is an independently published versioned release bytecode HAR (0.1.0). It is not on public OHPM and will not pull the latest version from a public channel.
 
 ## Send user messages on the phone; configure system prompts on the server
 
@@ -35,13 +35,13 @@ The prompt and policy features are available since `@tansr/serve` 0.8.0; the pla
 
 ## Install
 
-In the SDK repository, DevEco or `./scripts/native.ps1 -Action har` produces `tansr/build/default/outputs/default/tansr.har`. Copy it to the business module as `libs/tansr.har`, then:
+From the independently published SDK package you received, take `libs/tansr-harmony-0.1.0.har` and verify the sibling `SHA256SUMS` first. The HAR contains official ABC bytecode and type declarations, not SDK implementation ETS; bytecode is not an absolute secrecy guarantee. Copy it into the business module, then:
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
 ```
 
-Run `ohpm install`. The SDK has no external runtime dependency and does not include Node.js, React Native, WebView, or an Android compatibility runtime. Consuming the HAR from a separate project is enough to prove the wiring; you do not need to embed the demo HAP in your app.
+Set `useNormalizedOHMUrl: true` on the app `app.products[].buildOption.strictMode`, then run `ohpm install`. To upgrade, replace the whole versioned package and re-check the checksums; do not swap only the HAR or edit checksums to skip verification. The SDK has no external runtime dependency and does not include Node.js, React Native, WebView, or an Android compatibility runtime. The independent package is enough to integrate; you do not need to compile the SDK source, and you do not need to embed the demo HAP in your app.
 
 ## Credentials: only your own login state
 

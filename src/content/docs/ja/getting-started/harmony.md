@@ -1,6 +1,6 @@
 ---
 title: 'HarmonyOS SDK を 5 分で動かす'
-description: 'ネイティブ HarmonyOS アプリに @tansr/harmony を組み込む——ローカル HAR 依存を追加し、自分のログイン認証情報を渡し、最初のセッションを作ってイベントストリームを SessionView に還元します。'
+description: 'ネイティブ HarmonyOS アプリに @tansr/harmony を組み込む——独立公開のバージョン付き HAR を依存に追加し、自分のログイン認証情報を渡し、最初のセッションを作ってイベントストリームを SessionView に還元します。'
 zone: docs
 category: getting-started
 related:
@@ -19,7 +19,7 @@ lastVerified: '2026-09-16'
 
 `@tansr/harmony` はセッションサービス `/v2` の**ネイティブ ArkTS の薄いプロトコルクライアント**（HAR）です。入力を送り、イベントストリームを還元し、あなたが明示的に登録したローカルツールを実行し、権限と質問に応答します。エージェントのカーネル、権限エンジン、コンテキストのガバナンスはすべてあなたがデプロイした `@tansr/serve` のサーバー側で動き、スマートフォン上にはプラットフォームの認証情報が一切ありません。ビュー還元は Android / iOS と同じゴールデンサンプルを共有します。HAR は **ArkUI のページを含みません**。録音、再生、リストの仮想化はホスト側の仕事です。
 
-Android 互換スタックだけの古い HarmonyOS 端末は引き続き [Android SDK](/ja/getting-started/android/) を使います。現在の最低要件は HarmonyOS 6.0 / API 20（Stage モデル）です。HarmonyOS 5.x のネイティブ互換は後続の作業であり、この記事は利用可能だと主張しません。パッケージは OHPM に公開されておらず、ローカル HAR で組み込みます。
+Android 互換スタックだけの古い HarmonyOS 端末は引き続き [Android SDK](/ja/getting-started/android/) を使います。現在の最低要件は HarmonyOS 6.0 / API 20（Stage モデル）です。HarmonyOS 5.x のネイティブ互換は後続の作業であり、この記事は利用可能だと主張しません。現在の配布物は独立公開のバージョン付き release バイトコード HAR（0.1.0）です。公共 OHPM には未掲載で、公共チャネルから最新版を自動取得しません。
 
 ## スマートフォン側はユーザーメッセージを送り、サーバー側がシステムプロンプトを設定する
 
@@ -35,13 +35,13 @@ Android 互換スタックだけの古い HarmonyOS 端末は引き続き [Andro
 
 ## インストール
 
-SDK リポジトリで DevEco または `./scripts/native.ps1 -Action har` が `tansr/build/default/outputs/default/tansr.har` を出力します。業務モジュールの `libs/tansr.har` へコピーしたあと：
+受け取った独立公開 SDK パッケージから `libs/tansr-harmony-0.1.0.har` を取り出し、同じディレクトリの `SHA256SUMS` を先に照合します。HAR には公式の ABC バイトコードと型宣言が含まれ、SDK 実装の ETS は含みません。バイトコードは絶対的な秘匿を意味しません。業務モジュールへコピーしたあと：
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
 ```
 
-`ohpm install` を実行します。SDK に外部のランタイム依存はなく、Node.js、React Native、WebView、Android 互換ランタイムは含みません。別プロジェクトで HAR を消費すれば配線を確認でき、Demo HAP をアプリに埋め込む必要はありません。
+アプリの `app.products[].buildOption.strictMode` に `useNormalizedOHMUrl: true` を設定し、`ohpm install` を実行します。アップグレードではバージョン一式のパッケージを差し替え、要約を再照合してください。HAR だけを差し替えたり、要約を書き換えて検査を飛ばしたりしないでください。SDK に外部のランタイム依存はなく、Node.js、React Native、WebView、Android 互換ランタイムは含みません。独立パッケージを受け取れば組み込めます。SDK ソースをビルドする必要はなく、Demo HAP をアプリに埋め込む必要はありません。
 
 ## 認証情報：あなた自身のログイン状態だけ
 
