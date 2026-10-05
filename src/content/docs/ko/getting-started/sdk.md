@@ -9,15 +9,17 @@ related:
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:doc/release/sdk-0.18.1.md
+lastVerified: '2026-10-05'
 ---
 
-`@tansr/sdk`는 tansr 커널의 headless 언어 바인딩입니다. prompt가 들어가면 이벤트가 흘러나오며, UI 의존성은 없습니다. 쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축은 모두 커널에서 오며 컴파일 시 인라인되어 있습니다. 당신이 얻는 것은 `tansr` CLI와 같은 런타임을 라이브러리 형태로 당신의 앱에 내장한 것입니다.
+`@tansr/sdk`는 tansr 커널의 headless 언어 바인딩입니다. prompt가 들어가면 이벤트가 흘러나오며, UI 의존성은 없습니다. 쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축은 모두 커널에서 오며 컴파일 시 인라인되어 있습니다. 당신이 얻는 것은 `tansr` CLI와 같은 런타임을 라이브러리 형태로 당신의 앱에 내장한 것입니다. 이 페이지는 `@tansr/sdk` **0.18.1**(2026-10-04 공개)을 기준으로 확인했습니다. 프로세스 내 `createSession` 사용법은 0.13.0 이후 바뀌지 않았습니다.
 
 ## 애플리케이션 프롬프트는 어디에서 설정하나요
 
@@ -41,8 +43,10 @@ Windows Electron에서도 SDK는 메인 프로세스에서 실행되며, rendere
 ## 설치
 
 ```bash
-npm install @tansr/sdk
+npm install @tansr/sdk        # 现行 0.18.1
 ```
+
+0.18.0부터 패키지에는 하위 진입점 `@tansr/sdk/extensions`(아카이브 호스트 / 캐시 호스트)와 9곳의 선택적 시그니처 추가가 함께 들어 있습니다. 모두 추가일 뿐이며, 이 페이지의 루트 진입점 사용법과 동작은 그대로입니다. 쓰지 않는다면 읽을 필요가 없습니다. 에이전트를 서버 쪽에 두고 Android / iOS / HarmonyOS나 `@tansr/api-client` 같은 얇은 클라이언트가 HTTP로 접속하게 하려면 [`@tansr/serve`](/ko/getting-started/serve/)를 사용하세요. 새 통합은 통합 호출 표면 `/api`를 사용합니다.
 
 ## 자격 증명: 모델 출처 세 등급 중 하나를 선택
 
@@ -120,3 +124,4 @@ UI를 만들 거라면 이벤트를 손으로 조립하지 마세요. `createSes
 - [체크포인트와 재개](/ko/sdk/checkpoints/): 영구 저장, 재시작을 넘어선 재개, 수동 압축과 스냅숏.
 - [플랫폼 어셈블리와 번들](/ko/sdk/platform-bundle/): 기능 플래그, 도구 3링, 토큰 방식으로 배포되는 것.
 - [오류 처리와 재시도](/ko/sdk/errors-and-retries/): SDK 오류 코드, 플랫폼 오류 코드, 무엇을 재시도해야 하고 무엇을 하지 말아야 하는지.
+- [SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/): 0.18.x에서 공개된 `@tansr/sdk/extensions`, `@tansr/serve/extensions`, 통합 호출 표면 `/api`의 공개 상태, 경계, 성능 공개. 프로세스 내 통합은 마이그레이션이 필요 없습니다.

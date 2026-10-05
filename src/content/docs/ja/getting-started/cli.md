@@ -8,36 +8,31 @@ related:
   - cli/commands
   - support/troubleshooting
   - support/account
+  - serve/deploy-and-auth
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-10'
+  - tansr-cli:doc/report/REL-SEA-发行执行单-2026-10-05.md
+lastVerified: '2026-10-05'
 ---
 
-`tansr` は開発者向けのエージェント CLI です。同じ 1 つのカーネルを、対話式ターミナル（TUI）、ヘッドレススクリプト（headless）、常駐サービス（serve）、エディタエージェント（acp）、MCP ツールサービス（mcp serve）の 5 つの形態で提供します。このページでは最短経路だけを進みます：インストール、ログイン、ひと言話す、イベントストリームを一度見る。
+`tansr` は開発者向けのエージェント CLI です。同じ 1 つのカーネルを、対話式ターミナル（TUI）、ヘッドレススクリプト（headless）、常駐サービス（serve）、エディタエージェント（acp）、MCP ツールサービス（mcp serve）の 5 つの形態で提供します。このページでは最短経路だけを進みます：インストール、ログイン、ひと言話す、イベントストリームを一度見る。現在のバージョンは **0.10.1**（npm `@tansr/cli`、2026-10-04 公開）です。
 
 ## 前提
 
-- Node.js ≥ 22.19（npm パッケージ形態）。単一ファイル実行版（SEA）は Node ランタイムを同梱しており、事前インストールは不要です。
+- Node.js ≥ 22.19。現時点で公開されている形態は npm パッケージだけです。単一ファイル実行版（SEA、Node ランタイム同梱）はまだ公開されていません。後述を参照してください。
 - Windows / macOS / Linux をサポートします。Windows では Windows Terminal を推奨します。従来の conhost では自動的に ASCII グリフ段階に切り替わりますが、機能に影響はありません。
 
 ## インストール
 
-npm 形態（推奨）：
-
 ```bash
 npm i -g @tansr/cli
-tansr --version
+tansr --version          # 0.10.1
 ```
 
-パッケージ名は `@tansr/cli`、コマンド名は `tansr` です。
+パッケージ名は `@tansr/cli`、コマンド名は `tansr` です。アップグレードも同じく `npm i -g @tansr/cli@latest` で行います。0.10.1 以降、インストールした各バージョンの初回起動時にユーザーキャッシュディレクトリへ約 2 MB の Node コンパイルキャッシュを書き込みます（同じバージョンの 2 回目以降の起動が速くなります。`TANSR_COMPILE_CACHE=0` で無効化できます。[設定と doctor](/ja/cli/settings-and-doctor/)を参照）。
 
-単一ファイル形態：公式配布サイトから対応プラットフォームの実行ファイル（`tansr-sea-win32-x64.exe` のような名前）をダウンロードし、`SHA256SUMS` を検証してから PATH に置くだけです。
-
-```text
-https://bash.tansr.com/release/stable/tansr-sea-win32-x64.exe
-https://bash.tansr.com/release/stable/SHA256SUMS
-```
+**単一ファイル形態（SEA）と OSS 配布サイト：未公開。** 2026-10-05 時点で、公式配布サイト `bash.tansr.com` には 0.10.x に対応する実行ファイルも `SHA256SUMS` もありません（Windows 版は当面掲載しないことが決まっています）。配布サイトをインストール元として扱わないでください。SEA が公開され次第、本ページにダウンロードと検証の手順を追加します。
 
 ## 認証情報：個人アクセストークンでログイン
 
@@ -126,4 +121,4 @@ for await (const line of createInterface({ input: child.stdout })) {
 
 - [設定と doctor](/ja/cli/settings-and-doctor/)：5 層の設定、よく使う環境変数、`tansr doctor` の各セクションの読み方。
 - [コマンドとフラグのリファレンス](/cli/commands)：すべてのサブコマンドとフラグ。
-- 自分のエージェントを他の人にも使わせたい？[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)をご覧ください。
+- 自分のエージェントを他の人にも使わせたい？[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)をご覧ください。CLI 形態の `tansr serve --v2` は 0.10.0 以降、統一呼び出し面 `/api` も同時にマウントします（新規の統合はこちらへ）。`--v2` 構成では `/v1` 面はデフォルトで無効になり、移行用フラグ `--legacy-v1` は 0.10.1 以降は非推奨です。詳しくは[デプロイと認証](/ja/serve/deploy-and-auth/)を参照してください。

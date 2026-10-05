@@ -15,10 +15,13 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:doc/release/sdk-0.18.1.md
+lastVerified: '2026-10-05'
 ---
 
 SDK 的一句话分工：**智能体循环归 SDK，交互体验归你**。你提供 UI（或没有 UI）、业务函数、权限确认交互；SDK 提供模型接入、工具执行、事件流与状态投影。这一篇讲事件流这条主干。
+
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（现行 **0.18.1**，2026-10-04 发布；配套 `@tansr/serve` 0.14.0、`tansr` 命令行 0.10.1）。0.18.0 / 0.18.1 对本页的进程内 API **零行为变化**：`createSession` / `query` / `runAgent` 三档、事件包络、`SessionView` 均与 0.14.0 以来一致；统一 HTTP 调用面 `/api` 是会话服务的事，Electron / Node 内嵌 SDK 不经它。版本差异只在本页末尾「0.18.x 的加法」一节。
 
 ## system 与普通输入的边界
 
@@ -134,6 +137,18 @@ await pump;
 1. **resume / attach 恒优先于新建。** 持有上次 `sessionId` → 先试恢复 → 恢复不了才新建；每次进页面开新会话等于把上游已暖的缓存整体作废。
 2. **申报字节恒稳定。** 工具名 / 描述 / 参数 schema / `builtin` 选择集 / system 段都进模型请求前缀，顺序换位或描述改一个字，下一轮整前缀 miss。工具与宿主业务段应保持稳定；平台提示词变更会在后续轮次更新前缀，应同时评估缓存命中与调用成本。
 3. **闲置即关闭，恒不弃养。** `close()` 发起逻辑关闭与中止；退出宿主前用 `closeAsync()` 核对真实资源及所需存储 flush 回执，详见[生命周期与资源收尾](/sdk/lifecycle/)。平台会话归档是另一条边界，store 内容保留、随时 `resume`。
+
+## 0.18.x 的加法
+
+`@tansr/sdk` 0.18.0（2026-10-02，“2026.10 统一 API 发行车”）与 0.18.1（2026-10-04，「0.14.0 批」）相对 0.17.0 对本页相关的变化全部是**可选加法**，不传即零变化：
+
+- **子入口 `@tansr/sdk/extensions`**（0.18.0 起随包）：本地归档宿主 `createNodeArchiveHost` 与本地缓存宿主 `createNodeCacheHost`，都是显式装配的宿主，**不是 `createSession` 的缺省开关**；不 import 该子入口的代码零变化。0.18.1 的 `src` 相对 0.18.0 零改动，随车只因 `./extensions` 的发布物内容有差量。两宿主的职责边界与性能披露见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+- **`ToolContext.executionTarget?` / `ToolContext.turnId?` 与 `GateDecision.executionTarget?`**：自定义 `Tool.execute` 与自定义权限门能读到的三个新可选键。进程内 SDK（`createSession` / `query` / `defineTool` / 自定义门）里这三个键**恒缺席**——只有会话服务的 SDK2 显式执行档调度器会填入，表示该调用将在远端绑定设备 / 受控服务执行。自定义门若读到 `executionTarget`，不得回落宿主本机资源（缺资源即拒，不是宿主兜底）。
+- **`AppBundleModel.adapterDiagnostics?`**：只读投影，描述平台目录证据是否足以选择请求 / 计费适配器（`status ∈ 'ready' | 'review' | 'unresolved'`），供界面展示；不携供应商凭据或价格原文，平台未下发时 `undefined`。
+- **`CLIENT_FEATURES` 新增 `'bound-device-v1'`**：出线头 `x-tansr-client-features` 的缺省声明串随之变化，升级后首次装配会按新指纹重拉一次 bundle（旧缓存条目自然失效，无需手清）；对 `ClientFeature` 做穷举 `switch` 的代码补一个分支。进程内 SDK 不消费 bundle 的 `execution` 段，设备工具授权只在会话服务的 SDK2 执行档生效，见[平台装配与 bundle](/sdk/platform-bundle/)。
+- **`SessionStore` 可选能力位 `attachmentCheckpoints`**：内置 `createFileSessionStore` 已实现，`resume` 自此把附件准入状态随历史冷恢复；自定义五方法 Store 不声明即保持 0.17 行为，见[检查点与恢复](/sdk/checkpoints/)。
+
+0.18.0 之后主线仍在推进（例如平台非聊天操作面），这些改动**尚未随任何 npm 版本发布**，本页不作描述。
 
 ## 相关
 

@@ -9,6 +9,8 @@ related:
   - serve/v2-and-webhooks
   - serve/retention-and-governance
   - serve/env
+  - cli/settings-and-doctor
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:packages/server/README.md
@@ -16,11 +18,13 @@ sources:
   - tansr-cli:examples/serve-demo/README.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
+  - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-`@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。
+`@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。版本基线：`@tansr/serve` 0.14.0 与 `tansr` 命令行 0.10.1（均 2026-10-04 发布）；标注版本号的段落只对该版本及更高成立。
 
 ## 在平台或宿主配置应用角色
 
@@ -32,13 +36,13 @@ lastVerified: '2026-09-15'
 
 | 层 | 凭据 | 归属 |
 |---|---|---|
-| 客户端 ↔ 会话服务（`/v2`） | 你自定的登录态 token | 完全开发者侧；引擎只经 `authenticate` 缝取 `endUserId` |
+| 客户端 ↔ 会话服务（`/api`、`/v2`） | 你自定的登录态 token | 完全开发者侧；引擎只经 `authenticate` 缝取 `endUserId` |
 | 会话服务 ↔ tansr 平台 | `appid` + `appkey`（控制台「应用」颁发） | 服务进程持有；用 appkey 为每个终端用户换 `app_user` 令牌，计费按 endUser 归因 |
 | 客户端持 `appid` | 公开应用标识 | 可下发，恒非凭据 |
 
-红线：appkey 恒不下发到端；`app_user` 令牌恒不出会话服务；`/v2` 恒不受理 `/v1` 的 Bearer；会话 id 恒非鉴权因子，每个 `:id` 端点独立校验归属，跨用户恒 403。
+红线：appkey 恒不下发到端；`app_user` 令牌恒不出会话服务；`/api` / `/v2` 恒不受理 `/v1` 的 Bearer；会话 id 恒非鉴权因子，每个 `:id` 端点独立校验归属，跨用户恒 403；`/api` 上体内任何身份字段都不被当作身份，`endUserId` 恒由 `Authorization` 背后的鉴权缝裁定。
 
-`authenticate` 是 `/v2` 的**唯一**鉴权面。它的职责只有一个：把你的登录态映射到 `endUserId`（形制 `^[\x21-\x7E]{1,128}$`，创建后恒不变）。返回 `null` 或抛错一律 401。
+`authenticate` 是 `/v2` 与 `/api` 会话域的**唯一**鉴权面。它的职责只有一个：把你的登录态映射到 `endUserId`（形制 `^[\x21-\x7E]{1,128}$`，创建后恒不变）。返回 `null` 或抛错一律 401。0.13.0 起的 `/api` 门面对委托径**不重复鉴权**（由域 handler 即此缝裁定），门面自有端点（`/api/manifest`、`/api/capabilities`、`/api/sessions/:id/capabilities`）先鉴权再作答；0.14.0 起携 `Idempotency-Key` 的请求门面会先鉴权一次、域 handler 再鉴权一次。SDK2 执行 / 归档 / 缓存装配在场时，基础认证源另有限界：缺省 128 个未结束认证源、每请求 10 s（`AgentSessionsOptions.authentication: { maxPending?, timeoutMs? }`，旋钮 `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS`）；只装 SDK1 的部署缺席零变化。
 
 ```ts
 v2: {
@@ -58,6 +62,12 @@ appid / appkey 从环境变量读（官方样板用 `TANSR_APP_KEY_ID` / `TANSR_
 ## `/v1` 面与 `token`
 
 `startServer` 的 `token` 选项是 `/v1` 单运维方面的 Bearer（`POST /v1/sessions` 等六端点，以及 `GET /v1/status`）。它与 `/v2` 的鉴权互不相通。不需要 `/v1` 面也要给一个强随机值——引擎 fail-closed，不会起无鉴权服务。
+
+**0.13.0 起 `/v1` 在装配了 `/api` 门面的部署缺省关闭**（`options.v2` 在场即 `StartServerOptions.disableV1` 缺省为 `true`；SDK2 显式宿主在场时恒关、不能重开）：`/v1/sessions*`、`/v1/status`、`/v1/approvals/:id/credential` 缺省 404。只装 SDK1 `/v1`、不带 `/v2` 的部署不受影响。确需保留的 npm 嵌入形显式 `disableV1: false`；命令行形态用 `tansr serve --legacy-v1` 或 `TANSR_SERVE_LEGACY_V1=1`——该旋钮自 0.14.0 / 命令行 0.10.1 起**已标废弃、1.0.0 移除**，开启时出恰一条结构化 `warn` 事件 `server.deprecated_option`（`deprecatedSince: "0.14.0"`、`removal: "1.0.0"`、`replacement: "approval.credential.submit"`）。0.14.0 起审批凭证投递改走 `POST /api/approvals/:id/credential`（manifest revision 7 的 `approval.credential.submit`，鉴权 = 多租 Bearer + `x-tansr-end-user`），接审批投递的 `--v2` 部署不再需要 `--legacy-v1`；健检改走免 Bearer 的 `/healthz` `/readyz`，不要再探 `GET /v1/status`。
+
+## `/api` 统一调用面与旧前缀
+
+`options.v2` 在场的部署自 0.13.0 起在链首装配 `/api` 门面（路由表单一事实源 `packages/server/src/api/route-table.ts`）：`/v2/sessions/**` 以外，显式装配的 `/v3/sdk2/**`、`/v3/terminal*/**` 也各有 `/api` 对应物；全部 `/api/*` 响应携 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` 四头，错误统一信封。新集成只读一份 `GET /api/manifest`（0.14.0 为 revision 7：11 族 / 81 操作）与一张路由表；`/v2`、`/v3/*` 定义为内部适配入口，0.14.0 未移除、未进只读窗口，1.0.0 移除外部入口。多副本部署给 nginx / k8s 模板加 `/api` 分片（仓内 `deploy/serve-v2/**` 已含），与客户端切流同向。路由表与迁移时间表见[统一 API](/unified-api/)。
 
 ## 优雅关闭：信号归宿主
 
@@ -88,7 +98,9 @@ process.on('SIGINT', shutdown);
 
 三端点免 Bearer：`GET /healthz`（存活）、`GET /readyz`（就绪，`!closing ∧ 全部就绪探针 ready`）、`GET /metrics`（OpenMetrics 文本）。因为免鉴权，暴露面必须显式：`host` 为回环时缺省暴露；绑 `0.0.0.0` 时缺省**不暴露**，须 [`TANSR_SERVE_EXPOSE_OBSERVABILITY=1`](/serve/env#tansr_serve_expose_observability) 或 `observability: { expose: true }`。未暴露时这三条路径与任何未知路径响应一致，不泄漏存在性。反代恒不把 `/metrics` 转到公网；探针与抓取器走内网直连副本。
 
-每个请求采纳合法入站 `x-request-id`（否则取 `traceparent` 的 trace-id，再否则自铸 UUID），恒回响应头 `x-request-id`，作 `request.completed{ requestId, method, route, status, durationMs }` 的关联键。结构化日志走 [`TANSR_SERVE_LOG_FORMAT=json`](/serve/env#tansr_serve_log_format)，字段恒不含令牌与消息内容。
+每个请求采纳合法入站 `x-request-id`（否则取 `traceparent` 的 trace-id，再否则自铸 UUID），恒回响应头 `x-request-id`，作 `request.completed{ requestId, method, route, status, durationMs }` 的关联键。结构化日志走 [`TANSR_SERVE_LOG_FORMAT=json`](/serve/env#tansr_serve_log_format)，字段恒不含令牌与消息内容。`/api` 与 `/v2`、`/v3/*` 在指标 `route` 标签下分别可见——以 `/v2/` `/v3/` 开头的样本就是尚未迁移到 `/api` 的调用。
+
+**日志级别缺省 `warn`**（`@tansr/serve` 0.13.0 / 命令行 0.10.0 起）：`tansr serve` 入口以 `createServeLogger(sink, { level = 'warn' })` 包装日志，旋钮 `TANSR_SERVE_LOG_LEVEL=info|debug` 放开；固定 10 s 窗口内按（级别、事件、字段）分组限量，超出以 `log.repeated { originalEvent, suppressed, windowMs }` 汇总、组数超 128 以 `log.overflow` 出线；全部级别同样脱敏 / 有界（字段 ≤ 128 个、字符串 ≤ 1 024 字符、整体 ≤ 8 KiB，`prompt / messages / content / body / args / stdout / stderr` 等正文键恒 `[redacted]`）。此前依赖 `info` 级事件做仪表板的部署升级后要显式设 `TANSR_SERVE_LOG_LEVEL=info`。自托管宿主可选用同一 `createServeLogger`，旧自定义 logger 直接注入仍可。新事件名：`execution.rejected` / `execution.result`（SDK2 执行档）、`log.repeated` / `log.overflow`、`server.deprecated_option`（0.14.0）；仪表板 / 告警按名随动。
 
 ## 准入帽与运维旋钮
 
@@ -101,6 +113,7 @@ process.on('SIGINT', shutdown);
 | 分层超时与每轮墙钟 | [`TANSR_SERVE_UPSTREAM_CONNECT_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_connect_timeout_ms) · [`TANSR_SERVE_UPSTREAM_IDLE_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_idle_timeout_ms) · [`TANSR_SERVE_UPSTREAM_TOTAL_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_total_timeout_ms) · [`TANSR_SERVE_TURN_WALL_CLOCK_MS`](/serve/env#tansr_serve_turn_wall_clock_ms) |
 | SSE 背压 | [`TANSR_SERVE_SSE_MAX_BUFFER_BYTES`](/serve/env#tansr_serve_sse_max_buffer_bytes) · [`TANSR_SERVE_SSE_SLOW_POLICY`](/serve/env#tansr_serve_sse_slow_policy)（`disconnect` 缺省 / `drop-oldest`）· [`TANSR_SERVE_SSE_RETRY_MS`](/serve/env#tansr_serve_sse_retry_ms) |
 | 重放窗字节帽 | [`TANSR_SERVE_EVENT_BUFFER_MAX_BYTES`](/serve/env#tansr_serve_event_buffer_max_bytes)（部署建议 4 MiB / 会话） |
+| 0.13.0 / 0.14.0 新增（`SERVE_RUNTIME_ENV` 表 31 → 36 键） | `TANSR_SERVE_LOG_LEVEL`（缺省 `warn`）· `TANSR_SERVE_SSE_MAX_FRAME_BYTES`（SDK2 装配缺省 2 MiB 单帧硬帽）· `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS`（基础认证源限界）· `TANSR_SERVE_LEGACY_V1`（已废弃的 `/v1` 过渡旋钮） |
 
 准入拒绝恒 `503 overloaded` 携 `Retry-After`（「本机忙，稍后再来」）；平台铸令牌撞 429 / 5xx / 网络错则 `503 upstream_unavailable`（「上游坏，加压无益」），两者刻意分开。缺省全部不设硬帽——唯一例外是每轮墙钟：**`tansr serve` 命令行形态自 0.9.0 起缺省 30 分钟**（`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用），单轮预期超过 30 分钟的部署需显式设更大值或 `0`；库 `startServer` 与 `resolveServeRuntimeOptions` 不带此缺省，仍是缺席即不设墙钟（且不接受 `0`）。
 
@@ -122,4 +135,8 @@ tansr serve --port 8080 --host 0.0.0.0 --token my-secret
 TANSR_SERVE_TOKEN=my-secret tansr serve          # token 走环境变量
 ```
 
-`--token` 与 `TANSR_SERVE_TOKEN` 皆缺即用法错误拒启；缺省仅回环监听，外部接入须显式 `--host 0.0.0.0`；全部端点要求 `Authorization: Bearer <token>`，未带或不匹配一律 401。它是「一容器一智能体实例」的 `/v1` 形态（参考模板 `deploy/serve/`），无询问通道，权限落到「询问」时降级拒绝。放权（`defaultMode: "auto"`）要用环境隔离兜底：容器或最小权限专用用户；文件系统写面限工作目录；网络出口白名单。`tansr doctor` 的「无人值守基线」检查会在 `auto` 且探测不到隔离迹象时给显著提示（不阻断）；确认已隔离后设 `TANSR_ISOLATED=1` 压制提示。`tansr serve --v2` 把 `/v2` 面挂进命令行形态（同一 Bearer + `x-tansr-end-user` 头自报分域），**tansr 命令行 0.6.0 已提供**。
+`--token` 与 `TANSR_SERVE_TOKEN` 皆缺即用法错误拒启；缺省仅回环监听，外部接入须显式 `--host 0.0.0.0`；全部端点要求 `Authorization: Bearer <token>`，未带或不匹配一律 401。它是「一容器一智能体实例」的 `/v1` 形态（参考模板 `deploy/serve/`，健检已走 `/healthz` `/readyz`），无询问通道，权限落到「询问」时降级拒绝。放权（`defaultMode: "auto"`）要用环境隔离兜底：容器或最小权限专用用户；文件系统写面限工作目录；网络出口白名单。`tansr doctor` 的「无人值守基线」检查会在 `auto` 且探测不到隔离迹象时给显著提示（不阻断）；确认已隔离后设 `TANSR_ISOLATED=1` 压制提示。
+
+`tansr serve --v2` 把 `/v2` 面挂进命令行形态（同一 Bearer + `x-tansr-end-user` 头自报分域），**tansr 命令行 0.6.0 已提供**；0.10.0 起同一进程链首装配 `/api` 门面，新集成改用 `/api/sessions/**`。注意 `--v2` 在场即门面在场，**`/v1` 面缺省关闭**（见上文）；要同时保留 `/v1` 须显式 `--legacy-v1`（已废弃）。
+
+**可信宿主模块（命令行 0.10.0 起）**：`tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>`（两旗标成对，缺一即用法错误）让运维者显式指定本机绝对路径的 `.cjs` 受信宿主模块与其原始字节 SHA256。入口经同一文件描述符有界读取（≤ 16 MiB），`timingSafeEqual` 核摘要后编译**已验字节**执行（不按文件名 require，避免校验后替换窗口）；模块导出 `(context) => { agent, authenticate, terminal?, v2?, resources? }`，`context` 携 `cwd / env / logger / serve / extensions / own()`。此径只装配公开平台宿主（`createAgentSessionFactory` + 可选终端服务 / 归档 / 缓存 / 记忆 / 可信扩展），不加载旧 CLI 登录 / provider / 本机工具装配；与原入口共用进程守卫与信号预算。它与部署者本机代码同级受信：入口摘要不签署依赖图、不是代码沙箱、路径不由模型或 HTTP 提供。不传两旗标 = 0.9.0 行为；`@tansr/serve/extensions` 的 SDK2 档案 / 缓存 / 终端服务 / 共享事务 Store 等库面能力在命令行形态**只经此径**可达，见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。命令行形态的 serve 日志同样缺省 `warn`（`TANSR_SERVE_LOG_LEVEL`），全部旗标与环境变量见[配置与 doctor](/cli/settings-and-doctor/)。

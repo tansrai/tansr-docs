@@ -10,15 +10,24 @@ related:
   - harmony
   - serve/v2-and-webhooks
   - serve/deploy-and-auth
+  - sdk/platform-bundle
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-ios:README.md
+  - tansr-ios:CHANGELOG.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-iOS SDK 是 Android SDK 的 Swift 镜像，三端同律：同一份 `/v2` 契约常量对表、同一份视图归约金样、同一份帧序夹具。这一篇按与 Android 指南相同的顺序展开，方便双端团队对照；差异点（SwiftUI 接线、乐观落帐、Info.plist 声明、Windows 构建）单独标出。
+iOS SDK 是 Android SDK 的 Swift 镜像，三端同律：同一份 `/v2` 契约常量对表、同一份视图归约金样、同一份帧序夹具。这一篇按与 Android 指南相同的顺序展开，方便双端团队对照；差异点（SwiftUI 接线、乐观落帐、Info.plist 声明、Windows 构建）单独标出。本页按公开二进制包 `tansr-ios-spm` **0.3.0** 核对，服务端按 `@tansr/serve` 0.14.0。
+
+## 版本与服务端前缀（2026-10-05 核对）
+
+- 已发布的 0.3.0 直连 `/v2`。服务端 0.13.0 起在同进程新增统一调用面 `/api`（0.14.0 为 manifest revision 7），对已发布版本**透明**：`/v2` 的端点、载荷与 SSE 帧字节不变，服务端升级不要求 App 升级。
+- 仓库主线对 `/api` 的对齐（manifest r7、统一错误信封、三个请求头）与 SDK 2.0 端侧适配都未随 SPM 发布；本页不按它们描述行为。
+- `/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口；届时需要升级到对齐 `/api` 的包版本，时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
@@ -34,7 +43,7 @@ iOS SDK 是 Android SDK 的 Swift 镜像，三端同律：同一份 `/v2` 契约
 | `TansrClient` | 纯 Swift | URLSession 传输（SSE 走 delegate 桥，Darwin 与 FoundationNetworking 同径）、`TansrAgent` 入口工厂 |
 | `TansrUI` | SwiftUI（`#if canImport(SwiftUI)`，非 Apple 平台空编译） | `TansrSessionObserver`、`tansrSessionLifecycle`、缺省权限 / 提问对话框 `tansrBridgeDialogs`、`TansrMessageList` / `TansrToolCard` / `TansrTodoPanel` / `TansrUsageRow` / `TansrErrorBanner` / `TansrConnectionBanner`；皆可替换，不绑主题，零 AVFoundation 依赖 |
 
-发布渠道 SwiftPM（git tag 即发布，仓名 `tansr-ios`）；最低 iOS 16+ / macOS 13+。
+发布渠道 SwiftPM：公开二进制包 `tansrai/tansr-ios-spm`（当前 0.3.0，远端 XCFramework，不含 SDK 实现源码，模块名保持 `TansrCore` / `TansrClient` / `TansrUI`）；最低 iOS 16+ / macOS 13+。源码仓 `tansr-ios` 的 SPM tag（0.2.0）发布在私有仓库，需要仓库访问权限，面向有源码权限的联调。
 
 ## 视图流与事件归约
 
@@ -97,6 +106,16 @@ let session = try await client.openSession(CreateSessionRequest(), bridges: try 
 
 handler 以任务运行、按 `callId` 配对：重放的重复帧去重，`server.tool.cancel` 取消任务，`deadlineAt` 越线自弃（不应答），应答网络失败安全重试，图片结果 base64 化并前置 20 MiB 帽自检，权限 digest 由 SDK 逐字复述。未注册的桥 fail-closed:SDK 恒不应答，服务端按契约降级（权限 deny-and-continue / 提问结构化「自行裁决」）。
 
+## 公网工具：服务端执行
+
+应用在控制台开启 `tools.webFetch`、`tools.http`（需 `@tansr/serve` 0.12.0 起）或 `tools.webSearch` 后，智能体可以读取网页、发起 HTTP 请求或联网搜索。这些工具都在你的会话服务主机上执行：手机不代发网络请求，也不绕过原有权限审批。能力位改动对新建会话或从存储重新装配的会话生效，运行中的会话不会自动增删工具。
+
+- 公开二进制 SPM 0.3.0 已包含 `SearchResultDetails` / `NetworkResultDetails` 显示投影，`ToolCardArtifact` 原有用法不变：搜索卡保留来源、截断与空结果提示，网页与 HTTP 卡保留原正文并显示实际 HTTP 状态。
+- HTTP 状态不代替工具成败，4xx / 5xx 仍需检查；搜索空结果不代表已知网址无法访问。旧历史缺少这些元数据时保持未知，不补造。
+- 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
+
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；iOS 侧的端侧执行与耐久执行日志、档案同步适配仍是源码候选——真机签名与档案同步的 Apple 平台验收尚未完成，未随 SPM 发布，已发布版本的行为不变，见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+
 ## 语音：两条链
 
 1. **工具链**：智能体调 `SpeechToText` / `TextToSpeech`，产物随 `tool.completed.data` 到端，`TansrToolCard` 缺省渲染（转写正文 + 时长；语音行 + 时长 + 模型 + 计费字符）。
@@ -123,6 +142,7 @@ SDK 恒不内置任何推送 SDK（APNs / FCM / 厂商通道归你）。服务�
 
 ## 联调与构建
 
+- 应用接入使用公开二进制 SPM 包 `tansr-ios-spm`（见[快速开始的 iOS 一节](/getting-started/android/#ios-同法)）；本节的 `swift build` / `swift test` 面向有源码权限的联调。同一 App 依赖图里不要混用源码 SDK 与二进制 SDK。
 - 对接仓内 `examples/serve-demo`（echo 径缺省端口 8788 / 8789）；iOS 模拟器连宿主机直用 `127.0.0.1`。示例 `OrderAssistant`:`swift run OrderAssistant`，或 `TANSR_DEMO_BASE_URL=http://127.0.0.1:8789 swift run OrderAssistant` 覆盖服务地址；明文 http 仅 demo 用 `NSAllowsArbitraryLoads` 放行，生产恒上 TLS。
 - **Windows / Linux 上构建逻辑层**：`swift build` / `swift test`（Swift 6.3+）跑 `TansrCore` 全卷——金样对拍、契约对表、泵状态机、乐观落帐、双桥矩阵、音频直连面。Windows 跑 `swift test` 需把 XCTest 运行时 DLL 目录加进 PATH（`<Swift>\Platforms\<ver>\Windows.platform\Developer\Library\XCTest-<ver>\usr\bin64`）。
 - Windows 上若在载包处即红 `NSCocoaErrorDomain Code=257 "You don't have permission."`，通常不是 ACL 问题：SwiftPM 会把 `Package.swift` 编成 `%TEMP%` 下的 `<包名>-manifest.exe` 再启动，带主动防御的安全软件会拦截并隔离它。处置二选一：把 Swift 工具链目录加入安全软件信任区（根治）；或 `mklink /J` 一个安全软件放行的目录别名后在其中运行。

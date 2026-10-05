@@ -8,20 +8,24 @@ related:
   - cli/settings-and-doctor
   - serve/deploy-and-auth
   - serve/retention-and-governance
+  - serve/v2-and-webhooks
   - sdk/platform-bundle
+  - sdk/sdk2-preview
   - support/account
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/README.md
+  - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。
+这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。版本基线：`tansr` 命令行 0.10.1、`@tansr/sdk` 0.18.1、`@tansr/serve` 0.14.0（均 2026-10-04 发布）。
 
 ## 出网：流量去哪，怎么收窄
 
@@ -43,7 +47,28 @@ lastVerified: '2026-09-15'
 
 - `@tansr/sdk` 令牌档只连你传入的 `baseUrl`（平台网关）以及你显式配置的 MCP 服务器；SDK 恒不扫用户目录、恒无自带搜索端点。
 - `@tansr/serve` 上游链是 `appid/appkey → POST /v1/app-tokens → GET /t1/config + POST /t1/heartbeat → POST /t1/exchange`，全部指向 `apiBaseUrl`；另有你配置的轮末 webhook URL（出站请求恒不带任何鉴权凭据头，真伪凭签名）与可选冷层对象存储。
-- 移动端 SDK 只连你的会话服务 `baseUrl`，不直连平台。
+- 移动应用在控制台开启网页抓取（WebFetch）或 HTTP 请求（Http）后（`@tansr/serve` 0.12.0 起，缺省关），这两件工具由会话服务所在主机直接访问目标网址，沿用同一出网规则：托管 Http 不能引用宿主环境变量里的凭据，模型也不能解除宿主的私网访问上限；若配置了出网代理，须在代理侧同样限制私网目标。详见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
+- 移动端 SDK 与 `@tansr/api-client` 只连你的会话服务 `baseUrl`，不直连平台，也不在设备上代发这些工具请求。
+
+## 统一调用面 `/api`：头、围栏与旧前缀
+
+`@tansr/serve` 0.13.0 起，`options.v2` 在场的部署在同一端口链首装配统一调用面 `/api`（0.14.0 为 manifest revision 7）。与安全相关的只有这几条：
+
+- **身份只来自 `Authorization`。** `/api` 与 `/v2` 共用同一条 `authenticate` 缝裁定 `endUserId`；四个响应头 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` 与错误信封的 `traceId` / `requestId` 恒不携 endUserId、令牌或消息内容。请求体里的任何身份字段都不被当作身份。`tansr serve --v2` 命令行形态以同一 Bearer + `x-tansr-end-user` 头自报分域，这个头只能由你的网关在自家登录态之后写入，恒不能让终端直填。
+- **请求头都是显式协商，不是鉴权因子。** `tansr-session-family`、`tansr-closure-id`、`tansr-event-envelope`、`Idempotency-Key` / `If-Match` / `deadline`（后三者 0.14.0 起）出现在不适用的请求上一律 `400 invalid_request`，不静默忽略；不携任何一头 = 行为逐字节不变。
+- **能力闭合围栏**：`GET /api/sessions/:id/capabilities` 只读联邦各域既有能力源，回一张操作三态表（`enabled` / `disabled` / `unavailable`）与 `tansr-closure-id`；它**不新造授权引擎**，围栏内的操作仍由域 handler 按应用能力位、用户授权、会话状态与审批裁决。写操作可携上次的 `tansr-closure-id` 作前置条件：围栏已变 → `412 precondition_failed`（`rediscover`，重新发现后再决定是否重发，不得带旧值硬重放）；越围栏调用已 `disabled` 的操作 → `403 capability_unavailable`。未知会话、他人会话与只存在于档案宿主的会话同答 `404 not_found`，不泄漏存在性。
+- **`/v1` 缺省关闭**：门面在场的部署 `/v1/sessions*`、`/v1/status`、`/v1/approvals/:id/credential` 缺省 404（SDK2 显式宿主在场时恒关）。过渡旋钮 `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` 自 0.14.0 / 命令行 0.10.1 起已标废弃（1.0.0 移除，开启时出 `warn` 事件 `server.deprecated_option`）；审批凭证投递改走 `POST /api/approvals/:id/credential`。健检改 `/healthz` `/readyz`，不要再用 `/v1` Bearer 探 `/v1/status`。
+- 统一错误信封里的 `message` 不承诺字面、`detail.path` 回写为所请求的 `/api` 路径，`/v2` / `/v3` 内部前缀与宿主路径不外泄。各头与码表见[统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
+
+## 系统工具与终端工具的隔离（SDK 2.0 远端档）
+
+SDK 2.0 的「统一核心与薄终端」把工具按**执行地**分成两类，谁也不能替谁执行：
+
+- **系统工具在会话服务主机执行**：WebFetch / Http / WebSearch / 媒体工具与 MCP 适配在 serve 进程内按宿主出网规则运行（私网上限、凭据白名单、代理侧同律）；MCP 适配复用宿主既有连接，不能根据模型参数启动进程，模型也不能解除出网上限。
+- **终端工具只在绑定设备执行**：文件读取 / 列目录 / 写入 / 编辑与绑定工作区记忆（`fs.inspect` / `fs.read` / `fs.list` 等受控原语）只在应用经管理 API 显式配置 `execution.version = 'bound-device-v1'` 并在 `boundDevice.tools` 授予后才存在；**旧应用类型与旧 `tools` 位不推导终端授权**。有效工具 = 应用上界 ∩ 用户策略 ∩ 请求收窄 ∩ 设备原语；原 Read / List 权限与用户审批照常生效，配置目录不能代用户授权。
+- **记忆与附件不回落宿主**：可信宿主 `execution.memoryFor(scope)` 只选择绑定工作区内的相对目录，不读 serve 的 home / env / cwd；缺能力、拒绝、掉线或来源过大都只降级本轮，恒不改读服务端文件。外置附件来源 `trustedAttachmentSourceFor` 的 URL 只是查表键，SDK / serve 不自动 fetch，不接受模型或客户端把地址变成文件或网络权限。
+- **耐久执行先记后做**：执行器先持久占用操作再执行、先保存结果再回传；断线重开不重做结果未知的操作（SDK 层对应 `GateDecision.executionTarget` / `ToolContext.executionTarget`，`@tansr/sdk` 0.18.0 起；进程内 SDK 恒缺席）。
+- **可信宿主模块与部署者代码同级受信**：`tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>`（命令行 0.10.0 起）只核入口文件原始字节的摘要，不签署依赖图、不是代码沙箱；路径与摘要恒由部署流水线给出，不由模型或 HTTP 提供。
 
 ## 凭据：放哪、不放哪
 
@@ -55,7 +80,8 @@ lastVerified: '2026-09-15'
 | 应用密钥 appid / appkey | 你的应用 | 你的服务端进程环境变量（Node 进程或 `@tansr/serve`） | 终端设备、日志、错误响应、版本库（`.env` 入 `.gitignore`） |
 | 短期 `app_user` 令牌 | 你的某个终端用户 | Electron 主进程内存；`@tansr/serve` 进程内部 | renderer 进程、持久化存储；移动端**从不**接触它 |
 | 你自己的登录 token（移动端） | 你的用户 | 经 `authProvider` 按次提供，SDK 不持久化 | SharedPreferences / DataStore / UserDefaults / 日志 |
-| 会话服务 `/v1` Bearer(`--token` / `TANSR_SERVE_TOKEN`) | 运维方 | 环境变量 | 与 `/v2` 面互不相通，不要复用给终端用户 |
+| 会话服务 `/v1` Bearer(`--token` / `TANSR_SERVE_TOKEN`) | 运维方 | 环境变量 | 与 `/v2` / `/api` 面互不相通，不要复用给终端用户；`--v2` 部署 `/v1` 缺省已关 |
+| `--host-module-sha256` 的摘要 | 你的部署流水线 | 构建产物旁随 `.cjs` 一起生成、一起下发 | 不由运行时计算、不由模型或 HTTP 提供 |
 | webhook `secret` | 你的推送后端 | 会话服务与接收端各自的环境变量 | 日志；引擎恒不打印它 |
 
 三处红线值得反复说：appkey 恒不出你的服务端；`app_user` 令牌恒不出会话服务；会话 id 不是鉴权因子。
@@ -87,8 +113,9 @@ lastVerified: '2026-09-15'
 ### 会话服务（`@tansr/serve`）
 
 - 会话历史落在你配置的 `store` 目录 `<dir>/agent-sessions/<endUserKey>/sessions/<sessionId>/`,`endUserKey` 是终端用户 id 的哈希，不是身份；可挂冷层到你的对象存储，段是明文 JSONL（压缩）——**加密、密钥管理、驻留地、访问控制归你**（`policy.transform` 挂点）。
-- 内存态短窗：终结记录保留 30 min，闲置 24 h 落盘；`DELETE /v2/sessions/:id` 是关闭不是删除。**未配置保留期时 store 缺省永存**；存储保留期扫描（按天龄与每用户条数删休眠会话）**@tansr/serve 0.8.0 起提供**（工厂选项 `sessions.retention` 或两个环境变量，见[保留期与治理](/serve/retention-and-governance/#存储保留期扫描)）。真删除走 `store.delete`。
-- 结构化日志字段恒不含令牌与消息内容；指标标签恒不含 sessionId / endUserId。
+- 内存态短窗：终结记录保留 30 min，闲置 24 h 落盘；`DELETE /v2/sessions/:id`（`/api/sessions/:id` 同义）是关闭不是删除。**未配置保留期时 store 缺省永存**；存储保留期扫描（按天龄与每用户条数删休眠会话）**@tansr/serve 0.8.0 起提供**（工厂选项 `sessions.retention` 或两个环境变量，见[保留期与治理](/serve/retention-and-governance/#存储保留期扫描)）。真删除走 `store.delete`。
+- 0.14.0 起 `Idempotency-Key` 的回执缓存是进程内内存态（每用户 256 条 / 全局 4 096 条 / 10 分钟），按 `endUserId` 隔离、随进程消亡；显式装配的 SDK2 归档宿主以「单一授权源」策略保存档案，不是备份也不同步到别处，条目删除由宿主显式调用。
+- 结构化日志字段恒不含令牌与消息内容（0.13.0 起缺省级别 `warn`，各级别同样脱敏，正文键恒 `[redacted]`）；指标标签恒不含 sessionId / endUserId。
 - 下行到终端的权限请求帧恒不携完整工具参数，只有目标摘要；webhook 载荷恒不携消息内容与凭据。
 
 ### 端侧
@@ -115,5 +142,7 @@ Android / iOS / 鸿蒙 SDK 不缓存凭据；视图状态在内存；是否把 s
 - `tansr doctor`：凭据落在密钥库还是明文文件？`localProviders` 段是否符合你的预期（平台模式 / 逃生态）？无人值守基线有没有提示？
 - 仓库里 `grep` 一次 `TANSR_APP_KEY` / `sk-` / `tansr_sk_`，确认没有真值入库。
 - 会话服务绑 `0.0.0.0` 时，`/metrics` 是否只暴露给内网？`store` 目录是否本地盘、未共享？
-- 你的 token 换发端点是否只在自家登录态之后签发、`endUserId` 恒取服务端会话而不信任请求体？
+- 你的 token 换发端点是否只在自家登录态之后签发、`endUserId` 恒取服务端会话而不信任请求体？`x-tansr-end-user` 是否只由网关写入？
+- `--v2` 部署是否还开着 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1`？日志里有 `server.deprecated_option` 就该排期去掉（1.0.0 移除），审批投递改 `POST /api/approvals/:id/credential`。
+- `--host-module-sha256` 是否由部署流水线随 `.cjs` 产物生成，而不是上线时手算？
 - 冷层对象存储的生命周期规则与加密是否已配置？

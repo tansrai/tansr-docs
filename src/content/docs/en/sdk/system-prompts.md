@@ -21,10 +21,12 @@ sources:
   - tansr-cli:packages/sdk/src/run-agent.ts
   - tansr-cli:packages/server/src/v2/agent-session-factory.ts
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/sdk/CHANGELOG.md
+  - tansr-cli:packages/server/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-This guide covers `@tansr/sdk@0.13.0` and later (currently 0.16.0) with `@tansr/serve@0.8.0` and later (currently 0.11.0), all published on npm; the tansr CLI shares the same behaviour since 0.6.0. The platform side (`systemPrompt` / `systemPromptPolicy` in the API and console) has been live since 2026-09-14. Older SDK / serve consumers may ignore the platform prompt or lack the policy. Configuring a prompt on the platform alone does not establish client support.
+This guide covers `@tansr/sdk@0.13.0` and later (currently 0.18.1) with `@tansr/serve@0.8.0` and later (currently 0.14.0), all published on npm (both current versions released 2026-10-04); the tansr CLI shares the same behaviour since 0.6.0 (currently 0.10.1). SDK 0.14.0 through 0.18.1 and serve 0.9.0 through 0.14.0 changed nothing on this page; serve-side prompt assembly behaves identically on the `/v2` surface and on the unified `/api` surface available since 0.13.0, with unchanged domain payload bytes. The platform side (`systemPrompt` / `systemPromptPolicy` in the API and console) has been live since 2026-09-14. Older SDK / serve consumers may ignore the platform prompt or lack the policy. Configuring a prompt on the platform alone does not establish client support.
 
 Application managers maintain a shared role, response style, and business guidance in **Applications → Overview → Application system prompt**. Developers can also supply `system` in code. The platform policy decides how those sources combine.
 

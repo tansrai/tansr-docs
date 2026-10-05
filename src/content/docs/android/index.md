@@ -10,16 +10,26 @@ related:
   - harmony
   - serve/v2-and-webhooks
   - serve/deploy-and-auth
+  - sdk/platform-bundle
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-android:README.md
+  - tansr-android:CHANGELOG.md
+  - tansr-android:doc/report/ANDROID-MEDIA-03-0.4.0-发布记录.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-Android SDK（Maven 坐标 `com.tansr.sdk:core` / `:client` / `:compose`，包名前缀 `com.tansr.sdk`）是会话服务 `/v2` 协议的薄客户端。这一篇讲快速开始之后你会遇到的全部设计点：事件怎么变成 UI 状态、断线怎么恢复、前后台怎么处理、错误怎么呈现、工具与对话框怎么接、语音与推送怎么接。
+Android SDK（Maven 坐标 `com.tansr.sdk:core` / `:client` / `:compose`，包名前缀 `com.tansr.sdk`）是会话服务 `/v2` 协议的薄客户端。这一篇讲快速开始之后你会遇到的全部设计点：事件怎么变成 UI 状态、断线怎么恢复、前后台怎么处理、错误怎么呈现、工具与对话框怎么接、语音与推送怎么接。本页按已发布的 **0.4.0**（Maven Central，2026-09-14；三模块同版）核对，服务端按 `@tansr/serve` 0.14.0。
+
+## 版本与服务端前缀（2026-10-05 核对）
+
+- 已发布的 0.1.0 – 0.4.0 全部直连 `/v2`。服务端 0.13.0 起在同进程新增统一调用面 `/api`（0.14.0 为 manifest revision 7），对这些版本**透明**：`/v2` 的端点、载荷与 SSE 帧字节不变，服务端升级不要求 App 升级。
+- 仓库主线已完成对 `/api` 的对齐——manifest r7 操作表、统一错误码为主的公开异常模型（D19，破坏性、一版过渡）、SDK1 成功响应与事件流的统一响应头门（D10 / D38）、三个请求头 `Idempotency-Key` / `If-Match` / `deadline` 的 `ApiCallOptions`——这些都登记在 CHANGELOG「未发布（0.4.0-SNAPSHOT 之后）」，**尚未随任何 Maven 版本发布**；本页不按它们描述行为，发布后再改。
+- `/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口；届时需要升级到对齐 `/api` 的 SDK 版本，时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
@@ -112,6 +122,16 @@ val session = client.openSession(scope, CreateSessionRequest(), bridges = dialog
 - 权限 / 提问对话框：`BridgeDialogState` + `TansrBridgeDialogs(dialogs)` 拿缺省 UI，或自写 suspend 回调。**未注册的桥 fail-closed**:SDK 不应答，服务端权限 120 s 到点 deny-and-continue、提问 60 s 宽限后结构化「自行裁决」。
 - 权限帧的 `attribution.reason` 在场时（裁决人判为危险）把理由显示给用户终审；机器恒不代批。
 
+## 公网工具：服务端执行
+
+应用在控制台开启 `tools.webFetch`、`tools.http`（需 `@tansr/serve` 0.12.0 起）或 `tools.webSearch` 后，智能体可以读取网页、发起 HTTP 请求或联网搜索。这些工具都在你的会话服务主机上执行：手机不代发网络请求，也不绕过原有权限审批。能力位改动对新建会话或从存储重新装配的会话生效，运行中的会话不会自动增删工具。
+
+- 结果按工具卡原样呈现，保留截断提示；Http 的 HTTP 状态不代替工具成败，4xx / 5xx 仍需检查；搜索空结果只说明本次查询没有匹配，不等于网站无法访问。恢复旧历史时只展示真实保留的正文与状态，不补造来源或状态码。
+- 专用的搜索 / 网页 / HTTP 结果展示投影（`SearchResultDetails` / `NetworkResultDetails`）在 0.4.0 发布之后才进入源码主线（2026-09-16），尚未随 Maven 包发布；已发布的 0.4.0 仍按原有工具卡显示结果。
+- 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
+
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；Android 侧对应的档案同步与绑定设备执行适配仍在仓库主线、未随 Maven 包发布，已发布版本的行为不变，见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+
 ## 语音：两条链
 
 音频不是协议级模态（不入消息块、不入事件流）。
@@ -133,7 +153,7 @@ SDK 恒不内置任何推送 SDK。服务端在轮终态且无活跃订阅者时
 ## 凭据与日志纪律
 
 - 设备凭证 = 你的登录态，SDK 只经 `authProvider` 按次取用，**恒不持久化**（不写 SharedPreferences / DataStore / 文件 / 日志），不缓存超出单请求生命周期。
-- appkey 在 SDK / 示例代码面恒无此概念；`app_user` 令牌恒不下发设备；会话服务 `/v1` 的 Bearer 恒不受理于 `/v2`。
+- appkey 在 SDK / 示例代码面恒无此概念；`app_user` 令牌恒不下发设备；会话服务 `/v1` 的 Bearer 恒不受理于 `/v2` / `/api`。
 - SDK debug 日志不打印 auth 头、令牌、应答全文、工具 args 全量，只打形状摘要；崩溃上报拿不到凭证。
 - 工具应答与工具申报都是不受信输入：服务端形状校验强制，语义面靠能力档收窄 + 权限桥 + 事件流归因。设备可被逆向改造，不要因「自家 App」降低警惕。
 

@@ -12,14 +12,15 @@ related:
   - serve/v2-and-webhooks
 sources:
   - tansr-harmony:README.md
+  - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 `@tansr/harmony` 是会话服务 `/v2` 的**原生 ArkTS 薄客户端**（HAR）：发送输入、归约事件流、执行你显式注册的本地工具、应答权限与提问。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve`；手机上没有任何平台凭据。视图归约与 Android / iOS 共用同一份金样。HAR **不包含 ArkUI 页面**，录音 / 播放 / 列表虚拟化由宿主自己接。
 
-兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前最低 HarmonyOS 6.0 / API 20（Stage 模型）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR（0.1.0），尚未上架公共 OHPM，不会从公共渠道自动取最新版。
+兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前最低 HarmonyOS 6.0 / API 20（Stage 模型）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR（0.1.0），尚未上架公共 OHPM，不会从公共渠道自动取最新版（2026-10-05 核对，仍为 0.1.0）。服务端按 `@tansr/serve` 0.14.0 核对：0.13.0 起新增的统一调用面 `/api` 对 0.1.0 HAR 透明，HAR 继续直连 `/v2`；仓库主线对 `/api` 的对齐与 RDB 接收器 / HUKS 加密等能力都属本地候选，**未随任何版本发布**，本文不作描述。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
@@ -135,3 +136,4 @@ session.bridges.registerTool(declaration, {
 - [鸿蒙接入指南](/harmony/)：会话生命周期、三级恢复、工具桥、语音两条链、朗读双帽、媒体下载边界。
 - [Android 与 iOS 5 分钟跑通](/getting-started/android/)：对照三端同律差异。
 - [v2 协议与 webhook](/serve/v2-and-webhooks/)：服务端半场怎么把轮末通知交给你的推送后端。
+- [移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)：让智能体读取网页、发起 HTTP 请求或联网搜索——在服务端执行，缺省关，鸿蒙端无需改代码。

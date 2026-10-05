@@ -8,36 +8,31 @@ related:
   - cli/commands
   - support/troubleshooting
   - support/account
+  - serve/deploy-and-auth
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-08'
+  - tansr-cli:doc/report/REL-SEA-发行执行单-2026-10-05.md
+lastVerified: '2026-10-05'
 ---
 
-`tansr` 是面向开发者的智能体命令行：同一个内核以交互式终端（TUI）、无头脚本（headless）、常驻服务（serve）、编辑器代理（acp）和 MCP 工具服务（mcp serve）五种形态对外提供。这一篇只走最短路径：装好、登录、聊一句、看一眼事件流。
+`tansr` 是面向开发者的智能体命令行：同一个内核以交互式终端（TUI）、无头脚本（headless）、常驻服务（serve）、编辑器代理（acp）和 MCP 工具服务（mcp serve）五种形态对外提供。这一篇只走最短路径：装好、登录、聊一句、看一眼事件流。现行版本 **0.10.1**（npm `@tansr/cli`，2026-10-04 发布）。
 
 ## 前提
 
-- Node.js ≥ 22.19（npm 包形态）。单文件可执行版（SEA）自带 Node 运行时，无需预装。
+- Node.js ≥ 22.19。当前唯一的发布形态是 npm 包；单文件可执行版（SEA，自带 Node 运行时）尚未发布，见下文。
 - Windows / macOS / Linux 都支持。Windows 下建议用 Windows Terminal；传统 conhost 会自动切到 ASCII 字形档，功能不受影响。
 
 ## 安装
 
-npm 形态（推荐）：
-
 ```bash
 npm i -g @tansr/cli
-tansr --version
+tansr --version          # 0.10.1
 ```
 
-包名是 `@tansr/cli`，命令名是 `tansr`。
+包名是 `@tansr/cli`，命令名是 `tansr`。升级同样走 `npm i -g @tansr/cli@latest`。0.10.1 起首次启动会在用户缓存目录写入约 2 MB 的 Node 编译缓存（之后同版本启动更快；`TANSR_COMPILE_CACHE=0` 关闭，见[设置与 doctor](/cli/settings-and-doctor/)）。
 
-单文件形态：从官方分发点下载对应平台的可执行文件（命名形如 `tansr-sea-win32-x64.exe`），校验 `SHA256SUMS` 后放入 PATH 即可：
-
-```text
-https://bash.tansr.com/release/stable/tansr-sea-win32-x64.exe
-https://bash.tansr.com/release/stable/SHA256SUMS
-```
+**单文件形态（SEA）与 OSS 分发点：尚未发布。** 截至 2026-10-05，官方分发点 `bash.tansr.com` 上没有与 0.10.x 对应的可执行文件或 `SHA256SUMS`（Windows 版已拍板暂不上架），不要把分发点当作安装来源；SEA 上架后本页再补下载与校验步骤。
 
 ## 凭据：用个人访问令牌登录
 
@@ -126,4 +121,4 @@ for await (const line of createInterface({ input: child.stdout })) {
 
 - [设置与 doctor](/cli/settings-and-doctor/)：五层配置、常用环境变量、`tansr doctor` 各段怎么读。
 - [命令与旗标参考](/cli/commands)：全部子命令与旗标。
-- 想让别人也能用你的智能体？看[会话服务 5 分钟跑通](/getting-started/serve/)。
+- 想让别人也能用你的智能体？看[会话服务 5 分钟跑通](/getting-started/serve/)。命令行形态 `tansr serve --v2` 自 0.10.0 起同时装配统一调用面 `/api`（新集成走这里），`/v1` 面在 `--v2` 部署缺省关闭、过渡旗标 `--legacy-v1` 自 0.10.1 起已标废弃，详见[部署与鉴权](/serve/deploy-and-auth/)。

@@ -9,15 +9,17 @@ related:
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:doc/release/sdk-0.18.1.md
+lastVerified: '2026-10-05'
 ---
 
-`@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。
+`@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。本文按 `@tansr/sdk` **0.18.1**（2026-10-04 发布）核对；进程内 `createSession` 的用法自 0.13.0 以来未变。
 
 ## 应用提示词从哪里设置
 
@@ -41,8 +43,10 @@ Windows Electron 仍由主进程运行 SDK，renderer 发送的是用户输入�
 ## 安装
 
 ```bash
-npm install @tansr/sdk
+npm install @tansr/sdk        # 现行 0.18.1
 ```
+
+0.18.0 起包内另有子入口 `@tansr/sdk/extensions`（归档宿主 / 缓存宿主）与 9 处可选签名加法，全部是加法——本文的根入口用法与行为不变，不用它们就不必读。要把智能体放到服务端、让 Android / iOS / 鸿蒙或 `@tansr/api-client` 这类薄客户端经 HTTP 接入，走 [`@tansr/serve`](/getting-started/serve/)，新集成用统一调用面 `/api`。
 
 ## 凭据：三档模型来源，选一档
 
@@ -120,3 +124,4 @@ for await (const event of session.events) {
 - [检查点与恢复](/sdk/checkpoints/)：持久化、跨重启恢复、手动压缩与快照。
 - [平台装配与 bundle](/sdk/platform-bundle/)：能力位、工具三环、令牌档下发了什么。
 - [错误处理与重试](/sdk/errors-and-retries/):SDK 错误码、平台错误码、什么该重试什么不该。
+- [SDK 2.0 扩展入口](/sdk/sdk2-preview/)：0.18.x 已发布的 `@tansr/sdk/extensions`、`@tansr/serve/extensions` 与统一调用面 `/api` 的发布状态、边界与性能披露；进程内集成无需迁移。

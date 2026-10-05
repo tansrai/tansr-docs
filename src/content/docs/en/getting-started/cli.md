@@ -8,36 +8,31 @@ related:
   - cli/commands
   - support/troubleshooting
   - support/account
+  - serve/deploy-and-auth
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-09'
+  - tansr-cli:doc/report/REL-SEA-发行执行单-2026-10-05.md
+lastVerified: '2026-10-05'
 ---
 
-`tansr` is the developer-facing agent CLI: one kernel offered in five forms — interactive terminal (TUI), headless scripts, a long-running service (serve), an editor agent (acp) and an MCP tool service (mcp serve). This article takes the shortest path only: install, sign in, say one thing, glance at the event stream.
+`tansr` is the developer-facing agent CLI: one kernel offered in five forms — interactive terminal (TUI), headless scripts, a long-running service (serve), an editor agent (acp) and an MCP tool service (mcp serve). This article takes the shortest path only: install, sign in, say one thing, glance at the event stream. Current version: **0.10.1** (npm `@tansr/cli`, released 2026-10-04).
 
 ## Prerequisites
 
-- Node.js ≥ 22.19 (npm package form). The single-file executable (SEA) bundles its own Node runtime, nothing to preinstall.
+- Node.js ≥ 22.19. The npm package is currently the only released form; the single-file executable (SEA, bundling its own Node runtime) has not been released yet — see below.
 - Windows / macOS / Linux are all supported. On Windows, Windows Terminal is recommended; the legacy conhost automatically switches to the ASCII glyph set, with no loss of functionality.
 
 ## Install
 
-npm form (recommended):
-
 ```bash
 npm i -g @tansr/cli
-tansr --version
+tansr --version          # 0.10.1
 ```
 
-The package is `@tansr/cli`; the command is `tansr`.
+The package is `@tansr/cli`; the command is `tansr`. Upgrades go through `npm i -g @tansr/cli@latest` as well. Since 0.10.1 the first start of each installed version writes about 2 MB of Node compile cache into the user cache directory (later starts of the same version are faster; `TANSR_COMPILE_CACHE=0` disables it, see [Settings and doctor](/en/cli/settings-and-doctor/)).
 
-Single-file form: download the executable for your platform from the official distribution point (named like `tansr-sea-win32-x64.exe`), verify it against `SHA256SUMS`, and put it on your PATH:
-
-```text
-https://bash.tansr.com/release/stable/tansr-sea-win32-x64.exe
-https://bash.tansr.com/release/stable/SHA256SUMS
-```
+**Single-file form (SEA) and the OSS distribution point: not released yet.** As of 2026-10-05 the official distribution point `bash.tansr.com` carries no executable or `SHA256SUMS` matching 0.10.x (the Windows build has been decided to stay off the shelf for now). Do not treat the distribution point as an install source; this page will add the download and verification steps once SEA ships.
 
 ## Credentials: sign in with a personal access token
 
@@ -126,4 +121,4 @@ Headless mode has no prompt channel: whenever a permission decision lands on "as
 
 - [Settings and doctor](/en/cli/settings-and-doctor/): the five config layers, common environment variables, how to read each section of `tansr doctor`.
 - [Commands and flags reference](/cli/commands): every subcommand and flag.
-- Want others to use your agent too? See [Session service in 5 minutes](/en/getting-started/serve/).
+- Want others to use your agent too? See [Session service in 5 minutes](/en/getting-started/serve/). The CLI form `tansr serve --v2` also mounts the unified call surface `/api` since 0.10.0 (new integrations go there); with `--v2` the `/v1` surface is off by default and the escape hatch `--legacy-v1` is deprecated since 0.10.1 — see [Deployment and authentication](/en/serve/deploy-and-auth/).

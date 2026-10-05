@@ -12,7 +12,8 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/server/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
 会话缺省只在内存里。要让它在进程重启后还能接着聊，你需要两件事：一个 `SessionStore`（存到哪），以及 `createSession` 的 `store` / `resume` 两个字段（什么时候存、什么时候取）。上下文压缩之后原文不再在历史里，所以又有了快照（checkpoint）：某时刻完整上下文的自包含只读拷贝，可列举、可恢复、可删除。
@@ -75,6 +76,8 @@ async function openOrResume(lastId: string | undefined) {
 2. 损坏恒结构化 throw，不静默。
 
 两个可选成员：`getHistoryPage?(sessionId, { offset, limit })`（分页读，缺席回落全量切片）与 `checkpoints?: CheckpointStore`（与会话同生命周期的快照存储，缺席 = 快照未接线）。
+
+**附件准入状态的冷恢复**（`@tansr/sdk` 0.18.0 起，2026-10-02 发布）：Store 可声明可选能力位 `attachmentCheckpoints: true`，承诺把 `commit` 的 `meta.attachmentCheckpoint`（SDK 生成的不透明值）与 `messages` 同次原子保存、`get()` 原样返回；`resume` 自此把附件准入状态（累计注入字节 / 拒绝计数 / 条目）随历史冷恢复。Store 实际修复过本次历史时在记录上置 `attachmentReferencesInvalidated: true`，SDK 据此失效附件引用但保留累计准入预算。内置 `createFileSessionStore` 已实现；**不声明**该位的自定义五方法 Store 行为与 0.17 相同（冷恢复保守失效引用、不伪造缺失状态）。实现方不得解析、构造或以客户端元数据替代该值。
 
 ## 文件布局与封段
 
@@ -162,4 +165,6 @@ const last = await session.history({ offset: Math.max(0, total - 50), limit: 50 
 
 ## 与会话服务的关系
 
-`@tansr/serve` 的 `/v2` 面有同一组能力的 HTTP 形态（`compact` / `checkpoints` / `restore` / `history` 分页 / fork / export / import），语义与本文一致；服务端的会话保留与物理删除策略见[保留期与治理](/serve/retention-and-governance/)。
+`@tansr/serve` 的 `/v2` 面有同一组能力的 HTTP 形态（`compact` / `checkpoints` / `restore` / `history` 分页 / fork / export / import），语义与本文一致；0.13.0 起新集成经统一调用面 `/api/sessions/**` 调用同一组操作，领域载荷字节不变。服务端的会话保留与物理删除策略见[保留期与治理](/serve/retention-and-governance/)。
+
+`@tansr/sdk` 0.18.0 起的 `@tansr/sdk/extensions` 子入口另提供**本地归档宿主**（`createNodeArchiveHost`）：在原 `SessionStore` 之外为会话安装持久归档交接与可选的材料链，`open` 后仍返回原 `AgentSession`，本页的 `store` / `resume` / 检查点语义不变；它不是备份、不是多设备同步（存储策略固定 `single-authorized-source`，`replication` / `synchronization` 皆 `'none'`）。见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。

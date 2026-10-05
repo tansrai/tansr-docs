@@ -12,14 +12,15 @@ related:
   - serve/v2-and-webhooks
 sources:
   - tansr-harmony:README.md
+  - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 `@tansr/harmony`는 세션 서비스 `/v2`의 **네이티브 ArkTS 얇은 프로토콜 클라이언트**(HAR)입니다. 입력을 보내고, 이벤트 스트림을 리덕션하고, 당신이 명시적으로 등록한 로컬 도구를 실행하며, 권한과 질문에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve`에서 실행되고, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 뷰 리덕션은 Android / iOS와 같은 골든 샘플을 공유합니다. HAR는 **ArkUI 페이지를 포함하지 않습니다**. 녹음, 재생, 리스트 가상화는 호스트가 담당합니다.
 
-Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 현재 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 현재 산출물은 독립 배포된 버전 release 바이트코드 HAR(0.1.0)입니다. 공개 OHPM에는 없고, 공개 채널에서 최신판을 자동으로 가져오지 않습니다.
+Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 현재 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 현재 산출물은 독립 배포된 버전 release 바이트코드 HAR(0.1.0)입니다. 공개 OHPM에는 없고, 공개 채널에서 최신판을 자동으로 가져오지 않습니다(2026-10-05 확인, 여전히 0.1.0). 서버는 `@tansr/serve` 0.14.0 기준으로 확인했습니다. 0.13.0부터 추가된 통합 호출 표면 `/api`는 0.1.0 HAR에 투명하며, HAR는 계속 `/v2`에 직접 연결합니다. 저장소 메인라인의 `/api` 정렬과 RDB 수신기 / HUKS 암호화 같은 기능은 모두 로컬 후보이며 **아직 어떤 버전으로도 공개되지 않았습니다**. 이 문서에서는 다루지 않습니다.
 
 ## 휴대폰은 사용자 메시지를 보내고, 서버가 시스템 프롬프트를 설정한다
 
@@ -135,3 +136,4 @@ OS 마이크 권한과 에이전트 도구 허가는 두 층이며, 한쪽이 �
 - [HarmonyOS 연동 가이드](/ko/harmony/): 세션 수명 주기, 3단계 복구, 도구 브리지, 음성 두 갈래, 낭독 이중 캡, 미디어 다운로드 경계.
 - [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/): 세 클라이언트 계약을 대조합니다.
 - [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/): 서버 쪽이 턴 종료 알림을 당신의 푸시 백엔드에 넘기는 방법.
+- [모바일 앱의 공용 네트워크 도구](/ko/sdk/platform-bundle/#移动应用的公网工具): 에이전트가 웹 페이지를 읽고, HTTP 요청을 보내고, 웹 검색을 하게 합니다. 서버 쪽에서 실행되며 기본은 꺼짐이고, HarmonyOS 쪽 코드 변경은 필요 없습니다.

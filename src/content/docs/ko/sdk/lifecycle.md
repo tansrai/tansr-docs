@@ -10,10 +10,11 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/sdk/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-이 페이지는 `@tansr/sdk@0.13.0` 이상(현재 0.16.0)과 `@tansr/serve@0.8.0` 이상을 기준으로 하며, 모두 npm에 게시되었습니다. "0.14.0부터"로 표시한 부분은 `@tansr/sdk` 0.14.0(2026-09-14 게시) 이상이 필요합니다. 업무 이벤트의 종료와 리소스의 실제 종료는 서로 다른 시점입니다. 아래 인터페이스에는 해당 호환 버전이 필요합니다.
+이 페이지는 `@tansr/sdk@0.13.0` 이상(현재 0.18.1, 2026-10-04 게시)과 `@tansr/serve@0.8.0` 이상(현재 0.14.0)을 기준으로 하며, 모두 npm에 게시되었습니다. "0.14.0부터"로 표시한 부분은 `@tansr/sdk` 0.14.0(2026-09-14 게시) 이상이 필요합니다. 0.15.0부터 0.18.1까지 이 페이지의 종료 인터페이스에는 시그니처나 동작 변화가 없습니다. 업무 이벤트의 종료와 리소스의 실제 종료는 서로 다른 시점입니다. 아래 인터페이스에는 해당 호환 버전이 필요합니다.
 
 | 작업 | 용도 |
 | --- | --- |
@@ -77,3 +78,7 @@ if (cleanup) showCleanupReceipt(await cleanup.drain({ timeoutMs: 30_000 }));
 Electron 예제는 메인 프로세스에서 closeAsync를 사용하며, 미완료 세션과 host를 유지합니다. 바깥의 유한한 관찰이 시간 초과되면 다시 기다리기를 표시하고, 사용자가 바로 종료를 선택할 때만 남은 정리를 건너뜁니다. Android / iOS는 기존 serve 프로토콜을 사용합니다: 연결 끊김과 재연결은 세션 삭제와 같지 않으며, DELETE 응답과 session.ended는 하위 프로세스 종료를 증명하지 않습니다. Node 호스트는 먼저 기존 drain 예산으로 정지한 뒤 `server.settleResources()`를 기다리고, 마지막으로 공유 리소스를 닫습니다.
 
 CLI, ACP, headless의 MCP 새 관찰 상한은 10초이며, 기존 프로토콜과 도구 종료 정책은 유지됩니다. 내장 Task / 이어갈 수 있는 에이전트는 중첩 쿼리 영수증을 부모 리소스 도메인에 넘깁니다. TUI는 추가로 백그라운드 Task, 메모리 추출 / 고정 / 승격, 선택기의 실제 완료 지점을 기다리고, serve / ACP는 메모리 owner가 활동 목록에서 빠진 뒤에도 세션 닫기 체인이 그것을 보유합니다. 직접 추가한 백그라운드 작업은 명시적으로 연결해야 합니다. abort를 무시하는 서드파티 도구는 계속 pending일 수 있으며, 어떤 영수증도 등록되지 않은 임의의 자식 프로세스가 이미 종료되었음을 증명할 수 없습니다.
+
+## SDK 2.0 확장 호스트의 종료 순서(0.18.0부터)
+
+`@tansr/sdk/extensions`의 로컬 아카이브 호스트와 캐시 호스트([SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/) 참고)는 세션과 따로 닫습니다. 호스트의 `open`이 반환한 각 세션을 먼저 이 페이지의 `closeAsync({ flushStore: true, … })`로, 또는 `close()` 뒤 `drain()`을 호출해 영수증 `completed`를 확인합니다. 모든 세션이 완료된 뒤에야 `await cacheHost.dispose()`를 호출합니다. 관찰이 시간 초과되어도 객체를 유지한 채 원래 종료 처리를 기다립니다. `dispose()`는 저장, 알 수 없는 결과 확인, 삭제를 대신하지 않으며, 빌려온 원래 Store를 자동으로 닫지도 않습니다. 캐시 관계를 삭제해야 할 때는 `cacheHost.delete({ sessionId, authorization })`를 모든 호스트 세션의 종료와 배출 뒤, `dispose()` 앞에 둡니다. 삭제가 진행 중이면 `open` / `dispose`는 거부됩니다.
