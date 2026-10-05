@@ -12,8 +12,10 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
+  - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-08'
+lastVerified: '2026-10-05'
 ---
 
 SDK 永不 `process.exit`。错误只从三个口子出来：装配期 / 选项期以 `TansrSdkError` 抛出；运行期的模型与工具错误恒经事件流表达（`turn.error` / `tool.failed` / `turn.aborted`）；平台网关的错误码则藏在这两者的载荷里。先判清是哪一类，再决定重不重试。
@@ -106,3 +108,20 @@ try {
 ## 在会话服务形态怎么看
 
 用 `@tansr/serve` 时，同一批平台码经服务端映射后到达移动端：套餐并发帽映射为 `429 rate_limited` + `Retry-After` + `detail: { scope: 'plan' }`;`plan_required` / `plan_tier_insufficient` 以 403 原码透传 + `detail.scope: 'plan'`；上游限流 / 5xx / 网络错映射为 `503 upstream_unavailable`。端侧退避纪律不变：429 / 503 携 `Retry-After` 时按整秒值等待，5xx 无 `Retry-After` 时指数退避 + 抖动。详见[v2 协议与 webhook](/serve/v2-and-webhooks/)。
+
+上面说的是 `/v2` 直连面的错误体 `{ error: { code, message, detail? } }`，它的字节在 `@tansr/serve` 0.13.0 / 0.14.0 保持不变。
+
+## 经 `/api` 时的统一错误信封
+
+`@tansr/serve` 0.13.0 起（2026-10-02 发布）新集成走统一调用面 `/api`，所有 ≥ 400 的 JSON 错误不再按族各出一形，而是同一个统一信封：
+
+```json
+{ "contract": "unified-v1", "traceId": "<x-request-id>", "requestId": "<客户端幂等键或 null>", "code": "capacity_exceeded", "status": 429, "retryAction": "same-request", "message": "...", "detail": { "domainCode": "rate_limited", "domainStatus": 429 } }
+```
+
+- `code` 是 **19 个统一码**之一（`invalid_request` / `protocol_mismatch` / `unauthorized` / `forbidden` / `not_found` / `method_not_allowed` / `gone` / `conflict` / `stale_generation` / `gap` / `capability_unavailable` / `capacity_exceeded` / `payload_too_large` / `upstream_unavailable` / `result_unknown` / `rejected` / `internal_error`，加门面自有的 `precondition_failed` 与 `not_canonical`）；原族码（如本页上文的 `rate_limited`、`session_ended`、`session_not_found`）只保留在 `detail.domainCode`，原 wire 状态在 `detail.domainStatus`。一套 `switch (code)` 覆盖全部域，需要族级细分时再读 `domainCode`。
+- `retryAction` 是 **6 个动作**之一，它决定你的下一步：`none` 不可重试；`same-request` 同键同请求重放（携 `Retry-After` / `detail.retryAfterMs` 时先等）；`query-status` 先查回执 / 状态；`rebind` 重建绑定；`refresh` 重读修订后再试；`rediscover` 重新能力发现后再试。**`result_unknown` / `commit_unknown` 只允许 `query-status` 或 `rebind`，禁止换一个键重发**——那等于承认重复副作用。
+- 0.14.0 起三个请求头 `Idempotency-Key` / `If-Match`+`ETag` / `deadline` 的拒绝也走这同一信封，不新增错误码，细因在 `detail.reason`（如 `idempotency_key_reused`、`if_match_stale`、`deadline_exceeded`）；`412 precondition_failed` 自此既可能是围栏陈旧（`rediscover`）也可能是资源版本陈旧（`refresh`），按 `detail.domainCode` 区分。
+- 响应缺 `tansr-contract` 头、或 `/api` 返回非 JSON / 代理页，一律按「合同不可用」上报，**不能**据此猜成旧版服务而切回 `/v2`。
+
+`@tansr/api-client` 0.3.0（2026-10-04 正式版，dist-tag `latest`）的 `./api` 子入口把这套解码做成 `ApiError`（`code` / `retryAction` / `domainCode` / `domainStatus` / `closureId` 读法）与 `retryAdvice` / `retrySameRequest` 工具，`result_unknown` 恒降为 `query-status`。统一码全表、`retryAction` 来源映射与各族 `domainCode` 对照见 [统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。

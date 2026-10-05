@@ -8,20 +8,23 @@ related:
   - getting-started/sdk
   - sdk/sessions-and-events
   - sdk/errors-and-retries
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
+  - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:packages/server/README.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-10'
+lastVerified: '2026-10-05'
 ---
 
-令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。
+令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。版本基线：`@tansr/sdk` 0.18.1 / `@tansr/serve` 0.14.0（均已于 2026-10-04 发布）。
 
 ## 应用系统提示词也是装配配置
 
-新增 `systemPrompt` / `systemPromptPolicy` 由应用配置进入 bundle，需要配套 API 与 SDK / serve 版本，尚不代表已发布。默认 `fallback` 在 SDK 未传 `system` 时使用平台段；`prepend` 即使 SDK 显式传 `[]` 也保留平台段，再接 SDK 非空业务段。宿主 `systemAppend` 排在所选业务段后，不触发覆盖；其后才是该入口实际装配的工具、Skills 或 MCP 指南。
+`systemPrompt` / `systemPromptPolicy` 由应用配置进入 bundle（`@tansr/sdk` 0.13.0 / `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线）。默认 `fallback` 在 SDK 未传 `system` 时使用平台段；`prepend` 即使 SDK 显式传 `[]` 也保留平台段，再接 SDK 非空业务段。宿主 `systemAppend` 排在所选业务段后，不触发覆盖；其后才是该入口实际装配的工具、Skills 或 MCP 指南。
 
 这两项在后续新一轮前刷新，当前执行轮保持已选配置；不会清空历史，也不要求重开会话。通过 `session.applicationPrompt` 查看只读来源 / 策略摘要，不含正文。完整表格、管理 API 与冲突处理边界见[应用系统提示词](/sdk/system-prompts/)。
 
@@ -32,10 +35,12 @@ lastVerified: '2026-09-10'
 | 类型 | 适用 | 能力面 |
 |---|---|---|
 | 桌面应用 | Electron 等，SDK 进程内形态 | 全部工具位与平台位可配 |
-| 移动应用 | Android / iOS / 鸿蒙，经你的 `@tansr/serve` 会话服务 | 环 2 文件 / 命令 / 出网族固定关 |
+| 移动应用 | Android / iOS / 鸿蒙，经你的 `@tansr/serve` 会话服务 | 文件 / 命令族固定关；公网工具 WebFetch / Http / WebSearch 按位开启，缺省关（见下文[移动应用的公网工具](#移动应用的公网工具)） |
 | 服务端应用 | Node 后端嵌本 SDK | 能力面同桌面 |
 
 把**移动应用**的凭据拿到本 SDK 进程内装配不会失败，但文件族等位已按拓扑归一为关，并收到平台提示帧 `app_platform_mismatch`。请为每种接入形态各建一个应用：一应用一平台，多端多 appid，分吊销面、分用量归因。
+
+移动应用另可经平台 `PATCH /v1/apps/:id`（携 `x-tansr-client-features: bound-device-v1`）配置 `execution: { version: 'bound-device-v1', boundDevice: { tools } }` 段，为会话服务的 SDK 2.0 显式执行档授予绑定设备上的工具。`@tansr/sdk` 0.18.0 起 `AppCapabilitiesSchema` 认得该段并原样保留，但**进程内 SDK 不消费它**：设备工具授权只在 `@tansr/serve` 的 SDK2 执行档生效，旧应用类型与旧 `tools` 位不推导设备授权，缺位 = 未授权、绝不合并回进程内 `tools`。见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 工具三环：一个 `tools` 入口
 
@@ -55,6 +60,8 @@ await createSession({
 - 词表外名字 → `invalid_options`；位关而显式选择 → `capability_disabled`，消息含控制台修复指引。**恒 fail-fast 可读错，恒不静默缺工具。**
 - 媒体四名是计费工具，定义进每次 prompt 有 token 成本，**缺省全集恒不装**，要用必须显式列在 `builtin`。
 - `tools.platform` 保留为兼容别名（deprecated），与 `builtin` 同名四值等价；别名在场时每次装配出一条 `tools_platform_deprecated` 结构化告警。新写法请用 `builtin`。
+
+媒体四工具本身是内核的系统工具，平台负责的是授权模型、凭据与计量；能力位字段仍叫 `capabilities.platform`，这只是授权位的名字，不代表另有一类「平台工具」。工具产物（图片 / 视频 / 转写 / 语音卡）也不等于支持原生实时音视频消息：`sendBlocks` 只接受文本与图片，`audio` / `video` 原生块在写入历史、调用模型之前就返回 `invalid_blocks`；录音转写与朗读按钮请走独立的音频直连接口。
 
 环 1 的 `defineTool` 是「注册即说明书」：一次声明同时产出模型可见 schema 与人读文档，JSON 参数表与 zod 双档。MCP 外接用 `createMcpHost({ servers })`（应用级共享）或 `mcp: { servers }`（会话级），配置与业界 `mcpServers` 同形。skills 用 `defineSkill` 内联或 `dirs` 目录装载，恒不扫用户目录。
 
@@ -88,9 +95,19 @@ await createSession({
 
 原因是 webSearch 的工具本体在环 2（与命令行同一件 `WebSearch`），后端却恒是平台通道——SDK 形态没有 BYO 搜索端点，终端持搜索商密钥正是应用密钥防盗模型要消灭的反模式。装配矩阵一句话：**缺席选择 = 有则用之，按位静默收缩；显式选择 = 主张必须有，不满足即 fail-fast 分因可读错**（`capability_disabled` 或 `invalid_options`）。
 
+## 移动应用的公网工具
+
+移动应用的会话装配在你的 `@tansr/serve` 上（托管拓扑）。这类应用可勾选的工具位只有 `todoWrite`、`askUser`、`customTools`、`webFetch`、`http`、`webSearch` 与平台位，文件、命令等本地族固定关；`customTools` 经 `clientTools` 远程工具通路申报，由手机执行。
+
+- **版本**：`tools.webFetch`（网页抓取 WebFetch）与 `tools.http`（HTTP 请求 Http）由 `@tansr/serve` 0.12.0 / `@tansr/sdk` 0.17.0 起装配（2026-09-16 发布，现行 0.14.0 / 0.18.1 同样适用）；0.11.0 及更早的 serve 不为移动应用装配这两件。两位缺省关，须在控制台为该应用显式开启；`tools.webSearch` 另需 `platform.webSearch` 通道开通（见上节）。
+- **在哪执行**：三件工具都在**你的会话服务主机**上执行，沿用同一核心工具与权限链；Android / iOS / 鸿蒙 SDK 不在手机上代发网络请求，也不自动批准。服务端显式配置的工具白名单只能进一步收窄。
+- **何时生效**：改能力位后，新建会话或从存储重新装配的会话才生效；换票与提示词刷新不会改动活动会话的工具表。紧急撤回须停止对应会话。
+- **执行边界**：托管 Http 不能引用宿主环境变量里的凭据，模型也不能自行解除宿主的私网访问上限；配置出网代理时，须在代理侧同样限制私网目标。WebFetch 沿用原有出网规则，跨主机跳转可能触发新的权限询问——按错误里给出的公开目标另发一次明确请求，不要自动批准跳转。
+- **结果怎么读**：已知网址优先让智能体用 WebFetch，排查接口响应用 Http。Http 的 4xx / 5xx 是需要检查的响应，工具执行完成不等于远端 HTTP 成功；搜索空结果只说明本次查询没有匹配，不证明网站不存在。界面须保留截断提示。
+
 ## bundle 还下发了什么
 
-- **模型目录**：别名 / handle / `displayName` / `manufacturer` / `family`;`setModel` 传 handle。`model.modelId` 为可选字段，读它的调用方按 `string | undefined` 处置。
+- **模型目录**：别名 / handle / `displayName` / `manufacturer` / `family`;`setModel` 传 handle。`model.modelId` 为可选字段，读它的调用方按 `string | undefined` 处置。`@tansr/sdk` 0.18.0 起另有只读投影 `model.adapterDiagnostics?`（`request` / `billing` 两段各携 `adapterId` / `operation` / `status ∈ 'ready' | 'review' | 'unresolved'`，加 `conflicts[]`），描述当前目录证据是否足以选择请求 / 计费适配器，供界面展示模型的调用 / 计量能力；不携供应商凭据、价格原文或可执行适配器对象，平台未下发时 `undefined`，段坏形只丢诊断不丢模型条目。
 - **媒体授权集** `platformModels`：四媒体工具描述自动列出集内模型名，顺位第一即缺省；集成方恒不手配模型名。
 - **套餐投影** `plan`:`{ tier, caps{ concurrency, apps, orgMembers, monthlyEndUsers, gatewayLane }, status: 'active' | 'grace' | 'lapsed', expiresAt }`,`null` = 个人档无套餐。它只是投影，硬执行恒在服务端，SDK 恒不本地判限。
 - **裁决人档** `adjudicator`：令牌档缺省装配控制台任命的裁决人，资格档 `tier` 决定它能把多大半径的「询问」软化为放行。

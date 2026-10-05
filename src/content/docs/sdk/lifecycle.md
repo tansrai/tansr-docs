@@ -10,10 +10,11 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/sdk/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（当前 0.16.0）与 `@tansr/serve@0.8.0` 及更高版本；标注「0.14.0 起」的部分需要 `@tansr/sdk` 0.14.0（2026-09-14 发布）或更高。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（当前 0.18.1，2026-10-04 发布）与 `@tansr/serve@0.8.0` 及更高版本（当前 0.14.0）；标注「0.14.0 起」的部分需要 `@tansr/sdk` 0.14.0（2026-09-14 发布）或更高。0.15.0 … 0.18.1 对本页的收尾接口无签名或行为变化。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
 
 | 操作 | 用途 |
 | --- | --- |
@@ -77,3 +78,7 @@ if (cleanup) showCleanupReceipt(await cleanup.drain({ timeoutMs: 30_000 }));
 Electron 示例在主进程使用 closeAsync，保留未完成会话和 host；外层有限观察超时后显示再次等待，只有用户选择直接退出才跳过剩余清理。Android／iOS 使用现有 serve 协议：断线、重连不等于删除会话，DELETE 响应及 session.ended 不证明底层进程退出。Node 宿主先按原 drain 预算停机，再等 `server.settleResources()`，最后关闭共享资源。
 
 CLI、ACP、headless 的 MCP 新观察上限为 10 秒，旧协议与工具终止策略保持。内置 Task／可继续代理将嵌套查询回执交给父资源域；TUI 另外等待后台 Task、记忆提取／固化／提升和选择器的实际完成口，serve／ACP 在记忆 owner 退出活动列表后仍由会话关闭链持有它。自行增加的后台任务需显式接入。忽略 abort 的第三方工具可能继续 pending，任何回执都不能证明任意未登记子进程已经退出。
+
+## SDK 2.0 扩展宿主的收尾顺序（0.18.0 起）
+
+`@tansr/sdk/extensions` 的本地归档宿主与缓存宿主（见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)）与会话分开关闭：由宿主 `open` 返回的每个会话先按本页的 `closeAsync({ flushStore: true, … })`，或 `close()` 后 `drain()` 并确认回执 `completed`；全部会话完成后才 `await cacheHost.dispose()`。观察超时时继续保留对象并等待原收尾；`dispose()` 不代替保存、未知结果确认或删除，也不自动关闭借用的原 Store。需要删除缓存关系时，`cacheHost.delete({ sessionId, authorization })` 放在全部宿主会话关闭排空之后、`dispose()` 之前，删除进行中拒绝 `open` / `dispose`。
