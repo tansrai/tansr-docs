@@ -163,12 +163,12 @@ test('术语表:zh / en / ja / ko 四列非空且 en 主形唯一;avoid 变体�
   assert.ok(GLOSSARY.some((t) => t.zh === '出网白名单' && t.en === 'egress allowlist'));
 });
 
-test('语言接线:EXTRA_LOCALES 含 en / ja / ko;12 类四语标签齐;astro.config 侧栏 translations 四语;组件不再有 isEn 二叉分支', () => {
+test('语言接线:EXTRA_LOCALES 含 en / ja / ko;13 类四语标签齐;astro.config 侧栏 translations 四语;组件不再有 isEn 二叉分支', () => {
   assert.deepEqual(EXTRA_LOCALES.en, { label: 'English', lang: 'en' });
   assert.deepEqual(EXTRA_LOCALES.ja, { label: '日本語', lang: 'ja' });
   assert.deepEqual(EXTRA_LOCALES.ko, { label: '한국어', lang: 'ko' });
   assert.deepEqual(Object.keys(EXTRA_LOCALES), TRANSLATED_LOCALES);
-  assert.equal(CATEGORIES.length, 12);
+  assert.equal(CATEGORIES.length, 13);
   for (const c of CATEGORIES) {
     for (const l of TRANSLATED_LOCALES) assert.ok(typeof c[l] === 'string' && c[l].length > 0, `${c.directory} 缺 ${l} 标签`);
     assert.doesNotMatch(c.ja, HANGUL);

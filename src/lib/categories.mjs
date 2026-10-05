@@ -1,5 +1,5 @@
 /**
- * 12 类信息架构的单一事实源:astro.config.mjs(侧栏)与首页 / 帮助中心组件(卡片)共用。
+ * 13 类信息架构的单一事实源:astro.config.mjs(侧栏)与首页 / 帮助中心组件(卡片)共用。
  * 顺序即侧栏与卡片网格顺序;`zone` 标注该类属开发者文档区还是帮助中心区。
  */
 import { existsSync } from 'node:fs';
@@ -51,6 +51,7 @@ export const CATEGORIES = Object.freeze([
   { directory: 'android', zone: 'docs', label: 'Android SDK', en: 'Android SDK', ja: 'Android SDK', ko: 'Android SDK', description: '接入、事件归约、错误呈现与离线。', icon: 'mobile-android' },
   { directory: 'ios', zone: 'docs', label: 'iOS SDK', en: 'iOS SDK', ja: 'iOS SDK', ko: 'iOS SDK', description: '接入、事件归约、错误呈现与离线。', icon: 'apple' },
   { directory: 'harmony', zone: 'docs', label: '鸿蒙 SDK', en: 'HarmonyOS SDK', ja: 'HarmonyOS SDK', ko: 'HarmonyOS SDK', description: '原生 ArkTS HAR：接入、会话视图、工具桥与媒体边界。', icon: 'puzzle' },
+  { directory: 'unified-api', zone: 'docs', label: '统一 API 合同(/api)', en: 'Unified API (/api)', ja: '統一 API（/api）', ko: '통합 API(/api)', description: '会话服务唯一的 HTTP 调用面 unified-v1:发现与围栏、统一头与错误信封、事件包络、迁移、各语言客户端。', icon: 'random' },
   { directory: 'api', zone: 'docs', label: 'REST 参考', en: 'REST reference', ja: 'REST リファレンス', ko: 'REST 참조', description: '公开 REST 接口参考(/v1 · /t1 · /healthz · /readyz)。', icon: 'open-book' },
   { directory: 'errors', zone: 'docs', label: '错误码与排障', en: 'Errors & troubleshooting', ja: 'エラーとトラブルシューティング', ko: '오류 및 문제 해결', description: '错误码表(HTTP 状态、可重试、说明)与排障文章。', icon: 'warning' },
   { directory: 'security', zone: 'docs', label: '安全与隐私', en: 'Security & privacy', ja: 'セキュリティとプライバシー', ko: '보안 및 개인정보', description: '出网白名单、凭据、数据留存与密钥轮换。', icon: 'padlock' },
