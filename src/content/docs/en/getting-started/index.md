@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run".
@@ -27,8 +27,8 @@ tansr is an agent runtime: one kernel (query loop, tool scheduling, permission e
 | I want to talk to an agent in my terminal, edit code, run scripts | the `tansr` CLI | [CLI in 5 minutes](/en/getting-started/cli/) |
 | I am writing a Node.js / Electron program and want to embed the agent in my own process | `@tansr/sdk` | [Node SDK in 5 minutes](/en/getting-started/sdk/) |
 | I want to offer an agent to my own mobile or web users and need a multi-user backend | the `@tansr/serve` self-hosted session service | [Session service in 5 minutes](/en/getting-started/serve/) |
-| I am writing an Android app and the backend uses (or will use) `@tansr/serve` | Kotlin SDK `com.tansr.sdk` | [Android and iOS in 5 minutes](/en/getting-started/android/) |
-| I am writing an iOS / macOS app, backend as above | Swift package `tansr-ios` | the "Same on iOS" section of the same article |
+| I am writing an Android app and the backend uses (or will use) `@tansr/serve` | Kotlin SDK `com.tansr.sdk` (0.4.0) | [Android and iOS in 5 minutes](/en/getting-started/android/) |
+| I am writing an iOS / macOS app, backend as above | Swift binary package `tansr-ios-spm` (0.3.0) | the "Same on iOS" section of the same article |
 | I am writing a native HarmonyOS app, backend as above | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK in 5 minutes](/en/getting-started/harmony/) |
 
 Two rules of thumb:
@@ -61,7 +61,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 
 | Form | Minimum |
 |---|---|
-| CLI (npm package) | Node.js ≥ 22.19; Windows / macOS / Linux. The single-file executable bundles its own runtime and needs no Node |
+| CLI (npm package) | Node.js ≥ 22.19; Windows / macOS / Linux. The single-file executable (SEA) is not released yet; the npm package is currently the only form |
 | `@tansr/sdk` | Node.js ≥ 22.19; Electron ≥ 39; ESM only; TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19; the only third-party runtime dependency is `zod` |
 | Android SDK | minSdk 26; Kotlin coroutines + kotlinx.serialization + OkHttp |
@@ -77,6 +77,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | What an error code means and whether it is retryable | [Errors and retries](/en/sdk/errors-and-retries/) · [Error codes](/errors/codes) |
 | How to deploy the backend, shut it down gracefully, shard across replicas | [Deployment and authentication](/en/serve/deploy-and-auth/) |
 | I want to call the session service's HTTP surface (`/api`) directly, or write my own client | [Unified API (/api)](/en/unified-api/) |
+| Which parts of the SDK 2.0 extension entry points (archive host, cache host, unified API) are officially released | [SDK 2.0 extension entry points](/en/sdk/sdk2-preview/) |
 | How long sessions are kept and when they are reclaimed | [Retention and governance](/en/serve/retention-and-governance/) |
 | Where the CLI config files live and how to read `tansr doctor` | [Settings and doctor](/en/cli/settings-and-doctor/) |
 | Where data lives, how to rotate keys, where traffic goes | [Security and privacy](/en/security/) |

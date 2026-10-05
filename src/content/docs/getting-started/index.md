@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。
@@ -27,8 +27,8 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 我想在终端里直接和智能体对话、改代码、跑脚本 | `tansr` 命令行 | [命令行 5 分钟跑通](/getting-started/cli/) |
 | 我在写 Node.js / Electron 程序，想把智能体嵌进自己的进程 | `@tansr/sdk` | [Node SDK 5 分钟跑通](/getting-started/sdk/) |
 | 我要给自己的移动端或 Web 用户提供智能体，需要一个多用户的后端服务 | `@tansr/serve` 自托管会话服务 | [会话服务 5 分钟跑通](/getting-started/serve/) |
-| 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk` | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
-| 我在写 iOS / macOS App，后端同上 | Swift 包 `tansr-ios` | 同上一篇的「iOS 同法」一节 |
+| 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk`（0.4.0） | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
+| 我在写 iOS / macOS App，后端同上 | Swift 二进制包 `tansr-ios-spm`（0.3.0） | 同上一篇的「iOS 同法」一节 |
 | 我在写原生 HarmonyOS App，后端同上 | ArkTS HAR `@tansr/harmony` | [鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/) |
 
 两条经验法则：
@@ -61,7 +61,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 
 | 形态 | 最低要求 |
 |---|---|
-| 命令行（npm 包） | Node.js ≥ 22.19；Windows / macOS / Linux。单文件可执行版自带运行时，无需 Node |
+| 命令行（npm 包） | Node.js ≥ 22.19；Windows / macOS / Linux。单文件可执行版（SEA）尚未发布，当前只有 npm 包 |
 | `@tansr/sdk` | Node.js ≥ 22.19;Electron ≥ 39;ESM only;TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
 | Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
@@ -77,6 +77,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 某个错误码是什么意思、能不能重试 | [错误处理与重试](/sdk/errors-and-retries/) · [错误码表](/errors/codes) |
 | 服务端怎么部署、怎么优雅关闭、多副本怎么分片 | [部署与鉴权](/serve/deploy-and-auth/) |
 | 我想直接调会话服务的 HTTP 接口（`/api`），或自己写一个客户端 | [统一 API 合同（/api）](/unified-api/) |
+| SDK 2.0 的扩展入口（归档宿主、缓存宿主、统一 API）哪些已正式发布 | [SDK 2.0 扩展入口](/sdk/sdk2-preview/) |
 | 会话保留多久、什么时候被回收 | [保留期与治理](/serve/retention-and-governance/) |
 | 命令行配置文件在哪、`tansr doctor` 输出怎么读 | [设置与 doctor](/cli/settings-and-doctor/) |
 | 数据存在哪、密钥怎么轮换、出网去了哪 | [安全与隐私](/security/) |

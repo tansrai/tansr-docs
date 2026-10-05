@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 tansr はエージェントランタイムです。同じ 1 つのカーネル（クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮）を、いくつかの異なる形態で提供します。すべてを理解する必要はありません。「エージェントをどこで動かしたいか」に合わせて道を 1 つ選ぶだけです。
@@ -27,8 +27,8 @@ tansr はエージェントランタイムです。同じ 1 つのカーネル�
 | ターミナルで直接エージェントと対話し、コードを直し、スクリプトを実行したい | `tansr` CLI | [CLI を 5 分で動かす](/ja/getting-started/cli/) |
 | Node.js / Electron プログラムを書いていて、エージェントを自分のプロセスに組み込みたい | `@tansr/sdk` | [Node SDK を 5 分で動かす](/ja/getting-started/sdk/) |
 | 自分のモバイル / Web ユーザーにエージェントを提供したい。マルチユーザーのバックエンドが必要 | `@tansr/serve` セルフホストのセッションサービス | [セッションサービスを 5 分で動かす](/ja/getting-started/serve/) |
-| Android アプリを書いていて、バックエンドは `@tansr/serve` を使う（予定） | Kotlin SDK `com.tansr.sdk` | [Android と iOS を 5 分で動かす](/ja/getting-started/android/) |
-| iOS / macOS アプリを書いていて、バックエンドは上と同じ | Swift パッケージ `tansr-ios` | 同じ記事の「iOS でも同じ手順」節 |
+| Android アプリを書いていて、バックエンドは `@tansr/serve` を使う（予定） | Kotlin SDK `com.tansr.sdk`（0.4.0） | [Android と iOS を 5 分で動かす](/ja/getting-started/android/) |
+| iOS / macOS アプリを書いていて、バックエンドは上と同じ | Swift バイナリパッケージ `tansr-ios-spm`（0.3.0） | 同じ記事の「iOS でも同じ手順」節 |
 | ネイティブ HarmonyOS アプリを書いていて、バックエンドは上と同じ | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK を 5 分で動かす](/ja/getting-started/harmony/) |
 
 経験則は 2 つです。
@@ -61,7 +61,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 
 | 形態 | 最低要件 |
 |---|---|
-| CLI（npm パッケージ） | Node.js ≥ 22.19。Windows / macOS / Linux。単一ファイル実行版はランタイムを同梱しており Node 不要 |
+| CLI（npm パッケージ） | Node.js ≥ 22.19。Windows / macOS / Linux。単一ファイル実行版（SEA）は未公開で、現在は npm パッケージのみ |
 | `@tansr/sdk` | Node.js ≥ 22.19。Electron ≥ 39。ESM only。TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19。サードパーティのランタイム依存は `zod` のみ |
 | Android SDK | minSdk 26。Kotlin コルーチン + kotlinx.serialization + OkHttp |
@@ -77,6 +77,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | あるエラーコードの意味、再試行できるか | [エラー処理と再試行](/ja/sdk/errors-and-retries/) · [エラーコード表](/errors/codes) |
 | サーバーのデプロイ、グレースフルシャットダウン、複数レプリカでのシャーディング | [デプロイと認証](/ja/serve/deploy-and-auth/) |
 | セッションサービスの HTTP 面（`/api`）を直接呼びたい、または自分でクライアントを書きたい | [統一 API（/api）](/ja/unified-api/) |
+| SDK 2.0 の拡張入口（アーカイブホスト、キャッシュホスト、統一 API）のうち、どこまでが正式公開済みか | [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/) |
 | セッションはいつまで保持され、いつ回収されるか | [保持期間とガバナンス](/ja/serve/retention-and-governance/) |
 | CLI の設定ファイルはどこか、`tansr doctor` の出力をどう読むか | [設定と doctor](/ja/cli/settings-and-doctor/) |
 | データはどこに保存されるか、キーをどうローテーションするか、通信はどこへ向かうか | [セキュリティとプライバシー](/ja/security/) |

@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다.
@@ -27,8 +27,8 @@ tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구
 | 터미널에서 직접 에이전트와 대화하고, 코드를 고치고, 스크립트를 실행하고 싶다 | `tansr` CLI | [CLI 5분 안에 실행하기](/ko/getting-started/cli/) |
 | Node.js / Electron 프로그램을 작성 중이며, 에이전트를 내 프로세스에 내장하고 싶다 | `@tansr/sdk` | [Node SDK 5분 안에 실행하기](/ko/getting-started/sdk/) |
 | 내 모바일 / 웹 사용자에게 에이전트를 제공하고 싶고, 다중 사용자 백엔드가 필요하다 | `@tansr/serve` 자체 호스팅 세션 서비스 | [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) |
-| Android 앱을 작성 중이며, 백엔드는 `@tansr/serve`를 사용한다(사용할 예정이다) | Kotlin SDK `com.tansr.sdk` | [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
-| iOS / macOS 앱을 작성 중이며, 백엔드는 위와 같다 | Swift 패키지 `tansr-ios` | 같은 문서의 "iOS도 같은 방법" 절 |
+| Android 앱을 작성 중이며, 백엔드는 `@tansr/serve`를 사용한다(사용할 예정이다) | Kotlin SDK `com.tansr.sdk`(0.4.0) | [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
+| iOS / macOS 앱을 작성 중이며, 백엔드는 위와 같다 | Swift 바이너리 패키지 `tansr-ios-spm`(0.3.0) | 같은 문서의 "iOS도 같은 방법" 절 |
 | 네이티브 HarmonyOS 앱을 작성 중이며, 백엔드는 위와 같다 | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK 5분 안에 실행하기](/ko/getting-started/harmony/) |
 
 경험 법칙은 두 가지입니다.
@@ -61,7 +61,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 
 | 형태 | 최소 요구 사항 |
 |---|---|
-| CLI(npm 패키지) | Node.js ≥ 22.19. Windows / macOS / Linux. 단일 파일 실행 파일은 런타임을 내장하여 Node가 필요 없음 |
+| CLI(npm 패키지) | Node.js ≥ 22.19. Windows / macOS / Linux. 단일 파일 실행 파일(SEA)은 아직 출시되지 않았으며 현재는 npm 패키지만 제공 |
 | `@tansr/sdk` | Node.js ≥ 22.19. Electron ≥ 39. ESM only. TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19. 서드파티 런타임 의존성은 `zod` 하나뿐 |
 | Android SDK | minSdk 26. Kotlin 코루틴 + kotlinx.serialization + OkHttp |
@@ -77,6 +77,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 | 어떤 오류 코드의 의미, 재시도할 수 있는지 | [오류 처리와 재시도](/ko/sdk/errors-and-retries/) · [오류 코드 표](/errors/codes) |
 | 서버 배포, 정상 종료, 다중 레플리카 샤딩 | [배포와 인증](/ko/serve/deploy-and-auth/) |
 | 세션 서비스의 HTTP 표면(`/api`)을 직접 호출하거나 직접 클라이언트를 작성하고 싶다 | [통합 API(/api)](/ko/unified-api/) |
+| SDK 2.0 확장 진입점(아카이브 호스트, 캐시 호스트, 통합 API) 중 어디까지 정식 출시되었는가 | [SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/) |
 | 세션은 언제까지 보존되고 언제 회수되는가 | [보존 기간과 거버넌스](/ko/serve/retention-and-governance/) |
 | CLI 설정 파일은 어디에 있고, `tansr doctor` 출력을 어떻게 읽는가 | [설정과 doctor](/ko/cli/settings-and-doctor/) |
 | 데이터는 어디에 저장되고, 키는 어떻게 교체하며, 통신은 어디로 향하는가 | [보안과 개인정보](/ko/security/) |

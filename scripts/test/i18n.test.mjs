@@ -47,6 +47,9 @@ export const FIRST_BATCH = Object.freeze([
   'unified-api/clients.md',
 ]);
 
+/** 首批之外仅 en 有译文的手写页(ja / ko 走 Starlight 回落):计入 en 覆盖数,不入首批契约 */
+export const EN_ONLY_EXTRA = Object.freeze(['sdk/sdk2-preview.md']);
+
 export const TRANSLATED_LOCALES = Object.freeze(['en', 'ja', 'ko']);
 
 /** 字符类 */
@@ -269,11 +272,12 @@ for (const locale of TRANSLATED_LOCALES) {
   }
 }
 
-test('覆盖模型:首批 21 篇在 en / ja / ko 全部计入,无孤儿', () => {
+test('覆盖模型:首批 21 篇在 en / ja / ko 全部计入,en 另计 1 篇仅英译页,无孤儿', () => {
   const want = FIRST_BATCH.map(fileToSlug);
   for (const l of TRANSLATED_LOCALES) {
-    for (const s of want) assert.ok(coverage.rows.find((r) => r.slug === s)?.translated[l], `${s} 未计入 ${l} 覆盖`);
-    assert.equal(coverage.summary[l], want.length, `${l} 覆盖数 ${coverage.summary[l]} ≠ ${want.length}`);
+    const extra = l === 'en' ? EN_ONLY_EXTRA.map(fileToSlug) : [];
+    for (const s of [...want, ...extra]) assert.ok(coverage.rows.find((r) => r.slug === s)?.translated[l], `${s} 未计入 ${l} 覆盖`);
+    assert.equal(coverage.summary[l], want.length + extra.length, `${l} 覆盖数 ${coverage.summary[l]} ≠ ${want.length + extra.length}`);
   }
   assert.deepEqual(coverage.orphans, []);
 });

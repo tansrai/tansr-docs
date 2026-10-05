@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:33 篇手写文章中 English 21 篇、日本語 21 篇、한국어 21 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:34 篇手写文章中 English 22 篇、日本語 21 篇、한국어 21 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-10-05'
@@ -16,9 +16,9 @@ generated: true
 
 | 语言 | 已翻译 / 手写页 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 21 / 33 | 63.6% |
-| 日本語(`ja`) | 21 / 33 | 63.6% |
-| 한국어(`ko`) | 21 / 33 | 63.6% |
+| English(`en`) | 22 / 34 | 64.7% |
+| 日本語(`ja`) | 21 / 34 | 61.8% |
+| 한국어(`ko`) | 21 / 34 | 61.8% |
 | 生成页(不计覆盖率) | 587 | — |
 
 ## 逐页
@@ -41,6 +41,7 @@ generated: true
 | [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) | ✓ [セッションを閉じてリソースのクリーンアップを待つ](/ja/sdk/lifecycle/) | ✓ [세션 닫기와 리소스 정리 대기](/ko/sdk/lifecycle/) |
 | [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) | ✓ [タスクの実行中に入力を追加する](/ja/sdk/midturn-input/) | ✓ [작업 진행 중 입력 추가](/ko/sdk/midturn-input/) |
 | [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 | 回落 | 回落 |
+| [SDK 2.0 扩展入口：归档宿主、缓存宿主与统一 API](/sdk/sdk2-preview/) `sdk/sdk2-preview` | ✓ | ✓ [SDK 2.0 extension entries: archive host, cache host and the unified API](/en/sdk/sdk2-preview/) | 回落 | 回落 |
 | [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 | 回落 | 回落 |
 | [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) | ✓ [アプリケーションシステムプロンプトと SDK の結合ポリシー](/ja/sdk/system-prompts/) | ✓ [애플리케이션 시스템 프롬프트와 SDK 결합 정책](/ko/sdk/system-prompts/) |
 | [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) | ✓ [セキュリティとプライバシー](/ja/security/) | ✓ [보안과 개인정보](/ko/security/) |
