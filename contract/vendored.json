@@ -1,44 +1,44 @@
 {
   "openapi.json": {
-    "source": "tansr-api@a81d2ac164a6:openapi/openapi.json",
-    "revision": 5,
-    "sha256": "ae35f072afb1e88ed6f34154bb96ac9013649c25d3b8e90edafd0acbc0305200",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-api@ed26af655bc0:openapi/openapi.json",
+    "revision": 6,
+    "sha256": "114b47b0a0ade93465d038d86b4e58a631002e4449987ef11c4ebeeddbb04111",
+    "vendoredAt": "2026-10-05"
   },
   "serve.env.example": {
-    "source": "tansr-cli@c5219e025989:packages/server/.env.example",
-    "revision": 1,
-    "sha256": "cce07d7ebde406d874babd6bd4b998e0af4c1ec7a5573f71e77db3618c62e8f2",
-    "vendoredAt": "2026-09-13"
+    "source": "tansr-cli@01204b148175:packages/server/.env.example",
+    "revision": 2,
+    "sha256": "bc42ff7a74457522e334e7f5a34b54cf4d50896defdb1fd1f7832a94b0dbae67",
+    "vendoredAt": "2026-10-05"
   },
   "changelog/cli.md": {
-    "source": "tansr-cli@76e3c0dfb354:CHANGELOG.md",
-    "revision": 4,
-    "sha256": "d211f5f0adb894c1c6bd02de850b54028f047e5fb22337de86761ad97665dff6",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-cli@01204b148175:CHANGELOG.md",
+    "revision": 5,
+    "sha256": "1bb66530b52bc3b327c8103b610955987625a665a12d4d32b0f326302d88d80d",
+    "vendoredAt": "2026-10-05"
   },
   "changelog/sdk.md": {
-    "source": "tansr-cli@76e3c0dfb354:packages/sdk/CHANGELOG.md",
-    "revision": 8,
-    "sha256": "1af2b2d12a0514f507d75ecc9ea1da468711741ee75850f74bde9c8528b0dfde",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-cli@01204b148175:packages/sdk/CHANGELOG.md",
+    "revision": 9,
+    "sha256": "28effe1dba2f654c5c71fd442132e719cdf950f464474371d1fd71f622325077",
+    "vendoredAt": "2026-10-05"
   },
   "changelog/serve.md": {
-    "source": "tansr-cli@76e3c0dfb354:packages/server/CHANGELOG.md",
-    "revision": 7,
-    "sha256": "181aa544c1f28a8de756e9d9327801cf490b490ee8087873d9ded2b7d2522a59",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-cli@01204b148175:packages/server/CHANGELOG.md",
+    "revision": 8,
+    "sha256": "858d943c63247b71b12e2051da6b63f44b46c59500b28885206daee9565bfdf4",
+    "vendoredAt": "2026-10-05"
   },
   "cli-help.json": {
-    "source": "tansr-cli@76e3c0dfb354:dist/tansr.mjs",
-    "revision": 4,
-    "sha256": "9a3a1327dbdf43b083e1b985d442703cdeb2472d8fcea3d118f1ecedd9cc5623",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-cli@01204b148175:dist/tansr.mjs",
+    "revision": 5,
+    "sha256": "de8ecfee3e3a96517804689acc55598b2a7b9645a11b48ed0eb34a375088acf5",
+    "vendoredAt": "2026-10-05"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@76e3c0dfb354:packages/sdk/dist/index.d.ts",
-    "revision": 9,
-    "sha256": "0b6ba1c99888b7fcb52624e96f54883e9623b06f26b5ee5058af384a45fa4543",
-    "vendoredAt": "2026-09-15"
+    "source": "tansr-cli@01204b148175:packages/sdk/dist/index.d.ts",
+    "revision": 10,
+    "sha256": "f8e61ec8ec69ea4d158af771c80587e236a1f2b3c45972bdd44e6c1c87afed45",
+    "vendoredAt": "2026-10-05"
   }
 }
