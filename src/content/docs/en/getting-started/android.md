@@ -11,16 +11,19 @@ related:
   - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
+  - sdk/platform-bundle
 sources:
   - tansr-android:README.md
+  - tansr-android:CHANGELOG.md
   - tansr-ios:README.md
+  - tansr-ios:CHANGELOG.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-The Android and iOS SDKs are both **thin protocol clients** of the tansr session service (`/v2` protocol): they send input, render the event stream, run the local tools you explicitly register, and respond to permission and question dialogs. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential at all. Both platforms share one contract and one set of view-reduction golden samples. This article is Android-first, with the iOS equivalents in the last section.
+The Android and iOS SDKs are both **thin protocol clients** of the tansr session service (`/v2` protocol): they send input, render the event stream, run the local tools you explicitly register, and respond to permission and question dialogs. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential at all. Both platforms share one contract and one set of view-reduction golden samples. This article is Android-first, with the iOS equivalents in the last section. Version baseline (verified 2026-10-05): Android `com.tansr.sdk:*` **0.4.0** (Maven Central, 2026-09-14), iOS public binary package `tansr-ios-spm` **0.3.0**, server `@tansr/serve` 0.14.0. The released mobile SDKs still talk to `/v2` directly; the unified call surface `/api` added server-side in 0.13.0 is transparent to them, and the alignment to `/api` (manifest revision 7, unified error envelope, the three request headers) on both repositories' main branches has **not shipped in any release**.
 
 ## Send user messages on the phone; configure system prompts on the server
 
@@ -46,10 +49,12 @@ Maven Central coordinates, three artifacts, pick what you need:
 
 ```kotlin
 dependencies {
-    implementation("com.tansr.sdk:client:0.1.0")
-    implementation("com.tansr.sdk:compose:0.1.0")
+    implementation("com.tansr.sdk:client:0.4.0")
+    implementation("com.tansr.sdk:compose:0.4.0")
 }
 ```
+
+The current public version is 0.4.0 (on Maven Central since 2026-09-14; 0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 are all available). The three modules share one version number: upgrade them together and rebuild the app; do not mix SDK binaries of different versions.
 
 ## Credentials: only your own login state
 
@@ -127,7 +132,16 @@ Unregistered bridges fail closed: the SDK does not respond, and the server degra
 
 ## Same on iOS
 
-The Swift package `tansr-ios` is added through SwiftPM (the git tag is the version, currently `0.1.0`). Its three library products map one-to-one to the three Android modules: `TansrCore` (pure Swift protocol layer), `TansrClient` (URLSession transport + the `TansrAgent` factory), `TansrUI` (SwiftUI bindings and default components). In Xcode, "Add Package Dependencies" and enter the repository URL.
+iOS adds the public binary package `tansr-ios-spm` through SwiftPM (currently `0.3.0`). Its three modules map one-to-one to the three Android modules: `TansrCore` (pure Swift protocol layer), `TansrClient` (URLSession transport + the `TansrAgent` factory), `TansrUI` (SwiftUI bindings and default components). Declare it in `Package.swift` as below, or enter the same repository URL in Xcode's "Add Package Dependencies":
+
+```swift
+.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.3.0")
+// App target dependencies:
+.product(name: "TansrClient", package: "tansr-ios-spm")
+.product(name: "TansrUI", package: "tansr-ios-spm")
+```
+
+The public package contains no SDK implementation source and covers iOS 16+ devices and simulators as well as macOS 13+. Do not mix the source SDK and the binary SDK in one app's dependency graph.
 
 Client and first session:
 
@@ -157,3 +171,4 @@ Two iOS-specific notes: cleartext http for local debugging must be allowed in th
 
 - [Android integration guide](/en/android/), [iOS integration guide](/en/ios/) and [HarmonyOS integration guide](/en/harmony/): event reduction, error presentation, offline and foreground/background, the two voice links, push wake-up.
 - [v2 protocol and webhooks](/en/serve/v2-and-webhooks/): how the server side hands end-of-turn notifications to your push backend.
+- [Public-network tools for mobile apps](/en/sdk/platform-bundle/#移动应用的公网工具): let the agent read web pages, issue HTTP requests or search the web — executed server-side, off by default.

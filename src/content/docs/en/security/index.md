@@ -8,20 +8,24 @@ related:
   - cli/settings-and-doctor
   - serve/deploy-and-auth
   - serve/retention-and-governance
+  - serve/v2-and-webhooks
   - sdk/platform-bundle
+  - sdk/sdk2-preview
   - support/account
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/README.md
+  - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-This page covers only **what you can do**: know where traffic goes, put credentials in the right place, know where data is kept, and rotate. tansr's internal defenses (permission engine, protected paths, hard security red lines, audit chain) are laid out in the guides for each form; here they are cited only where they touch your own actions.
+This page covers only **what you can do**: know where traffic goes, put credentials in the right place, know where data is kept, and rotate. tansr's internal defenses (permission engine, protected paths, hard security red lines, audit chain) are laid out in the guides for each form; here they are cited only where they touch your own actions. Version baseline: `tansr` CLI 0.10.1, `@tansr/sdk` 0.18.1, `@tansr/serve` 0.14.0 (all released 2026-10-04).
 
 ## Egress: where traffic goes and how to narrow it
 
@@ -43,7 +47,28 @@ Two user-visible defenses already in place: a single command that both reference
 
 - With the token source, `@tansr/sdk` connects only to the `baseUrl` you pass (the platform gateway) and the MCP servers you configure explicitly; the SDK never scans the user's home directory and never has a built-in search endpoint.
 - The upstream chain of `@tansr/serve` is `appid/appkey → POST /v1/app-tokens → GET /t1/config + POST /t1/heartbeat → POST /t1/exchange`, all against `apiBaseUrl`; plus the end-of-turn webhook URL you configure (outbound requests never carry any authentication header — authenticity is proven by the signature) and the optional cold-tier object storage.
-- The mobile SDKs connect only to your session service's `baseUrl`, never directly to the platform.
+- Once a mobile app enables web fetch (WebFetch) or HTTP requests (Http) in the console (`@tansr/serve` 0.12.0 and later, off by default), those two tools access the target URL directly from the host running the session service and follow the same egress rules: hosted Http cannot reference credentials from host environment variables, and the model cannot lift the host's private-network limits; if you use an egress proxy, restrict private-network targets on the proxy as well. See [Public-network tools for mobile apps](/en/sdk/platform-bundle/#移动应用的公网工具).
+- The mobile SDKs and `@tansr/api-client` connect only to your session service's `baseUrl`, never directly to the platform, and never issue those tool requests from the device.
+
+## The unified call surface `/api`: headers, closure and legacy prefixes
+
+Since `@tansr/serve` 0.13.0, a deployment with `options.v2` present mounts the unified call surface `/api` at the head of the chain on the same port (manifest revision 7 in 0.14.0). Only a few points are security-relevant:
+
+- **Identity comes from `Authorization` only.** `/api` and `/v2` share the same `authenticate` hook that decides `endUserId`; the four response headers `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` and the envelope's `traceId` / `requestId` never carry endUserId, tokens or message content. No identity field in a request body is treated as identity. The CLI form `tansr serve --v2` partitions by the same Bearer plus the `x-tansr-end-user` header; that header may only be written by your gateway after your own login, never filled in by the client.
+- **Request headers are explicit negotiation, not authentication factors.** `tansr-session-family`, `tansr-closure-id`, `tansr-event-envelope`, `Idempotency-Key` / `If-Match` / `deadline` (the last three since 0.14.0) on a request they do not apply to yield `400 invalid_request` rather than being silently ignored; without any of them, behaviour is byte-for-byte unchanged.
+- **Capability closure**: `GET /api/sessions/:id/capabilities` federates the existing capability sources of each domain read-only into one three-state operation table (`enabled` / `disabled` / `unavailable`) plus `tansr-closure-id`; it **introduces no new authorization engine** — operations inside the closure are still decided by the domain handler against app capability flags, user authorization, session state and approvals. A write may carry the last `tansr-closure-id` as a precondition: a changed closure yields `412 precondition_failed` (`rediscover`; rediscover first, never hard-replay with the old value); calling an operation that is `disabled` yields `403 capability_unavailable`. Unknown sessions, other users' sessions and sessions that exist only in the archive host all answer `404 not_found`, without leaking existence.
+- **`/v1` is off by default**: with the facade present, `/v1/sessions*`, `/v1/status` and `/v1/approvals/:id/credential` answer 404 by default (always off when an SDK2 explicit host is present). The escape hatch `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` is deprecated since 0.14.0 / CLI 0.10.1 (removed in 1.0.0; enabling it emits the `warn` event `server.deprecated_option`); approval credential submission moves to `POST /api/approvals/:id/credential`. Health checks use `/healthz` `/readyz`; stop probing `/v1/status` with the `/v1` Bearer.
+- In the unified error envelope `message` has no literal guarantee and `detail.path` is rewritten to the requested `/api` path; the internal `/v2` / `/v3` prefixes and host paths do not leak. Headers and the code table are in [Unified API headers and error envelope](/en/unified-api/headers-and-errors/).
+
+## Isolation of system tools and terminal tools (SDK 2.0 remote profile)
+
+SDK 2.0's "unified core, thin terminals" splits tools by **where they execute**, and neither side can execute for the other:
+
+- **System tools run on the session-service host**: WebFetch / Http / WebSearch / media tools and the MCP adapter run inside the serve process under the host's egress rules (private-network limits, credential allowlist, the same on the proxy); the MCP adapter reuses the host's existing connections and cannot start processes from model parameters, and the model cannot lift egress limits.
+- **Terminal tools run only on the bound device**: file read / list / write / edit and bound-workspace memory (controlled primitives such as `fs.inspect` / `fs.read` / `fs.list`) exist only after the application explicitly configures `execution.version = 'bound-device-v1'` through the management API and grants them in `boundDevice.tools`; **legacy application types and legacy `tools` flags never imply terminal authorization**. Effective tools = application ceiling ∩ user policy ∩ request narrowing ∩ device primitives; the original Read / List permissions and user approvals still apply, and a configured directory cannot authorize on the user's behalf.
+- **Memory and attachments never fall back to the host**: the trusted host's `execution.memoryFor(scope)` selects only relative directories inside the bound workspace and never reads serve's home / env / cwd; missing capability, denial, disconnection or an oversized source only degrades the current turn and never falls back to reading server files. The URL of an external attachment source `trustedAttachmentSourceFor` is only a lookup key: SDK / serve never fetch automatically and never let the model or the client turn an address into a file or network permission.
+- **Durable execution records before effects**: the executor persistently claims an operation before executing and saves the result before returning; reconnecting after a disconnect never redoes an operation whose outcome is unknown (SDK side: `GateDecision.executionTarget` / `ToolContext.executionTarget`, since `@tansr/sdk` 0.18.0; always absent for in-process SDK).
+- **A trusted host module is trusted like the deployer's own code**: `tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>` (CLI 0.10.0 and later) verifies only the digest of the entry file's raw bytes; it does not sign the dependency graph and is not a code sandbox. Path and digest always come from your deployment pipeline, never from the model or over HTTP.
 
 ## Credentials: where they go and where they never go
 
@@ -55,7 +80,8 @@ Two user-visible defenses already in place: a single command that both reference
 | App key appid / appkey | Your app | Environment variables of your backend process (a Node process or `@tansr/serve`) | Client devices, logs, error responses, the repository (`.env` goes in `.gitignore`) |
 | Short-lived `app_user` token | One of your end users | Electron main-process memory; inside the `@tansr/serve` process | The renderer process, persistent storage; mobile **never** touches it |
 | Your own login token (mobile) | Your user | Provided per request through `authProvider`; the SDK does not persist it | SharedPreferences / DataStore / UserDefaults / logs |
-| Session-service `/v1` Bearer (`--token` / `TANSR_SERVE_TOKEN`) | The operator | An environment variable | Unrelated to the `/v2` surface; do not reuse it for end users |
+| Session-service `/v1` Bearer (`--token` / `TANSR_SERVE_TOKEN`) | The operator | An environment variable | Unrelated to the `/v2` / `/api` surfaces; do not reuse it for end users; `/v1` is off by default in `--v2` deployments |
+| The `--host-module-sha256` digest | Your deployment pipeline | Generated next to the `.cjs` build artifact and shipped together with it | Never computed at runtime, never supplied by the model or over HTTP |
 | Webhook `secret` | Your push backend | Environment variables on the session service and on the receiver, separately | Logs; the engine never prints it |
 
 Three red lines worth repeating: the appkey never leaves your backend; the `app_user` token never leaves the session service; the session id is not an authentication factor.
@@ -87,8 +113,9 @@ The CLI adds one more layer of redaction discipline as a safety net: keys in rep
 ### The session service (`@tansr/serve`)
 
 - Session history lands in the `store` directory you configure, `<dir>/agent-sessions/<endUserKey>/sessions/<sessionId>/`; `endUserKey` is a hash of the end-user id, not an identity. A cold tier can be mounted on your object storage; segments are plaintext JSONL (compressed) — **encryption, key management, residency and access control are yours** (the `policy.transform` hook).
-- Short in-memory windows: terminal records are kept for 30 min, idle sessions are written to disk after 24 h; `DELETE /v2/sessions/:id` closes, it does not delete. **With no retention configured the store keeps everything by default**; the storage retention sweep (deleting dormant sessions by age in days and per-user count) is **available since @tansr/serve 0.8.0** (factory option `sessions.retention` or two environment variables — see [Retention and governance](/en/serve/retention-and-governance/#存储保留期扫描)). Real deletion is `store.delete`.
-- Structured log fields never contain tokens or message content; metric labels never contain sessionId / endUserId.
+- Short in-memory windows: terminal records are kept for 30 min, idle sessions are written to disk after 24 h; `DELETE /v2/sessions/:id` (same as `/api/sessions/:id`) closes, it does not delete. **With no retention configured the store keeps everything by default**; the storage retention sweep (deleting dormant sessions by age in days and per-user count) is **available since @tansr/serve 0.8.0** (factory option `sessions.retention` or two environment variables — see [Retention and governance](/en/serve/retention-and-governance/#存储保留期扫描)). Real deletion is `store.delete`.
+- Since 0.14.0 the `Idempotency-Key` receipt cache is in-process memory (256 per user / 4,096 global / 10 minutes), isolated by `endUserId` and gone with the process; an explicitly assembled SDK2 archive host stores archives under a "single authorized source" strategy — it is not a backup and does not synchronize elsewhere, and entries are deleted only by an explicit host call.
+- Structured log fields never contain tokens or message content (default level `warn` since 0.13.0; every level is redacted the same way, body keys are always `[redacted]`); metric labels never contain sessionId / endUserId.
 - Permission request frames sent down to clients never carry full tool arguments, only a target summary; webhook payloads never carry message content or credentials.
 
 ### On the device
@@ -115,5 +142,7 @@ On the platform side, only one code signals that a token is dead: `unauthorized`
 - `tansr doctor`: did the credential land in the OS keychain or a plaintext file? Does the `localProviders` section match what you expect (platform mode / escape hatch)? Any unattended-baseline notice?
 - `grep` your repository once for `TANSR_APP_KEY` / `sk-` / `tansr_sk_` to confirm no real value was committed.
 - When the session service binds `0.0.0.0`, is `/metrics` exposed to the internal network only? Is the `store` directory a local disk, not shared?
-- Does your token mint endpoint mint only after your own login, and does it always take `endUserId` from the server-side session rather than trusting the request body?
+- Does your token mint endpoint mint only after your own login, and does it always take `endUserId` from the server-side session rather than trusting the request body? Is `x-tansr-end-user` written only by your gateway?
+- Is a `--v2` deployment still running with `--legacy-v1` / `TANSR_SERVE_LEGACY_V1`? A `server.deprecated_option` event in the logs means it should be scheduled for removal (gone in 1.0.0); move approval submission to `POST /api/approvals/:id/credential`.
+- Is `--host-module-sha256` produced by the deployment pipeline together with the `.cjs` artifact, rather than computed by hand at rollout?
 - Are lifecycle rules and encryption configured on the cold-tier object storage?

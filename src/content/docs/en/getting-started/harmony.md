@@ -12,14 +12,15 @@ related:
   - serve/v2-and-webhooks
 sources:
   - tansr-harmony:README.md
+  - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
 `@tansr/harmony` is a **native ArkTS thin client** (HAR) of the session service `/v2` protocol: it sends input, reduces the event stream, runs the local tools you explicitly register, and answers permission and question prompts. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential. View reduction shares the same golden samples as Android / iOS. The HAR **does not include ArkUI pages**; recording, playback and list virtualization belong to the host.
 
-Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The current minimum is HarmonyOS 6.0 / API 20 (Stage model). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The current delivery is an independently published versioned release bytecode HAR (0.1.0). It is not on public OHPM and will not pull the latest version from a public channel.
+Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The current minimum is HarmonyOS 6.0 / API 20 (Stage model). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The current delivery is an independently published versioned release bytecode HAR (0.1.0). It is not on public OHPM and will not pull the latest version from a public channel (re-verified 2026-10-05: still 0.1.0). Server side verified against `@tansr/serve` 0.14.0: the unified call surface `/api` added in 0.13.0 is transparent to the 0.1.0 HAR, which keeps talking to `/v2`; the repository's alignment to `/api` and capabilities such as the RDB receiver / HUKS encryption are local candidates that have **not shipped in any release**, so this page does not describe them.
 
 ## Send user messages on the phone; configure system prompts on the server
 
@@ -135,3 +136,4 @@ OS microphone permission and agent tool permission are two layers; one cannot re
 - [HarmonyOS integration guide](/en/harmony/): session lifecycle, three-level recovery, tool bridges, the two voice links, dual speech caps, media download bounds.
 - [Android and iOS in 5 minutes](/en/getting-started/android/): compare the three-client contract.
 - [v2 protocol and webhooks](/en/serve/v2-and-webhooks/): how the server half hands end-of-turn notices to your push backend.
+- [Public-network tools for mobile apps](/en/sdk/platform-bundle/#移动应用的公网工具): let the agent read web pages, issue HTTP requests or search the web — executed server-side, off by default, no HarmonyOS code change needed.

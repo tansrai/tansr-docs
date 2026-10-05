@@ -10,10 +10,11 @@ related:
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/sdk/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-This guide covers `@tansr/sdk@0.13.0` and later (currently 0.16.0) with `@tansr/serve@0.8.0` and later, all published on npm; anything marked "since 0.14.0" requires `@tansr/sdk` 0.14.0 (published 2026-09-14) or newer. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
+This guide covers `@tansr/sdk@0.13.0` and later (currently 0.18.1, published 2026-10-04) with `@tansr/serve@0.8.0` and later (currently 0.14.0), all published on npm; anything marked "since 0.14.0" requires `@tansr/sdk` 0.14.0 (published 2026-09-14) or newer. Releases 0.15.0 through 0.18.1 changed neither the signatures nor the behaviour of the cleanup interfaces on this page. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
 
 | Operation | Contract |
 | --- | --- |
@@ -77,3 +78,7 @@ Completion evidence distinguishes `transport-completion` from a third-party `con
 The Electron demo retains unfinished sessions and the shared host. Its bounded outer observation offers another wait after a timeout; only an explicit user choice forces exit. Android and iOS keep their existing serve protocol: disconnecting or reconnecting does not delete a session, and DELETE or session.ended is not operating-system completion evidence. The Node host drains with the existing budget, awaits server.settleResources, then closes shared resources.
 
 CLI, ACP and headless add a 10-second MCP observation cap while preserving existing protocol and termination policies. Built-in Task and continuable agents transfer nested query receipts into their parent resource scope. TUI also awaits its background Task, memory extraction, consolidation, promotion and selector owners. Serve and ACP retain memory owners in the session cleanup chain after removal from the active list. Custom background work must be connected explicitly. Non-cooperative third-party tools may remain pending; no receipt certifies arbitrary unregistered child processes.
+
+## Shutdown order for SDK 2.0 extension hosts (since 0.18.0)
+
+If you opted into `@tansr/sdk/extensions` (`createNodeArchiveHost` / `createNodeCacheHost`, shipped in `@tansr/sdk` 0.18.0 on 2026-10-02), the host sits on top of the sessions on this page and is torn down after them: close or drain every session opened through the host first, then remove cache entries you no longer need with `cacheHost.delete({ sessionId, authorization })`, and only then call the host's `dispose()`. `dispose()` releases resources; it does not save anything, does not confirm unknown results, does not delete archives or cache entries, and does not close a `SessionStore` that you passed in — the borrowed store stays yours. In-process sessions that never touched the extension entry are unaffected. See [SDK 2.0 extension entries](/en/sdk/sdk2-preview/).
