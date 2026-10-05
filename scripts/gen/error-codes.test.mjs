@@ -23,7 +23,12 @@ test('error-codes:码数 = vendored 契约条数,锚点 = 码名且唯一', () =
   const [{ content }] = generate(root);
   const codes = headings(content, 3);
   assert.equal(codes.length, catalog.length);
-  assert.equal(catalog.length, 85, '派单登记 85 码;契约变了请同步终报计数');
+  // 85 → 88:tansr-api@ed26af65(2026-10-05 vendor)新增 operation_input_invalid(400)/ operation_not_configured(503)/
+  // upstream_outcome_unknown(502),皆来自 /t1 非对话操作面(tag nonchat);零删除。
+  assert.equal(catalog.length, 88, '登记 88 码(原 85 + 3);契约变了请同步终报计数');
+  for (const c of ['operation_input_invalid', 'operation_not_configured', 'upstream_outcome_unknown']) {
+    assert.ok(catalog.some((e) => e.code === c), `tansr-api@ed26af65 起登记 ${c}`);
+  }
   assert.deepEqual([...codes].sort(), catalog.map((e) => e.code).sort());
   assert.equal(new Set(codes).size, codes.length, '锚点重复');
   for (const c of codes) assert.match(c, /^[a-z0-9_]+$/, `码名 ${c} 不是合法锚点`);

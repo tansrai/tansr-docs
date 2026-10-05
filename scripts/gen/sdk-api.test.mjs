@@ -16,9 +16,17 @@ const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
  * ModelTransitionBackup / SendBlocksResult / SessionBudgetOptions / SessionContextState / SessionModelState / SessionUserBlock /
  * SpeechInputPlan(+Result)/ SwitchModelOptions / SwitchModelResult;零删除);
  * tansr-cli@76e3c0df 再 vendor(sdk 0.16.0 已发)新增 1 值 + 2 类型 = 528:值 SESSION_RECOVERY_VERSION;类型 SessionRecoveryPolicy /
- * SessionRecoveryReport(0.15.0 文件存储有界容错读取);零删除。
+ * SessionRecoveryReport(0.15.0 文件存储有界容错读取);零删除;
+ * tansr-cli@01204b14 再 vendor(2026-10-05;sdk 0.18.1 已发 + 其后 main 上未发布加法)新增 13 值 + 40 类型 = 581,零删除:
+ *   - 已发(sdk 0.18.0,2026-10-02)4 类型:AppBundleAdapterDiagnosticStatus / AppBundleRequestAdapterDiagnostic /
+ *     AppBundleBillingAdapterDiagnostic / AppBundleModelAdapterDiagnostics(0.17.0 → 0.18.0 根入口 528 → 532;0.18.1 零差量);
+ *   - 未发布(0.18.1 之后,尚无版本号)13 值 + 36 类型:非对话操作客户端 createPlatformNonchatClient / PlatformNonchatError /
+ *     NONCHAT_PROTOCOL / NONCHAT_OPERATION_PATHS 及 Nonchat* / Document* / Music* / Voice* / Embeddings* / Rerank* / PlatformVideoInput /
+ *     PlatformOperationModel 类型与 *Schema 值,实时会话 REALTIME_SUBPROTOCOL / Realtime* 类型,配额 AppQuota / AppQuotaSchema。
+ *     资料站按事实源法照常生成这些页;发行说明不把它们记作 0.18.1 已发特性。
  */
-export const EXPECTED_EXPORTS = 528;
+export const EXPECTED_EXPORTS = 581;
+export const EXPECTED_EXPORT_SPLIT = { values: 212, types: 369 };
 
 function fm(content) {
   const lines = content.split('\n');
@@ -27,13 +35,16 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 528(值199 · 类型329)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 581(值212 · 类型369)', () => {
   const c = countExports(dts);
-  assert.deepEqual(c, { values: 199, types: 329, total: EXPECTED_EXPORTS });
+  assert.deepEqual(c, { ...EXPECTED_EXPORT_SPLIT, total: EXPECTED_EXPORTS });
   const valueExports = dts.match(/^export \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(valueExports?.includes('SESSION_RECOVERY_VERSION'), 'sdk 0.15.0 起导出 SESSION_RECOVERY_VERSION');
   const typeExports = dts.match(/^export type \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(typeExports, '须保留独立的类型导出行');
+  for (const name of ['AppBundleAdapterDiagnosticStatus', 'AppBundleRequestAdapterDiagnostic', 'AppBundleBillingAdapterDiagnostic', 'AppBundleModelAdapterDiagnostics']) {
+    assert.ok(typeExports.includes(name), `sdk 0.18.0 起导出 ${name}`);
+  }
   assert.deepEqual(typeExports.filter((name) => name.startsWith('SessionInput')).sort(), [
     'SessionInputCapabilities', 'SessionInputContent', 'SessionInputReceipt', 'SessionInputRejectCode',
     'SessionInputResult', 'SessionInputSubmission', 'SessionInputTarget',
@@ -99,10 +110,47 @@ test('sdk-api:generate → 每导出一页 + 总览;页数 = 有独立页导出 
   assert.deepEqual(again.map((o) => [o.rel, o.content]), outputs.map((o) => [o.rel, o.content]), '二次生成须逐字节相同(确定性)');
 });
 
-test('sdk-api:z.infer 别名预处理 → 53 条别名求出真实结构;引用处保留别名名字;别名页显示结构;全站无 z.infer 残留 / 无 : any 折塌', async () => {
+/**
+ * z.infer 残留点名登记(与生成器 `inferAliasesUnresolved` 严格相等,按 d.ts 出现序;任一侧漂移即红):求值结果泄出 zod 内部结构
+ *(`z.Zod…` / `["_output"]`,见 ZOD_INTERNALS_PATTERN)的别名不改写、原样保留 d.ts 原文。
+ *   - SegmentManifest(非导出;只被同样非导出的 StoreInput / LoadResult 引用,任何页面都不渲染):`z.infer<typeof SegmentManifestSchema>`
+ *     经 zod stub 求值得到 `z.flatten<z.addQuestionMarks<z.baseObjectOutputType<…>>>`(stub 不展开该形)。tansr-cli@76e3c0df 时即如此,
+ *     旧生成器把这段 zod 内部文本写回了别名(不可见),现改为原样保留;页面零变化。
+ *   - NonchatInput(导出;tansr-cli@01204b14,0.18.1 之后未发布加法):泛型别名 `z.infer<(typeof NONCHAT_INPUT_SCHEMAS)[Operation]>`
+ *     的实参依赖类型参数,求值只得整张模式表的索引访问,无用户可读结构;页面显示 d.ts 原文。
+ */
+export const INFER_RESIDUE_ALLOWLIST = Object.freeze({
+  SegmentManifest: { exported: false, original: 'z.infer<typeof SegmentManifestSchema>' },
+  // 页面显示的是 typedoc 的打印形(索引访问不加括号);d.ts 原文为 `z.infer<(typeof NONCHAT_INPUT_SCHEMAS)[Operation]>`
+  NonchatInput: { exported: true, original: 'z.infer<typeof NONCHAT_INPUT_SCHEMAS[Operation]>' },
+});
+
+test('sdk-api:z.infer 别名预处理 → 74 条别名求出真实结构(含泛型 1 条)、2 条点名登记原样保留;引用处保留别名名字;别名页显示结构;全站无 z.infer 残留(登记页除外)/ 无 : any 折塌', async () => {
   const outputs = await generate(root);
   const index = outputs.find((o) => o.rel === join(OUT_DIR, 'index.md'));
-  assert.equal(index.stats.inferAliasesResolved, 53, '51 条 `type X = z.infer<typeof XSchema>` + 2 条 NonNullable<z.infer<…>>(tansr-cli@c5219e02 起 +1)');
+  // 53 → 74(tansr-cli@01204b14):69 条 `type X = z.infer<typeof XSchema>`(原 51;新增 19 条非对话操作面别名,SegmentManifest 改计入
+  // 原样保留)+ 2 条 NonNullable<z.infer<…>>(不变)+ 2 条由多个 z.infer 组成的联合别名 DocumentOperationInput / MusicOperationInput
+  // + 1 条泛型别名 PlatformNonchatTask<Result>(实参 typeof NonchatTaskSchema 不依赖类型参数,可求出结构;皆为 0.18.1 之后未发布加法)。
+  assert.equal(index.stats.inferAliasesResolved, 74, '69 条 `type X = z.infer<typeof XSchema>` + 2 条 NonNullable<z.infer<…>> + 2 条 z.infer 联合别名 + 1 条泛型别名');
+  assert.deepEqual(index.stats.inferAliasesUnresolved, Object.keys(INFER_RESIDUE_ALLOWLIST), '原样保留的别名须与点名登记严格相等(按 d.ts 出现序)');
+  const nonchatTask = outputs.find((o) => o.rel === join(OUT_DIR, 'type-aliases', 'PlatformNonchatTask.md'));
+  assert.match(nonchatTask.content, /type PlatformNonchatTask<Result> = Omit<\{\n\s+\w+/, '泛型别名的 z.infer 求出结构(typedoc 按键名排序显示)、类型参数名保留');
+  assert.match(nonchatTask.content, /\n\s+taskId: string;\n/, 'PlatformNonchatTask 结构须含 taskId');
+  assert.match(nonchatTask.content, /\}, "result"> & \{\n\s+result\?: Result;\n\}/, '泛型参数 Result 在交叉段原样保留');
+  const exportedNames = new Set([...dts.matchAll(/^export (?:type )?\{ ([^}]+) \};$/gm)].flatMap((m) => m[1].split(',').map((s) => s.trim())));
+  for (const [name, { exported, original }] of Object.entries(INFER_RESIDUE_ALLOWLIST)) {
+    assert.equal(exportedNames.has(name), exported, `${name} 的导出状态须与登记一致`);
+    const page = outputs.find((o) => o.rel === join(OUT_DIR, 'type-aliases', `${name}.md`));
+    if (!exported) {
+      assert.equal(page, undefined, `${name} 非导出,不应成页`);
+      continue;
+    }
+    assert.ok(page, `登记的残留别名 ${name} 须有页`);
+    assert.ok(page.content.includes(original), `${name} 页须原样显示 d.ts 原文 ${original}`);
+    assert.doesNotMatch(page.content, /z\.Zod|_output/, `${name} 页不得泄出 zod 内部结构`);
+  }
+  // *Schema 变量页本就显示 `z.ZodObject<…>` 等模式类型(d.ts 原文),只守 stub 求值失败才会出现的内部助手类型
+  for (const o of outputs) assert.doesNotMatch(o.content, /z\.flatten|addQuestionMarks|baseObjectOutputType|\["_output"\]/, `${o.rel} 泄出 z.infer 求值失败的 zod 内部助手类型`);
   const session = outputs.find((o) => o.rel === join(OUT_DIR, 'classes', 'AgentSession.md'));
   assert.match(session.content, /get events\(\): AsyncIterable<KernelEvent>;/, '引用处须是别名名字而非整段内联');
   // 回归护栏:事件联合被内联时该页曾达 1600+ 行;正常成员增长(tansr-cli@c5219e02 起 +5 成员 → 804 行)不应触发。
@@ -113,8 +161,9 @@ test('sdk-api:z.infer 别名预处理 → 53 条别名求出真实结构;引用�
   assert.match(kernelEvent.content, /type: "session\.created";/);
   const message = outputs.find((o) => o.rel === join(OUT_DIR, 'type-aliases', 'IRMessage.md'));
   assert.match(message.content, /type IRMessage = \{\n\s+blocks: \(/);
+  const allowed = new Set(Object.entries(INFER_RESIDUE_ALLOWLIST).filter(([, v]) => v.exported).map(([name]) => join(OUT_DIR, 'type-aliases', `${name}.md`)));
   for (const o of outputs) {
-    assert.doesNotMatch(o.content, /z\.infer</, `${o.rel} 仍有 z.infer 残留`);
-    assert.doesNotMatch(o.content, /^type [A-Za-z]+ = any;$/m, `${o.rel} 别名折成 any(stub 不足)`);
+    if (!allowed.has(o.rel)) assert.doesNotMatch(o.content, /z\.infer</, `${o.rel} 仍有 z.infer 残留`);
+    assert.doesNotMatch(o.content, /^type [A-Za-z]+(<[^>]*>)? = any;$/m, `${o.rel} 别名折成 any(stub 不足)`);
   }
 });

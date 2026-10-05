@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRootFrom } from '../lib/text.mjs';
-import { danglingRefs, filterPublic, generate, OUT_REL, PUBLIC_TITLE, sanitizeMarkdownText } from './openapi-public.mjs';
+import { danglingRefs, filterPublic, generate, OUT_REL, PUBLIC_TITLE, publicTags, sanitizeMarkdownText } from './openapi-public.mjs';
 
 const root = repoRootFrom(import.meta.url);
 
@@ -164,6 +164,25 @@ test('openapi-public:$ref 全部可解析;components 只含可达 schema(不可�
   assert.ok(Object.keys(doc.components.schemas).length < Object.keys(source.components.schemas).length, '应有裁剪');
   const usedSecurity = new Set(opsOf(doc).flatMap(({ op }) => (op.security ?? []).flatMap((s) => Object.keys(s))));
   assert.deepEqual(Object.keys(doc.components.securitySchemes).sort(), [...usedSecurity].sort(), 'securitySchemes = 公开操作实际引用集');
+});
+
+test('openapi-public:tags 规则 5 —— 声明过的按源序留(含 description)、未用到的去、用到而未声明的补 { name } 按名序附后;真契约 tansr-api@ed26af65 起 4 个未声明 tag(nonchat · sdk2-cache · sdk2-cache-core · sdk2-runtime-continuity)', () => {
+  const declared = [{ name: 'twp', description: 'T' }, { name: 'admin', description: 'A' }, { name: 'gateway', description: 'G' }];
+  assert.deepEqual(publicTags(declared, new Set(['zeta', 'gateway', 'alpha', 'twp'])), [
+    { name: 'twp', description: 'T' },
+    { name: 'gateway', description: 'G' },
+    { name: 'alpha' },
+    { name: 'zeta' },
+  ]);
+  assert.deepEqual(publicTags(undefined, new Set(['b', 'a'])), [{ name: 'a' }, { name: 'b' }], '源无 tags 声明时全部补 { name }');
+  assert.deepEqual(publicTags([{ name: 'x' }], new Set()), [], '无公开操作用到即为空');
+  const { doc } = filterPublic(source);
+  const declaredNames = new Set((source.tags ?? []).map((t) => t.name));
+  const synthesized = doc.tags.filter((t) => !declaredNames.has(t.name));
+  assert.deepEqual(synthesized, ['nonchat', 'sdk2-cache', 'sdk2-cache-core', 'sdk2-runtime-continuity'].map((name) => ({ name })), '真契约:4 个只在操作上出现的 tag 以 { name } 补齐;源头补声明后此断言应改为空');
+  const declaredKept = doc.tags.slice(0, doc.tags.length - synthesized.length);
+  for (const t of declaredKept) assert.deepEqual(t, (source.tags ?? []).find((s) => s.name === t.name), `${t.name} 声明过的须逐字沿源`);
+  assert.deepEqual(declaredKept.map((t) => t.name), (source.tags ?? []).map((t) => t.name).filter((n) => doc.tags.some((t) => t.name === n) && declaredNames.has(n)), '声明过的按源序');
 });
 
 test('openapi-public:error-codes 子集 = 被公开操作说明引用的码;info.title 改公开面;servers 无本机地址', () => {

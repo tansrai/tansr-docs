@@ -10,7 +10,9 @@
  *   3. 去顶层内部扩展(`x-tansr-flags` 等一切非 KEEP_TOP_EXTENSIONS 的 `x-*`),去操作级一切 `x-tansr-*`;
  *      保留 `x-tansr-enums` 全部、`x-tansr-error-codes` 中被公开操作说明整词引用的子集;
  *   4. `components` 只留公开操作可达的 schema(`$ref` 闭包)与被公开操作 `security` 引用的 securityScheme;
- *   5. `tags` 只留公开操作用到的;`servers` 去掉本机 / 私网地址;`info.title` 改「tansr 平台 REST API(公开面)」,
+ *   5. `tags` = 公开操作用到的 tag 集:源顶层声明过的按源序保留(含 description);公开操作用到而源顶层**未声明**的
+ *      以仅含 `name` 的条目按名序补在其后(tansr-api@ed26af65 起 /t1 非对话操作面 nonchat 与 sdk2-* 三族共 4 个 tag 只在操作上出现、
+ *      顶层未登记;公开副本须自洽,源头补声明另登敞口);`servers` 去掉本机 / 私网地址;`info.title` 改「tansr 平台 REST API(公开面)」,
  *      `info.description` 改为公开面口径(原文提及管理面)。
  *   6. 鉴权(用户拍板 2026-09-10):管理密钥 `adminKey`(头 `x-tansr-admin-key`)只在管理面使用,公开面不出——
  *      每个公开操作的 `security` 剔除含 SECURITY_SCHEME_BLOCKLIST 键的替代项(匿名 `{}` 与其余替代项原样保留、序不变);
@@ -71,6 +73,17 @@ export function stripBlockedSecurity(security) {
   if (!Array.isArray(security)) return { kept: security, stripped: 0 };
   const kept = security.filter((alt) => !(alt && typeof alt === 'object' && Object.keys(alt).some((k) => SECURITY_SCHEME_BLOCKLIST.has(k))));
   return { kept, stripped: security.length - kept.length };
+}
+
+/**
+ * 规则 5:公开副本的 `tags` = 公开操作实际用到的 tag 集。源顶层声明过的按源序保留(含 description 等);
+ * 用到而未声明的补 `{ name }`(按名序附后),保证副本自洽、消费方(starlight-openapi 分组 / 错误码分面)不必回查源契约。
+ */
+export function publicTags(declared, usedTags) {
+  const kept = (declared ?? []).filter((t) => usedTags.has(t.name));
+  const declaredNames = new Set(kept.map((t) => t.name));
+  const undeclared = [...usedTags].filter((name) => !declaredNames.has(name)).sort();
+  return [...kept, ...undeclared.map((name) => ({ name }))];
 }
 
 function collectRefs(value, into) {
@@ -184,7 +197,7 @@ export function filterPublic(source) {
       const servers = (v ?? []).filter((s) => !isPrivateServer(s.url));
       if (servers.length) out.servers = servers;
     } else if (k === 'tags') {
-      out.tags = (v ?? []).filter((t) => usedTags.has(t.name));
+      out.tags = publicTags(v, usedTags);
     } else if (k === 'paths') {
       out.paths = paths;
     } else if (k === 'security') {

@@ -119,11 +119,17 @@ function compilerOptions() {
 }
 
 /**
- * 预处理:把 `type X = z.infer<typeof XSchema>;` 形的别名(50 条 + 2 条 NonNullable 包裹)改写为 TypeScript 求出的真实结构文本。
+ * 预处理:把 `type X = z.infer<typeof XSchema>;` 形的别名(含 NonNullable 包裹、多个 z.infer 的联合)改写为 TypeScript 求出的真实结构文本。
  * 缘由:`z.infer` 是索引访问(`T['_output']`),TS 不给这种结果挂别名符号,typedoc 遇到引用处就整段内联(`AgentSession.events`
  * 曾被展成 1600 行的事件联合);改成字面结构后别名符号可挂,引用处保留 `KernelEvent` 名字并链到别名页,别名页则显示真实结构。
- * 返回 { text, rewritten }。
+ * 泛型别名同法(tansr-cli@01204b14 起出现,如 `PlatformNonchatTask<Result> = Omit<z.infer<typeof NonchatTaskSchema>, 'result'> & {…}`):
+ * 求值在别名自身作用域内进行,类型参数名原样保留。但 z.infer 的实参依赖类型参数时(如 `(typeof NONCHAT_INPUT_SCHEMAS)[Operation]`)
+ * 求出的只是整张 zod 模式表的索引访问(满篇 `z.ZodObject<…>` / `["_output"]`),没有用户可读结构——这类别名**原样保留**(页面仍显示
+ * d.ts 原文的 `z.infer<…>`),名字记入 `unresolved` 供测试点名登记,不抛。
+ * 返回 { text, rewritten, unresolved }。
  */
+export const ZOD_INTERNALS_PATTERN = /\bz\.Zod|\[["']_output["']\]/;
+
 export async function resolveInferAliases(entryPosix, tsconfigPath) {
   const ts = (await import('typescript')).default;
   const cfg = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
@@ -135,17 +141,22 @@ export async function resolveInferAliases(entryPosix, tsconfigPath) {
   if (!sf) throw new Error(`typescript 未装载 ${entryPosix}`);
   const flags = ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias | ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope;
   const edits = [];
+  const unresolved = [];
   for (const st of sf.statements) {
-    if (!ts.isTypeAliasDeclaration(st) || st.typeParameters?.length) continue;
+    if (!ts.isTypeAliasDeclaration(st)) continue;
     if (!/\bz\.infer</.test(st.type.getText(sf))) continue;
     const type = checker.getTypeAtLocation(st.name);
     const text = checker.typeToString(type, st, flags);
     if (text === 'any' || text.includes('...')) throw new Error(`${st.name.text} 的 z.infer 结构无法求出(${text.slice(0, 80)});stub 需补`);
+    if (ZOD_INTERNALS_PATTERN.test(text)) {
+      unresolved.push(st.name.text); // 实参依赖类型参数:求值得到的是 zod 模式表而非结构,原样保留
+      continue;
+    }
     edits.push({ start: st.type.getStart(sf), end: st.type.getEnd(), text });
   }
   let text = sf.getFullText();
   for (const e of edits.sort((a, b) => b.start - a.start)) text = text.slice(0, e.start) + e.text + text.slice(e.end);
-  return { text, rewritten: edits.length };
+  return { text, rewritten: edits.length, unresolved };
 }
 
 /**
@@ -182,7 +193,7 @@ export async function runTypedoc(root) {
       }
     };
     walk(out);
-    return { files, reflections: { total: project.children?.length ?? 0, byKind }, rewritten: pre.rewritten };
+    return { files, reflections: { total: project.children?.length ?? 0, byKind }, rewritten: pre.rewritten, unresolved: pre.unresolved };
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -292,7 +303,7 @@ export function transformPage({ rel, markdown, lastVerified, stats }) {
 export async function generate(root) {
   const dts = readContractText(root, SOURCE);
   const counted = countExports(dts);
-  const { files, reflections, rewritten } = await runTypedoc(root);
+  const { files, reflections, rewritten, unresolved } = await runTypedoc(root);
   if (reflections.total !== counted.total) {
     throw new Error(`导出数不对表:sdk-index.d.ts 尾部 export 名字 ${counted.total},typedoc 顶层反射 ${reflections.total}(${JSON.stringify(reflections.byKind)})`);
   }
@@ -302,7 +313,7 @@ export async function generate(root) {
     const dir = posix.dirname(rel);
     byDir[dir] = (byDir[dir] ?? 0) + 1;
   }
-  const stats = { ...counted, byDir, pages: files.size, reflections: reflections.byKind, inferAliasesResolved: rewritten };
+  const stats = { ...counted, byDir, pages: files.size, reflections: reflections.byKind, inferAliasesResolved: rewritten, inferAliasesUnresolved: unresolved };
   const lastVerified = lastVerifiedFor(root, SOURCE);
   const outputs = [];
   for (const [rel, markdown] of [...files.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
