@@ -8,14 +8,17 @@ related:
   - cli/commands
   - serve/env
   - support/troubleshooting
+  - serve/deploy-and-auth
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/server/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-命令行的行为由三处决定：配置文件（五层 `settings.json`）、环境变量、命令行旗标。`tansr doctor` 把这三处合并后的装配结果零网络地打印出来，是排障的第一步。
+命令行的行为由三处决定：配置文件（五层 `settings.json`）、环境变量、命令行旗标。`tansr doctor` 把这三处合并后的装配结果零网络地打印出来，是排障的第一步。本页按 `tansr` 命令行 0.10.1（2026-10-04 发布，npm `@tansr/cli`）核对；单文件 SEA 与 OSS 分发点上没有 0.10.x 产物，安装与升级走 npm。
 
 ## 五层配置与合并规则
 
@@ -73,9 +76,25 @@ lastVerified: '2026-09-15'
 | `TANSR_UPDATE_CHANNEL` / `TANSR_UPDATE_PINNED_VERSION` / `TANSR_NO_UPDATE_CHECK` / `TANSR_UPDATE_MANIFEST_URL` | 更新通道 / 组织锁定版本 / 个人退出检查 / 自托管清单 |
 | `TANSR_WEBSEARCH_ENDPOINT` / `TANSR_WEBSEARCH_API_KEY` | WebSearch 自带端点（显式设置恒压过登录态平台搜索） |
 | `TANSR_IMAGEGEN_*` / `TANSR_ASR_*` / `TANSR_TTS_*` | 媒体工具自带端点三件（`_ENDPOINT` / `_API_KEY` / `_MODEL`,+ `TANSR_TTS_VOICE`） |
+| `TANSR_COMPILE_CACHE` | 启动编译缓存目录（命令行 0.10.1 起，npm 形态）：缺省落用户缓存目录 `…/tansr/compile-cache`（设 `TANSR_USER_HOME` 时落 `<TANSR_USER_HOME>/.cache/tansr/compile-cache`）；`=<dir>` 改目录、`=0` 关闭。每个新安装版本首次启动多写约 2 MB、数十个文件，之后同版本启动更快；旧版本缓存不自动删，可整目录清；任何失败静默跳过 |
 | `TANSR_SERVE_TOKEN` | `tansr serve` 的 Bearer（`--token` 缺省时回退） |
+| `TANSR_SERVE_LOG_LEVEL` | `tansr serve` 日志级别，**缺省 `warn`**（命令行 0.10.0 / `@tansr/serve` 0.13.0 起）；此前靠 `info` 事件做仪表板的部署升级后要显式 `=info` |
+| `TANSR_SERVE_LEGACY_V1` | `=1` 在 `tansr serve --v2` 部署里重开 `/v1` 面（等价旗标 `--legacy-v1`）。**已废弃**：0.14.0 / 命令行 0.10.1 起开启即出一条 `warn` 事件 `server.deprecated_option`，1.0.0 移除；审批凭证投递改 `POST /api/approvals/:id/credential` 后不再需要 |
+| `TANSR_SERVE_SSE_MAX_FRAME_BYTES` / `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS` | SDK2 装配在场时的单帧字节硬帽（缺省 2 MiB）与基础认证源限界（缺省 128 个未结束 / 10 s）；只装 SDK1 的部署缺席零变化（命令行 0.10.0 起） |
 
-`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，全表见[环境变量表](/serve/env)；例如 [`TANSR_SERVE_LOG_FORMAT`](/serve/env#tansr_serve_log_format)、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions)。
+`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，命令行 0.10.0 起共 36 键，全表见[环境变量表](/serve/env)；例如 [`TANSR_SERVE_LOG_FORMAT`](/serve/env#tansr_serve_log_format)、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions)。
+
+## `tansr serve` 的旗标（0.10.x）
+
+| 旗标 | 含义 |
+|---|---|
+| `--token` / `--port` / `--host` | Bearer（缺省回退 `TANSR_SERVE_TOKEN`）、端口（缺省 7433）、监听地址（缺省回环，外部接入须显式 `0.0.0.0`） |
+| `--v2` | 挂 `/v2` 多租户面（同一 Bearer + `x-tansr-end-user` 头分域，0.6.0 起）；0.10.0 起同时在链首装配统一调用面 `/api`，且 **`/v1` 面缺省关闭**（0.13.0 的 serve 契约变更） |
+| `--legacy-v1` | 在 `--v2` 部署里重开 `/v1`；**已废弃**（0.10.1 起出 `server.deprecated_option` warn，1.0.0 移除），新集成改 `/api` |
+| `--host-module <absolute.cjs> --host-module-sha256 <sha256>` | 成对旗标（缺一即用法错误），显式装配本机绝对路径的 `.cjs` 受信宿主模块（≤ 16 MiB，核摘要后编译已验字节执行），`@tansr/serve/extensions` 的 SDK2 归档 / 缓存 / 终端服务在命令行形态只经此径可达；不传 = 0.9.0 行为（0.10.0 起） |
+| `--trust-project-hooks` | 工作区无信任记录时本次启用项目层 hooks（0.7.0 起） |
+
+`tansr bg kill --force` 在装有大量 PowerShell 模块的 Windows 机上因身份探针超时被判「不可核」而拒杀的问题已随 0.10.1 修正（wire / 旗标 / 退出码零变化）。完整命令面见[命令参考](/cli/commands#serve)，部署形态见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## `tansr doctor` 怎么读
 
