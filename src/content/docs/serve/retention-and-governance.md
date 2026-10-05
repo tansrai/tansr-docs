@@ -8,6 +8,7 @@ related:
   - serve/v2-and-webhooks
   - serve/env
   - sdk/checkpoints
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
@@ -16,10 +17,11 @@ sources:
   - tansr-cli:examples/serve-demo/README.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-08'
+  - tansr-cli:CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-一个会话在会话服务里有三种存在状态：**运行态**（内存里有驱动、有环形缓冲）、**终结残影**（轮已结束或已关闭，内存记录还在保留窗内可重放）、**休眠态**（只在 store 里，resume 可复活）。治理就是决定每种状态活多久、由谁回收。原则：**机器恒不物理删除业务主数据，除非运维显式配置。**
+一个会话在会话服务里有三种存在状态：**运行态**（内存里有驱动、有环形缓冲）、**终结残影**（轮已结束或已关闭，内存记录还在保留窗内可重放）、**休眠态**（只在 store 里，resume 可复活）。治理就是决定每种状态活多久、由谁回收。原则：**机器恒不物理删除业务主数据，除非运维显式配置。** 本页按 `@tansr/serve` 0.14.0（2026-10-04 发布）核对；治理表的冻结缺省自 0.8.0 以来未变，0.13.0 / 0.14.0 的加法单列于下文「0.13.0 / 0.14.0 的加法」。
 
 ## `/v2` 多会话治理表（冻结缺省）
 
@@ -48,7 +50,7 @@ lastVerified: '2026-09-08'
 
 ## 关闭 ≠ 删除
 
-`DELETE /v2/sessions/:id` 是**关闭**：释放运行态与并发帽名额，内存记录进保留窗后逐出，**store 内容保留**，随时可 `resume`。真删除只发生在 store 级 `store.delete(endUserId, sessionId)`（热层目录 + 冷层对象级联消失），或下文的保留期扫描。给用户的「结束会话」按钮应当是 close，不是 delete。
+`DELETE /v2/sessions/:id`（经统一调用面即 `DELETE /api/sessions/:id`，语义与字节相同）是**关闭**：释放运行态与并发帽名额，内存记录进保留窗后逐出，**store 内容保留**，随时可 `resume`。真删除只发生在 store 级 `store.delete(endUserId, sessionId)`（热层目录 + 冷层对象级联消失），或下文的保留期扫描。给用户的「结束会话」按钮应当是 close，不是 delete。
 
 ## 会话存储：生产恒接
 
@@ -87,9 +89,19 @@ const store = createServeAgentSessionStore({
 
 未配置保留期时，store **缺省永存**：休眠会话不会被服务端自动删除。**@tansr/serve 0.8.0 已提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`](/serve/env#tansr_serve_session_max_per_end_user)。控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
 
+## 0.13.0 / 0.14.0 的加法
+
+以下各项只在对应装配在场时生效，**只装 SDK1 `/v1` 的部署与固定使用 `/v2` 的客户端缺省零变化**。
+
+- **三个请求头与回执缓存（0.14.0）**：`/api` 上的写操作接受 `Idempotency-Key`（ASCII 1–128；同键同义返原回执、副作用恰一次，同键异义 `409 conflict`；回执缓存进程内有界：每用户 256 条 / 全局 4 096 条 / TTL 10 分钟，按 `endUserId` + 操作名 + manifest revision 隔离）、`If-Match` + 响应 `ETag`（只对有版本资源，即 manifest 里带 `expectedRevision` 的写操作；版本陈旧 `412 precondition_failed`、`retryAction: refresh`，一字未写）、`deadline`（RFC 3339；到达时已过期 `408 invalid_request`、`reason: deadline_exceeded`，不受理、不触及下游、不占幂等窗）。三头不新增错误码，`detail.reason` 由 2 枚扩到 17 枚；三头需要体时请求体帽 1 MiB（超出 `413 payload_too_large`、`reason: header_body_limit`）。不携这三个头 = 行为逐字节不变。回执缓存是内存态、随进程消亡，不属于本页的持久化保留窗。
+- **审批凭证投递改走 `/api`（0.14.0）**：`POST /api/approvals/:id/credential`（manifest revision 7 的 `approval.credential.submit`，内部径为 manifest 里唯一的 `/v1` 路径）；接审批投递的 `--v2` 部署不再需要 `--legacy-v1`。
+- **会话所有权租约（0.14.0 修正）**：启用 `ownership` 的可信宿主在慢盘上不再「无对手却自判死亡」——owner 自身操作只按代际围栏判定、`expiresAt` 只决定他人接管资格、每次持锁 meta 写顺带续约；`ownership.leaseMs` 下限由 1 000 ms 抬到 **5 000 ms**（显式传 1 000–4 999 抛 `TypeError`，缺省 30 000 ms 与 `[5000, 300000]` 区间不变）。带 `runtimeRecovery` 的多 Serve 部署在病态慢盘上仍可能合法接管活 owner（活性损失，非双写），该窗口此前即存在。
+- **设备 I/O 预算（0.14.0）**：`memoryFor(scope).deviceIoBudgetMs` 取值 1 000–120 000 ms，缺省 10 000 ms，只对绑定设备执行档的记忆读写生效。
+- **SDK2 归档 / 缓存宿主的保留与删除（0.13.0 起，须显式装配）**：`@tansr/serve/extensions` 的归档宿主以「单一授权源 + 源确认落盘」策略保存会话档案，复制 / 同步策略恒 `'none'`——它不是备份，不替代本页的 store 与冷层；缓存宿主的条目由宿主以 `delete({ sessionId, authorization })` 显式删除，`dispose()` 只释放资源不删数据，已归档条目的续约回 `410`（终态）并以 `archived: 'cold-new'` 指示重建。SSE 单帧硬帽 `maxFrameBytes` 缺省 2 MiB（`TANSR_SERVE_SSE_MAX_FRAME_BYTES`）只在这些装配在场时生效。宿主装配方式见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+
 ## `/v1` 面的终结记录保留窗
 
-`tansr serve` 长驻进程的 `/v1` 面缺省 **30 分钟保留窗 + 最多 10000 条终结记录**（超出按最早终结者先逐出）；到期或被逐出后该会话的 `events` / `messages` / `abort` 一律 `404 session_not_found`——编排方应在会话终结后 30 分钟内取完事件流，或自行持久化。`TANSR_SERVE_V1_RETENTION_MS`（毫秒）与 `TANSR_SERVE_V1_MAX_RETAINED`（条数）可调；取值 `0` 或 `off` = 该级不逐出；非法值静默回落缺省。以 npm 包嵌入时 `/v1` 缺省**不逐出**，由宿主经 `startServer({ v1: { governance } })` 选配。活跃会话恒不受影响。
+`tansr serve` 长驻进程的 `/v1` 面缺省 **30 分钟保留窗 + 最多 10000 条终结记录**（超出按最早终结者先逐出）；到期或被逐出后该会话的 `events` / `messages` / `abort` 一律 `404 session_not_found`——编排方应在会话终结后 30 分钟内取完事件流，或自行持久化。`TANSR_SERVE_V1_RETENTION_MS`（毫秒）与 `TANSR_SERVE_V1_MAX_RETAINED`（条数）可调；取值 `0` 或 `off` = 该级不逐出；非法值静默回落缺省。以 npm 包嵌入时 `/v1` 缺省**不逐出**，由宿主经 `startServer({ v1: { governance } })` 选配。活跃会话恒不受影响。本节只对 `/v1` 面在场的部署成立：0.13.0 起 `--v2` / `options.v2` 在场的部署 `/v1` 缺省关闭，显式开启的 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` 自 0.14.0 起已标废弃（1.0.0 移除），见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 与平台侧租约的关系
 

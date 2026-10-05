@@ -12,16 +12,22 @@ related:
   - errors/codes
   - android
   - ios
+  - sdk/sdk2-preview
 sources:
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:packages/server/.env.example
   - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:CHANGELOG.md
+  - tansr-cli:doc/90-SDK技术手册.md
+  - tansr-cli:examples/serve-demo/README.md
   - tansr-android:README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-`/v2` 是 `@tansr/serve` 对外的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS / 鸿蒙 SDK 已把这套协议封装；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。
+`/v2` 是 `@tansr/serve` 的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS / 鸿蒙 SDK 已发布版本封装的正是这套协议；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。本页按 `@tansr/serve` 0.14.0（2026-10-04 发布）核对；`/v2` 的端点、载荷与 SSE 帧字节自 0.9.0 以来未变。
+
+**新集成请改走统一调用面 `/api`**（`@tansr/serve` 0.13.0 起 GA，2026-10-02 发布）：同一组会话操作在 `/api/sessions/**` 上可达，领域载荷字节不变，但错误改为统一信封、响应携统一头，并有 manifest 与会话级能力围栏可供发现。`/v2` 自 0.13.0 起定义为**内部适配入口**，至 1.0.0（`unified-v1` 冻结）移除外部入口；0.14.0 没有移除任何 `/v2` 路由、没有进入只读窗口。本页下文的 `/v2` 事实在那之前继续成立，只是请不要在新代码里手写 `/v2` 前缀，也不要在同一会话族里新旧前缀混用。`/api` 的路由表、统一头与错误信封见[统一 API](/unified-api/)与[统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
 
 ## 在平台或宿主配置应用角色
 
@@ -31,8 +37,8 @@ lastVerified: '2026-09-15'
 
 ## 总纪律
 
-- `/v2` 与 `/v1` 同进程同端口，路由顺序恒 `/v1` 先；两面身份体系互不相通。
-- 错误信封恒 `{ "error": { "code": "<机器码>", "message": "<本地化文案>", "detail"?: {…} } }`。`code` 稳定可判，`message` 不承诺字面，`detail` 是可选结构化位，在场才落键。
+- `/v2`、`/api` 与（若开启的）`/v1` 同进程同端口；`/v1` 与 `/v2` 两面身份体系互不相通。**`/v1` 单租户面在装配了 `/api` 门面的部署（`options.v2` 在场）缺省关闭**（`@tansr/serve` 0.13.0 起，对外契约变更）：`/v1/sessions*`、`/v1/status`、`/v1/approvals/:id/credential` 缺省 404。确需保留的部署显式 `disableV1: false`（npm 嵌入形）或 `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1`（命令行形态）——该过渡旋钮自 0.14.0 / 命令行 0.10.1 起**已标废弃、1.0.0 移除**，显式开启时出一条结构化 `warn` 事件 `server.deprecated_option`（字段 `option` / `env` / `source: flag|env` / `deprecatedSince: "0.14.0"` / `removal: "1.0.0"` / `replacement: "approval.credential.submit"` / `replacementPath`）。0.13.0 时接审批凭证投递的 `--v2` 部署还须 `--legacy-v1`；0.14.0 起 manifest revision 7 新增 `approval.credential.submit`（`POST /api/approvals/:id/credential`），不再需要。只装 SDK1 `/v1`、不带 `/v2` 的部署不受影响，`/v1` 保留至独立退役项。健检一律改走免 Bearer 的 `/healthz` `/readyz`，不要再探 `GET /v1/status`。
+- 错误信封恒 `{ "error": { "code": "<机器码>", "message": "<本地化文案>", "detail"?: {…} } }`。`code` 稳定可判，`message` 不承诺字面，`detail` 是可选结构化位，在场才落键。经 `/api` 调用时同一错误改为统一信封 `{ contract: 'unified-v1', code, status, retryAction, detail: { domainCode, domainStatus, … } }`，本页的 `code` 落在 `detail.domainCode`；`/v2` 直连面的错误体字节不变。
 - 载荷演进：请求端未知键忽略；响应端新增键不通知；客户端对未知事件类型与未知字段恒容忍。
 - 体帽：缺省 1 MiB；`messages` 与 `tool-results` 两端点 20 MiB；快照导入与音频两端点 32 MiB。超限恒 `413 payload_too_large`。
 
@@ -60,6 +66,14 @@ lastVerified: '2026-09-15'
 | `POST /v2/sessions/:id/audio/transcriptions` · `POST /v2/sessions/:id/audio/speech` | 音频直连（服务端代打平台语音面，不进历史不签事件） | `200 TranscriptData` / `200 SpeechData` |
 
 创建请求的关键可选键：`prompt`、`model`、`tools`（只减不增的白名单）、`clientTools`（远程工具申报，见下）、`capabilitiesProfile`（服务端持档名，内置 `mobile-default`）、`thinking: { budget }`、`cwd`（绝对路径；缺省无策略 = 不接受）、`resume: { sessionId }`、`fork: { sessionId, checkpointId }`（与 resume 互斥）。`endUser: { id }` 可省略，在场且与鉴权产物不符即 403。`messages` 支持 `{ prompt }` 或 `{ blocks: [{ t: 'text', text } | { t: 'image', mime, data }] }`，二选一；运行中注入 `blocks` 恒 `422 midturn_blocks_rejected`。
+
+`mobile-default` 档的工具上界是移动应用可勾选的全集：TodoWrite、AskUser、WebFetch、Http、WebSearch 与四个媒体工具（WebFetch / Http 自 `@tansr/serve` 0.12.0 起纳入）；`customTools` 位走 `clientTools` 独立通路。实际装配再与应用能力位取交集，创建请求里的 `tools` 白名单只能继续收窄。能力位改动只对新建会话与从 store 重新装配的会话生效，活动会话的工具表不因换票或提示词刷新而改变，紧急撤回须停止对应会话。WebFetch / Http 在本服务主机上执行：托管 Http 不能引用宿主环境变量里的凭据，也不能解除宿主的私网上限；配了出网代理，须在代理侧同样限制私网目标。详见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
+
+`GET /v2/sessions/:id?include=applicationPrompt`（0.13.0 起）才返回 `applicationPrompt` 只读摘要（来源 / 策略，不含正文）；其它 `include` 值 400。
+
+### 其它前缀：`/v3/*` 与 `/api`
+
+`@tansr/serve` 0.13.0 起随包的 `@tansr/serve/extensions` 可信宿主扩展在 `/v3/sdk2/**`（归档 / 卸载会话族 / 缓存）与 `/v3/terminal*/**`（终端服务：会话配置、记忆管理、执行器与观测）上挂路由，全部须宿主**显式装配**，`tansr serve --v2` 不自动开启；`/v3/*` 与 `/v2` 一样定义为内部适配入口，门面对应物为 `/api/archive/**`、`/api/cache/**`、`/api/terminal/**` 与会话作用域别名 `/api/sessions/:id/{memory,configuration}`。装配方式见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)与[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 错误码
 
@@ -93,7 +107,8 @@ lastVerified: '2026-09-15'
 - **慢消费者**：单条连接的待写队列超 `maxSubscriberBufferBytes`（缺省 2 MiB）或持续 paused 超 `slowSubscriberGraceMs`（10 s）按部署策略处置——缺省 `disconnect`（断连，端侧凭 `Last-Event-ID` 走 L1）；可配 `drop-oldest`（保连接、丢该连接最旧的帧，并主动下发一帧 `requestedAfterSeq: -1` 的 gap，`oldestRetainedSeq` 缺席）。客户端恒不得假定 gap 帧只在重连首帧出现。0.9.0 起 `maxSubscriberBufferBytes` 同时是每次 socket 写的字节上界（大重放分片交付；帧文本与顺序逐字节不变）。
 - **`session.events_dropped` 恒不出现在 `/v2`**：这是 contract-v0.27 新增的 SDK 专属事件（`scope: 'sdk.events'`，SDK 进程内事件背压的兜底），serve 恒不发出、不进 SSE 流、不进重放窗、不进 journal；客户端不需要为它写分支。契约事件表随此由 54 型增至 55 型（MANIFEST revision 7）。
 - 首帧 `retry: 3000`（可含抖动，客户端恒按实际值重连）；每 15 s 一条 `: hb` 心跳；`?exclude=hook,mcp` 可按前缀过滤内核事件（控制帧与 gap 帧恒不受过滤，被滤事件仍占 seq）。
-- 环形缓冲缺省 1024 条，可另配字节帽。
+- 环形缓冲缺省 1024 条，可另配字节帽。SDK2 / 执行 / 归档 / 缓存装配在场时另有单帧 UTF-8 字节硬帽（`SseOptions.maxFrameBytes`，缺省 2 MiB，旋钮 `TANSR_SERVE_SSE_MAX_FRAME_BYTES`，0.13.0 起）：超界只断开该订阅、不拆坏 JSON、不伪造完成；SDK1-only 部署缺席零变化。
+- **统一事件包络只在 `/api` 上、且显式协商才出现**（0.13.0 起）：经 `/api/sessions/:id/events` 请求并携 `tansr-event-envelope: unified-v1` 头时，服务端回响同名响应头并逐帧把 `data:` 改写为 7 键 `{ contract, eventId, domain, type, cursorSet, terminalStatus, raw }`——`raw` 恒为本页所述的原事件对象，`eventId` = 本帧 `id:`；未携头或未回响 = 未协商，帧字节与 `/v2` 逐字节相同。`/v2` 直连恒不改写。
 
 ## 远程工具桥与双桥
 
