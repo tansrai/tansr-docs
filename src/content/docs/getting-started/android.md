@@ -11,16 +11,19 @@ related:
   - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
+  - sdk/platform-bundle
 sources:
   - tansr-android:README.md
+  - tansr-android:CHANGELOG.md
   - tansr-ios:README.md
+  - tansr-ios:CHANGELOG.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-Android 与 iOS SDK 都是 tansr 会话服务（`/v2` 协议）的**薄协议客户端**：发送输入、渲染事件流、执行你显式注册的本地工具、应答权限与提问对话框。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve` 服务端；手机上没有任何平台凭据。两端同一套契约、同一份视图归约金样，本文以 Android 为主，末节给 iOS 的对应写法。
+Android 与 iOS SDK 都是 tansr 会话服务（`/v2` 协议）的**薄协议客户端**：发送输入、渲染事件流、执行你显式注册的本地工具、应答权限与提问对话框。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve` 服务端；手机上没有任何平台凭据。两端同一套契约、同一份视图归约金样，本文以 Android 为主，末节给 iOS 的对应写法。版本基线（2026-10-05 核对）：Android `com.tansr.sdk:*` **0.4.0**（Maven Central，2026-09-14）、iOS 公开二进制包 `tansr-ios-spm` **0.3.0**、服务端 `@tansr/serve` 0.14.0——已发布的移动 SDK 仍直连 `/v2`，服务端 0.13.0 起新增的统一调用面 `/api` 对它们透明，两仓主线对 `/api`（manifest revision 7、统一错误信封、三个请求头）的对齐**尚未随任何版本发布**。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
@@ -46,10 +49,12 @@ Maven Central 坐标，三件按需选：
 
 ```kotlin
 dependencies {
-    implementation("com.tansr.sdk:client:0.1.0")
-    implementation("com.tansr.sdk:compose:0.1.0")
+    implementation("com.tansr.sdk:client:0.4.0")
+    implementation("com.tansr.sdk:compose:0.4.0")
 }
 ```
+
+当前公开版本为 0.4.0（2026-09-14 上架 Maven Central；0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 四版皆在）。三个模块共用一个版本号：升级时一起升级并重新编译 App，不要混用不同版本的 SDK 二进制。
 
 ## 凭据：只有你自己的登录态
 
@@ -127,7 +132,16 @@ val session = client.openSession(scope, CreateSessionRequest(),
 
 ## iOS 同法
 
-Swift 包 `tansr-ios` 经 SwiftPM 添加（git tag 即版本，当前 `0.1.0`），三个库产品与 Android 三模块一一对应：`TansrCore`（纯 Swift 协议层）、`TansrClient`（URLSession 传输 + `TansrAgent` 工厂）、`TansrUI`（SwiftUI 绑定与缺省组件）。在 Xcode「Add Package Dependencies」里填仓库地址即可。
+iOS 经 SwiftPM 添加公开的二进制包 `tansr-ios-spm`（当前 `0.3.0`），三个模块与 Android 三模块一一对应：`TansrCore`（纯 Swift 协议层）、`TansrClient`（URLSession 传输 + `TansrAgent` 工厂）、`TansrUI`（SwiftUI 绑定与缺省组件）。在 `Package.swift` 里按下面声明，或在 Xcode「Add Package Dependencies」里填同一仓库地址：
+
+```swift
+.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.3.0")
+// App target dependencies:
+.product(name: "TansrClient", package: "tansr-ios-spm")
+.product(name: "TansrUI", package: "tansr-ios-spm")
+```
+
+公开包不含 SDK 实现源码，覆盖 iOS 16+ 真机与模拟器以及 macOS 13+。同一个 App 的依赖图里不要混用源码 SDK 与二进制 SDK。
 
 客户端与第一个会话：
 
@@ -157,3 +171,4 @@ iOS 特有的两处注意：本地联调明文 http 需在 App 的 Info.plist �
 
 - [Android 接入指南](/android/)、[iOS 接入指南](/ios/)与[鸿蒙接入指南](/harmony/)：事件归约、错误呈现、离线与前后台、语音两条链、推送唤醒。
 - [v2 协议与 webhook](/serve/v2-and-webhooks/)：服务端半场怎么把轮末通知交给你的推送后端。
+- [移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)：让智能体读取网页、发起 HTTP 请求或联网搜索——在服务端执行，缺省关。

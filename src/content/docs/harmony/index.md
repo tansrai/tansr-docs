@@ -11,16 +11,19 @@ related:
   - ios
   - serve/v2-and-webhooks
   - serve/deploy-and-auth
+  - sdk/platform-bundle
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-harmony:README.md
+  - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-harmony:doc/HM-01-Demo接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-16'
+lastVerified: '2026-10-05'
 ---
 
-鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前独立发布版本 0.1.0）是会话服务 `/v2` 的原生 ArkTS 薄客户端。最低 HarmonyOS 6.0 / API 20，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。
+鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前独立发布版本 0.1.0，未上架公共 OHPM）是会话服务 `/v2` 的原生 ArkTS 薄客户端。最低 HarmonyOS 6.0 / API 20，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。服务端按 `@tansr/serve` 0.14.0 核对（2026-10-05）：0.13.0 起新增的统一调用面 `/api` 对 0.1.0 HAR 透明，`/v2` 的端点、载荷与 SSE 帧字节不变；仓库主线对 `/api` 的对齐未随任何 HAR 版本发布，本页不按它描述行为。`/v2` 自 0.13.0 起定义为内部适配入口、1.0.0 移除外部入口，时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
 兼容 Android 的旧鸿蒙设备继续使用 [Android SDK](/android/)。HarmonyOS 5.x 原生兼容是后续工作，当前不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR，尚未上架公共 OHPM；签名安装与真机矩阵不在本文范围。接入步骤见[鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/)。
 
@@ -100,6 +103,16 @@ session.bridges.onQuestion = (request) => { /* answerQuestion */ };
 - 未设置 `onPermission` 默认拒绝。过期请求不能批准。普通 `tool.permission.*` 仅供观察。
 - 提问与权限是不同桥族。补充文本、回答问题都不等于批准工具。
 - 客户端不对全部工具强制 ask；自动 allow、真实 ask 与 deny 由 serve 复用内核裁决。
+
+## 公网工具：服务端执行
+
+应用在控制台开启 `tools.webFetch`、`tools.http`（需 `@tansr/serve` 0.12.0 起）或 `tools.webSearch` 后，智能体可以读取网页、发起 HTTP 请求或联网搜索。这些工具都在你的会话服务主机上执行：HAR 不在设备上代发网络请求，也不自动批准工具。能力位改动对新建会话或从存储重新装配的会话生效，运行中的会话不会自动增删工具。
+
+- 示例应用的工具页提供 WebSearch、WebFetch、Http GET 公网示例，选择后只填入输入草稿，由用户核对后发送；服务端发起审批时，聊天页顶部固定显示「有待确认请求」入口。
+- HTTP 状态、网络错误与抓取失败按工具实际结果解释；搜索空结果不等于网站不存在，已知域名可明确让 WebFetch 读取。
+- 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
+
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；鸿蒙侧的显式传输入口、本机 RDB 档案接收器与同步、本机业务工具与可选 HUKS 正文加密仍是本地开发候选，未随 HAR 发布、也未完成真机验收，已发布版本的行为不变，见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 语音：两条链
 
