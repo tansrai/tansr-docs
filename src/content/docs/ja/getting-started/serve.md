@@ -11,18 +11,21 @@ related:
   - serve/env
   - getting-started/android
   - getting-started/harmony
+  - sdk/sdk2-preview
 sources:
   - tansr-cli:packages/server/README.md
   - tansr-cli:examples/serve-demo/README.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:packages/api-client/CHANGELOG.md
+  - tansr-cli:CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-`@tansr/serve` は tansr の **Agent セッションエンジン**です。npm パッケージとしてあなた自身の Node サービスに組み込み、外向きには `/v2` のマルチセッション REST + SSE プロトコル面を公開し、内向きにはあなたのアプリキーで tansr プラットフォームに接続して実際にモデルを呼び出します。これは**ゲートウェイではありません**——ユーザーのログイン方法、レート制限、課金はすべてあなた自身の仕組みに属し、エンジンはトランスポート、プロトコル、セッションのガバナンスだけを担います。
+`@tansr/serve` は tansr の **Agent セッションエンジン**です。npm パッケージとしてあなた自身の Node サービスに組み込み、外向きにはマルチセッションの REST + SSE プロトコル面——統一呼び出し面 `/api`（0.13.0 以降 GA）と、その背後の `/v2` セッションプロトコル——を公開し、内向きにはあなたのアプリキーで tansr プラットフォームに接続して実際にモデルを呼び出します。これは**ゲートウェイではありません**——ユーザーのログイン方法、レート制限、課金はすべてあなた自身の仕組みに属し、エンジンはトランスポート、プロトコル、セッションのガバナンスだけを担います。本ページは `@tansr/serve` **0.14.0**（2026-10-04 公開）に基づいて確認しています。
 
-Android / iOS / HarmonyOS SDK が接続するのはこのサービスです。
+公開済みの Android / iOS / HarmonyOS SDK が接続するのはこのサービスです（`/v2` 経由）。Node 側の薄いクライアントは `@tansr/api-client` 0.3.0（サブエントリ `./api`、正式版 2026-10-04）です。**新規の統合は直接 `/api` を使ってください**。同じセッション、同じペイロードのバイト列に、4 つの `tansr-*` レスポンスヘッダーと統一エラーエンベロープが加わります。`/v2` は 0.13.0 以降「内部アダプターの入口」と定義され、1.0.0 で外部入口が削除されます。すでに本番で動いている `/v2` 呼び出しを今すぐ変える必要はありません。
 
 ## プラットフォームまたはホストでアプリの役割を設定する
 
@@ -39,10 +42,10 @@ Android / iOS / HarmonyOS SDK が接続するのはこのサービスです。
 ## インストール
 
 ```bash
-npm install @tansr/serve
+npm install @tansr/serve        # 现行 0.14.0
 ```
 
-唯一のサードパーティランタイム依存は `zod` です。tansr の内部パッケージはコンパイル時にインライン化されており、あなたの依存ツリーには現れません。
+唯一のサードパーティランタイム依存は `zod` です。tansr の内部パッケージはコンパイル時にインライン化されており、あなたの依存ツリーには現れません。0.13.0 以降、パッケージにはサブエントリ `@tansr/serve/extensions`（SDK2 のアーカイブ / キャッシュ / ターミナルサービスのホスト。明示的な組み立てが必要）と `@tansr/serve/process` も同梱されていますが、本ページのルートエントリの使い方はそれらに依存しません。
 
 ## 認証情報：appid / appkey はサーバー側に置く
 
@@ -50,7 +53,7 @@ npm install @tansr/serve
 
 | 層 | 認証情報 | 所属 |
 |---|---|---|
-| クライアント ↔ セッションサービス | あなたが定義したログイン状態の token（JWT、session cookie、OAuth のいずれでも可） | 完全にあなたのもの。エンジンは `authenticate` フックを通じて `endUserId` を受け取るだけ |
+| クライアント ↔ セッションサービス（`/api`、`/v2`） | あなたが定義したログイン状態の token（JWT、session cookie、OAuth のいずれでも可） | 完全にあなたのもの。エンジンは `authenticate` フックを通じて `endUserId` を受け取るだけ |
 | セッションサービス ↔ tansr プラットフォーム | `appid` + `appkey` | サービスプロセスが保持。エンジンはこれを使って各エンドユーザー向けに `app_user` トークンを発行する |
 | クライアントが保持する `appid` | 公開のアプリ識別子 | 配布可能。認証情報ではない |
 
@@ -86,10 +89,10 @@ const build = createAgentSessionFactory({
 const server = await startServer({
   host: '127.0.0.1',
   port: 8787,
-  token: process.env.MY_V1_TOKEN!, // /v1 面的 Bearer;与 /v2 鉴权互不相通
+  token: process.env.MY_V1_TOKEN!, // /v1 面的 Bearer;fail-closed 必填;v2 在场时 /v1 缺省关闭,与 /api、/v2 鉴权互不相通
   createSession: build.factory,
   version: '1.0.0',
-  v2: {
+  v2: { // v2 在场 = 同时装配 /api 门面与 /v2 内部入口
     // 唯一鉴权面:你的登录态 → endUserId;返回 null 即 401
     authenticate: async (req) => {
       const user = await myAuth.verify(req.headers['authorization']);
@@ -105,16 +108,23 @@ const server = await startServer({
 
 プロセスシグナルはホストの責任です。エンジンはあなたの代わりに SIGTERM を監視しません。少なくとも `server.drain({ timeoutMs: 30_000 })` を接続してから終了してください。詳細は[デプロイと認証](/ja/serve/deploy-and-auth/)を参照。
 
-実プラットフォームに接続せず、まずオフラインでプロトコルを見たい？リポジトリ内のサンプル `examples/serve-demo` は、エコー Agent で `/v2` プロトコル層全体を疎通させています。サービス起動はコマンド 1 つ：`pnpm --filter tansr-example-serve-demo start`。デフォルトで `127.0.0.1:8788` を待ち受けます。
+実プラットフォームに接続せず、まずオフラインでプロトコルを見たい？リポジトリ内のサンプル `examples/serve-demo` は、エコー Agent で `/api` / `/v2` プロトコル層全体を疎通させています。サービス起動はコマンド 1 つ：`pnpm --filter tansr-example-serve-demo start`。デフォルトで `127.0.0.1:8788` を待ち受けます。
 
 ## 最初のセッション
 
-curl でそのまま一巡してみましょう。`<あなたのログイン token>` は、あなた自身の仕組みが発行し、`authenticate` が検証できるトークンです。
+curl でそのまま一巡してみましょう。`<あなたのログイン token>` は、あなた自身の仕組みが発行し、`authenticate` が検証できるトークンです。以下では統一呼び出し面 `/api` を使います。`/api/sessions` を `/v2/sessions` に置き換えても同じセッション、同じレスポンスボディが得られます（4 つの `tansr-*` レスポンスヘッダーが付かず、エラーボディは旧エンベロープになります）。
+
+まず、このサービスに何が組み立てられているかを確認します（manifest revision 7 = `@tansr/serve` 0.14.0）：
+
+```bash
+curl -s http://127.0.0.1:8787/api/manifest -H "Authorization: Bearer <你的登录 token>" -D - -o /dev/null
+# tansr-contract: unified-v1 / tansr-manifest-revision: 7 / tansr-domain: discovery / tansr-schema-hash: …
+```
 
 セッションを作成（最初の prompt 付き）：
 
 ```bash
-curl -s -X POST http://127.0.0.1:8787/v2/sessions \
+curl -s -X POST http://127.0.0.1:8787/api/sessions \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Content-Type: application/json" \
   -d '{"prompt":"你好,介绍一下你能做什么"}'
@@ -127,29 +137,29 @@ curl -s -X POST http://127.0.0.1:8787/v2/sessions \
 続きの入力：
 
 ```bash
-curl -s -X POST http://127.0.0.1:8787/v2/sessions/<sessionId>/messages \
+curl -s -X POST http://127.0.0.1:8787/api/sessions/<sessionId>/messages \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Content-Type: application/json" \
   -d '{"prompt":"再简短一点"}'
 ```
 
-`202 { "sessionId", "accepted": true }` が返ります。
+`202 { "sessionId", "accepted": true }` が返ります。失敗時、`/api` は統一エンベロープ `{ "contract": "unified-v1", "code", "status", "retryAction", "detail": { "domainCode", … } }` を返します。1 つの `switch (code)` ですべてのドメインを扱え、元の `/v2` コードが必要なら `detail.domainCode` を読みます。
 
 ## イベントを見る
 
 SSE イベントストリームを購読します。
 
 ```bash
-curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
+curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>"
 ```
 
-最初のフレームは `retry: 3000` で、その後はカーネルイベント 1 件につき 1 フレーム：`id: <seq>` と `data: <KernelEvent JSON>` で、`event:` 名は付きません。制御フレーム（ツール要求、権限要求、質問）だけが `event: server.*` 名を持ちます。15 秒ごとに `: hb` コメントのハートビートが 1 件流れます。
+最初のフレームは `retry: 3000` で、その後はカーネルイベント 1 件につき 1 フレーム：`id: <seq>` と `data: <KernelEvent JSON>` で、`event:` 名は付きません。制御フレーム（ツール要求、権限要求、質問）だけが `event: server.*` 名を持ちます。15 秒ごとに `: hb` コメントのハートビートが 1 件流れます。フレームのバイト列は `/v2` と同一です。リクエストヘッダー `tansr-event-envelope: unified-v1` をさらに付けたときだけ、`data:` が 7 キーの統一イベントエンベロープに書き換えられます（元のイベントは `raw` に入ります）。
 
 切断後は最後に消費した seq を付けて再接続すると、サーバーはリングバッファから切断点以降のイベントを再送します。
 
 ```bash
-curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
+curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
   -H "Authorization: Bearer <你的登录 token>" \
   -H "Last-Event-ID: 42"
 ```
@@ -158,11 +168,12 @@ curl -N http://127.0.0.1:8787/v2/sessions/<sessionId>/events \
 
 ## CLI 形態の serve
 
-`tansr serve --token <値>` でも常駐サービスを起動できますが、これは単一運用者向けの `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` などの 6 エンドポイント、同じ 1 つの Bearer token）で、オーケストレーションシステムからの接続に向いており、マルチテナントのプロダクトバックエンドではありません。`tansr serve --v2` は `/v2` 面も CLI 形態に載せるもので、**tansr CLI 0.6.0 以降で利用できます**。上記の `@tansr/serve` npm 組み込み形態（0.8.0 以降、現行 0.11.0）も引き続き利用できます。
+`tansr serve --token <値>` でも常駐サービスを起動できますが、これは単一運用者向けの `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` などの 6 エンドポイント、同じ 1 つの Bearer token）で、オーケストレーションシステムからの接続に向いており、マルチテナントのプロダクトバックエンドではありません。`tansr serve --v2` は `/v2` 面も CLI 形態に載せるもので（**tansr CLI 0.6.0 以降で利用できます**）、0.10.0 以降は `/api` ファサードも同時に組み立てます。`--v2` がある構成では `/v1` 面がデフォルトで無効になります——どうしても残す場合の `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` は 0.10.1 以降は非推奨です（`server.deprecated_option` の警告を出し、1.0.0 で削除）。CLI 形態の現行は **0.10.1**（npm `@tansr/cli`、2026-10-04）です。SDK2 のアーカイブ / キャッシュ / ターミナルサービスのホストは、CLI 形態では `--host-module <absolute.cjs> --host-module-sha256 <sha256>` 経由でのみ利用できます。上記の `@tansr/serve` npm 組み込み形態（0.8.0 以降、現行 0.14.0）も引き続き利用できます。
 
 ## 次のステップ
 
-- [デプロイと認証](/ja/serve/deploy-and-auth/)：認証フック、グレースフルシャットダウン、観測エンドポイント、複数レプリカでのシャーディング。
+- [デプロイと認証](/ja/serve/deploy-and-auth/)：認証フック、`/v1` のデフォルト無効化と旧プレフィックスのスケジュール、グレースフルシャットダウン、観測エンドポイント、複数レプリカでのシャーディング。
 - [v2 プロトコルと webhook](/ja/serve/v2-and-webhooks/)：エンドポイントの全形、3 段階の復旧チェーン、ターン終了時のアウトバウンド通知と署名。
-- [保持期間とガバナンス](/ja/serve/retention-and-governance/)：保持ウィンドウ、アイドル回収、同時実行数の上限、セッションストレージ。
+- [保持期間とガバナンス](/ja/serve/retention-and-governance/)：保持ウィンドウ、アイドル回収、同時実行数の上限、セッションストレージ、0.14.0 の 3 つのリクエストヘッダー。
 - [環境変数一覧](/serve/env)：すべての `TANSR_SERVE_*` ノブ。
+- [SDK 2.0 拡張エントリ](/ja/sdk/sdk2-preview/)：`@tansr/serve/extensions` の明示的なホスト、`@tansr/api-client` 0.3.0、性能の開示。

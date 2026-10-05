@@ -11,16 +11,19 @@ related:
   - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
+  - sdk/platform-bundle
 sources:
   - tansr-android:README.md
+  - tansr-android:CHANGELOG.md
   - tansr-ios:README.md
+  - tansr-ios:CHANGELOG.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-Android와 iOS SDK는 모두 tansr 세션 서비스(`/v2` 프로토콜)의 **얇은 프로토콜 클라이언트**입니다. 입력을 보내고, 이벤트 스트림을 렌더링하고, 당신이 명시적으로 등록한 로컬 도구를 실행하고, 권한과 질문 대화 상자에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve` 서버 쪽에서 실행되며, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 두 플랫폼은 같은 계약과 같은 뷰 리덕션 골든 샘플을 공유합니다. 이 문서는 Android를 중심으로 설명하고, 마지막 절에서 iOS의 대응하는 작성법을 제시합니다.
+Android와 iOS SDK는 모두 tansr 세션 서비스(`/v2` 프로토콜)의 **얇은 프로토콜 클라이언트**입니다. 입력을 보내고, 이벤트 스트림을 렌더링하고, 당신이 명시적으로 등록한 로컬 도구를 실행하고, 권한과 질문 대화 상자에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve` 서버 쪽에서 실행되며, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 두 플랫폼은 같은 계약과 같은 뷰 리덕션 골든 샘플을 공유합니다. 이 문서는 Android를 중심으로 설명하고, 마지막 절에서 iOS의 대응하는 작성법을 제시합니다. 버전 기준(2026-10-05 확인): Android `com.tansr.sdk:*` **0.4.0**(Maven Central, 2026-09-14), iOS 공개 바이너리 패키지 `tansr-ios-spm` **0.3.0**, 서버 `@tansr/serve` 0.14.0. 공개된 모바일 SDK는 여전히 `/v2`에 직접 연결하며, 서버 0.13.0부터 추가된 통합 호출 표면 `/api`는 이들에게 투명합니다. 두 저장소 메인라인의 `/api`(manifest revision 7, 통합 오류 봉투, 요청 헤더 셋) 정렬은 **아직 어떤 버전으로도 공개되지 않았습니다**.
 
 ## 휴대폰은 사용자 메시지를 보내고, 서버는 시스템 프롬프트를 설정
 
@@ -46,10 +49,12 @@ Maven Central 좌표. 세 가지 중 필요한 것을 선택합니다.
 
 ```kotlin
 dependencies {
-    implementation("com.tansr.sdk:client:0.1.0")
-    implementation("com.tansr.sdk:compose:0.1.0")
+    implementation("com.tansr.sdk:client:0.4.0")
+    implementation("com.tansr.sdk:compose:0.4.0")
 }
 ```
+
+현재 공개 버전은 0.4.0(2026-09-14 Maven Central 게시. 0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 네 버전이 모두 있음)입니다. 세 모듈은 같은 버전 번호를 공유합니다. 업그레이드는 셋을 함께 올리고 앱을 다시 빌드하며, 서로 다른 버전의 SDK 바이너리를 섞어 쓰지 마세요.
 
 ## 자격 증명: 당신의 로그인 상태만
 
@@ -127,7 +132,16 @@ val session = client.openSession(scope, CreateSessionRequest(),
 
 ## iOS도 같은 방법
 
-Swift 패키지 `tansr-ios`는 SwiftPM으로 추가합니다(git tag가 곧 버전이며, 현재 `0.1.0`). 세 라이브러리 제품이 Android 세 모듈과 하나씩 대응합니다: `TansrCore`(순수 Swift 프로토콜 층), `TansrClient`(URLSession 전송 + `TansrAgent` 팩토리), `TansrUI`(SwiftUI 바인딩과 기본 컴포넌트). Xcode의 "Add Package Dependencies"에 저장소 주소를 입력하면 됩니다.
+iOS는 SwiftPM으로 공개 바이너리 패키지 `tansr-ios-spm`(현재 `0.3.0`)을 추가합니다. 세 모듈이 Android 세 모듈과 하나씩 대응합니다: `TansrCore`(순수 Swift 프로토콜 층), `TansrClient`(URLSession 전송 + `TansrAgent` 팩토리), `TansrUI`(SwiftUI 바인딩과 기본 컴포넌트). `Package.swift`에 아래처럼 선언하거나, Xcode의 "Add Package Dependencies"에 같은 저장소 주소를 입력합니다:
+
+```swift
+.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.3.0")
+// App target dependencies:
+.product(name: "TansrClient", package: "tansr-ios-spm")
+.product(name: "TansrUI", package: "tansr-ios-spm")
+```
+
+공개 패키지에는 SDK 구현 소스 코드가 들어 있지 않으며, iOS 16+ 실기기와 시뮬레이터, macOS 13+를 지원합니다. 같은 앱의 의존성 그래프 안에서 소스 SDK와 바이너리 SDK를 섞어 쓰지 마세요.
 
 클라이언트와 첫 세션:
 
@@ -157,3 +171,4 @@ iOS 특유의 주의점 두 가지: 로컬 통합 테스트에서 평문 http를
 
 - [Android 연동 가이드](/ko/android/), [iOS 연동 가이드](/ko/ios/), [HarmonyOS 연동 가이드](/ko/harmony/): 이벤트 리덕션, 오류 표시, 오프라인과 포그라운드 / 백그라운드, 음성 두 체인, 푸시 웨이크업.
 - [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/): 서버 쪽 후반에서 턴 종료 알림을 당신의 푸시 백엔드에 넘기는 방법.
+- [모바일 앱의 공용 네트워크 도구](/ko/sdk/platform-bundle/#移动应用的公网工具): 에이전트가 웹 페이지를 읽고, HTTP 요청을 보내고, 웹 검색을 하게 합니다. 서버 쪽에서 실행되며 기본은 꺼짐입니다.

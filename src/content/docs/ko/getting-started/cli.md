@@ -8,36 +8,31 @@ related:
   - cli/commands
   - support/troubleshooting
   - support/account
+  - serve/deploy-and-auth
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-09-10'
+  - tansr-cli:doc/report/REL-SEA-发行执行单-2026-10-05.md
+lastVerified: '2026-10-05'
 ---
 
-`tansr`는 개발자를 위한 에이전트 CLI입니다. 하나의 커널을 대화형 터미널(TUI), 헤드리스 스크립트(headless), 상주 서비스(serve), 편집기 에이전트(acp), MCP 도구 서비스(mcp serve)의 다섯 가지 형태로 제공합니다. 이 문서는 가장 짧은 경로만 갑니다: 설치하고, 로그인하고, 한마디 대화하고, 이벤트 스트림을 한 번 봅니다.
+`tansr`는 개발자를 위한 에이전트 CLI입니다. 하나의 커널을 대화형 터미널(TUI), 헤드리스 스크립트(headless), 상주 서비스(serve), 편집기 에이전트(acp), MCP 도구 서비스(mcp serve)의 다섯 가지 형태로 제공합니다. 이 문서는 가장 짧은 경로만 갑니다: 설치하고, 로그인하고, 한마디 대화하고, 이벤트 스트림을 한 번 봅니다. 현재 버전은 **0.10.1**(npm `@tansr/cli`, 2026-10-04 공개)입니다.
 
 ## 전제 조건
 
-- Node.js ≥ 22.19(npm 패키지 형태). 단일 파일 실행 파일(SEA)은 Node 런타임을 내장하므로 미리 설치할 필요가 없습니다.
+- Node.js ≥ 22.19. 현재 공개된 유일한 형태는 npm 패키지입니다. 단일 파일 실행 파일(SEA, Node 런타임 내장)은 아직 공개되지 않았습니다. 아래를 참고하세요.
 - Windows / macOS / Linux를 모두 지원합니다. Windows에서는 Windows Terminal을 권장합니다. 기존 conhost에서는 자동으로 ASCII 글리프 단계로 전환되며, 기능에는 영향이 없습니다.
 
 ## 설치
 
-npm 형태(권장):
-
 ```bash
 npm i -g @tansr/cli
-tansr --version
+tansr --version          # 0.10.1
 ```
 
-패키지 이름은 `@tansr/cli`, 명령 이름은 `tansr`입니다.
+패키지 이름은 `@tansr/cli`, 명령 이름은 `tansr`입니다. 업그레이드도 똑같이 `npm i -g @tansr/cli@latest`로 합니다. 0.10.1부터 설치한 각 버전의 첫 시작 때 사용자 캐시 디렉터리에 약 2 MB의 Node 컴파일 캐시를 씁니다(같은 버전의 이후 시작이 빨라집니다. `TANSR_COMPILE_CACHE=0`으로 끌 수 있으며, [설정과 doctor](/ko/cli/settings-and-doctor/)를 참고하세요).
 
-단일 파일 형태: 공식 배포 지점에서 해당 플랫폼의 실행 파일(`tansr-sea-win32-x64.exe` 같은 이름)을 내려받고, `SHA256SUMS`를 검증한 뒤 PATH에 넣으면 됩니다.
-
-```text
-https://bash.tansr.com/release/stable/tansr-sea-win32-x64.exe
-https://bash.tansr.com/release/stable/SHA256SUMS
-```
+**단일 파일 형태(SEA)와 OSS 배포 지점: 아직 공개되지 않았습니다.** 2026-10-05 기준 공식 배포 지점 `bash.tansr.com`에는 0.10.x에 대응하는 실행 파일이나 `SHA256SUMS`가 없습니다(Windows 빌드는 당분간 올리지 않기로 결정됨). 배포 지점을 설치 출처로 취급하지 마세요. SEA가 공개되면 이 페이지에 다운로드와 검증 절차를 추가합니다.
 
 ## 자격 증명: 개인 액세스 토큰으로 로그인
 
@@ -126,4 +121,4 @@ for await (const line of createInterface({ input: child.stdout })) {
 
 - [설정과 doctor](/ko/cli/settings-and-doctor/): 5층 설정, 자주 쓰는 환경 변수, `tansr doctor`의 각 섹션을 읽는 법.
 - [명령과 플래그 참조](/cli/commands): 모든 하위 명령과 플래그.
-- 다른 사람도 당신의 에이전트를 쓰게 하고 싶나요? [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/)를 보세요.
+- 다른 사람도 당신의 에이전트를 쓰게 하고 싶나요? [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/)를 보세요. CLI 형태의 `tansr serve --v2`는 0.10.0부터 통합 호출 표면 `/api`도 함께 마운트합니다(새 통합은 이쪽으로). `--v2` 배포에서는 `/v1` 표면이 기본적으로 꺼지며, 전환용 플래그 `--legacy-v1`은 0.10.1부터 사용 중단 예정입니다. 자세한 내용은 [배포와 인증](/ko/serve/deploy-and-auth/)을 참고하세요.

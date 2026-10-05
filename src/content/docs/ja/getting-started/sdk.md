@@ -9,15 +9,17 @@ related:
   - sdk/sessions-and-events
   - sdk/platform-bundle
   - sdk/errors-and-retries
+  - sdk/sdk2-preview
   - security
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-09-15'
+  - tansr-cli:doc/release/sdk-0.18.1.md
+lastVerified: '2026-10-05'
 ---
 
-`@tansr/sdk` は tansr カーネルの headless な言語バインディングです。prompt を入れるとイベントが流れ出てくる、UI 依存ゼロのライブラリです。クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮はすべてカーネル由来でコンパイル時にインライン化されており、手に入るのは `tansr` CLI と同じランタイムを、ライブラリの形態であなたのアプリに組み込んだものです。
+`@tansr/sdk` は tansr カーネルの headless な言語バインディングです。prompt を入れるとイベントが流れ出てくる、UI 依存ゼロのライブラリです。クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮はすべてカーネル由来でコンパイル時にインライン化されており、手に入るのは `tansr` CLI と同じランタイムを、ライブラリの形態であなたのアプリに組み込んだものです。本ページは `@tansr/sdk` **0.18.1**（2026-10-04 公開）に基づいて確認しています。プロセス内の `createSession` の使い方は 0.13.0 以降変わっていません。
 
 ## アプリケーションプロンプトはどこで設定するか
 
@@ -41,8 +43,10 @@ Windows の Electron でも SDK はメインプロセスで実行し、renderer 
 ## インストール
 
 ```bash
-npm install @tansr/sdk
+npm install @tansr/sdk        # 现行 0.18.1
 ```
+
+0.18.0 以降、パッケージにはサブエントリ `@tansr/sdk/extensions`（アーカイブホスト / キャッシュホスト）と 9 か所の任意のシグネチャ追加が同梱されています。いずれも追加のみで、本ページのルートエントリの使い方と挙動は変わりません。使わないなら読む必要はありません。エージェントをサーバー側に置き、Android / iOS / HarmonyOS や `@tansr/api-client` のような薄いクライアントから HTTP 経由で接続させるには、[`@tansr/serve`](/ja/getting-started/serve/)を使います。新規の統合には統一呼び出し面 `/api` を使ってください。
 
 ## 認証情報：モデルの取得元は 3 段階、1 つ選ぶ
 
@@ -120,3 +124,4 @@ UI を作るなら、イベントを手で組み立てないでください。`c
 - [チェックポイントと再開](/ja/sdk/checkpoints/)：永続化、再起動をまたいだ再開、手動の圧縮とスナップショット。
 - [プラットフォームアセンブリとバンドル](/ja/sdk/platform-bundle/)：機能フラグ、ツールの 3 リング、トークン方式で配信されるもの。
 - [エラー処理と再試行](/ja/sdk/errors-and-retries/)：SDK のエラーコード、プラットフォームのエラーコード、再試行すべきものとすべきでないもの。
+- [SDK 2.0 拡張エントリ](/ja/sdk/sdk2-preview/)：0.18.x で公開済みの `@tansr/sdk/extensions`、`@tansr/serve/extensions`、統一呼び出し面 `/api` の公開状況、境界、性能の開示。プロセス内統合に移行は不要です。

@@ -11,16 +11,19 @@ related:
   - getting-started/harmony
   - getting-started/serve
   - serve/v2-and-webhooks
+  - sdk/platform-bundle
 sources:
   - tansr-android:README.md
+  - tansr-android:CHANGELOG.md
   - tansr-ios:README.md
+  - tansr-ios:CHANGELOG.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-Android と iOS の SDK はどちらも tansr セッションサービス（`/v2` プロトコル）の**薄いプロトコルクライアント**です。入力を送り、イベントストリームを描画し、あなたが明示的に登録したローカルツールを実行し、権限と質問のダイアログに応答します。エージェントのカーネル、権限エンジン、コンテキストのガバナンスはすべてあなたがデプロイした `@tansr/serve` のサーバー側で動き、スマートフォン上にはプラットフォームの認証情報が一切ありません。両プラットフォームは同じ契約と同じビュー還元のゴールデンサンプルを共有します。このページは Android を主に扱い、最後の節で iOS の対応する書き方を示します。
+Android と iOS の SDK はどちらも tansr セッションサービス（`/v2` プロトコル）の**薄いプロトコルクライアント**です。入力を送り、イベントストリームを描画し、あなたが明示的に登録したローカルツールを実行し、権限と質問のダイアログに応答します。エージェントのカーネル、権限エンジン、コンテキストのガバナンスはすべてあなたがデプロイした `@tansr/serve` のサーバー側で動き、スマートフォン上にはプラットフォームの認証情報が一切ありません。両プラットフォームは同じ契約と同じビュー還元のゴールデンサンプルを共有します。このページは Android を主に扱い、最後の節で iOS の対応する書き方を示します。バージョンの基準（2026-10-05 に確認）：Android `com.tansr.sdk:*` **0.4.0**（Maven Central、2026-09-14）、iOS の公開バイナリパッケージ `tansr-ios-spm` **0.3.0**、サーバー側 `@tansr/serve` 0.14.0。公開済みのモバイル SDK は引き続き `/v2` に直結し、サーバー側 0.13.0 で追加された統一呼び出し面 `/api` はそれらに対して透過的です。両リポジトリのメインラインで進む `/api`（manifest revision 7、統一エラーエンベロープ、3 つのリクエストヘッダー）への整合は、**まだどのバージョンでも公開されていません**。
 
 ## スマートフォン側はユーザーメッセージを送り、サーバー側がシステムプロンプトを設定する
 
@@ -46,10 +49,12 @@ Maven Central の座標。3 つから必要なものを選びます。
 
 ```kotlin
 dependencies {
-    implementation("com.tansr.sdk:client:0.1.0")
-    implementation("com.tansr.sdk:compose:0.1.0")
+    implementation("com.tansr.sdk:client:0.4.0")
+    implementation("com.tansr.sdk:compose:0.4.0")
 }
 ```
+
+現在の公開バージョンは 0.4.0（2026-09-14 に Maven Central へ掲載。0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 の 4 版がすべて存在）です。3 つのモジュールは同じバージョン番号を共有します。アップグレードは 3 つ同時に行ってアプリを再ビルドし、異なるバージョンの SDK バイナリを混在させないでください。
 
 ## 認証情報：あなた自身のログイン状態だけ
 
@@ -127,7 +132,16 @@ val session = client.openSession(scope, CreateSessionRequest(),
 
 ## iOS でも同じ手順
 
-Swift パッケージ `tansr-ios` は SwiftPM で追加します（git tag がそのままバージョンで、現在は `0.1.0`）。3 つのライブラリプロダクトが Android の 3 モジュールに 1 対 1 で対応します：`TansrCore`（純粋な Swift のプロトコル層）、`TansrClient`（URLSession トランスポート + `TansrAgent` ファクトリ）、`TansrUI`（SwiftUI バインディングとデフォルトコンポーネント）。Xcode の「Add Package Dependencies」にリポジトリのアドレスを入力するだけです。
+iOS は SwiftPM で公開のバイナリパッケージ `tansr-ios-spm`（現在 `0.3.0`）を追加します。3 つのモジュールが Android の 3 モジュールに 1 対 1 で対応します：`TansrCore`（純粋な Swift のプロトコル層）、`TansrClient`（URLSession トランスポート + `TansrAgent` ファクトリ）、`TansrUI`（SwiftUI バインディングとデフォルトコンポーネント）。`Package.swift` に次のように宣言するか、Xcode の「Add Package Dependencies」に同じリポジトリのアドレスを入力します：
+
+```swift
+.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.3.0")
+// App target dependencies:
+.product(name: "TansrClient", package: "tansr-ios-spm")
+.product(name: "TansrUI", package: "tansr-ios-spm")
+```
+
+公開パッケージには SDK 実装のソースコードは含まれず、iOS 16+ の実機とシミュレーター、および macOS 13+ をカバーします。同じアプリの依存グラフ内でソース版 SDK とバイナリ版 SDK を混在させないでください。
 
 クライアントと最初のセッション：
 
@@ -157,3 +171,4 @@ iOS 特有の注意点は 2 つ：ローカルでの平文 http による結合�
 
 - [Android 導入ガイド](/ja/android/)、[iOS 導入ガイド](/ja/ios/)、[HarmonyOS 導入ガイド](/ja/harmony/)：イベントの還元、エラーの表示、オフラインとフォアグラウンド / バックグラウンド、音声の 2 つのチェーン、プッシュによる起動。
 - [v2 プロトコルと webhook](/ja/serve/v2-and-webhooks/)：サーバー側の後半で、ターン終了時の通知をあなたのプッシュバックエンドに渡す方法。
+- [モバイルアプリ向けの公開ネットワークツール](/ja/sdk/platform-bundle/#移动应用的公网工具)：エージェントにウェブページの読み取り、HTTP リクエスト、ウェブ検索をさせる——サーバー側で実行され、デフォルトは無効です。

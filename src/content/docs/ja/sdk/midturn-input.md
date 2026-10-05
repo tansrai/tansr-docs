@@ -13,10 +13,11 @@ sources:
   - tansr-cli:packages/kernel/src/query/session-input-delivery.ts
   - tansr-cli:packages/cli/src/headless/input-control.ts
   - tansr-cli:packages/server/src/v2/routes.ts
-lastVerified: '2026-09-10'
+  - tansr-cli:packages/server/CHANGELOG.md
+lastVerified: '2026-10-05'
 ---
 
-このページは `@tansr/sdk@0.13.0`、`@tansr/cli@0.6.0`、`@tansr/serve@0.8.0` に対応し、これらのバージョンは npm に公開済みです。モバイルアプリには能力検出と同一ターン入力に対応したクライアントも必要です。ソースコードとドキュメントの検証は、スマートフォン実機での検証を意味しません。
+このページは `@tansr/sdk@0.13.0`、`@tansr/cli@0.6.0`、`@tansr/serve@0.8.0` 以降に対応し、これらのバージョンは npm に公開済みです（現行 0.18.1 / 0.10.1 / 0.14.0、2026-10-04 公開。その間、このページのインターフェースのシグネチャ、受領証、失敗の境界に変更はありません）。モバイルアプリには能力検出と同一ターン入力に対応したクライアントのバージョンも必要です（各クライアントの導入ガイドを参照）。ソースコードとドキュメントの検証は、スマートフォン実機での検証を意味しません。
 
 **`submitInput` は、指定した実行中のターンにユーザー入力を追加するだけです。** 現在のモデルストリームやツールを中断せず、新しいセッションも作らず、対象のターンが閉じた後に自動で次のターンを開くこともありません。すでに開始されたリクエストは書き換えられません。追加したテキストは安全な入力バリアで履歴に入り、その後に次のモデル呼び出しで使われる可能性があります。
 
@@ -105,6 +106,8 @@ GET /v2/sessions/{sessionId}/inputs/ui-001?historyEpoch=FROM_CAPABILITIES&turnId
 ```
 
 パスとクエリの値は URL エンコードしてください。送信成功は **202 + `{ outcome: 'accepted', receipt }`** を返します。ターゲットの閉鎖／内容の競合は 409、注入クォータは 429、サポートされない機能／内容は 422、形式エラーは 400 です。状態照会の成功は 200 + `{ receipt }`、見つからない場合は 404 です。従来の `POST .../messages` の 202 の意味は互換性が維持され、新しい入力受領証とは同じではありません。SSE は従来のイベントプロトコルをそのまま流します。今期は入力状態の SSE イベントを追加せず、クライアントは照会インターフェースを呼んで表示を更新します。
+
+`@tansr/serve` 0.13.0 以降（2026-10-02 公開）、新規の統合は統一呼び出し面を使います。同じ一連の操作が `/api/sessions/{sessionId}/input-capabilities`、`/api/sessions/{sessionId}/inputs`、`/api/sessions/{sessionId}/inputs/{inputId}` で到達でき、リクエストボディと `{ outcome, receipt }` 受領証のバイト列は変わりません。400 以上のエラーは統一エンベロープになり（`code` は統一コード、元のドメインコードは `detail.domainCode`）、すべての `/api` レスポンスに `tansr-contract` などの統一レスポンスヘッダーが付きます。`/v2` 直結面はこのバージョンでも利用でき、バイト列も変わりませんが、内部アダプターの入口と定義され、1.0.0 で外部入口が削除されます。同じセッションは 1 種類のプレフィックスだけを使ってください。[統一 API](/ja/unified-api/)と [v2 プロトコルと webhook](/ja/serve/v2-and-webhooks/)を参照してください。
 
 ## ACP：拡張をネゴシエートし、通常の prompt を並行送信しない
 

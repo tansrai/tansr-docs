@@ -8,20 +8,24 @@ related:
   - cli/settings-and-doctor
   - serve/deploy-and-auth
   - serve/retention-and-governance
+  - serve/v2-and-webhooks
   - sdk/platform-bundle
+  - sdk/sdk2-preview
   - support/account
 sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/README.md
+  - tansr-cli:packages/server/CHANGELOG.md
+  - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-15'
+lastVerified: '2026-10-05'
 ---
 
-이 페이지는 **당신이 할 수 있는 것**만 씁니다: 트래픽이 어디로 가는지 알기, 자격 증명을 올바른 곳에 두기, 데이터가 어디에 남는지 알기, 교체할 수 있게 되기. tansr 내부의 방어선(권한 엔진, 보호 경로, 하드 보안 레드라인, 감사 체인)은 각 형태의 가이드에서 이미 다루었으며, 여기서는 당신의 조작과 관련될 때만 참조합니다.
+이 페이지는 **당신이 할 수 있는 것**만 씁니다: 트래픽이 어디로 가는지 알기, 자격 증명을 올바른 곳에 두기, 데이터가 어디에 남는지 알기, 교체할 수 있게 되기. tansr 내부의 방어선(권한 엔진, 보호 경로, 하드 보안 레드라인, 감사 체인)은 각 형태의 가이드에서 이미 다루었으며, 여기서는 당신의 조작과 관련될 때만 참조합니다. 버전 기준: `tansr` CLI 0.10.1, `@tansr/sdk` 0.18.1, `@tansr/serve` 0.14.0(모두 2026-10-04 공개).
 
 ## 아웃바운드 통신: 트래픽이 어디로 가고, 어떻게 좁히는가
 
@@ -43,7 +47,28 @@ lastVerified: '2026-09-15'
 
 - `@tansr/sdk` 토큰 방식은 당신이 전달한 `baseUrl`(플랫폼 게이트웨이)과 명시적으로 설정한 MCP 서버에만 연결합니다. SDK는 사용자 디렉터리를 스캔하지 않고, 자체 검색 엔드포인트도 없습니다.
 - `@tansr/serve`의 업스트림 체인은 `appid/appkey → POST /v1/app-tokens → GET /t1/config + POST /t1/heartbeat → POST /t1/exchange`이며, 모두 `apiBaseUrl`을 가리킵니다. 그 밖에 당신이 설정한 턴 종료 webhook URL(아웃바운드 요청에는 어떤 인증 자격 증명 헤더도 붙지 않으며, 진위는 서명으로 확인)과 선택적 콜드 계층 객체 저장소가 있습니다.
-- 모바일 SDK는 당신의 세션 서비스 `baseUrl`에만 연결하며, 플랫폼에 직접 연결하지 않습니다.
+- 모바일 앱이 콘솔에서 웹 페이지 가져오기(WebFetch)나 HTTP 요청(Http)을 켜면(`@tansr/serve` 0.12.0부터, 기본은 꺼짐), 이 두 도구는 세션 서비스가 있는 호스트에서 대상 URL에 직접 접근하며 같은 외부 연결 규칙을 따릅니다. 호스팅된 Http는 호스트 환경 변수의 자격 증명을 참조할 수 없고, 모델도 호스트의 사설망 접근 상한을 풀 수 없습니다. 외부 프록시를 설정했다면 프록시 쪽에서도 똑같이 사설망 대상을 제한하세요. 자세한 내용은 [모바일 앱의 공용 네트워크 도구](/ko/sdk/platform-bundle/#移动应用的公网工具)를 참고하세요.
+- 모바일 SDK와 `@tansr/api-client`는 당신의 세션 서비스 `baseUrl`에만 연결하며, 플랫폼에 직접 연결하지 않고, 이 도구들의 요청을 기기에서 대신 보내지도 않습니다.
+
+## 통합 호출 표면 `/api`: 헤더, 울타리, 구 접두사
+
+`@tansr/serve` 0.13.0부터 `options.v2`가 있는 배포는 같은 포트의 체인 맨 앞에 통합 호출 표면 `/api`를 조립합니다(0.14.0은 manifest revision 7). 보안과 관련된 것은 다음 몇 가지뿐입니다:
+
+- **신원은 `Authorization`에서만 옵니다.** `/api`와 `/v2`는 같은 `authenticate` 훅으로 `endUserId`를 판정합니다. 응답 헤더 넷 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash`와 오류 봉투의 `traceId` / `requestId`에는 endUserId, 토큰, 메시지 내용이 절대 들어가지 않습니다. 요청 본문의 어떤 신원 필드도 신원으로 취급되지 않습니다. `tansr serve --v2` CLI 형태는 같은 Bearer + `x-tansr-end-user` 헤더로 분할 도메인을 스스로 신고하는데, 이 헤더는 당신의 게이트웨이가 자체 로그인 상태 뒤에서만 써야 하며 단말이 직접 채우게 해서는 안 됩니다.
+- **요청 헤더는 모두 명시적 협상이지 인증 요소가 아닙니다.** `tansr-session-family`, `tansr-closure-id`, `tansr-event-envelope`, `Idempotency-Key` / `If-Match` / `deadline`(뒤의 셋은 0.14.0부터)이 해당하지 않는 요청에 나타나면 일률적으로 `400 invalid_request`이며 조용히 무시되지 않습니다. 어떤 헤더도 붙이지 않으면 동작은 바이트 단위로 변하지 않습니다.
+- **기능 폐포 울타리**: `GET /api/sessions/:id/capabilities`는 각 도메인의 기존 기능 소스를 읽기 전용으로 연합해 작업 삼태 표(`enabled` / `disabled` / `unavailable`)와 `tansr-closure-id`를 돌려줍니다. 이것은 **새 인가 엔진을 만들지 않으며**, 울타리 안의 작업은 여전히 도메인 handler가 앱 기능 비트, 사용자 인가, 세션 상태, 승인에 따라 판정합니다. 쓰기 작업은 지난번 `tansr-closure-id`를 전제 조건으로 붙일 수 있습니다. 울타리가 바뀌었으면 `412 precondition_failed`(`rediscover`. 다시 발견한 뒤 재전송 여부를 정하고, 옛 값을 그대로 억지로 재전송하지 마세요), 울타리를 넘어 `disabled`인 작업을 호출하면 `403 capability_unavailable`입니다. 알 수 없는 세션, 타인의 세션, 아카이브 호스트에만 있는 세션은 모두 `404 not_found`로 답해 존재 여부를 누설하지 않습니다.
+- **`/v1`은 기본적으로 꺼짐**: 파사드가 있는 배포에서는 `/v1/sessions*`, `/v1/status`, `/v1/approvals/:id/credential`이 기본적으로 404입니다(SDK2 명시적 호스트가 있으면 항상 꺼짐). 전환용 손잡이 `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1`은 0.14.0 / CLI 0.10.1부터 사용 중단 예정입니다(1.0.0에서 제거. 켜면 `warn` 이벤트 `server.deprecated_option`이 나옴). 승인 자격 증명 전달은 `POST /api/approvals/:id/credential`로 옮깁니다. 헬스 체크는 `/healthz` `/readyz`로 바꾸고, `/v1` Bearer로 `/v1/status`를 찔러 보지 마세요.
+- 통합 오류 봉투의 `message`는 글자 그대로를 보장하지 않고, `detail.path`에는 요청한 `/api` 경로가 되돌려 적히며, `/v2` / `/v3` 내부 접두사와 호스트 경로는 밖으로 새지 않습니다. 각 헤더와 코드 표는 [통합 API의 요청 헤더와 오류 봉투](/ko/unified-api/headers-and-errors/)를 참고하세요.
+
+## 시스템 도구와 터미널 도구의 격리(SDK 2.0 원격 프로필)
+
+SDK 2.0의 "통합 코어와 얇은 터미널"은 도구를 **실행 장소**에 따라 두 부류로 나누며, 어느 쪽도 상대를 대신해 실행할 수 없습니다:
+
+- **시스템 도구는 세션 서비스 호스트에서 실행**: WebFetch / Http / WebSearch / 미디어 도구와 MCP 어댑터는 serve 프로세스 안에서 호스트의 외부 연결 규칙(사설망 상한, 자격 증명 허용 목록, 프록시 쪽 동일 규칙)에 따라 동작합니다. MCP 어댑터는 호스트의 기존 연결을 재사용하며, 모델 매개변수에 따라 프로세스를 시작할 수 없고, 모델도 외부 연결 상한을 풀 수 없습니다.
+- **터미널 도구는 바인딩된 기기에서만 실행**: 파일 읽기 / 디렉터리 목록 / 쓰기 / 편집과 바인딩된 작업 공간 메모리(`fs.inspect` / `fs.read` / `fs.list` 같은 통제된 프리미티브)는 앱이 관리 API로 `execution.version = 'bound-device-v1'`을 명시적으로 설정하고 `boundDevice.tools`로 부여했을 때만 존재합니다. **구 앱 유형과 구 `tools` 비트에서 터미널 인가는 도출되지 않습니다.** 유효한 도구 = 앱 상한 ∩ 사용자 정책 ∩ 요청 축소 ∩ 기기 프리미티브. 원래의 Read / List 권한과 사용자 승인은 그대로 적용되며, 설정 디렉터리가 사용자를 대신해 인가할 수 없습니다.
+- **메모리와 첨부 파일은 호스트로 되돌아가지 않습니다**: 신뢰된 호스트의 `execution.memoryFor(scope)`는 바인딩된 작업 공간 안의 상대 디렉터리만 고르며 serve의 home / env / cwd를 읽지 않습니다. 기능 부족, 거부, 연결 끊김, 소스 과대는 모두 해당 턴만 격하시키며, 서버 쪽 파일을 읽는 동작으로 바뀌는 일은 절대 없습니다. 외부 첨부 파일 소스 `trustedAttachmentSourceFor`의 URL은 조회 표의 키일 뿐이며, SDK / serve는 자동으로 fetch하지 않고, 모델이나 클라이언트가 주소를 파일 권한이나 네트워크 권한으로 바꾸는 것도 받아들이지 않습니다.
+- **내구 실행은 먼저 기록하고 나서 실행**: 실행기는 작업을 먼저 영구적으로 점유한 뒤 실행하고, 결과를 먼저 저장한 뒤 돌려줍니다. 연결이 끊긴 뒤 다시 열어도 결과를 알 수 없는 작업을 다시 하지 않습니다(SDK 층에서는 `GateDecision.executionTarget` / `ToolContext.executionTarget`에 대응하며 `@tansr/sdk` 0.18.0부터. 프로세스 내 SDK에서는 항상 없음).
+- **신뢰된 호스트 모듈은 배포자 코드와 같은 수준으로 신뢰됩니다**: `tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>`(CLI 0.10.0부터)은 진입 파일 원시 바이트의 다이제스트만 대조하며, 의존성 그래프에 서명하는 것도 코드 샌드박스도 아닙니다. 경로와 다이제스트는 항상 배포 파이프라인이 제공하며, 모델이나 HTTP가 제공하지 않습니다.
 
 ## 자격 증명: 어디에 두고, 어디에 두지 않는가
 
@@ -55,7 +80,8 @@ lastVerified: '2026-09-15'
 | 앱 키 appid / appkey | 당신의 앱 | 당신의 서버 프로세스 환경 변수(Node 프로세스 또는 `@tansr/serve`) | 단말 기기, 로그, 오류 응답, 저장소(`.env`는 `.gitignore`에) |
 | 단기 `app_user` 토큰 | 당신의 어느 최종 사용자 | Electron 메인 프로세스 메모리. `@tansr/serve` 프로세스 내부 | renderer 프로세스, 영구 저장소. 모바일은 **절대** 접촉하지 않음 |
 | 당신의 로그인 token(모바일) | 당신의 사용자 | `authProvider`로 요청마다 제공하며, SDK는 영구 저장하지 않음 | SharedPreferences / DataStore / UserDefaults / 로그 |
-| 세션 서비스 `/v1` Bearer(`--token` / `TANSR_SERVE_TOKEN`) | 운영자 | 환경 변수 | `/v2` 면과 서로 통하지 않음. 최종 사용자에게 재사용하지 말 것 |
+| 세션 서비스 `/v1` Bearer(`--token` / `TANSR_SERVE_TOKEN`) | 운영자 | 환경 변수 | `/v2` / `/api` 면과 서로 통하지 않음. 최종 사용자에게 재사용하지 말 것. `--v2` 배포에서는 `/v1`이 기본적으로 꺼짐 |
+| `--host-module-sha256`의 다이제스트 | 당신의 배포 파이프라인 | 빌드 산출물 옆에서 `.cjs`와 함께 생성하고 함께 배포 | 런타임에 계산하지 않고, 모델이나 HTTP가 제공하지 않음 |
 | webhook `secret` | 당신의 푸시 백엔드 | 세션 서비스와 수신 측 각자의 환경 변수 | 로그. 엔진은 절대 출력하지 않음 |
 
 반복해서 말할 가치가 있는 레드라인 세 가지: appkey는 절대 당신의 서버 밖으로 나가지 않습니다. `app_user` 토큰은 절대 세션 서비스 밖으로 나가지 않습니다. 세션 id는 인증 요소가 아닙니다.
@@ -87,8 +113,9 @@ CLI에는 당신을 위한 마스킹 규율이 한 층 더 있습니다: 보고�
 ### 세션 서비스(`@tansr/serve`)
 
 - 세션 기록은 당신이 설정한 `store` 디렉터리 `<dir>/agent-sessions/<endUserKey>/sessions/<sessionId>/`에 저장됩니다. `endUserKey`는 최종 사용자 id의 해시이며 신원이 아닙니다. 콜드 계층을 당신의 객체 저장소에 연결할 수 있으며, 세그먼트는 평문 JSONL(압축)입니다. **암호화, 키 관리, 데이터 소재지, 접근 제어는 당신의 책임**입니다(`policy.transform` 연결점).
-- 메모리 상태의 짧은 창: 종료 레코드는 30분 보존, 유휴 24시간이면 디스크에 저장. `DELETE /v2/sessions/:id`는 닫기이며 삭제가 아닙니다. **보존 기간을 설정하지 않으면 store는 기본적으로 영구 보존**입니다. 저장소 보존 기간 스캔(일 단위 나이와 사용자별 개수로 휴면 세션 삭제)은 **@tansr/serve 0.8.0부터 제공**됩니다(팩토리 옵션 `sessions.retention` 또는 환경 변수 두 개, [보존 기간과 거버넌스](/ko/serve/retention-and-governance/#存储保留期扫描) 참고). 실제 삭제는 `store.delete`로 합니다.
-- 구조화 로그 필드에는 토큰과 메시지 내용이 절대 들어가지 않습니다. 메트릭 라벨에는 sessionId / endUserId가 절대 들어가지 않습니다.
+- 메모리 상태의 짧은 창: 종료 레코드는 30분 보존, 유휴 24시간이면 디스크에 저장. `DELETE /v2/sessions/:id`(`/api/sessions/:id`와 동의)는 닫기이며 삭제가 아닙니다. **보존 기간을 설정하지 않으면 store는 기본적으로 영구 보존**입니다. 저장소 보존 기간 스캔(일 단위 나이와 사용자별 개수로 휴면 세션 삭제)은 **@tansr/serve 0.8.0부터 제공**됩니다(팩토리 옵션 `sessions.retention` 또는 환경 변수 두 개, [보존 기간과 거버넌스](/ko/serve/retention-and-governance/#存储保留期扫描) 참고). 실제 삭제는 `store.delete`로 합니다.
+- 0.14.0부터 `Idempotency-Key`의 영수증 캐시는 프로세스 내 메모리 상태이며(사용자당 256개 / 전역 4 096개 / 10분), `endUserId`별로 격리되고 프로세스와 함께 사라집니다. 명시적으로 조립한 SDK2 아카이브 호스트는 "단일 인가 소스" 정책으로 아카이브를 저장하며, 백업이 아니고 다른 곳으로 동기화하지도 않으며, 항목 삭제는 호스트가 명시적으로 호출합니다.
+- 구조화 로그 필드에는 토큰과 메시지 내용이 절대 들어가지 않습니다(0.13.0부터 기본 레벨은 `warn`이며, 어느 레벨에서도 똑같이 가려지고 본문 키는 항상 `[redacted]`). 메트릭 라벨에는 sessionId / endUserId가 절대 들어가지 않습니다.
 - 단말로 내려가는 권한 요청 프레임에는 완전한 도구 인자가 절대 실리지 않으며, 대상 요약만 있습니다. webhook 페이로드에는 메시지 내용과 자격 증명이 절대 실리지 않습니다.
 
 ### 단말 쪽
@@ -115,5 +142,7 @@ Android / iOS / HarmonyOS SDK는 자격 증명을 캐시하지 않습니다. 뷰
 - `tansr doctor`: 자격 증명이 키체인에 있는가, 평문 파일에 있는가? `localProviders` 섹션이 당신의 예상과 맞는가(플랫폼 모드 / 이스케이프 해치)? 무인 기준선에 관한 안내가 있는가?
 - 저장소에서 `TANSR_APP_KEY` / `sk-` / `tansr_sk_`를 한 번 `grep`해서 실제 값이 들어가지 않았는지 확인.
 - 세션 서비스를 `0.0.0.0`에 바인딩할 때 `/metrics`는 내부망에만 노출되는가? `store` 디렉터리는 로컬 디스크이며 공유되지 않는가?
-- 당신의 토큰 발급 엔드포인트는 자체 로그인 상태 뒤에서만 발급하고, `endUserId`는 항상 서버 세션에서 가져오며 요청 본문을 신뢰하지 않는가?
+- 당신의 토큰 발급 엔드포인트는 자체 로그인 상태 뒤에서만 발급하고, `endUserId`는 항상 서버 세션에서 가져오며 요청 본문을 신뢰하지 않는가? `x-tansr-end-user`는 게이트웨이만 쓰고 있는가?
+- `--v2` 배포에서 아직 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1`을 켜 두고 있지 않은가? 로그에 `server.deprecated_option`이 있으면 제거 일정을 잡아야 하며(1.0.0에서 제거), 승인 전달은 `POST /api/approvals/:id/credential`로 바꿉니다.
+- `--host-module-sha256`은 배포 파이프라인이 `.cjs` 산출물과 함께 생성하는가, 출시 때 손으로 계산하지는 않는가?
 - 콜드 계층 객체 저장소의 수명 주기 규칙과 암호화는 설정되었는가?
