@@ -3,7 +3,7 @@
  * 只用 node 内建能力,不 import astro。
  */
 
-/** 12 类(与 src/lib/categories.mjs 的 directory 一一对应) */
+/** 13 类(与 src/lib/categories.mjs 的 directory 一一对应) */
 export const CATEGORY_VALUES = Object.freeze([
   'getting-started',
   'sdk',
@@ -12,6 +12,7 @@ export const CATEGORY_VALUES = Object.freeze([
   'android',
   'ios',
   'harmony',
+  'unified-api',
   'api',
   'errors',
   'security',

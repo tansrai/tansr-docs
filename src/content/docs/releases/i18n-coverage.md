@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:26 篇手写文章中 English 14 篇、日本語 14 篇、한국어 14 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:33 篇手写文章中 English 21 篇、日本語 21 篇、한국어 21 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-10-05'
@@ -16,9 +16,9 @@ generated: true
 
 | 语言 | 已翻译 / 手写页 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 14 / 26 | 53.8% |
-| 日本語(`ja`) | 14 / 26 | 53.8% |
-| 한국어(`ko`) | 14 / 26 | 53.8% |
+| English(`en`) | 21 / 33 | 63.6% |
+| 日本語(`ja`) | 21 / 33 | 63.6% |
+| 한국어(`ko`) | 21 / 33 | 63.6% |
 | 生成页(不计覆盖率) | 587 | — |
 
 ## 逐页
@@ -51,6 +51,13 @@ generated: true
 | [账号、密钥、套餐与计费](/support/account/) `support/account` | ✓ | ✓ [Account, keys, plans and billing](/en/support/account/) | ✓ [アカウント、キー、プラン、課金](/ja/support/account/) | ✓ [계정, 키, 플랜, 과금](/ko/support/account/) |
 | [联系支持](/support/contact/) `support/contact` | ✓ | ✓ [Contact support](/en/support/contact/) | ✓ [サポートに連絡](/ja/support/contact/) | ✓ [지원팀에 문의](/ko/support/contact/) |
 | [排障指南](/support/troubleshooting/) `support/troubleshooting` | ✓ | ✓ [Troubleshooting](/en/support/troubleshooting/) | ✓ [トラブルシューティングガイド](/ja/support/troubleshooting/) | ✓ [문제 해결 가이드](/ko/support/troubleshooting/) |
+| [统一 API 合同（/api）总览](/unified-api/) `unified-api` | ✓ | ✓ [Unified API (/api) overview](/en/unified-api/) | ✓ [統一 API 契約（/api）の概要](/ja/unified-api/) | ✓ [통합 API 계약(/api) 개요](/ko/unified-api/) |
+| [各语言客户端](/unified-api/clients/) `unified-api/clients` | ✓ | ✓ [Clients by language](/en/unified-api/clients/) | ✓ [各言語のクライアント](/ja/unified-api/clients/) | ✓ [언어별 클라이언트](/ko/unified-api/clients/) |
+| [发现与能力围栏](/unified-api/discovery-and-closure/) `unified-api/discovery-and-closure` | ✓ | ✓ [Discovery and the capability closure](/en/unified-api/discovery-and-closure/) | ✓ [ディスカバリーと能力クロージャ](/ja/unified-api/discovery-and-closure/) | ✓ [디스커버리와 능력 클로저](/ko/unified-api/discovery-and-closure/) |
+| [事件流与统一事件包络](/unified-api/events/) `unified-api/events` | ✓ | ✓ [Event streams and the unified event envelope](/en/unified-api/events/) | ✓ [イベントストリームと統一イベントエンベロープ](/ja/unified-api/events/) | ✓ [이벤트 스트림과 통합 이벤트 봉투](/ko/unified-api/events/) |
+| [统一请求头、响应头与错误信封](/unified-api/headers-and-errors/) `unified-api/headers-and-errors` | ✓ | ✓ [Unified request headers, response headers and the error envelope](/en/unified-api/headers-and-errors/) | ✓ [統一リクエストヘッダー、レスポンスヘッダーとエラーエンベロープ](/ja/unified-api/headers-and-errors/) | ✓ [통합 요청 헤더, 응답 헤더와 오류 봉투](/ko/unified-api/headers-and-errors/) |
+| [迁移与退役时间表](/unified-api/migration/) `unified-api/migration` | ✓ | ✓ [Migration and retirement timetable](/en/unified-api/migration/) | ✓ [移行と廃止のタイムテーブル](/ja/unified-api/migration/) | ✓ [마이그레이션과 폐기 일정](/ko/unified-api/migration/) |
+| [调用面、领域与操作目录](/unified-api/surface/) `unified-api/surface` | ✓ | ✓ [Surface, domains and the operation catalogue](/en/unified-api/surface/) | ✓ [呼び出し面、ドメインと操作カタログ](/ja/unified-api/surface/) | ✓ [호출 표면, 도메인과 작업 카탈로그](/ko/unified-api/surface/) |
 
 <details>
 <summary>生成页(587,不计覆盖率)</summary>

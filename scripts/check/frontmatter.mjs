@@ -1,7 +1,7 @@
 /**
  * frontmatter 契约门(共同派单契约 3 / 4 / 7):扫 `src/content/docs/**\/*.{md,mdx}`,逐文件核
  *   - 契约字段齐:title · description · zone · category · lastVerified
- *   - 枚举合法:zone ∈ {docs, support};category ∈ 12 类
+ *   - 枚举合法:zone ∈ {docs, support};category ∈ 13 类
  *   - lastVerified 形 YYYY-MM-DD(裸日期或带引号皆可)
  *   - related:形为站内 slug,且 slug 对应文章存在(当前语言或根语言)
  *   - sources:`contract/<path>` 须真存在于仓内 `contract/`;`tansr-cli:` / `tansr-api:` / `tansr-android:` / `tansr-ios:` / `tansr-harmony:` 只校形

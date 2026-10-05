@@ -76,6 +76,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | What capabilities the platform grants my app and how to toggle them in the console | [Platform assembly and the bundle](/en/sdk/platform-bundle/) |
 | What an error code means and whether it is retryable | [Errors and retries](/en/sdk/errors-and-retries/) · [Error codes](/errors/codes) |
 | How to deploy the backend, shut it down gracefully, shard across replicas | [Deployment and authentication](/en/serve/deploy-and-auth/) |
+| I want to call the session service's HTTP surface (`/api`) directly, or write my own client | [Unified API (/api)](/en/unified-api/) |
 | How long sessions are kept and when they are reclaimed | [Retention and governance](/en/serve/retention-and-governance/) |
 | Where the CLI config files live and how to read `tansr doctor` | [Settings and doctor](/en/cli/settings-and-doctor/) |
 | Where data lives, how to rotate keys, where traffic goes | [Security and privacy](/en/security/) |

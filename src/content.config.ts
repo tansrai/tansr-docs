@@ -7,7 +7,7 @@ import { CATEGORY_VALUES, DATE_PATTERN, SLUG_PATTERN, SOURCE_PATTERN, ZONE_VALUE
 /**
  * 文章 frontmatter 契约(在 Starlight 原生 title / description 之上):
  * - zone:所属区(开发者文档 / 帮助中心)
- * - category:12 类之一
+ * - category:13 类之一
  * - related:站内 slug(如 `errors/codes`),文章页尾「相关文章」据此渲染;slug 不存在构建期抛
  * - sources:该文引用的事实源(`contract/…` 或 `tansr-cli:` / `tansr-api:` / `tansr-android:` / `tansr-ios:` / `tansr-harmony:` + 仓内路径),`pnpm frontmatter` 门核存在 / 核形
  * - lastVerified:最近一次对表事实源的日期
