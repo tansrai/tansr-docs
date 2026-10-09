@@ -23,7 +23,7 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-09'
 ---
 
 `/api`는 새 프로토콜이 아니라 기존 도메인 하위 계약을 같은 접두사, 같은 봉투 아래에 모은 것입니다. 따라서 마이그레이션의 주된 작업은 경로, 헤더, 오류 판정을 바꾸는 것이지 업무 로직을 다시 쓰는 것이 아닙니다. 성공 응답 본문과 이벤트 페이로드는 한 바이트도 바뀌지 않습니다.
@@ -88,7 +88,7 @@ lastVerified: '2026-10-05'
 |---|---|---|
 | 1 | 내부 어댑터: `/api`가 재작성해 기존 도메인 핸들러에 위임하고, 이전 접두사는 바이트 단위로 불변 | 완료(0.13.0) |
 | 2 | 이중 쓰기 / 섀도 읽기: 같은 골든 벡터를 이전 진입점과 `/api` 양쪽에서 실행해 성공 본문은 바이트 단위로 동일, 오류 본문은 필드 단위로 같은 출처 | Node와 .NET에는 같은 출처의 대응표와 적합성 리플레이가 있음. Android / iOS / HarmonyOS / Go는 165개 골든 벡터 리플레이로 정렬 |
-| 3 | 클라이언트 전환: 각 클라이언트의 소스에 이전 접두사 리터럴이 남지 않음 | Node `@tansr/api-client` 0.3.0 정식판은 전환 완료(`./api`). .NET, Android, iOS, HarmonyOS, Go 메인라인은 전환 완료이며 릴리스 상태는 [언어별 클라이언트](/ko/unified-api/clients/) 참고. `examples/serve-demo`는 공개 SDK 경유로 변경 |
+| 3 | 클라이언트 전환: 각 클라이언트의 소스에 이전 접두사 리터럴이 남지 않음 | Node `@tansr/api-client` 0.3.0 정식판은 전환 완료(`./api`). .NET NuGet 0.2.0, Go `github.com/tansrai/tansr-go` v0.3.0, Rust / Python / C++ 0.1.0은 공개 패키지에서 `/api`를 탑니다. Android, iOS, HarmonyOS 릴리스 상태는 [언어별 클라이언트](/ko/unified-api/clients/) 참고. `examples/serve-demo`는 공개 SDK 경유로 변경 |
 | 4 | 신구 혼용 금지: 같은 세션 패밀리가 두 접두사로 교차 접근되면 구조화된 경고를 냄(거부하지는 않음) | 미착수 |
 | 5 | 이전 진입점의 읽기 전용 창: `/v2`, `/v3/*`의 쓰기 작업은 410으로 답하고 읽기는 계속 수리하며 응답에 폐기 헤더를 붙임 | 미착수. **0.14.0에서 시작하지 않으며 빨라야 0.15.0** |
 | 6 | 닫기: `/v2`, `/v3/*`의 외부 도달 가능 진입점을 제거하고 이전 접두사는 통합 봉투 404로 답함 | 1.0.0 |

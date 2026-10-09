@@ -1,6 +1,6 @@
 ---
 title: 各语言客户端
-description: Node @tansr/api-client/api 0.3.0 正式版的用法与导出；.NET、Android、iOS、鸿蒙、Go 各客户端对 unified-v1（manifest revision 7）的对齐状态——已发布版本与主线源码的差别；以及所有客户端共同遵守的生成式路径模块、零回退响应门、统一码判定与三个请求头的本地校验。
+description: Node @tansr/api-client/api 0.3.0 正式版的用法与导出；.NET 0.2.0、Go v0.3.0、Rust / Python / C++ 0.1.0 等已发布客户端，以及 Android、iOS、鸿蒙尚未换公开包的对齐状态；所有客户端共同遵守的生成式路径模块、零回退响应门、统一码判定与三个请求头的本地校验。
 zone: docs
 category: unified-api
 sidebar:
@@ -28,19 +28,22 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-09'
 ---
 
-六个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布状态不同**。下表是截至 2026-10-05 各仓库主线与公开发布物的事实；写着「主线已对齐、未发布」的，意味着你从公开渠道装到的版本还不走 `/api`。
+九个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布状态不同**。下表截至 2026-10-09。Android、iOS、鸿蒙三行仍是 2026-10-05 已核对的公开发布物，本轮没有重核 Maven、SPM 与 HAR。写着「主线已对齐、未发布」的，意味着你从公开渠道装到的版本还不走 `/api`。
 
 | 客户端 | 公开发布物 | `/api`（unified-v1）支持 |
 |---|---|---|
 | Node `@tansr/api-client` | 0.3.0 正式版（npm，2026-10-04） | **已发布**：`@tansr/api-client/api` 子入口，对齐 manifest revision 7 |
-| .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet 0.1.0.2 | 主线已对齐 revision 7（2026-10-03），**未发布**；0.1.0.2 仍走旧前缀 |
+| .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0**（2026-10-07；0.1.0.2 仍在源上） | **已发布**：0.2.0 对齐 manifest revision 7；0.1.0.2 早于这批对齐 |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | 主线已对齐 revision 7（2026-10-03），**未发布**；0.4.0 仍走旧前缀 |
 | iOS `tansrai/tansr-ios-spm` | 公开二进制 SPM 0.3.0 | 主线已对齐 revision 7，**未发布**；0.3.0 仍走旧前缀 |
 | 鸿蒙 HAR `@tansr/harmony` | 随包 HAR 0.1.0（无 OHPM 渠道） | 主线已对齐 revision 7（2026-10-04），**未发布**；0.1.0 仍走旧前缀 |
-| Go `github.com/cpple/tansr-go` | 标签 `v0.1.0`（随 2026-10-02 发行车） | `v0.1.0` 为骨架：`api` / `canonical` / `sse` 有实现与测试，`executor` / `archive` 仅接口；主线此后对齐 revision 7 与三个请求头（2026-10-03，含破坏性的错误类型改动），尚无新标签 |
+| Go `github.com/tansrai/tansr-go` | 模块 **v0.3.0**（2026-10-07） | **已发布**：v0.2.0 起高层会话、执行器与档案走 `/api`；v0.3.0 只把模块路径从 `github.com/cpple/tansr-go` 迁出 |
+| Rust `tansr-sdk` / `tansr-sdk-demo` | crates.io **0.1.0**（2026-10-08） | **已发布**：异步客户端走统一 `/api` |
+| Python `tansr-sdk` / `tansr-sdk-demo` | PyPI **0.1.0**（2026-10-08） | **已发布**：同步与 asyncio 共用同一套 `/api` |
+| C++ `tansrai/tansr-cpp` | GitHub Release **v0.1.0**（2026-10-08） | **已发布**：静态 SDK 与三个独立 Demo；尚未进入 Conan Center / vcpkg 公共索引 |
 
 ## 所有客户端共同的实现纪律
 
@@ -103,7 +106,7 @@ try {
 
 ## .NET
 
-主线（未发布）下 SDK 只走 `/api`：路径常量 `Tansr.Sdk.Api.ApiRoutes` 由 `node scripts/generate-api-routes.mjs` 从仓内 vendored 的 `contract/api-manifest.json` 生成；通用入口 `client.CallAsync(ApiRoutes.X, new ApiCallOptions { IdempotencyKey, IfMatch, Deadline, ClosureId })`；围栏经 `client.GetCapabilityClosureAsync(sessionId)`；统一信封解码为 `UnifiedApiException`（`Code` / `StatusCode` / `RetryAction` 为主位，族事实在 `Detail.DomainCode` / `DomainStatus` / `DomainRetryAction`），`UnifiedRetry.Advice(error)` 与 `UnifiedRetry.RetrySameRequestAsync(...)` 承担重试纪律；`TansrClientOptions.NegotiateEventEnvelope` 显式协商事件包络，未回响抛 `EnvelopeNotNegotiatedException`。NuGet 上的 0.1.0.2 早于这些改动。
+NuGet 上的当前公开版本是 **0.2.0**（`Tansr.Sdk` 与 `Tansr.Sdk.Windows`，2026-10-07）。它只走 `/api`：路径常量 `Tansr.Sdk.Api.ApiRoutes` 由 `node scripts/generate-api-routes.mjs` 从仓内 vendored 的 `contract/api-manifest.json` 生成；通用入口 `client.CallAsync(ApiRoutes.X, new ApiCallOptions { IdempotencyKey, IfMatch, Deadline, ClosureId })`；围栏经 `client.GetCapabilityClosureAsync(sessionId)`；统一信封解码为 `UnifiedApiException`（`Code` / `StatusCode` / `RetryAction` 为主位，族事实在 `Detail.DomainCode` / `DomainStatus` / `DomainRetryAction`），`UnifiedRetry.Advice(error)` 与 `UnifiedRetry.RetrySameRequestAsync(...)` 承担重试纪律；`TansrClientOptions.NegotiateEventEnvelope` 显式协商事件包络，未回响抛 `EnvelopeNotNegotiatedException`。更早的 0.1.0.2 仍在 NuGet，早于这批统一合同对齐，不要把它当作 `/api` 客户端。
 
 ## Android
 
@@ -128,7 +131,32 @@ res, err := client.Call(ctx, api.OpSessionMessageSend, api.CallOptions{
 stream, err := client.Events(ctx, api.OpSessionEventsObserve, api.EventsOptions{Params: map[string]string{"id": sessionID}})
 ```
 
-`github.com/cpple/tansr-go`（标准库实现，零第三方依赖）：子包 `api`（发现 / `Call` / `Events` / 错误信封 / 重试建议）、`canonical`、`sse` 有实现与测试，`executor`、`archive` 只有接口定义，真实会话服务联调仍待进行。标签 `v0.1.0` 随 2026-10 发行车打出；主线此后把 `APIError.Code` / `RetryAction` 改为类型化常量（`api.Code*` 19 个、`api.Action*` 6 个，`Detail.DomainCode` 为次级字段）、接入三个请求头（`CallOptions.IfMatch` / `Deadline` / `IdempotencyKey`，`Meta.ETag` 只收强形），这些改动相对 `v0.1.0` 是破坏性的，且尚未打新标签。
+`github.com/tansrai/tansr-go` **v0.3.0**（2026-10-07，MIT，Go 1.25 或以上，标准库实现，无第三方运行依赖）。模块路径已从 `github.com/cpple/tansr-go` 迁出：`v0.1.0` 只覆盖 `api` / `canonical` / `sse`；`v0.2.0` 起 `session`、`executor`、`archive` 为真实实现，并带 `go-chat` / `go-tools` / `go-archive`。`v0.3.0` 只改模块路径，协议行为相对 `v0.2.0` 不变。升级必须同时改 `go.mod` 与全部 import，不能混用新旧模块的类型。安装：`go get github.com/tansrai/tansr-go@v0.3.0`。
+
+## Rust
+
+```sh
+cargo add tansr-sdk@=0.1.0
+```
+
+`tansr-sdk` 与 `tansr-sdk-demo` **0.1.0** 已在 crates.io（2026-10-08，MIT）。需要 Rust 1.85 或更新版本；Windows 构建还要 MSVC 构建工具，并且当前 shell 的 PATH 上要有 NASM。异步客户端走统一 `/api`，高层会话、显式业务工具和单设备加密档案随包提供。三个示例命令是 `tansr-chat`、`tansr-tools`、`tansr-archive`。源码在 `tansrai/tansr-rust`。
+
+## Python
+
+```sh
+python -m pip install tansr-sdk==0.1.0
+```
+
+`tansr-sdk` 与 `tansr-sdk-demo` **0.1.0** 已在 PyPI（2026-10-08，MIT，源码 `tansrai/tansr-python`）。公开声明支持 Python 3.7 及以上。Windows 上解释器自带的旧 OpenSSL 不能用来连 HTTPS，须按发行说明换隔离运行库。同步接口与 asyncio 共用同一套 `/api` 实现。示例命令 `tansr-py-chat`、`tansr-py-tools`、`tansr-py-archive` 在 `tansr-sdk-demo` 包内。
+
+## C++
+
+```cmake
+find_package(TansrSDK 0.1.0 EXACT CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE tansr::sdk)
+```
+
+`tansrai/tansr-cpp` 的 GitHub Release **v0.1.0**（2026-10-08，MIT）提供源码包，以及 Windows x64、Linux x64、macOS arm64 的静态 SDK 与独立 Demo。Conan Center 与 vcpkg 公共索引尚未收录。语言标准是 C++17；依赖按发行清单自行准备，CMake 不自动下载。三个示例是 `tansr-chat`、`tansr-tools`、`tansr-archive`。
 
 ## 下一步
 

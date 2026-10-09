@@ -23,7 +23,7 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-09'
 ---
 
 `/api` is not a new protocol; it gathers the existing domain subcontracts under one prefix and one envelope. Most of the migration therefore consists of changing paths, headers and error handling rather than rewriting business logic; success bodies and event payloads do not change by a single byte.
@@ -88,7 +88,7 @@ The `/v1` in this site's REST reference is the platform-side interface and unrel
 |---|---|---|
 | 1 | Internal adapter: `/api` rewrites and delegates to the existing domain handlers, old prefixes byte-identical | Done (0.13.0) |
 | 2 | Dual write / shadow read: the same golden vectors run through the old entry and `/api`, success bodies byte-identical, error bodies field-for-field from the same source | Node and .NET have the same-source mapping tables and conformance replay; Android / iOS / HarmonyOS / Go align by replaying the 165 golden vectors |
-| 3 | Client cut-over: no old prefix literal remains in any client's source | Node `@tansr/api-client` 0.3.0 stable has cut over (`./api`); the .NET, Android, iOS, HarmonyOS and Go mainlines have cut over, release status in [Clients by language](/en/unified-api/clients/); `examples/serve-demo` goes through the public SDK |
+| 3 | Client cut-over: no old prefix literal remains in any client's source | Node `@tansr/api-client` 0.3.0 stable has cut over (`./api`); .NET NuGet 0.2.0, Go `github.com/tansrai/tansr-go` v0.3.0, and Rust / Python / C++ 0.1.0 ship on `/api`; Android, iOS and HarmonyOS release status is in [Clients by language](/en/unified-api/clients/); `examples/serve-demo` goes through the public SDK |
 | 4 | Forbid mixing: a structured warning (no rejection) when the same session family is accessed through both prefixes | Not started |
 | 5 | Read-only window for the old entries: writes on `/v2` and `/v3/*` answer 410, reads are still served, responses carry a retirement header | Not started; **not in 0.14.0, earliest 0.15.0** |
 | 6 | Closure: remove the externally reachable `/v2` and `/v3/*` entries; old prefixes answer 404 in the unified envelope | 1.0.0 |

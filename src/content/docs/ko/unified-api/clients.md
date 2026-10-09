@@ -1,6 +1,6 @@
 ---
 title: 언어별 클라이언트
-description: Node @tansr/api-client/api 0.3.0 정식판의 사용법과 내보내기. .NET, Android, iOS, HarmonyOS, Go 각 클라이언트의 unified-v1(매니페스트 revision 7) 정렬 현황을 릴리스된 버전과 메인라인 소스의 차이와 함께 제시. 그리고 모든 클라이언트가 공통으로 지키는 생성된 경로 모듈, 폴백 없는 응답 게이트, 통합 코드 판정, 세 요청 헤더의 로컬 검증.
+description: Node @tansr/api-client/api 0.3.0 정식판의 사용법과 내보내기. .NET 0.2.0, Go v0.3.0, Rust / Python / C++ 0.1.0 등 공개된 클라이언트와 Android, iOS, HarmonyOS의 아직 바뀌지 않은 릴리스. 모든 클라이언트가 공통으로 지키는 생성된 경로 모듈, 폴백 없는 응답 게이트, 통합 코드 판정, 세 요청 헤더의 로컬 검증.
 zone: docs
 category: unified-api
 sidebar:
@@ -28,19 +28,22 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-09'
 ---
 
-여섯 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 상태는 다릅니다**. 아래 표는 2026-10-05 시점 각 저장소 메인라인과 공개 릴리스물의 사실입니다. "메인라인 정렬 완료, 미릴리스"라고 적힌 것은 공개 채널에서 설치할 수 있는 버전이 아직 `/api`를 거치지 않는다는 뜻입니다.
+아홉 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 상태는 다릅니다**. 아래 표는 2026-10-09 기준입니다. Android, iOS, HarmonyOS 세 줄은 2026-10-05에 확인한 공개물이며, 이번 갱신에서 Maven, SPM, HAR은 다시 확인하지 않았습니다. "메인라인 정렬 완료, 미릴리스"라고 적힌 것은 공개 채널에서 설치할 수 있는 버전이 아직 `/api`를 거치지 않는다는 뜻입니다.
 
 | 클라이언트 | 공개 릴리스물 | `/api`(unified-v1) 지원 |
 |---|---|---|
 | Node `@tansr/api-client` | 0.3.0 정식판(npm, 2026-10-04) | **릴리스됨**: `@tansr/api-client/api` 진입점, 매니페스트 revision 7에 정렬 |
-| .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet 0.1.0.2 | 메인라인은 revision 7에 정렬 완료(2026-10-03), **미릴리스**. 0.1.0.2는 아직 이전 접두사 |
+| .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0**(2026-10-07. 0.1.0.2도 남아 있음) | **릴리스됨**. 0.2.0은 매니페스트 revision 7에 맞음. 0.1.0.2는 그 이전 |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | 메인라인은 revision 7에 정렬 완료(2026-10-03), **미릴리스**. 0.4.0은 아직 이전 접두사 |
 | iOS `tansrai/tansr-ios-spm` | 공개 바이너리 SPM 0.3.0 | 메인라인은 revision 7에 정렬 완료, **미릴리스**. 0.3.0은 아직 이전 접두사 |
 | HarmonyOS HAR `@tansr/harmony` | 번들 HAR 0.1.0(OHPM 채널 없음) | 메인라인은 revision 7에 정렬 완료(2026-10-04), **미릴리스**. 0.1.0은 아직 이전 접두사 |
-| Go `github.com/cpple/tansr-go` | 태그 `v0.1.0`(2026-10-02 릴리스 트레인과 함께) | `v0.1.0`은 뼈대: `api` / `canonical` / `sse`는 구현과 테스트가 있고 `executor` / `archive`는 인터페이스만. 메인라인은 그 뒤 revision 7과 세 요청 헤더에 정렬(2026-10-03, 오류 타입의 파괴적 변경 포함)했으나 새 태그는 아직 없음 |
+| Go `github.com/tansrai/tansr-go` | 모듈 **v0.3.0**(2026-10-07) | **릴리스됨**. v0.2.0부터 상위 세션, 실행기, 아카이브가 `/api`를 통과. v0.3.0은 모듈 경로만 `github.com/cpple/tansr-go`에서 옮김 |
+| Rust `tansr-sdk` / `tansr-sdk-demo` | crates.io **0.1.0**(2026-10-08) | **릴리스됨**. 비동기 클라이언트가 통합 `/api`를 사용 |
+| Python `tansr-sdk` / `tansr-sdk-demo` | PyPI **0.1.0**(2026-10-08) | **릴리스됨**. 동기 API와 asyncio가 같은 `/api` 구현을 공유 |
+| C++ `tansrai/tansr-cpp` | GitHub Release **v0.1.0**(2026-10-08) | **릴리스됨**. 정적 SDK와 독립 데모 세 개. Conan Center와 공개 vcpkg 색인에는 아직 없음 |
 
 ## 모든 클라이언트에 공통인 구현 규율
 
@@ -103,7 +106,7 @@ try {
 
 ## .NET
 
-메인라인(미릴리스)에서 SDK는 `/api`만 거칩니다. 경로 상수 `Tansr.Sdk.Api.ApiRoutes`는 `node scripts/generate-api-routes.mjs`가 저장소 안에 vendored된 `contract/api-manifest.json`에서 생성합니다. 범용 진입점은 `client.CallAsync(ApiRoutes.X, new ApiCallOptions { IdempotencyKey, IfMatch, Deadline, ClosureId })`, 클로저는 `client.GetCapabilityClosureAsync(sessionId)`로 얻고, 통합 봉투는 `UnifiedApiException`으로 디코딩됩니다(`Code` / `StatusCode` / `RetryAction`이 주, 패밀리 사실은 `Detail.DomainCode` / `DomainStatus` / `DomainRetryAction`). `UnifiedRetry.Advice(error)`와 `UnifiedRetry.RetrySameRequestAsync(...)`가 재시도 규율을 맡고, `TansrClientOptions.NegotiateEventEnvelope`가 이벤트 봉투를 명시적으로 협상하며 되돌아오지 않으면 `EnvelopeNotNegotiatedException`을 던집니다. NuGet의 0.1.0.2는 이 변경들보다 앞선 것입니다.
+NuGet의 현재 공개 버전은 **0.2.0**(`Tansr.Sdk`와 `Tansr.Sdk.Windows`, 2026-10-07)입니다. `/api`만 거칩니다. 경로 상수 `Tansr.Sdk.Api.ApiRoutes`는 `node scripts/generate-api-routes.mjs`가 저장소 안에 vendored된 `contract/api-manifest.json`에서 생성합니다. 범용 진입점은 `client.CallAsync(ApiRoutes.X, new ApiCallOptions { IdempotencyKey, IfMatch, Deadline, ClosureId })`, 클로저는 `client.GetCapabilityClosureAsync(sessionId)`로 얻고, 통합 봉투는 `UnifiedApiException`으로 디코딩됩니다(`Code` / `StatusCode` / `RetryAction`이 주, 패밀리 사실은 `Detail.DomainCode` / `DomainStatus` / `DomainRetryAction`). `UnifiedRetry.Advice(error)`와 `UnifiedRetry.RetrySameRequestAsync(...)`가 재시도 규율을 맡고, `TansrClientOptions.NegotiateEventEnvelope`가 이벤트 봉투를 명시적으로 협상하며 되돌아오지 않으면 `EnvelopeNotNegotiatedException`을 던집니다. 더 이전인 0.1.0.2도 NuGet에 남아 있지만 이번 계약 정렬보다 앞선 것이므로 `/api` 클라이언트로 쓰지 마세요.
 
 ## Android
 
@@ -128,7 +131,32 @@ res, err := client.Call(ctx, api.OpSessionMessageSend, api.CallOptions{
 stream, err := client.Events(ctx, api.OpSessionEventsObserve, api.EventsOptions{Params: map[string]string{"id": sessionID}})
 ```
 
-`github.com/cpple/tansr-go`(표준 라이브러리만 사용, 서드파티 의존성 없음): 하위 패키지 `api`(디스커버리 / `Call` / `Events` / 오류 봉투 / 재시도 조언), `canonical`, `sse`에는 구현과 테스트가 있고 `executor`, `archive`는 인터페이스 정의만 있으며 실제 세션 서비스와의 연동 검증은 아직 진행 전입니다. 태그 `v0.1.0`은 2026-10 릴리스 트레인과 함께 찍혔습니다. 메인라인은 그 뒤 `APIError.Code` / `RetryAction`을 타입이 있는 상수(`api.Code*` 19개, `api.Action*` 6개, `Detail.DomainCode`는 부차 필드)로 고치고 세 요청 헤더(`CallOptions.IfMatch` / `Deadline` / `IdempotencyKey`, `Meta.ETag`는 강한 형태만 받음)를 연결했습니다. 이 변경들은 `v0.1.0`에 대해 파괴적이며 새 태그는 아직 찍히지 않았습니다.
+`github.com/tansrai/tansr-go` **v0.3.0**(2026-10-07, MIT, Go 1.25 이상, 표준 라이브러리만, 런타임 서드파티 의존성 없음). 모듈 경로는 `github.com/cpple/tansr-go`에서 옮겨졌습니다. `v0.1.0`은 `api` / `canonical` / `sse`만 다룹니다. `v0.2.0`부터 `session`, `executor`, `archive`가 실제 구현이고 `go-chat` / `go-tools` / `go-archive`가 함께 있습니다. `v0.3.0`이 바꾸는 것은 모듈 경로뿐이며 프로토콜 동작은 `v0.2.0`과 같습니다. 올릴 때는 `go.mod`와 모든 import를 함께 고치고 옛 모듈과 새 모듈의 타입을 섞지 마세요. 설치는 `go get github.com/tansrai/tansr-go@v0.3.0`입니다.
+
+## Rust
+
+```sh
+cargo add tansr-sdk@=0.1.0
+```
+
+`tansr-sdk`와 `tansr-sdk-demo` **0.1.0**이 crates.io에 있습니다(2026-10-08, MIT). Rust 1.85 이상이 필요합니다. Windows 빌드에는 MSVC 빌드 도구와 현재 셸 PATH의 NASM이 필요합니다. 비동기 클라이언트는 통합 `/api`를 쓰고, 상위 세션, 명시적 업무 도구, 단일 기기 암호화 아카이브가 함께 제공됩니다. 예제 명령은 `tansr-chat`, `tansr-tools`, `tansr-archive`입니다. 소스는 `tansrai/tansr-rust`에 있습니다.
+
+## Python
+
+```sh
+python -m pip install tansr-sdk==0.1.0
+```
+
+`tansr-sdk`와 `tansr-sdk-demo` **0.1.0**이 PyPI에 있습니다(2026-10-08, MIT, 소스 `tansrai/tansr-python`). 공개 범위는 Python 3.7 이상입니다. Windows에서 인터프리터에 딸린 오래된 OpenSSL로는 HTTPS를 열 수 없습니다. 발행 설명의 격리 런타임을 쓰세요. 동기 API와 asyncio는 같은 `/api` 구현을 공유합니다. 예제 명령 `tansr-py-chat`, `tansr-py-tools`, `tansr-py-archive`는 `tansr-sdk-demo` 안에 있습니다.
+
+## C++
+
+```cmake
+find_package(TansrSDK 0.1.0 EXACT CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE tansr::sdk)
+```
+
+`tansrai/tansr-cpp`의 GitHub Release **v0.1.0**(2026-10-08, MIT)은 소스 패키지와 Windows x64, Linux x64, macOS arm64용 정적 SDK 및 독립 데모를 배포합니다. Conan Center와 공개 vcpkg 색인에는 아직 없습니다. 언어 수준은 C++17입니다. 의존성은 발행 목록에 따라 직접 준비하고 CMake는 자동으로 받지 않습니다. 예제는 `tansr-chat`, `tansr-tools`, `tansr-archive`입니다.
 
 ## 다음 단계
 

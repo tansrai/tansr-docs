@@ -23,7 +23,7 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-09'
 ---
 
 `/api` 不是一套新协议，而是把既有领域子合同收到同一个前缀、同一套信封之下。因此迁移的主体工作是换路径、换头、换错误判定，而不是重写业务逻辑；成功响应体与事件载荷一字不变。
@@ -88,7 +88,7 @@ lastVerified: '2026-10-05'
 |---|---|---|
 | 一 | 内部 adapter：`/api` 改写委托到既有领域处理器，旧前缀逐字节不变 | 完成（0.13.0） |
 | 二 | 双写 / 影子读：同一组金向量经旧入口与 `/api` 双跑，成功体逐字节同、错误体逐字段同源 | Node 与 .NET 已建立同源对表与 conformance 回放；Android / iOS / 鸿蒙 / Go 以 165 条金向量回放对齐 |
-| 三 | 客户端切流：各端源码不再出现旧前缀字面量 | Node `@tansr/api-client` 0.3.0 正式版已切（`./api`）；.NET、Android、iOS、鸿蒙、Go 主线已切，发布状态见[各语言客户端](/unified-api/clients/)；`examples/serve-demo` 改经公开 SDK |
+| 三 | 客户端切流：各端源码不再出现旧前缀字面量 | Node `@tansr/api-client` 0.3.0 正式版已切（`./api`）；.NET NuGet 0.2.0、Go `github.com/tansrai/tansr-go` v0.3.0、Rust / Python / C++ 0.1.0 已随公开包切到 `/api`；Android、iOS、鸿蒙的发布状态见[各语言客户端](/unified-api/clients/)；`examples/serve-demo` 改经公开 SDK |
 | 四 | 禁止新旧混用：同一会话族在两种前缀下交叉访问时出结构化告警（不拒绝） | 未开始 |
 | 五 | 旧入口只读窗口：`/v2`、`/v3/*` 的写操作改答 410，读仍受理，响应附退役头 | 未开始；**不在 0.14.0 启动，最早 0.15.0** |
 | 六 | 关闭：移除 `/v2`、`/v3/*` 的外部可达入口，旧前缀答统一信封 404 | 1.0.0 |
