@@ -77,6 +77,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | あるエラーコードの意味、再試行できるか | [エラー処理と再試行](/ja/sdk/errors-and-retries/) · [エラーコード表](/errors/codes) |
 | サーバーのデプロイ、グレースフルシャットダウン、複数レプリカでのシャーディング | [デプロイと認証](/ja/serve/deploy-and-auth/) |
 | セッションサービスの HTTP 面（`/api`）を直接呼びたい、または自分でクライアントを書きたい | [統一 API（/api）](/ja/unified-api/) |
+| プログラミング助手に、自分の説明から動く製品を作ってほしい | `@tansr/skill` 0.1.3 | [プログラミング助手で製品を作る](/ja/getting-started/skill/) |
 | SDK 2.0 の拡張入口（アーカイブホスト、キャッシュホスト、統一 API）のうち、どこまでが正式公開済みか | [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/) |
 | セッションはいつまで保持され、いつ回収されるか | [保持期間とガバナンス](/ja/serve/retention-and-governance/) |
 | CLI の設定ファイルはどこか、`tansr doctor` の出力をどう読むか | [設定と doctor](/ja/cli/settings-and-doctor/) |

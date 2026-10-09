@@ -77,6 +77,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 某个错误码是什么意思、能不能重试 | [错误处理与重试](/sdk/errors-and-retries/) · [错误码表](/errors/codes) |
 | 服务端怎么部署、怎么优雅关闭、多副本怎么分片 | [部署与鉴权](/serve/deploy-and-auth/) |
 | 我想直接调会话服务的 HTTP 接口（`/api`），或自己写一个客户端 | [统一 API 合同（/api）](/unified-api/) |
+| 我想让编程助手按我的描述做出可运行的产品 | `@tansr/skill` 0.1.3 | [用编程助手做产品](/getting-started/skill/) |
 | SDK 2.0 的扩展入口（归档宿主、缓存宿主、统一 API）哪些已正式发布 | [SDK 2.0 扩展入口](/sdk/sdk2-preview/) |
 | 会话保留多久、什么时候被回收 | [保留期与治理](/serve/retention-and-governance/) |
 | 命令行配置文件在哪、`tansr doctor` 输出怎么读 | [设置与 doctor](/cli/settings-and-doctor/) |

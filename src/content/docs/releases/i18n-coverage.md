@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:34 篇手写文章中 English 22 篇、日本語 21 篇、한국어 21 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:35 篇手写文章中 English 23 篇、日本語 22 篇、한국어 22 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-10-09'
@@ -16,9 +16,9 @@ generated: true
 
 | 语言 | 已翻译 / 手写页 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 22 / 34 | 64.7% |
-| 日本語(`ja`) | 21 / 34 | 61.8% |
-| 한국어(`ko`) | 21 / 34 | 61.8% |
+| English(`en`) | 23 / 35 | 65.7% |
+| 日本語(`ja`) | 22 / 35 | 62.9% |
+| 한국어(`ko`) | 22 / 35 | 62.9% |
 | 生成页(不计覆盖率) | 587 | — |
 
 ## 逐页
@@ -34,6 +34,7 @@ generated: true
 | [鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/) `getting-started/harmony` | ✓ | ✓ [HarmonyOS SDK in 5 minutes](/en/getting-started/harmony/) | ✓ [HarmonyOS SDK を 5 分で動かす](/ja/getting-started/harmony/) | ✓ [HarmonyOS SDK 5분 안에 실행하기](/ko/getting-started/harmony/) |
 | [Node SDK 5 分钟跑通](/getting-started/sdk/) `getting-started/sdk` | ✓ | ✓ [Node SDK in 5 minutes](/en/getting-started/sdk/) | ✓ [Node SDK を 5 分で動かす](/ja/getting-started/sdk/) | ✓ [Node SDK 5분 안에 실행하기](/ko/getting-started/sdk/) |
 | [会话服务 5 分钟跑通](/getting-started/serve/) `getting-started/serve` | ✓ | ✓ [Session service in 5 minutes](/en/getting-started/serve/) | ✓ [セッションサービスを 5 分で動かす](/ja/getting-started/serve/) | ✓ [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) |
+| [用编程助手做产品](/getting-started/skill/) `getting-started/skill` | ✓ | ✓ [Build a product with a coding assistant](/en/getting-started/skill/) | ✓ [プログラミング助手で製品を作る](/ja/getting-started/skill/) | ✓ [코딩 도우미로 제품 만들기](/ko/getting-started/skill/) |
 | [鸿蒙接入指南](/harmony/) `harmony` | ✓ | 回落 | 回落 | 回落 |
 | [iOS 接入指南](/ios/) `ios` | ✓ | 回落 | 回落 | 回落 |
 | [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 | 回落 | 回落 |

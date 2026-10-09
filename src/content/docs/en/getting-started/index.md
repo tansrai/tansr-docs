@@ -77,6 +77,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | What an error code means and whether it is retryable | [Errors and retries](/en/sdk/errors-and-retries/) · [Error codes](/errors/codes) |
 | How to deploy the backend, shut it down gracefully, shard across replicas | [Deployment and authentication](/en/serve/deploy-and-auth/) |
 | I want to call the session service's HTTP surface (`/api`) directly, or write my own client | [Unified API (/api)](/en/unified-api/) |
+| I want a coding assistant to build a running product from my description | `@tansr/skill` 0.1.3 | [Build a product with a coding assistant](/en/getting-started/skill/) |
 | Which parts of the SDK 2.0 extension entry points (archive host, cache host, unified API) are officially released | [SDK 2.0 extension entry points](/en/sdk/sdk2-preview/) |
 | How long sessions are kept and when they are reclaimed | [Retention and governance](/en/serve/retention-and-governance/) |
 | Where the CLI config files live and how to read `tansr doctor` | [Settings and doctor](/en/cli/settings-and-doctor/) |
