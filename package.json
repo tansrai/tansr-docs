@@ -5,6 +5,10 @@
   "type": "module",
   "description": "tansr 资料站(docs.tansr.com):开发者文档 + 帮助中心",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tansrai/tansr-docs"
+  },
   "engines": {
     "node": ">=22"
   },

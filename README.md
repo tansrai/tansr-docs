@@ -1,5 +1,7 @@
 # tansr 资料站 · docs.tansr.com
 
+源码以 [MIT](LICENSE) 协议公开在 [tansrai/tansr-docs](https://github.com/tansrai/tansr-docs)。
+
 tansr 的开发者文档与帮助中心(一站两区):`/` 开发者文档(SDK · 会话服务 · CLI · Android / iOS · REST 参考 · 错误码 · 发布说明),`/support/` 帮助中心(账号与计费 · 排障 · 联系支持)。
 
 - 站点:Astro + Starlight 静态站,Pagefind 本地搜索,zh-CN 为根、en 第二语言。
@@ -48,10 +50,10 @@ secret 只有一把 `UPSTREAM_READ_TOKEN`(能读两私有仓的 token);未交割
 兄弟仓侧(候拍,本仓不改兄弟仓):tansr-api / tansr-cli 各在 CI 成功后追加一步
 
 ```bash
-gh api repos/cpple/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'   # cli 仓用 client_payload[cli_ref]
+gh api repos/tansrai/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'   # cli 仓用 client_payload[cli_ref]
 ```
 
-需各仓一把能对 `cpple/tansr-docs` 发 dispatch 的 secret `DOCS_DISPATCH_TOKEN`(`GH_TOKEN` 传入;仓库自带的 `GITHUB_TOKEN` 不能跨仓派发)。两把 token 均未创建、未配置,等拍。
+需各仓一把能对 `tansrai/tansr-docs` 发 dispatch 的 secret `DOCS_DISPATCH_TOKEN`(`GH_TOKEN` 传入;仓库自带的 `GITHUB_TOKEN` 不能跨仓派发)。两把 token 均未创建、未配置,等拍。
 
 ## 许可
 

@@ -1,7 +1,7 @@
 name: vendor
 
 # 上游(tansr-api / tansr-cli)变更后自动 vendor:拷入契约副本 → 再生生成页 → 过门 → 以 github-actions[bot] 身份提交推 main → 派发 deploy。
-# 触发:① 兄弟仓 CI 成功后 `gh api repos/cpple/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'`
+# 触发:① 兄弟仓 CI 成功后 `gh api repos/tansrai/tansr-docs/dispatches -f event_type=upstream-updated -f 'client_payload[api_ref]=<sha>'`
 #          (client_payload.api_ref / cli_ref 可选,缺省 master / main;接线说明见 README「上游接线」,兄弟仓侧凭据候拍,本仓不改兄弟仓)
 #      ② 手动 workflow_dispatch(inputs api_ref / cli_ref)
 # 凭据:UPSTREAM_READ_TOKEN(能读两私有仓 cpple/tansr-api · cpple/tansr 的 token)未交割时只打 notice、成功退出,不把工作流标红

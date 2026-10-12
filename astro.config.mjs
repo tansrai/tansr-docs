@@ -63,7 +63,7 @@ export default defineConfig({
        * 只加元权重——查表页行键元字段 `keys`(MarkdownContent.astro 挂)8 > 标题 5;理由与实测见 src/lib/search-weights.mjs。
        */
       pagefind: { ranking: { metaWeights: { ...META_WEIGHTS } } },
-      editLink: { baseUrl: 'https://github.com/cpple/tansr-docs/edit/main/' },
+      editLink: { baseUrl: 'https://github.com/tansrai/tansr-docs/edit/main/' },
       lastUpdated: true,
       customCss: ['./src/styles/custom.css'],
       components: {
