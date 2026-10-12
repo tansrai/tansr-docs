@@ -1,6 +1,6 @@
 ---
 title: Migration and retirement timetable
-description: Path mapping and request / error shape differences when moving from /v2, /v3/sdk2 and /v3/terminal* to /api; the session service's /v1 being off by default since @tansr/serve 0.13.0 on deployments with /api, and the --legacy-v1 transition; progress of the six-step migration as of 0.14.0; the retirement cadence for /v2 and /v3/*, and the discipline of rolling server and clients back in pairs.
+description: Path mapping and request / error shape differences when moving from /v2, /v3/sdk2 and /v3/terminal* to /api; the session service's /v1 being off by default since @tansr/serve 0.13.0 on deployments with /api, and the --legacy-v1 transition; progress of the six-step migration as of 0.15.0; the retirement cadence for /v2 and /v3/*, and the discipline of rolling server and clients back in pairs.
 zone: docs
 category: unified-api
 sidebar:
@@ -23,7 +23,7 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
 `/api` is not a new protocol; it gathers the existing domain subcontracts under one prefix and one envelope. Most of the migration therefore consists of changing paths, headers and error handling rather than rewriting business logic; success bodies and event payloads do not change by a single byte.
@@ -84,13 +84,13 @@ The `/v1` in this site's REST reference is the platform-side interface and unrel
 
 ## The six-step migration and where it stands
 
-| Step | Content | Status as of `@tansr/serve` 0.14.0 |
+| Step | Content | Status as of `@tansr/serve` 0.15.1 (published 2026-10-10, current npm `latest`) |
 |---|---|---|
 | 1 | Internal adapter: `/api` rewrites and delegates to the existing domain handlers, old prefixes byte-identical | Done (0.13.0) |
 | 2 | Dual write / shadow read: the same golden vectors run through the old entry and `/api`, success bodies byte-identical, error bodies field-for-field from the same source | Node and .NET have the same-source mapping tables and conformance replay; Android / iOS / HarmonyOS / Go align by replaying the 165 golden vectors |
-| 3 | Client cut-over: no old prefix literal remains in any client's source | Node `@tansr/api-client` 0.3.0 stable has cut over (`./api`); .NET NuGet 0.2.0, Go `github.com/tansrai/tansr-go` v0.3.0, and Rust / Python / C++ 0.1.0 ship on `/api`; Android, iOS and HarmonyOS release status is in [Clients by language](/en/unified-api/clients/); `examples/serve-demo` goes through the public SDK |
-| 4 | Forbid mixing: a structured warning (no rejection) when the same session family is accessed through both prefixes | Not started |
-| 5 | Read-only window for the old entries: writes on `/v2` and `/v3/*` answer 410, reads are still served, responses carry a retirement header | Not started; **not in 0.14.0, earliest 0.15.0** |
+| 3 | Client cut-over: no old prefix literal remains in any client's source | Node `@tansr/api-client` 0.3.0 stable has cut over (`./api`). From 0.4.0 (2026-10-06), the frozen `./sdk2` and `./terminal` entries also default to `/api` when `routePrefixes` is omitted; pass `LEGACY_ROUTE_PREFIXES` to keep the old prefixes. The `./api` entry is unchanged from 0.3.0. .NET NuGet 0.2.0, Go `github.com/tansrai/tansr-go` v0.3.0, and Rust / Python / C++ 0.1.0 ship on `/api`; Android, iOS and HarmonyOS release status is in [Clients by language](/en/unified-api/clients/); `examples/serve-demo` goes through the public SDK |
+| 4 | Forbid mixing: a structured warning (no rejection) when the same session family is accessed through both prefixes | Started in 0.15.0: when the same session id is used through both `/api` and `/v2` or `/v3/*`, the server emits `api.legacy_prefix_mixed`. The default `readwrite` mode does not reject the request |
+| 5 | Read-only window for the old entries: writes on `/v2` and `/v3/*` answer 410, reads are still served, responses carry a retirement header | The knob shipped in 0.15.0. The default remains `readwrite`, so writes are not answered with 410. Set `TANSR_SERVE_LEGACY_PREFIX=readonly` to open the read-only window; `off` answers 404 for every old prefix. Old-prefix responses also carry `Deprecation` and `Link` (and `Sunset` when `TANSR_SERVE_LEGACY_SUNSET` is set). The 0.15.0 release notes placed a future default of `readonly` on a later version. The current npm release, `@tansr/serve` 0.15.1 (2026-10-10), still defaults to `readwrite` and does not carry out that change. 0.16.0 is not published |
 | 6 | Closure: remove the externally reachable `/v2` and `/v3/*` entries; old prefixes answer 404 in the unified envelope | 1.0.0 |
 
 Self-hosted multi-replica deployments must adjust their reverse proxy before step 3: `/api/sessions/:id/**` must share shard affinity with `/v2/sessions/:id/**`, and the four SSE paths under `/api` follow the same long-connection discipline; otherwise cut-over produces cross-replica 404s.
@@ -101,7 +101,8 @@ Self-hosted multi-replica deployments must adjust their reverse proxy before ste
 |---|---|---|
 | 2026-10-02 | `@tansr/serve` 0.13.0, `@tansr/protocol` 0.2.0, `@tansr/cli` 0.10.0 | `/api` generally available; `/v1` off by default on deployments with `/api`; retirement of `/v2` and `/v3/*` announced for 1.0.0 |
 | 2026-10-04 | `@tansr/serve` 0.14.0, `@tansr/cli` 0.10.1, `@tansr/api-client` 0.3.0 | Manifest revision 7, the three request headers; `--legacy-v1` deprecated |
-| ≥ 0.15.0 (unscheduled) | `@tansr/serve` | Earliest point for the step 4 warnings and the step 5 read-only window; the window will be stated explicitly in the corresponding release notes |
+| 2026-10-06 | `@tansr/serve` 0.15.0, `@tansr/cli` 0.10.2, `@tansr/api-client` 0.4.0 | Step 4 warnings are on and do not reject by default; the step 5 read-only window can be opened explicitly, and the default remains `readwrite`; old-prefix responses carry `Deprecation` / `Link`; frozen api-client entries default to `/api` |
+| 2026-10-10 | `@tansr/serve` 0.15.1, `@tansr/cli` 0.10.3 | The old-prefix window still defaults to `readwrite`. The Go / Rust / C++ consumer fixes in the same release do not change the `/api` envelope |
 | 1.0.0 | `@tansr/serve` 1.0.0, `@tansr/api-client` 1.0.0 | External `/v2` and `/v3/*` entries removed, `/api` becomes the only surface; the `unified-v1` family moves from `candidate` to `frozen`; the SDK1 entry of `@tansr/api-client` deprecated, removed in 2.0 |
 
 Turning off `/v1` and retiring `/v2` and `/v3/*` are two independent changes to the public contract, each with its own release notes.
@@ -109,7 +110,7 @@ Turning off `/v1` and retiring `/v2` and `/v3/*` are two independent changes to 
 ## Rolling back in pairs
 
 - **A server rollback must be paired with a client rollback.** 0.12.0 has no `/api`: a client that has cut over receives old-shape 404s without the `tansr-contract` header and, by the rules, reports "contract unavailable" instead of falling back to the old prefix automatically. When rolling the server back to 0.12.0, roll Node back to `@tansr/api-client` 0.2.0 and the old entries, and mobile clients back to their previous release.
-- **A client can roll back on its own.** The 0.13.0 / 0.14.0 servers keep `/v2` and `/v3/*`, so old clients see no protocol break; this holds until 1.0.0.
+- **A client can roll back on its own.** The 0.13.0, 0.14.0, 0.15.0 and 0.15.1 servers keep `/v2` and `/v3/*` under the default `readwrite` mode, so old clients see no protocol break; this holds until 1.0.0. After `TANSR_SERVE_LEGACY_PREFIX` is set to `readonly` or `off`, old clients' writes, or every old prefix, are rejected in that mode.
 - 0.13.0 and 0.14.0 change no storage format: the session store, archive host and cache medium need no migration during a rollback.
 - Reverse-proxy templates and client cut-over must move in the same direction: a client already on `/api` with a rolled-back template loses shard affinity.
 

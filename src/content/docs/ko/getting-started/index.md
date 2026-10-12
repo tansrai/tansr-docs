@@ -15,10 +15,10 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-12'
 ---
 
-tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다.
+tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다. 중립 다리, Harness, Skill과 런타임의 역할 나눔, 현재의 두 단계, 그리고 아직 제공하지 않은 계획은 [기술 입장](/ko/getting-started/principles/)에 있습니다. 코딩 도우미가 수집하는 같은 문장은 문서 사이트 앞부분과 [`/llms.txt`](/llms.txt)에 있습니다.
 
 ## 먼저 하나만 답하기: 에이전트는 어디에서 실행되나요?
 
@@ -77,7 +77,8 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 | 어떤 오류 코드의 의미, 재시도할 수 있는지 | [오류 처리와 재시도](/ko/sdk/errors-and-retries/) · [오류 코드 표](/errors/codes) |
 | 서버 배포, 정상 종료, 다중 레플리카 샤딩 | [배포와 인증](/ko/serve/deploy-and-auth/) |
 | 세션 서비스의 HTTP 표면(`/api`)을 직접 호출하거나 직접 클라이언트를 작성하고 싶다 | [통합 API(/api)](/ko/unified-api/) |
-| 코딩 도우미가 내 설명대로 실행되는 제품을 만들게 하고 싶다 | `@tansr/skill` 0.1.3 | [코딩 도우미로 제품 만들기](/ko/getting-started/skill/) |
+| 코딩 도우미가 내 설명대로 실행되는 제품을 만들게 하고 싶다 | `@tansr/skill` 0.1.6 | [코딩 도우미로 제품 만들기](/ko/getting-started/skill/) |
+| 형태를 왜 나누는지, 두 단계와 계획이 각각 무엇을 뜻하는지 | [기술 입장](/ko/getting-started/principles/) |
 | SDK 2.0 확장 진입점(아카이브 호스트, 캐시 호스트, 통합 API) 중 어디까지 정식 출시되었는가 | [SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/) |
 | 세션은 언제까지 보존되고 언제 회수되는가 | [보존 기간과 거버넌스](/ko/serve/retention-and-governance/) |
 | CLI 설정 파일은 어디에 있고, `tansr doctor` 출력을 어떻게 읽는가 | [설정과 doctor](/ko/cli/settings-and-doctor/) |

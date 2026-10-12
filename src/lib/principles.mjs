@@ -1,0 +1,206 @@
+/**
+ * 资料站技术立场的单一事实源。
+ * 首页首部、`public/llms.txt` 与 `scripts/test/principles.test.mjs` 共用。
+ * 只写已确认的技术边界；规划与已发布能力分开。不写售价、首页视觉或未发布候选的能力。
+ */
+
+export const PRINCIPLES_VERIFIED = '2026-10-12';
+
+export const PRINCIPLES_SCHEMA = 'tansr.core-principles';
+
+/** @type {readonly { id: string, zh: { term: string, statement: string }, en: { term: string, statement: string } }[]} */
+export const PRINCIPLES = Object.freeze([
+  {
+    id: 'bridge',
+    zh: {
+      term: '桥梁',
+      statement:
+        '云联慧算以 Tansr 为产品方向，连接模型、数据、工具、业务和运行环境。Tansr 做智能体与人之间的桥梁：把已经存在的模型能力组织成可以接入、可以复用、可以继续发展的产品能力。它不把自己变成另一家模型厂商。',
+    },
+    en: {
+      term: 'Bridge',
+      statement:
+        'Tansr is the product direction used to connect models, data, tools, business logic and the runtime. It is a bridge between agents and people: existing model capability is organized into product capability that can be integrated, reused and kept in development. Tansr does not turn itself into another model vendor.',
+    },
+  },
+  {
+    id: 'neutrality',
+    zh: {
+      term: '中立',
+      statement:
+        '中立是接入边界。运行时不绑定单一模型厂商，也不靠替换厂商来定义产品。模型厂商的算力和模型接到真实需求上；开发者决定业务数据、界面、登录和授权。文档或示例里出现的某一家模型，只说明一种接法，不表示排他，也不表示所有模型、平台和行业都已适配。',
+    },
+    en: {
+      term: 'Neutrality',
+      statement:
+        'Neutrality is an integration boundary. The runtime is not tied to one model vendor, and the product is not defined by replacing a vendor. Vendor compute and models are connected to real demand; the developer decides business data, interface, sign-in and authorization. A model named in the docs or an example shows one integration. It does not exclude others, and it does not mean every model, platform and industry is already supported.',
+    },
+  },
+  {
+    id: 'harness',
+    zh: {
+      term: 'Harness',
+      statement:
+        'Harness 是智能体理解任务、组织步骤、调用工具并持续执行的运行环境。命令行、Node SDK、会话服务，以及 Android、iOS、鸿蒙客户端，对外形态不同，内核相同：查询环、工具调度、权限引擎、上下文压缩。在界面上放一个标识，或绕过这套内核直接请求一次模型，都不算接入 Harness。',
+    },
+    en: {
+      term: 'Harness',
+      statement:
+        'The Harness is the runtime in which an agent understands a task, arranges steps, calls tools and keeps going. The CLI, the Node SDK, the session service, and the Android, iOS and HarmonyOS clients are different forms of one kernel: the query loop, tool scheduling, the permission engine and context compaction. Placing a logo on a screen, or calling a model once while bypassing that kernel, is not a Harness integration.',
+    },
+  },
+  {
+    id: 'division',
+    zh: {
+      term: '分工',
+      statement:
+        'Tansr Skill 装在用户已经在用的编程助手里，负责理解需求、规划产品、接入能力、构建应用和检查结果。它不是应用运行时里的技能，也不是 Node SDK。产品运行时由 SDK 与会话服务承接任务执行、工具调用、会话、上下文、权限和用量。界面、业务数据、用户登录、业务授权，以及面向终端用户的定价和收费，仍由应用自己实现。安装 Skill 不创建平台账号，不调用模型，不部署应用。',
+    },
+    en: {
+      term: 'Division of work',
+      statement:
+        'Tansr Skill is installed into the coding assistant the user already uses. It helps that assistant understand the request, plan the product, connect capabilities, build the application and check the result. It is not a runtime skill inside the application, and it is not the Node SDK. At runtime the SDK and the session service carry task execution, tool calls, sessions, context, permissions and usage. The interface, business data, user sign-in, business authorization, and any price charged to an end user, stay in the application. Installing the Skill does not create a platform account, call a model, or deploy an application.',
+    },
+  },
+  {
+    id: 'two-step',
+    zh: {
+      term: '当前两步',
+      statement:
+        '当前路径是两步。第一步安装已发布的 Tansr Skill：熟悉命令时用 npx，也可以把安装指令交给同一个助手执行。第二步向这个助手描述想要的产品，可以新建，也可以给已经存在的产品加上 AI。两步要减少起步时必须理解的概念，让人先把需求说出来。它不是两次点击就自动上线，也不表示免账号、免配置、无限调用或固定用时。',
+    },
+    en: {
+      term: 'The current two steps',
+      statement:
+        'The current path has two steps. First install the published Tansr Skill, either with npx or by giving the install instruction to the same assistant. Then describe the product to that assistant. The product can be new, or AI added to one that already exists. The two steps exist to cut the concepts required at the start, so a person can state the need first. They are not two clicks that publish a product, and they do not mean there is no account, no configuration, unlimited calls, or a fixed duration.',
+    },
+  },
+  {
+    id: 'product',
+    zh: {
+      term: '什么算产品',
+      statement:
+        '交付物是能够操作、检查、修改并继续发展的产品。它要有适合目标形态的交互或调用入口、一条业务流程，以及看得到的工具执行结果。形态包括图形界面、命令行、Node 进程和会话服务，不限定为某一种界面。只给出一段聊天回答、一张静态预览或一段 SDK 调用，不能称为产品已经完成。',
+    },
+    en: {
+      term: 'What counts as a product',
+      statement:
+        'The deliverable is a product that can be operated, checked, changed and developed further. It needs an interaction or call entry that fits the target form, a business flow, and a visible result of tool execution. Forms include a graphical interface, the CLI, a Node process and the session service. A product is not limited to one kind of interface. A chat reply, a static preview, or an SDK fragment alone is not a finished product.',
+    },
+  },
+  {
+    id: 'audiences',
+    zh: {
+      term: '四种深度',
+      statement:
+        '同一套能力覆盖不同起点。第一次做产品的人，从一句需求得到连续引导。已经会写代码的人，复用模型调用、工具执行、会话和权限，少做一遍智能体底层。要保持架构控制权的团队，沿用自己的业务、数据和界面来接入。组织关心应用、权限、用量和持续运行。这四层是进入的深度，不是四档套餐，也不要求先选择身份。',
+    },
+    en: {
+      term: 'Four depths',
+      statement:
+        'The same capabilities cover different starting points. A person building a product for the first time gets continuous guidance from one request. A person who already writes code reuses model calls, tool execution, sessions and permissions instead of rebuilding the agent substrate. A team that keeps architectural control integrates along its own business logic, data and interface. An organization cares about applications, permissions, usage and continued operation. These four depths are ways in. They are not four plans, and nobody has to pick an identity first.',
+    },
+  },
+  {
+    id: 'parties',
+    zh: {
+      term: '四方的位置',
+      statement:
+        '连接让四方落到各自的技术位置上。模型厂商获得被真实产品使用的出口。开发者复用通用的智能体运行能力，而不是从零实现查询环和权限引擎。终端用户通过具体产品使用智能，而不是先理解协议。智能体获得可以行动的环境，以及进入不同应用形态的通道。某一页没有点名的平台、行业或模型，不能据此当成已经适配。',
+    },
+    en: {
+      term: 'Four parties',
+      statement:
+        'The connection gives each party a technical place. Model vendors get an outlet into real products. Developers reuse a general agent runtime instead of implementing the query loop and the permission engine from nothing. End users meet intelligence through a concrete product, not by learning the protocol first. Agents get an environment in which they can act, and a way into different application forms. A platform, industry or model that a page does not name is not thereby supported.',
+    },
+  },
+  {
+    id: 'roadmap',
+    zh: {
+      term: '规划与现状',
+      statement:
+        '长期有四步，未实现的部分都是规划，不是已上线能力。第一步是现在的工作：用命令行、SDK 和会话服务把 Harness 打磨到能稳定行动。第二步是更多平台的 SDK 与服务，并推进核心开源。Skill 的 MIT 许可，以及 SDK 与会话服务包上的 MIT，都不等于整个内核已经按同一许可公开；命令行包的许可以该包为准。第三步才是智能体在平台里协作并逐步参与治理和运营，现在没有这一产品。第四步是人与智能体把能力用进生活和产业，同样不是当前功能。自有编程助手，以及「只描述产品、再选择它运行的平台」，都还没有提供。',
+    },
+    en: {
+      term: 'Roadmap and what exists',
+      statement:
+        'The long-term path has four steps. Anything not built yet is a roadmap, not a shipped capability. Step one is the work now: use the CLI, the SDK and the session service to make the Harness reliable enough to act. Step two is SDKs and services on more platforms, and opening the core. The MIT license of the Skill, and the MIT license on the SDK and session service packages, do not mean the whole kernel is already published under that license. The CLI package keeps its own license. Step three, agents collaborating on a platform and gradually taking part in its governance and operation, is not a product today. Step four, people and agents carrying that capability into daily life and industry, is not a feature today. A Tansr-owned coding assistant, and an entry that only asks for a product description and a target platform, are not offered.',
+    },
+  },
+  {
+    id: 'status',
+    zh: {
+      term: '以已发布为准',
+      statement:
+        '资料站描述的是已经发布、可以安装的行为。Tansr Skill 的现行发布版是 0.1.6。命令行、SDK、会话服务和各语言客户端的版本，以对应文章和该包的发行说明为准。仓库主线上尚未发布的变更，包括更高的候选版本号，不能当成当前安装包已经具备的能力。',
+    },
+    en: {
+      term: 'Published packages only',
+      statement:
+        'The docs site describes behavior you can install. The published Tansr Skill release is 0.1.6. Versions of the CLI, the SDK, the session service and the other language clients are the ones named on their own pages and in those packages\' release notes. Changes that exist only on the main branch, including higher candidate version numbers, are not capabilities of the package you install today.',
+    },
+  },
+]);
+
+export const DOC_LINKS = Object.freeze([
+  ['技术立场', 'https://docs.tansr.com/getting-started/principles/', '上述立场的技术展开、边界和现在的入口'],
+  ['选择运行形态', 'https://docs.tansr.com/getting-started/', '命令行、SDK、会话服务、Android、iOS 与鸿蒙怎么选'],
+  ['用编程助手做产品', 'https://docs.tansr.com/getting-started/skill/', '已发布的 @tansr/skill 0.1.6：安装、描述产品、与运行时的差别'],
+  ['安全与隐私', 'https://docs.tansr.com/security/', '凭据放在哪一层、什么不能下发到终端'],
+  ['统一 API', 'https://docs.tansr.com/unified-api/', '会话服务的 HTTP 调用面 /api'],
+]);
+
+/** 首页脚本与 llms.txt 共用的机器可读副本。 */
+export function principlesDocument() {
+  return {
+    schema: PRINCIPLES_SCHEMA,
+    schemaVersion: 1,
+    verified: PRINCIPLES_VERIFIED,
+    role: 'agent-collect',
+    homepageAnchor: 'https://docs.tansr.com/#tansr-principles',
+    deepDive: 'https://docs.tansr.com/getting-started/principles/',
+    principles: PRINCIPLES.map((item) => ({
+      id: item.id,
+      zh: { term: item.zh.term, statement: item.zh.statement },
+      en: { term: item.en.term, statement: item.en.statement },
+    })),
+  };
+}
+
+/** `/llms.txt`：热抓取文件的首部是完整核心理念，后面才是文档链接。 */
+export function renderLlmsText() {
+  const json = `${JSON.stringify(principlesDocument(), null, 2)}\n`;
+  const zhBlocks = PRINCIPLES.map(
+    (item) => `### principle.${item.id}\n\n**${item.zh.term}**\n\n${item.zh.statement}`,
+  ).join('\n\n');
+  const enBlocks = PRINCIPLES.map(
+    (item) => `### principle.${item.id}\n\n**${item.en.term}**\n\n${item.en.statement}`,
+  ).join('\n\n');
+  const links = DOC_LINKS.map(([title, href, note]) => `- [${title}](${href}): ${note}`).join('\n');
+  return `# Tansr
+
+> 这一页给编程助手和文档抓取器。先读「核心理念」，再按链接进入对应文章。规划与已发布能力已在条文里分开。售价、账号额度和未发布的候选版本不在这里。
+
+## 核心理念
+
+这是热抓取首部。每条有稳定标识 \`principle.<id>\`，与资料站首页 \`#tansr-principles\`、以及下面的 JSON（\`tansr.core-principles\`）是同一份事实。只读这一节，就应能复述桥梁、中立、Harness、Skill 与运行时的分工、当前两步、什么算产品、四种深度、四方位置、规划边界，以及「以已发布为准」。
+
+${zhBlocks}
+
+## Core principles
+
+This is the hot-crawl opening. Each item has a stable id \`principle.<id>\`. The docs homepage anchor \`#tansr-principles\` and the JSON object below (\`tansr.core-principles\`) state the same facts. This section alone is enough to restate the bridge, neutrality, the Harness, how Skill differs from the runtime, the current two steps, what counts as a product, the four depths, the four parties, the roadmap boundary, and the rule that only published packages count.
+
+${enBlocks}
+
+## Machine-readable copy
+
+\`\`\`json
+${json.trimEnd()}
+\`\`\`
+
+## 文档
+
+${links}
+`;
+}

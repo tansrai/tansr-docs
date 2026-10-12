@@ -1,6 +1,6 @@
 ---
 title: 各语言客户端
-description: Node @tansr/api-client/api 0.3.0 正式版的用法与导出；.NET 0.2.0、Go v0.3.0、Rust / Python / C++ 0.1.0 等已发布客户端，以及 Android、iOS、鸿蒙尚未换公开包的对齐状态；所有客户端共同遵守的生成式路径模块、零回退响应门、统一码判定与三个请求头的本地校验。
+description: Node @tansr/api-client 0.4.0 正式版：./api 的用法与导出同 0.3.0，冻结入口缺省改走 /api；.NET 0.2.0、Go v0.3.0、Rust / Python / C++ 0.1.0 等已发布客户端，以及 Android、iOS、鸿蒙尚未换公开包的对齐状态；所有客户端共同遵守的生成式路径模块、零回退响应门、统一码判定与三个请求头的本地校验。
 zone: docs
 category: unified-api
 sidebar:
@@ -28,14 +28,14 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
-九个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布状态不同**。下表截至 2026-10-09。Android、iOS、鸿蒙三行仍是 2026-10-05 已核对的公开发布物，本轮没有重核 Maven、SPM 与 HAR。写着「主线已对齐、未发布」的，意味着你从公开渠道装到的版本还不走 `/api`。
+九个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布状态不同**。下表截至 2026-10-12。Node 行按 2026-10-06 已发布的 0.4.0 更新。Android、iOS、鸿蒙三行仍是 2026-10-05 已核对的公开发布物，本轮没有重核 Maven、SPM 与 HAR。写着「主线已对齐、未发布」的，意味着你从公开渠道装到的版本还不走 `/api`。
 
 | 客户端 | 公开发布物 | `/api`（unified-v1）支持 |
 |---|---|---|
-| Node `@tansr/api-client` | 0.3.0 正式版（npm，2026-10-04） | **已发布**：`@tansr/api-client/api` 子入口，对齐 manifest revision 7 |
+| Node `@tansr/api-client` | 0.4.0 正式版（npm，2026-10-06，`latest`） | **已发布**：`./api` 相对 0.3.0 无变化，仍对齐 manifest revision 7。不传 `routePrefixes` 的冻结 `./sdk2` / `./terminal` 缺省改走 `/api`；仍要旧前缀时显式传入 `LEGACY_ROUTE_PREFIXES` |
 | .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0**（2026-10-07；0.1.0.2 仍在源上） | **已发布**：0.2.0 对齐 manifest revision 7；0.1.0.2 早于这批对齐 |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | 主线已对齐 revision 7（2026-10-03），**未发布**；0.4.0 仍走旧前缀 |
 | iOS `tansrai/tansr-ios-spm` | 公开二进制 SPM 0.3.0 | 主线已对齐 revision 7，**未发布**；0.3.0 仍走旧前缀 |
@@ -102,7 +102,7 @@ try {
 - 结果形 `{ status, body, meta }`；`meta` 含 `contract`、`manifestRevision`、`domain`、`schemaHash`、`closureId`、`eventEnvelope`、`traceId`、`etag`、`retryAfterMs`。202 是受理不是完成。
 - 错误类型：`ApiError`（统一信封：`code`、`status`、`retryAction`、`traceId`、`requestId`、`domainCode`、`detail`）、`DomainError`（未归一的族原信封，今日只有 `archive-sync-v1`）、`ContractUnavailableError`、`ApiClientError`（本地：`aborted`、`network_error`、`envelope_not_negotiated`、`payload_too_large`、`invalid_response`、`deadline_exceeded`、`if_match_not_applicable` 等）。
 - `API_OPERATIONS` 是 81 条操作的目录（revision 7），每条带 `method`、`apiPath`、`query`、`kind`、`sse`、`etagPath`、`expectedRevision`、`requestIdPath`；严格族（`sdk2-*`、`terminal-*`、`archive-sync-v1`）的请求体由 SDK 以 canonical JSON 编码。
-- 旧入口 `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` 在 0.3.0 冻结：仍随包发布，不再增改。
+- 旧入口 `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` 在 0.3.0 冻结，现在仍随包发布。0.4.0 起，不传 `routePrefixes` 时它们的缺省路由改为 `/api`。还要打旧前缀就传入 `LEGACY_ROUTE_PREFIXES`。导出名称没有增删。
 
 ## .NET
 

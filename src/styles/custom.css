@@ -369,3 +369,22 @@
 .cf-error a {
   color: var(--sl-color-text-accent);
 }
+
+/* 首页热抓取首部:技术立场。条文在首屏 HTML 里,不依赖展开。 */
+.principles-lead {
+  margin: 0 auto 2.5rem;
+  max-width: 52rem;
+  padding: 1.25rem 1.35rem 1.35rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: var(--tansr-card-radius);
+}
+.principles-lead h2 {
+  margin-top: 0;
+}
+.principles-lead dt {
+  margin-top: 0.9rem;
+  font-weight: 600;
+}
+.principles-lead dd {
+  margin: 0.25rem 0 0;
+}

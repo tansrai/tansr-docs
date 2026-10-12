@@ -1,6 +1,6 @@
 ---
 title: 迁移与退役时间表
-description: 从 /v2、/v3/sdk2、/v3/terminal* 切到 /api 的路径对照与请求 / 错误形差异；会话服务 /v1 自 @tansr/serve 0.13.0 起在装配 /api 的部署上缺省关闭与 --legacy-v1 过渡；六步迁移法截至 0.14.0 的进度；/v2 与 /v3/* 的退役节奏，以及服务端与客户端成对回滚的纪律。
+description: 从 /v2、/v3/sdk2、/v3/terminal* 切到 /api 的路径对照与请求 / 错误形差异；会话服务 /v1 自 @tansr/serve 0.13.0 起在装配 /api 的部署上缺省关闭与 --legacy-v1 过渡；六步迁移法截至 0.15.0 的进度；/v2 与 /v3/* 的退役节奏，以及服务端与客户端成对回滚的纪律。
 zone: docs
 category: unified-api
 sidebar:
@@ -23,7 +23,7 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
 `/api` 不是一套新协议，而是把既有领域子合同收到同一个前缀、同一套信封之下。因此迁移的主体工作是换路径、换头、换错误判定，而不是重写业务逻辑；成功响应体与事件载荷一字不变。
@@ -84,13 +84,13 @@ lastVerified: '2026-10-09'
 
 ## 六步迁移法与当前进度
 
-| 步 | 内容 | 截至 `@tansr/serve` 0.14.0 的状态 |
+| 步 | 内容 | 截至 `@tansr/serve` 0.15.1（2026-10-10 发布，当前 npm `latest`）的状态 |
 |---|---|---|
 | 一 | 内部 adapter：`/api` 改写委托到既有领域处理器，旧前缀逐字节不变 | 完成（0.13.0） |
 | 二 | 双写 / 影子读：同一组金向量经旧入口与 `/api` 双跑，成功体逐字节同、错误体逐字段同源 | Node 与 .NET 已建立同源对表与 conformance 回放；Android / iOS / 鸿蒙 / Go 以 165 条金向量回放对齐 |
-| 三 | 客户端切流：各端源码不再出现旧前缀字面量 | Node `@tansr/api-client` 0.3.0 正式版已切（`./api`）；.NET NuGet 0.2.0、Go `github.com/tansrai/tansr-go` v0.3.0、Rust / Python / C++ 0.1.0 已随公开包切到 `/api`；Android、iOS、鸿蒙的发布状态见[各语言客户端](/unified-api/clients/)；`examples/serve-demo` 改经公开 SDK |
-| 四 | 禁止新旧混用：同一会话族在两种前缀下交叉访问时出结构化告警（不拒绝） | 未开始 |
-| 五 | 旧入口只读窗口：`/v2`、`/v3/*` 的写操作改答 410，读仍受理，响应附退役头 | 未开始；**不在 0.14.0 启动，最早 0.15.0** |
+| 三 | 客户端切流：各端源码不再出现旧前缀字面量 | Node `@tansr/api-client` 0.3.0 正式版已切（`./api`）；0.4.0（2026-10-06）起，不传 `routePrefixes` 的冻结入口 `./sdk2` 与 `./terminal` 也缺省走 `/api`，仍要旧前缀时显式传入 `LEGACY_ROUTE_PREFIXES`。`./api` 子入口相对 0.3.0 无变化。.NET NuGet 0.2.0、Go `github.com/tansrai/tansr-go` v0.3.0、Rust / Python / C++ 0.1.0 已随公开包切到 `/api`；Android、iOS、鸿蒙的发布状态见[各语言客户端](/unified-api/clients/)；`examples/serve-demo` 改经公开 SDK |
+| 四 | 禁止新旧混用：同一会话族在两种前缀下交叉访问时出结构化告警（不拒绝） | 已开始（0.15.0）：同一会话 id 先后走 `/api` 与 `/v2` 或 `/v3/*` 时记一条 `api.legacy_prefix_mixed`。缺省 `readwrite` 不拒绝 |
+| 五 | 旧入口只读窗口：`/v2`、`/v3/*` 的写操作改答 410，读仍受理，响应附退役头 | 旋钮已随 0.15.0 提供，缺省仍是 `readwrite`，写操作不会因此改答 410。显式 `TANSR_SERVE_LEGACY_PREFIX=readonly` 才进入只读窗口；`off` 则旧前缀全部 404。旧前缀响应另附 `Deprecation` 与 `Link`（设置 `TANSR_SERVE_LEGACY_SUNSET` 后再附 `Sunset`）。0.15.0 发行说明曾把「缺省改为 readonly」写在后续版本。当前 npm 上的 `@tansr/serve` 0.15.1（2026-10-10）仍保持缺省 `readwrite`，没有执行这项迁移。0.16.0 尚未发布 |
 | 六 | 关闭：移除 `/v2`、`/v3/*` 的外部可达入口，旧前缀答统一信封 404 | 1.0.0 |
 
 自托管多副本部署在步三之前要先改反代：`/api/sessions/:id/**` 必须与 `/v2/sessions/:id/**` 走同一分片亲和，`/api` 下的四条 SSE 路径沿用同样的长连接纪律，否则切流后会出现跨副本 404。
@@ -101,7 +101,8 @@ lastVerified: '2026-10-09'
 |---|---|---|
 | 2026-10-02 | `@tansr/serve` 0.13.0、`@tansr/protocol` 0.2.0、`@tansr/cli` 0.10.0 | `/api` 正式可用；装配 `/api` 的部署上 `/v1` 缺省关闭；预告 `/v2`、`/v3/*` 于 1.0.0 退役 |
 | 2026-10-04 | `@tansr/serve` 0.14.0、`@tansr/cli` 0.10.1、`@tansr/api-client` 0.3.0 | manifest revision 7、三个请求头；`--legacy-v1` 标废弃 |
-| ≥ 0.15.0（未排期） | `@tansr/serve` | 最早可开始步四告警与步五只读窗口；只读窗口会在对应发行说明里明写 |
+| 2026-10-06 | `@tansr/serve` 0.15.0、`@tansr/cli` 0.10.2、`@tansr/api-client` 0.4.0 | 步四告警已生效，缺省不拒绝；步五只读窗口可显式打开，缺省仍是 `readwrite`；旧前缀响应附 `Deprecation` / `Link`；冻结的 api-client 入口缺省改走 `/api` |
+| 2026-10-10 | `@tansr/serve` 0.15.1、`@tansr/cli` 0.10.3 | 旧前缀窗口缺省仍是 `readwrite`。同车的 Go / Rust / C++ 消费修复不改变 `/api` 信封 |
 | 1.0.0 | `@tansr/serve` 1.0.0、`@tansr/api-client` 1.0.0 | 移除 `/v2`、`/v3/*` 外部入口，`/api` 成为唯一调用面；`unified-v1` 族由 `candidate` 转 `frozen`；`@tansr/api-client` 的 SDK1 入口标废弃，2.0 移除 |
 
 `/v1` 关闭与 `/v2`、`/v3/*` 退役是两项独立的对外合同变更，各有各的发行说明。
@@ -109,7 +110,7 @@ lastVerified: '2026-10-09'
 ## 成对回滚
 
 - **服务端回滚必须与客户端成对。** 0.12.0 没有 `/api`：已切 `/api` 的客户端会收到旧形 404 且没有 `tansr-contract` 头，按纪律上报「合同不可用」而不会自动退回旧前缀。把服务端回到 0.12.0 时，Node 回到 `@tansr/api-client` 0.2.0 并改回旧入口，移动端回到上一发行物。
-- **客户端可以单独回滚。** 0.13.0 / 0.14.0 服务端仍保留 `/v2`、`/v3/*`，旧客户端没有协议断层；这一点一直保持到 1.0.0 之前。
+- **客户端可以单独回滚。** 0.13.0、0.14.0、0.15.0 与 0.15.1 在缺省 `readwrite` 下仍保留 `/v2`、`/v3/*`，旧客户端没有协议断层；这一点一直保持到 1.0.0 之前。显式把 `TANSR_SERVE_LEGACY_PREFIX` 设成 `readonly` 或 `off` 之后，旧客户端的写操作或全部旧前缀会按该模式被拒绝。
 - 0.13.0 与 0.14.0 没有存储格式变化：会话 store、档案宿主、缓存介质在回滚中不需要迁移。
 - 反代模板与客户端切流必须同向：客户端已切 `/api` 而模板回滚，会丢失分片亲和。
 

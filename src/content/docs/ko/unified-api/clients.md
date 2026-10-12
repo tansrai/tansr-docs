@@ -1,6 +1,6 @@
 ---
 title: 언어별 클라이언트
-description: Node @tansr/api-client/api 0.3.0 정식판의 사용법과 내보내기. .NET 0.2.0, Go v0.3.0, Rust / Python / C++ 0.1.0 등 공개된 클라이언트와 Android, iOS, HarmonyOS의 아직 바뀌지 않은 릴리스. 모든 클라이언트가 공통으로 지키는 생성된 경로 모듈, 폴백 없는 응답 게이트, 통합 코드 판정, 세 요청 헤더의 로컬 검증.
+description: Node @tansr/api-client 0.4.0 정식판. ./api 사용법과 내보내기는 0.3.0과 같고, 동결된 진입점의 기본 경로는 /api. .NET 0.2.0, Go v0.3.0, Rust / Python / C++ 0.1.0 등 공개된 클라이언트와 Android, iOS, HarmonyOS의 아직 바뀌지 않은 릴리스. 모든 클라이언트가 공통으로 지키는 생성된 경로 모듈, 폴백 없는 응답 게이트, 통합 코드 판정, 세 요청 헤더의 로컬 검증.
 zone: docs
 category: unified-api
 sidebar:
@@ -28,14 +28,14 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
-아홉 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 상태는 다릅니다**. 아래 표는 2026-10-09 기준입니다. Android, iOS, HarmonyOS 세 줄은 2026-10-05에 확인한 공개물이며, 이번 갱신에서 Maven, SPM, HAR은 다시 확인하지 않았습니다. "메인라인 정렬 완료, 미릴리스"라고 적힌 것은 공개 채널에서 설치할 수 있는 버전이 아직 `/api`를 거치지 않는다는 뜻입니다.
+아홉 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 상태는 다릅니다**. 아래 표는 2026-10-12 기준입니다. Node 행만 2026-10-06에 공개된 0.4.0으로 갱신했습니다. Android, iOS, HarmonyOS 세 줄은 2026-10-05에 확인한 공개물이며, 이번 갱신에서 Maven, SPM, HAR은 다시 확인하지 않았습니다. "메인라인 정렬 완료, 미릴리스"라고 적힌 것은 공개 채널에서 설치할 수 있는 버전이 아직 `/api`를 거치지 않는다는 뜻입니다.
 
 | 클라이언트 | 공개 릴리스물 | `/api`(unified-v1) 지원 |
 |---|---|---|
-| Node `@tansr/api-client` | 0.3.0 정식판(npm, 2026-10-04) | **릴리스됨**: `@tansr/api-client/api` 진입점, 매니페스트 revision 7에 정렬 |
+| Node `@tansr/api-client` | 0.4.0 정식판(npm, 2026-10-06, `latest`) | **릴리스됨**: `./api`는 0.3.0과 같고 매니페스트 revision 7에 맞음. `routePrefixes`를 넘기지 않는 동결된 `./sdk2` / `./terminal`은 기본적으로 `/api`. 이전 접두사가 필요하면 `LEGACY_ROUTE_PREFIXES`를 넘김 |
 | .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0**(2026-10-07. 0.1.0.2도 남아 있음) | **릴리스됨**. 0.2.0은 매니페스트 revision 7에 맞음. 0.1.0.2는 그 이전 |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | 메인라인은 revision 7에 정렬 완료(2026-10-03), **미릴리스**. 0.4.0은 아직 이전 접두사 |
 | iOS `tansrai/tansr-ios-spm` | 공개 바이너리 SPM 0.3.0 | 메인라인은 revision 7에 정렬 완료, **미릴리스**. 0.3.0은 아직 이전 접두사 |
@@ -102,7 +102,7 @@ try {
 - 결과 형태는 `{ status, body, meta }`. `meta`에는 `contract`, `manifestRevision`, `domain`, `schemaHash`, `closureId`, `eventEnvelope`, `traceId`, `etag`, `retryAfterMs`가 있습니다. 202는 수리이지 완료가 아닙니다.
 - 오류 타입: `ApiError`(통합 봉투: `code`, `status`, `retryAction`, `traceId`, `requestId`, `domainCode`, `detail`), `DomainError`(정규화되지 않은 패밀리 원래 봉투. 오늘은 `archive-sync-v1`뿐), `ContractUnavailableError`, `ApiClientError`(로컬: `aborted`, `network_error`, `envelope_not_negotiated`, `payload_too_large`, `invalid_response`, `deadline_exceeded`, `if_match_not_applicable` 등).
 - `API_OPERATIONS`는 81개 작업의 카탈로그(revision 7)이며 각 항목에 `method`, `apiPath`, `query`, `kind`, `sse`, `etagPath`, `expectedRevision`, `requestIdPath`가 있습니다. 엄격한 패밀리(`sdk2-*`, `terminal-*`, `archive-sync-v1`)의 요청 본문은 SDK가 canonical JSON으로 인코딩합니다.
-- 이전 진입점 `./sdk2`, `./sdk2/node`, `./terminal`, `./terminal/node`는 0.3.0에서 동결: 여전히 패키지와 함께 배포되며 변경은 없습니다.
+- 이전 진입점 `./sdk2`, `./sdk2/node`, `./terminal`, `./terminal/node`는 0.3.0에서 동결되어 여전히 패키지에 포함됩니다. 0.4.0에서는 `routePrefixes`를 생략하면 기본 경로가 `/api`입니다. 이전 접두사를 쓰려면 `LEGACY_ROUTE_PREFIXES`를 넘기세요. 내보내기 이름의 추가나 삭제는 없습니다.
 
 ## .NET
 

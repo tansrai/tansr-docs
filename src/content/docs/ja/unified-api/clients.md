@@ -1,6 +1,6 @@
 ---
 title: 各言語のクライアント
-description: Node @tansr/api-client/api 0.3.0 正式版の使い方とエクスポート。.NET 0.2.0、Go v0.3.0、Rust / Python / C++ 0.1.0 など公開済みのクライアントと、Android、iOS、HarmonyOS の未切替リリース。全クライアント共通の生成パスモジュール、フォールバックしないレスポンスゲート、統一コード判定、3 つのリクエストヘッダーのローカル検証。
+description: Node @tansr/api-client 0.4.0 正式版。./api の使い方とエクスポートは 0.3.0 と同じで、凍結入口の既定は /api。 .NET 0.2.0、Go v0.3.0、Rust / Python / C++ 0.1.0 など公開済みのクライアントと、Android、iOS、HarmonyOS の未切替リリース。全クライアント共通の生成パスモジュール、フォールバックしないレスポンスゲート、統一コード判定、3 つのリクエストヘッダーのローカル検証。
 zone: docs
 category: unified-api
 sidebar:
@@ -28,14 +28,14 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
-9 つのクライアントはどれも同じ契約に従って `unified-v1` を実装していますが、**リリース状況は異なります**。下の表は 2026-10-09 時点です。Android、iOS、HarmonyOS の 3 行は 2026-10-05 に確認した公開物のままで、この回では Maven、SPM、HAR を再確認していません。「メインラインは整合済み、未リリース」とあるものは、公開チャネルからインストールできるバージョンがまだ `/api` を経由しないことを意味します。
+9 つのクライアントはどれも同じ契約に従って `unified-v1` を実装していますが、**リリース状況は異なります**。下の表は 2026-10-12 時点です。Node の行だけ 2026-10-06 公開の 0.4.0 に更新しました。Android、iOS、HarmonyOS の 3 行は 2026-10-05 に確認した公開物のままで、この回では Maven、SPM、HAR を再確認していません。「メインラインは整合済み、未リリース」とあるものは、公開チャネルからインストールできるバージョンがまだ `/api` を経由しないことを意味します。
 
 | クライアント | 公開リリース物 | `/api`（unified-v1）対応 |
 |---|---|---|
-| Node `@tansr/api-client` | 0.3.0 正式版（npm、2026-10-04） | **リリース済み**：`@tansr/api-client/api` エントリ、マニフェスト revision 7 に整合 |
+| Node `@tansr/api-client` | 0.4.0 正式版（npm、2026-10-06、`latest`） | **リリース済み**：`./api` は 0.3.0 から不変で、マニフェスト revision 7 に整合。`routePrefixes` を渡さない凍結済み `./sdk2` / `./terminal` は既定で `/api`。旧プレフィックスが必要なら `LEGACY_ROUTE_PREFIXES` を明示 |
 | .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0**（2026-10-07。0.1.0.2 も残存） | **リリース済み**。0.2.0 はマニフェスト revision 7 に整合。0.1.0.2 はその前 |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | メインラインは revision 7 に整合済み（2026-10-03）、**未リリース**。0.4.0 はまだ旧プレフィックス |
 | iOS `tansrai/tansr-ios-spm` | 公開バイナリ SPM 0.3.0 | メインラインは revision 7 に整合済み、**未リリース**。0.3.0 はまだ旧プレフィックス |
@@ -102,7 +102,7 @@ try {
 - 結果の形は `{ status, body, meta }`。`meta` には `contract`、`manifestRevision`、`domain`、`schemaHash`、`closureId`、`eventEnvelope`、`traceId`、`etag`、`retryAfterMs` があります。202 は受理であって完了ではありません。
 - エラー型：`ApiError`（統一エンベロープ：`code`、`status`、`retryAction`、`traceId`、`requestId`、`domainCode`、`detail`）、`DomainError`（正規化されていないファミリーの元のエンベロープ。今日は `archive-sync-v1` のみ）、`ContractUnavailableError`、`ApiClientError`（ローカル：`aborted`、`network_error`、`envelope_not_negotiated`、`payload_too_large`、`invalid_response`、`deadline_exceeded`、`if_match_not_applicable` など）。
 - `API_OPERATIONS` は 81 操作のカタログ（revision 7）で、各項目に `method`、`apiPath`、`query`、`kind`、`sse`、`etagPath`、`expectedRevision`、`requestIdPath` があります。厳密なファミリー（`sdk2-*`、`terminal-*`、`archive-sync-v1`）のリクエスト本文は SDK が canonical JSON でエンコードします。
-- 旧エントリ `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` は 0.3.0 で凍結：引き続きパッケージとともに配布され、変更はありません。
+- 旧エントリ `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` は 0.3.0 で凍結され、今も同梱されます。0.4.0 では `routePrefixes` を省略したときの既定ルートが `/api` になりました。旧プレフィックスへ出すには `LEGACY_ROUTE_PREFIXES` を明示してください。エクスポート名の追加や削除はありません。
 
 ## .NET
 

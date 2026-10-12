@@ -1,6 +1,6 @@
 ---
 title: Clients by language
-description: Usage and exports of the Node @tansr/api-client/api 0.3.0 stable release; released clients including .NET 0.2.0, Go v0.3.0 and Rust, Python and C++ 0.1.0, plus Android, iOS and HarmonyOS releases that have not yet switched; and the shared rules of generated path modules, a zero-fallback response gate, unified-code-first errors and local checks of the three request headers.
+description: The Node @tansr/api-client 0.4.0 stable release. Usage and exports of ./api match 0.3.0, and the frozen entries now default to /api. Also .NET 0.2.0, Go v0.3.0 and Rust, Python and C++ 0.1.0, plus Android, iOS and HarmonyOS releases that have not yet switched; and the shared rules of generated path modules, a zero-fallback response gate, unified-code-first errors and local checks of the three request headers.
 zone: docs
 category: unified-api
 sidebar:
@@ -28,14 +28,14 @@ sources:
   - tansr-ios:CHANGELOG.md
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
-lastVerified: '2026-10-09'
+lastVerified: '2026-10-12'
 ---
 
-Nine clients implement `unified-v1` against the same contract, but their **release status differs**. The table is current as of 2026-10-09. The Android, iOS and HarmonyOS rows are still the public artefacts checked on 2026-10-05; Maven, SPM and the HAR were not rechecked in this pass. "Mainline aligned, unreleased" means the version you install from the public channel does not go through `/api` yet.
+Nine clients implement `unified-v1` against the same contract, but their **release status differs**. The table is current as of 2026-10-12. Only the Node row is updated to the 0.4.0 release published on 2026-10-06. The Android, iOS and HarmonyOS rows are still the public artefacts checked on 2026-10-05; Maven, SPM and the HAR were not rechecked in this pass. "Mainline aligned, unreleased" means the version you install from the public channel does not go through `/api` yet.
 
 | Client | Public release | `/api` (unified-v1) support |
 |---|---|---|
-| Node `@tansr/api-client` | 0.3.0 stable (npm, 2026-10-04) | **Released**: `@tansr/api-client/api` entry, aligned with manifest revision 7 |
+| Node `@tansr/api-client` | 0.4.0 stable (npm, 2026-10-06, `latest`) | **Released**: `./api` is unchanged from 0.3.0 and still aligned with manifest revision 7. Frozen `./sdk2` / `./terminal` default to `/api` when `routePrefixes` is omitted; pass `LEGACY_ROUTE_PREFIXES` to keep the old prefixes |
 | .NET `Tansr.Sdk` / `Tansr.Sdk.Windows` | NuGet **0.2.0** (2026-10-07; 0.1.0.2 remains listed) | **Released**: 0.2.0 matches manifest revision 7; 0.1.0.2 predates that alignment |
 | Android `com.tansr.sdk:core / client / compose` | Maven Central 0.4.0 | Mainline aligned with revision 7 (2026-10-03), **unreleased**; 0.4.0 still uses the old prefixes |
 | iOS `tansrai/tansr-ios-spm` | Public binary SPM 0.3.0 | Mainline aligned with revision 7, **unreleased**; 0.3.0 still uses the old prefixes |
@@ -102,7 +102,7 @@ Key points:
 - Result shape `{ status, body, meta }`; `meta` holds `contract`, `manifestRevision`, `domain`, `schemaHash`, `closureId`, `eventEnvelope`, `traceId`, `etag`, `retryAfterMs`. A 202 is acceptance, not completion.
 - Error types: `ApiError` (unified envelope: `code`, `status`, `retryAction`, `traceId`, `requestId`, `domainCode`, `detail`), `DomainError` (an un-normalised family envelope, today only `archive-sync-v1`), `ContractUnavailableError`, `ApiClientError` (local: `aborted`, `network_error`, `envelope_not_negotiated`, `payload_too_large`, `invalid_response`, `deadline_exceeded`, `if_match_not_applicable` and so on).
 - `API_OPERATIONS` is the catalogue of 81 operations (revision 7), each with `method`, `apiPath`, `query`, `kind`, `sse`, `etagPath`, `expectedRevision`, `requestIdPath`; request bodies of the strict families (`sdk2-*`, `terminal-*`, `archive-sync-v1`) are encoded by the SDK as canonical JSON.
-- The old entries `./sdk2`, `./sdk2/node`, `./terminal` and `./terminal/node` are frozen in 0.3.0: still shipped, no further changes.
+- The old entries `./sdk2`, `./sdk2/node`, `./terminal` and `./terminal/node` were frozen in 0.3.0 and are still shipped. From 0.4.0, omitting `routePrefixes` sends them to `/api`. Pass `LEGACY_ROUTE_PREFIXES` to keep the old prefixes. Export names were not added or removed.
 
 ## .NET
 
