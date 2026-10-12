@@ -1,6 +1,6 @@
 /**
  * 资料站技术立场的单一事实源。
- * 首页首部、`public/llms.txt` 与 `scripts/test/principles.test.mjs` 共用。
+ * 文档 head 的 JSON、`public/llms.txt` 与 `scripts/test/principles.test.mjs` 共用。首页只在页尾放折叠入口。
  * 只写已确认的技术边界；规划与已发布能力分开。不写售价、首页视觉或未发布候选的能力。
  */
 
@@ -183,13 +183,13 @@ export function renderLlmsText() {
 
 ## 核心理念
 
-这是热抓取首部。每条有稳定标识 \`principle.<id>\`，与资料站首页 \`#tansr-principles\`、以及下面的 JSON（\`tansr.core-principles\`）是同一份事实。只读这一节，就应能复述桥梁、中立、Harness、Skill 与运行时的分工、当前两步、什么算产品、四种深度、四方位置、规划边界，以及「以已发布为准」。
+这是给编程助手的采集首部。每条有稳定标识 \`principle.<id>\`，与每页文档 head 里的 JSON（\`tansr.core-principles\`）、以及资料站首页页尾 \`#tansr-principles\` 是同一份事实。只读这一节，就应能复述桥梁、中立、Harness、Skill 与运行时的分工、当前两步、什么算产品、四种深度、四方位置、规划边界，以及「以已发布为准」。
 
 ${zhBlocks}
 
 ## Core principles
 
-This is the hot-crawl opening. Each item has a stable id \`principle.<id>\`. The docs homepage anchor \`#tansr-principles\` and the JSON object below (\`tansr.core-principles\`) state the same facts. This section alone is enough to restate the bridge, neutrality, the Harness, how Skill differs from the runtime, the current two steps, what counts as a product, the four depths, the four parties, the roadmap boundary, and the rule that only published packages count.
+This is the opening for a coding assistant to collect. Each item has a stable id \`principle.<id>\`. The JSON object in each docs page head (\`tansr.core-principles\`) and the collapsed homepage anchor \`#tansr-principles\` state the same facts. This section alone is enough to restate the bridge, neutrality, the Harness, how Skill differs from the runtime, the current two steps, what counts as a product, the four depths, the four parties, the roadmap boundary, and the rule that only published packages count.
 
 ${enBlocks}
 

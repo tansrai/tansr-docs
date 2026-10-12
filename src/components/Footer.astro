@@ -9,12 +9,14 @@ import Pagination from '@astrojs/starlight/components/Pagination.astro';
 import { uiLocale } from '../lib/categories.mjs';
 
 const STRINGS = {
-  'zh-CN': { terms: '服务条款', privacy: '隐私政策', nav: '法律条目', copyright: '站点代码 MIT;文档内容保留所有权利。' },
-  en: { terms: 'Terms of service', privacy: 'Privacy policy', nav: 'Legal', copyright: 'Site code MIT; content all rights reserved.' },
-  ja: { terms: '利用規約', privacy: 'プライバシーポリシー', nav: '法的情報', copyright: 'サイトのコードは MIT ライセンス。ドキュメントの内容は全著作権を保有します。' },
-  ko: { terms: '서비스 약관', privacy: '개인정보 처리방침', nav: '법적 고지', copyright: '사이트 코드는 MIT 라이선스, 문서 내용은 모든 권리 보유.' },
+  'zh-CN': { terms: '服务条款', privacy: '隐私政策', nav: '法律条目', stance: '技术立场', copyright: '站点与文档以 MIT 许可公开。' },
+  en: { terms: 'Terms of service', privacy: 'Privacy policy', nav: 'Legal', stance: 'Technical stance', copyright: 'Site and docs are published under the MIT license.' },
+  ja: { terms: '利用規約', privacy: 'プライバシーポリシー', nav: '法的情報', stance: '技術上の立場', copyright: 'サイトとドキュメントは MIT ライセンスで公開しています。' },
+  ko: { terms: '서비스 약관', privacy: '개인정보 처리방침', nav: '법적 고지', stance: '기술 입장', copyright: '사이트와 문서는 MIT 라이선스로 공개됩니다.' },
 } as const;
-const t = STRINGS[uiLocale(Astro.locals.starlightRoute.locale)];
+const locale = uiLocale(Astro.locals.starlightRoute.locale);
+const t = STRINGS[locale];
+const stanceHref = locale === 'zh-CN' ? '/getting-started/principles/' : `/${locale}/getting-started/principles/`;
 const year = new Date().getFullYear();
 const legal = [
   { href: 'https://www.tansr.com/terms', label: t.terms },
@@ -33,6 +35,7 @@ const ICP_HREF = 'https://beian.miit.gov.cn/';
   <Pagination />
   <div class="legal">
     <nav aria-label={t.nav} class="legal-links">
+      <a href={stanceHref}>{t.stance}</a>
       {legal.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
       <a class="icp" lang="zh-CN" href={ICP_HREF} target="_blank" rel="noopener noreferrer">{ICP}</a>
     </nav>

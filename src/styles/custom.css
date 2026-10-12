@@ -370,21 +370,21 @@
   color: var(--sl-color-text-accent);
 }
 
-/* 首页热抓取首部:技术立场。条文在首屏 HTML 里,不依赖展开。 */
-.principles-lead {
-  margin: 0 auto 2.5rem;
+/* 首页页尾:技术立场默认折叠,展开后才显示条文。 */
+.principles-foot {
+  margin: 2.5rem auto 0;
   max-width: 52rem;
-  padding: 1.25rem 1.35rem 1.35rem;
-  border: 1px solid var(--sl-color-gray-5);
-  border-radius: var(--tansr-card-radius);
+  border-top: 1px solid var(--sl-color-gray-6);
+  padding-top: 0.75rem;
 }
-.principles-lead h2 {
-  margin-top: 0;
+.principles-foot summary {
+  cursor: pointer;
+  font-weight: 600;
 }
-.principles-lead dt {
+.principles-foot dt {
   margin-top: 0.9rem;
   font-weight: 600;
 }
-.principles-lead dd {
+.principles-foot dd {
   margin: 0.25rem 0 0;
 }

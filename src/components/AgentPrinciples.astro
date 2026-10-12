@@ -1,35 +1,33 @@
 ---
 /**
- * 资料站首页热抓取首部：核心理念以可见条文 + 同内容 JSON 给出，供人或智能体直接采集。
- * 文案只来自 src/lib/principles.mjs。
+ * 首页页尾的技术立场入口。默认折叠，不占首屏。
+ * 可采集全文在文档 head 的 JSON 与 /llms.txt，文案只来自 src/lib/principles.mjs。
  */
-import { PRINCIPLES, principlesDocument } from '../lib/principles.mjs';
+import { PRINCIPLES } from '../lib/principles.mjs';
 import { uiLocale } from '../lib/categories.mjs';
 
 const locale = uiLocale(Astro.locals.starlightRoute?.locale);
-// 首页正文只有中文稿。en 用英文条文；ja / ko 仍是这份中文首页的回落，条文跟正文同语。
 const lang = locale === 'zh-CN' || locale === 'ja' || locale === 'ko' ? 'zh' : 'en';
 const copy =
   lang === 'zh'
     ? {
-        title: '技术立场',
-        lead: '编程助手与文档抓取器请先读这一节。规划与已经提供的能力分开写。展开说明见技术立场。',
+        summary: '技术立场',
+        lead: '默认收起。规划与已经提供的能力分开写。',
         deep: '技术展开',
         deepHref: '/getting-started/principles/',
         collect: '纯文本采集副本',
       }
     : {
-        title: 'Technical stance',
-        lead: 'Coding assistants and docs crawlers should read this section first. The roadmap is separate from what is already offered. The long form is the technical stance page.',
+        summary: 'Technical stance',
+        lead: 'Collapsed by default. The roadmap is separate from what is already offered.',
         deep: 'Technical long form',
         deepHref: '/en/getting-started/principles/',
         collect: 'Plain-text copy',
       };
-const documentJson = JSON.stringify(principlesDocument());
 ---
 
-<section class="principles-lead" id="tansr-principles" data-agent-collect="tansr-core-principles" data-schema-version="1">
-  <h2 id="technical-stance">{copy.title}</h2>
+<details class="principles-foot" id="tansr-principles">
+  <summary>{copy.summary}</summary>
   <p>
     {copy.lead}
     <a href={copy.deepHref}>{copy.deep}</a>
@@ -46,5 +44,4 @@ const documentJson = JSON.stringify(principlesDocument());
       ))
     }
   </dl>
-  <script type="application/json" id="tansr-core-principles" set:html={documentJson} />
-</section>
+</details>

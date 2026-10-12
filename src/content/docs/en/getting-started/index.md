@@ -18,7 +18,7 @@ sources:
 lastVerified: '2026-10-12'
 ---
 
-tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run". The neutral bridge, the Harness, how Skill differs from the runtime, the current two steps, and the roadmap that is not offered yet are on [Technical stance](/en/getting-started/principles/). The same statements, for a coding assistant to collect, are in the opening of the docs homepage and in [`/llms.txt`](/llms.txt).
+tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run". The neutral bridge, the Harness, how Skill differs from the runtime, the current two steps, and the roadmap that is not offered yet are on [Technical stance](/en/getting-started/principles/). The same statements, for a coding assistant to collect, are in [`/llms.txt`](/llms.txt). The homepage keeps only a collapsed entry at the bottom.
 
 ## First question: where does the agent run?
 

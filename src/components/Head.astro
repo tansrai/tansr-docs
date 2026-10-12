@@ -1,6 +1,10 @@
 ---
 import Default from '@astrojs/starlight/components/Head.astro';
+import { principlesDocument } from '../lib/principles.mjs';
+
+const documentJson = JSON.stringify(principlesDocument());
 ---
 
 <Default />
 <link rel="alternate" type="text/plain" href="/llms.txt" title="Tansr core principles and docs map for agents" />
+<script type="application/json" id="tansr-core-principles" set:html={documentJson} />
