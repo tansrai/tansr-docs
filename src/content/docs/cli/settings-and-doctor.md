@@ -15,10 +15,10 @@ sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-命令行的行为由三处决定：配置文件（五层 `settings.json`）、环境变量、命令行旗标。`tansr doctor` 把这三处合并后的装配结果零网络地打印出来，是排障的第一步。本页按 `tansr` 命令行 0.10.1（2026-10-04 发布，npm `@tansr/cli`）核对；单文件 SEA 与 OSS 分发点上没有 0.10.x 产物，安装与升级走 npm。
+命令行的行为由三处决定：配置文件（五层 `settings.json`）、环境变量、命令行旗标。`tansr doctor` 把这三处合并后的装配结果零网络地打印出来，是排障的第一步。本页按 `tansr` 命令行 0.10.3（2026-10-10 发布，npm `@tansr/cli`，内嵌 `@tansr/serve` 0.15.1）核对；0.10.2 / 0.10.3 没有新增命令、旗标或配置键。单文件 SEA 目前只有 Linux x64 / arm64 两档（分发点 `bash.tansr.com`，与 npm 同版），其它平台的安装与升级走 npm，见[命令行 5 分钟跑通](/getting-started/cli/)。
 
 ## 五层配置与合并规则
 
@@ -81,8 +81,9 @@ lastVerified: '2026-10-05'
 | `TANSR_SERVE_LOG_LEVEL` | `tansr serve` 日志级别，**缺省 `warn`**（命令行 0.10.0 / `@tansr/serve` 0.13.0 起）；此前靠 `info` 事件做仪表板的部署升级后要显式 `=info` |
 | `TANSR_SERVE_LEGACY_V1` | `=1` 在 `tansr serve --v2` 部署里重开 `/v1` 面（等价旗标 `--legacy-v1`）。**已废弃**：0.14.0 / 命令行 0.10.1 起开启即出一条 `warn` 事件 `server.deprecated_option`，1.0.0 移除；审批凭证投递改 `POST /api/approvals/:id/credential` 后不再需要 |
 | `TANSR_SERVE_SSE_MAX_FRAME_BYTES` / `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS` | SDK2 装配在场时的单帧字节硬帽（缺省 2 MiB）与基础认证源限界（缺省 128 个未结束 / 10 s）；只装 SDK1 的部署缺席零变化（命令行 0.10.0 起） |
+| `TANSR_SERVE_LEGACY_PREFIX` / `TANSR_SERVE_LEGACY_SUNSET` | 旧 `/v2`、`/v3/*` 前缀的退役窗口（命令行 0.10.2 起，内嵌 `@tansr/serve` 0.15.0）：前者取 `readwrite`（缺省，0.10.3 未变）/ `readonly`（旧前缀写操作改答 `410 gone`）/ `off`（旧前缀全部 404）；后者为 HTTP-date 或 ISO-8601，设了才在旧前缀响应附 `Sunset` 头。只在 `--v2` 部署有消费点，非 `--v2` 启动时按既有律出现在「legacy 组未生效」提示里；没有对应旗标 |
 
-`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，命令行 0.10.0 起共 36 键，全表见[环境变量表](/serve/env)；例如 [`TANSR_SERVE_LOG_FORMAT`](/serve/env#tansr_serve_log_format)、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions)。
+`tansr serve` 的运维旋钮（准入帽、SSE 背压、日志形态等 `TANSR_SERVE_*`）与 `@tansr/serve` 同名同义，命令行 0.10.0 起 36 键、0.10.2 起 38 键，全表见[环境变量表](/serve/env)；例如 [`TANSR_SERVE_LOG_FORMAT`](/serve/env#tansr_serve_log_format)、[`TANSR_SERVE_MAX_ACTIVE_SESSIONS`](/serve/env#tansr_serve_max_active_sessions)。
 
 ## `tansr serve` 的旗标（0.10.x）
 
@@ -94,7 +95,7 @@ lastVerified: '2026-10-05'
 | `--host-module <absolute.cjs> --host-module-sha256 <sha256>` | 成对旗标（缺一即用法错误），显式装配本机绝对路径的 `.cjs` 受信宿主模块（≤ 16 MiB，核摘要后编译已验字节执行），`@tansr/serve/extensions` 的 SDK2 归档 / 缓存 / 终端服务在命令行形态只经此径可达；不传 = 0.9.0 行为（0.10.0 起） |
 | `--trust-project-hooks` | 工作区无信任记录时本次启用项目层 hooks（0.7.0 起） |
 
-`tansr bg kill --force` 在装有大量 PowerShell 模块的 Windows 机上因身份探针超时被判「不可核」而拒杀的问题已随 0.10.1 修正（wire / 旗标 / 退出码零变化）。完整命令面见[命令参考](/cli/commands#serve)，部署形态见[部署与鉴权](/serve/deploy-and-auth/)。
+0.10.2 / 0.10.3 未新增旗标：旧前缀退役窗口只经上表的两个环境变量控制。`tansr bg kill --force` 在装有大量 PowerShell 模块的 Windows 机上因身份探针超时被判「不可核」而拒杀的问题已随 0.10.1 修正（wire / 旗标 / 退出码零变化）。完整命令面见[命令参考](/cli/commands#serve)，部署形态见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## `tansr doctor` 怎么读
 
@@ -103,20 +104,20 @@ tansr doctor          # 人读报告;退出码 0 可用、1 有阻断问题
 tansr doctor --json   # 机器可读
 ```
 
-它零模型调用、零网络、零子进程，全部取装配期缓存事实，适合 CI 预检；TUI 内 `/doctor` 是同一份。命令面参考见[命令参考](/cli/commands#doctor)。
+它零模型调用、零网络、零子进程，全部取装配期缓存事实，适合 CI 预检。命令面参考见[命令参考](/cli/commands#doctor)。TUI 内的 `/doctor` 是**另一份**页内自检：十二项 ✓ / ✗ 清单（`node_version` ≥ 22.19、`config_sources` 无 skipped 层、`config_diagnostics` 无 error 级、`model_resolution`、`context_window`、`context_scheme` 为 production 方案、`custom_commands`、`mcp_connections`、`terminal` 为 TTY、`workspace_trust` 非未信任、`output_style` 无坏文件、`session_driver_state`），只呈现、不产生退出码；两者取同一批装配期事实，但项目与结论口径不同，CI 以 `tansr doctor` 的退出码为准。
 
-**检查项（按输出序；以实际输出为准）**：
+**什么算阻断**：退出码只看 `--json` 顶层 `problems` 数组（`ok: true` 即为空），四个问题码：
 
-| 段 | 看什么 | 阻断？|
-|---|---|---|
-| `node_version` | ≥ 22.19 基线 | 是 |
-| `config_sources` | 五层各自状态，不应有 skipped | 是（有层被整体跳过） |
-| `config_diagnostics` | 逐条被剔除的键（层 / 键路径 / 期望类型）；诊断永不携带字段值 | error 级为阻断 |
-| `model_resolution` | 当前别名解析到哪个 provider / 模型 | 是（解析失败） |
-| `context_window` / `context_scheme` | 窗口两值（标称 / 有效）与钳位侧；活动方案 id 与阶段，非 production 方案出警示 | 否 |
-| `custom_commands` | 自定义命令源无 skipped | 否 |
-| `mcp_connections` | 懒台未连 / 已连均健康；失败台报警 | 否 |
-| `terminal` / `workspace_trust` / `output_style` | TTY 与尺寸；未信任收紧态；当前风格 | 否 |
+| 问题码 | 触发 |
+|---|---|
+| `no_provider` | 没有可用的 provider 注册表（未登录平台，且本地 provider 未配置） |
+| `unresolved_model` | 诊断别名 `main` 解析失败（未知别名 / 未知 provider 等，`provider.error` 携结构化码） |
+| `missing_credential` | 已解析的 provider 声明了 `auth.env`，而该环境变量为空（本地 provider 场景；`credentials.envVar` 只给名、永不给值） |
+| `session_store_unwritable` | 会话存储根不可写 |
+
+加 `--connectors` 时连接器自检的阻断问题并入同一数组。配置层被整体跳过、error 级配置诊断、未信任工作区、MCP 连接失败、Node 版本等都**只呈现、不阻断**——它们出现在报告对应段里，但不改退出码。
+
+**报告段序**：版本行 → 配置五层（层 / 状态 / 路径、error 级诊断计数、被层律忽略的段、设了 `TANSR_USER_HOME` 时的配置总根）→ provider 解析（`main` → provider / 模型、来源，图片输入三态）→ 模型选择归因 → 凭据 → 剪枝 / 逃生态 → 凭据存储 → 登录档、套餐、WebSearch 来源 → 会话存储 → 更新源 → 工作区信任 → 遥测、审计、输出风格、沙箱、语义索引、媒体 → 裁决链、权限指标 → 无人值守基线 → 上下文、记忆 →（`--connectors`）连接器 → 结论行（问题计数）。
 
 **归因段（不计阻断，排障最常看）**：
 
