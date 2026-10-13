@@ -18,10 +18,10 @@ sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-一个会话在会话服务里有三种存在状态：**运行态**（内存里有驱动、有环形缓冲）、**终结残影**（轮已结束或已关闭，内存记录还在保留窗内可重放）、**休眠态**（只在 store 里，resume 可复活）。治理就是决定每种状态活多久、由谁回收。原则：**机器恒不物理删除业务主数据，除非运维显式配置。** 本页按 `@tansr/serve` 0.14.0（2026-10-04 发布）核对；治理表的冻结缺省自 0.8.0 以来未变，0.13.0 / 0.14.0 的加法单列于下文「0.13.0 / 0.14.0 的加法」。
+一个会话在会话服务里有三种存在状态：**运行态**（内存里有驱动、有环形缓冲）、**终结残影**（轮已结束或已关闭，内存记录还在保留窗内可重放）、**休眠态**（只在 store 里，resume 可复活）。治理就是决定每种状态活多久、由谁回收。原则：**机器恒不物理删除业务主数据，除非运维显式配置。** 本页按 `@tansr/serve` 0.15.1（2026-10-10 发布，当前 npm `latest`）核对；治理表的冻结缺省自 0.8.0 以来未变，0.13.0 – 0.15.0 的加法单列于下文「0.13.0 – 0.15.0 的加法」；0.15.1 只含 Go / Rust / C++ 消费对照发现的四项服务端修复（设备绑定能力前置、工具实时输出、统一错误状态与重试动作映射、检查点恢复的材料结算），不改本页任何缺省。
 
 ## `/v2` 多会话治理表（冻结缺省）
 
@@ -38,13 +38,15 @@ lastVerified: '2026-10-05'
 | `permissionTimeoutMs` / `questionGraceMs` | 120 s / 60 s | 权限桥到点 deny-and-continue / 提问桥无订阅者宽限 |
 | `eventBufferSize` | 1024 | 逐会话环形缓冲条数 |
 
-三个**无冻结缺省**的治理位（缺省不设 = 无限），数值随租户与容量决定：
+三个**无冻结缺省**的治理位（缺省不设 = 无限；唯一例外见表后），数值随租户与容量决定：
 
 | 目的 | 库选项 | 环境变量 |
 |---|---|---|
 | 终结残影数量帽（LRU 最旧先逐） | `v2.governance.maxRetainedSessions` | [`TANSR_SERVE_MAX_RETAINED_SESSIONS`](/serve/env#tansr_serve_max_retained_sessions) |
 | 自纳管起的寿命帽 | `v2.governance.maxSessionLifetimeMs` | [`TANSR_SERVE_MAX_SESSION_LIFETIME_MS`](/serve/env#tansr_serve_max_session_lifetime_ms) |
 | 轮数帽 | `v2.governance.maxTurnsPerSession` | [`TANSR_SERVE_MAX_TURNS_PER_SESSION`](/serve/env#tansr_serve_max_turns_per_session) |
+
+例外：显式装配了 SDK2 执行 / 归档 / 缓存 / 同步 / 终端服务宿主（`@tansr/serve/extensions`，0.13.0 起）的服务，`maxRetainedSessions` 缺省改为 **256**——显式值优先，`0` = 终结即逐出；逐出只关闭内存重放窗，不删持久历史，有 store 时元信息 / history / resume 照走存储。只装 SDK1 的部署仍是缺省无限。
 
 孤儿宽限与离场回收也可经 [`TANSR_SERVE_ORPHAN_GRACE_MS`](/serve/env#tansr_serve_orphan_grace_ms) / [`TANSR_SERVE_IDLE_AFTER_GONE_MS`](/serve/env#tansr_serve_idle_after_gone_ms) 调整。容量模型一句话：「挂着的会话数」≠「同时活跃数」——订阅者全部离场 60 s 后中止当前轮、再 5 min 后落盘退出内存，内存与 CPU 只随同时活跃的会话增长。
 
@@ -89,10 +91,11 @@ const store = createServeAgentSessionStore({
 
 未配置保留期时，store **缺省永存**：休眠会话不会被服务端自动删除。**@tansr/serve 0.8.0 已提供**存储保留期治理：工厂选项 `sessions.retention{ maxAgeDays, maxPerEndUser, maxBytes }`（缺省缺席 = 零删除 = 现状），任一在场即启用治理扫描的「store 保留」段——按 `meta.updatedAt` 删超龄休眠会话（`maxAgeDays` 缺席按 30 d 兜底，与平台会话租约窗同值）、每终端用户超数时最旧先删（附件与同居快照随删），**在册活跃会话恒不删**；实扫间隔缺省 1 h，每轮有删除即记结构化日志 `session.retention_swept{ scanned, deleted, failures, byReason }`。对应两个环境变量 [`TANSR_SERVE_SESSION_MAX_AGE_DAYS`](/serve/env#tansr_serve_session_max_age_days) / [`TANSR_SERVE_SESSION_MAX_PER_END_USER`](/serve/env#tansr_serve_session_max_per_end_user)。控制台组织治理里配置的会话保留天数（`governance.sessionRetentionDays`）按终端用户域覆写该阈值。被删会话此后 resume → `404 session_not_found`，客户端按 L3 新建，端侧零改动。
 
-## 0.13.0 / 0.14.0 的加法
+## 0.13.0 – 0.15.0 的加法
 
 以下各项只在对应装配在场时生效，**只装 SDK1 `/v1` 的部署与固定使用 `/v2` 的客户端缺省零变化**。
 
+- **旧前缀退役窗口（0.15.0）**：`legacyPrefixes` / `TANSR_SERVE_LEGACY_PREFIX` 取 `readwrite`（缺省，截至 0.15.1 未变）/ `readonly` / `off`，只在 `/api` 门面在场时生效；`readonly` 下 `/v2`、`/v3/*` 的写操作改答 `410 gone`（`detail.domainCode: legacy_prefix_retired`），`off` 下旧前缀全部 404。它只决定旧入口受不受理，**不改变任何会话的保留窗、闲置回收或 store 内容**——被拒的写请求不触及会话，客户端改走 `/api` 后同一会话照常可见。旧前缀响应附 `Deprecation` / `Link`（设 `TANSR_SERVE_LEGACY_SUNSET` 后再附 `Sunset`）。细节见[部署与鉴权](/serve/deploy-and-auth/)。
 - **三个请求头与回执缓存（0.14.0）**：`/api` 上的写操作接受 `Idempotency-Key`（ASCII 1–128；同键同义返原回执、副作用恰一次，同键异义 `409 conflict`；回执缓存进程内有界：每用户 256 条 / 全局 4 096 条 / TTL 10 分钟，按 `endUserId` + 操作名 + manifest revision 隔离）、`If-Match` + 响应 `ETag`（只对有版本资源，即 manifest 里带 `expectedRevision` 的写操作；版本陈旧 `412 precondition_failed`、`retryAction: refresh`，一字未写）、`deadline`（RFC 3339；到达时已过期 `408 invalid_request`、`reason: deadline_exceeded`，不受理、不触及下游、不占幂等窗）。三头不新增错误码，`detail.reason` 由 2 枚扩到 17 枚；三头需要体时请求体帽 1 MiB（超出 `413 payload_too_large`、`reason: header_body_limit`）。不携这三个头 = 行为逐字节不变。回执缓存是内存态、随进程消亡，不属于本页的持久化保留窗。
 - **审批凭证投递改走 `/api`（0.14.0）**：`POST /api/approvals/:id/credential`（manifest revision 7 的 `approval.credential.submit`，内部径为 manifest 里唯一的 `/v1` 路径）；接审批投递的 `--v2` 部署不再需要 `--legacy-v1`。
 - **会话所有权租约（0.14.0 修正）**：启用 `ownership` 的可信宿主在慢盘上不再「无对手却自判死亡」——owner 自身操作只按代际围栏判定、`expiresAt` 只决定他人接管资格、每次持锁 meta 写顺带续约；`ownership.leaseMs` 下限由 1 000 ms 抬到 **5 000 ms**（显式传 1 000–4 999 抛 `TypeError`，缺省 30 000 ms 与 `[5000, 300000]` 区间不变）。带 `runtimeRecovery` 的多 Serve 部署在病态慢盘上仍可能合法接管活 owner（活性损失，非双写），该窗口此前即存在。

@@ -21,10 +21,10 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。版本基线：`@tansr/serve` 0.14.0 与 `tansr` 命令行 0.10.1（均 2026-10-04 发布）；标注版本号的段落只对该版本及更高成立。
+`@tansr/serve` 以 npm 包嵌进你的 Node 进程。它负责传输与协议机器（路由、SSE 编帧与重放、三类桥应答、多会话治理、轮末 webhook），**不负责**网关职责——TLS 终结、IP 级限流、WAF、用户登录都归你的边缘与登录态体系。这一篇把生产部署要决定的事按顺序讲一遍。版本基线：`@tansr/serve` 0.15.1 与 `tansr` 命令行 0.10.3（均 2026-10-10 发布，当前 npm `latest`）；标注版本号的段落只对该版本及更高成立。
 
 ## 在平台或宿主配置应用角色
 
@@ -67,7 +67,9 @@ appid / appkey 从环境变量读（官方样板用 `TANSR_APP_KEY_ID` / `TANSR_
 
 ## `/api` 统一调用面与旧前缀
 
-`options.v2` 在场的部署自 0.13.0 起在链首装配 `/api` 门面（路由表单一事实源 `packages/server/src/api/route-table.ts`）：`/v2/sessions/**` 以外，显式装配的 `/v3/sdk2/**`、`/v3/terminal*/**` 也各有 `/api` 对应物；全部 `/api/*` 响应携 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` 四头，错误统一信封。新集成只读一份 `GET /api/manifest`（0.14.0 为 revision 7：11 族 / 81 操作）与一张路由表；`/v2`、`/v3/*` 定义为内部适配入口，0.14.0 未移除、未进只读窗口，1.0.0 移除外部入口。多副本部署给 nginx / k8s 模板加 `/api` 分片（仓内 `deploy/serve-v2/**` 已含），与客户端切流同向。路由表与迁移时间表见[统一 API](/unified-api/)。
+`options.v2` 在场的部署自 0.13.0 起在链首装配 `/api` 门面（路由表单一事实源 `packages/server/src/api/route-table.ts`）：`/v2/sessions/**` 以外，显式装配的 `/v3/sdk2/**`、`/v3/terminal*/**` 也各有 `/api` 对应物；全部 `/api/*` 响应携 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` 四头，错误统一信封。新集成只读一份 `GET /api/manifest`（0.14.0 起为 revision 7：11 族 / 81 操作，0.15.1 未变）与一张路由表；`/v2`、`/v3/*` 定义为内部适配入口，1.0.0 移除外部入口。多副本部署给 nginx / k8s 模板加 `/api` 分片（仓内 `deploy/serve-v2/**` 已含），与客户端切流同向。路由表与迁移时间表见[统一 API](/unified-api/)。
+
+**旧前缀退役窗口（0.15.0 起）**：`StartServerOptions.legacyPrefixes` / 旋钮 `TANSR_SERVE_LEGACY_PREFIX` 取 `readwrite` / `readonly` / `off`，只在 `/api` 门面在场时有消费点。缺省 `readwrite`（截至 0.15.1 未变）：旧前缀读写照常受理。`readonly`：manifest 中 `kind: write` 的 38 个操作在 `/v2`、`/v3/*` 上改答 `410 gone` 统一信封（`code: gone`、`retryAction: rediscover`、`detail.domainCode: legacy_prefix_retired`，`message` 指向对应的 `/api` 操作），39 个读操作与 4 个事件流仍受理，manifest 未登记的旧路径不拒。`off`：旧前缀全部 `404 not_found` 统一信封。三种模式下旧前缀的每个响应（含 SSE、含被拒的响应）都附 `Deprecation: @1790900340`（= `/api` GA 时刻 2026-10-02T00:19Z，RFC 9745）与 `Link: </api/manifest>; rel="deprecation"`；配置了 `legacyPrefixSunset` / `TANSR_SERVE_LEGACY_SUNSET`（HTTP-date 或 ISO-8601；库选项传入非法模式或不可解析日期在 `startServer` 抛 `TypeError`，环境变量非法值则按运行时旋钮纪律告警后忽略）才另附 `Sunset`，缺省不附。`readwrite` 下响应体与状态码逐字节不变；`/api` 响应不带这三头。同一会话 id 先后经 `/api/sessions/:id/**` 与 `/v2/sessions/:id/**`、`/v3/sdk2/sessions/:id/**` 访问时每次切换记一条 `warn` `api.legacy_prefix_mixed`（按会话 id 的 4 096 条 LRU，`readwrite` 下只留痕不拒绝）；`readonly` / `off` 下每个被拒的 `method route` 模板首次记一条 `api.legacy_prefix_rejected`。两事件计数持续为零是把窗口切到 `readonly` 的证据。0.15.0 发行说明曾把「缺省改为 `readonly`」写在后续版本；当前 npm `latest` 的 0.15.1 仍是 `readwrite`，实际切换以届时发布说明为准。命令行 `tansr serve --v2` 同样读这两个环境变量，没有对应旗标。
 
 ## 优雅关闭：信号归宿主
 
@@ -100,7 +102,7 @@ process.on('SIGINT', shutdown);
 
 每个请求采纳合法入站 `x-request-id`（否则取 `traceparent` 的 trace-id，再否则自铸 UUID），恒回响应头 `x-request-id`，作 `request.completed{ requestId, method, route, status, durationMs }` 的关联键。结构化日志走 [`TANSR_SERVE_LOG_FORMAT=json`](/serve/env#tansr_serve_log_format)，字段恒不含令牌与消息内容。`/api` 与 `/v2`、`/v3/*` 在指标 `route` 标签下分别可见——以 `/v2/` `/v3/` 开头的样本就是尚未迁移到 `/api` 的调用。
 
-**日志级别缺省 `warn`**（`@tansr/serve` 0.13.0 / 命令行 0.10.0 起）：`tansr serve` 入口以 `createServeLogger(sink, { level = 'warn' })` 包装日志，旋钮 `TANSR_SERVE_LOG_LEVEL=info|debug` 放开；固定 10 s 窗口内按（级别、事件、字段）分组限量，超出以 `log.repeated { originalEvent, suppressed, windowMs }` 汇总、组数超 128 以 `log.overflow` 出线；全部级别同样脱敏 / 有界（字段 ≤ 128 个、字符串 ≤ 1 024 字符、整体 ≤ 8 KiB，`prompt / messages / content / body / args / stdout / stderr` 等正文键恒 `[redacted]`）。此前依赖 `info` 级事件做仪表板的部署升级后要显式设 `TANSR_SERVE_LOG_LEVEL=info`。自托管宿主可选用同一 `createServeLogger`，旧自定义 logger 直接注入仍可。新事件名：`execution.rejected` / `execution.result`（SDK2 执行档）、`log.repeated` / `log.overflow`、`server.deprecated_option`（0.14.0）；仪表板 / 告警按名随动。
+**日志级别缺省 `warn`**（`@tansr/serve` 0.13.0 / 命令行 0.10.0 起）：`tansr serve` 入口以 `createServeLogger(sink, { level = 'warn' })` 包装日志，旋钮 `TANSR_SERVE_LOG_LEVEL=info|debug` 放开；固定 10 s 窗口内按（级别、事件、字段）分组限量，超出以 `log.repeated { originalEvent, suppressed, windowMs }` 汇总、组数超 128 以 `log.overflow` 出线；全部级别同样脱敏 / 有界（字段 ≤ 128 个、字符串 ≤ 1 024 字符、整体 ≤ 8 KiB，`prompt / messages / content / body / args / stdout / stderr` 等正文键恒 `[redacted]`）。此前依赖 `info` 级事件做仪表板的部署升级后要显式设 `TANSR_SERVE_LOG_LEVEL=info`。自托管宿主可选用同一 `createServeLogger`，旧自定义 logger 直接注入仍可。新事件名：`execution.rejected` / `execution.result`（SDK2 执行档）、`log.repeated` / `log.overflow`、`server.deprecated_option`（0.14.0）、`api.legacy_prefix_mixed` / `api.legacy_prefix_rejected`（0.15.0，旧前缀窗口）；仪表板 / 告警按名随动。
 
 ## 准入帽与运维旋钮
 
@@ -113,7 +115,7 @@ process.on('SIGINT', shutdown);
 | 分层超时与每轮墙钟 | [`TANSR_SERVE_UPSTREAM_CONNECT_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_connect_timeout_ms) · [`TANSR_SERVE_UPSTREAM_IDLE_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_idle_timeout_ms) · [`TANSR_SERVE_UPSTREAM_TOTAL_TIMEOUT_MS`](/serve/env#tansr_serve_upstream_total_timeout_ms) · [`TANSR_SERVE_TURN_WALL_CLOCK_MS`](/serve/env#tansr_serve_turn_wall_clock_ms) |
 | SSE 背压 | [`TANSR_SERVE_SSE_MAX_BUFFER_BYTES`](/serve/env#tansr_serve_sse_max_buffer_bytes) · [`TANSR_SERVE_SSE_SLOW_POLICY`](/serve/env#tansr_serve_sse_slow_policy)（`disconnect` 缺省 / `drop-oldest`）· [`TANSR_SERVE_SSE_RETRY_MS`](/serve/env#tansr_serve_sse_retry_ms) |
 | 重放窗字节帽 | [`TANSR_SERVE_EVENT_BUFFER_MAX_BYTES`](/serve/env#tansr_serve_event_buffer_max_bytes)（部署建议 4 MiB / 会话） |
-| 0.13.0 / 0.14.0 新增（`SERVE_RUNTIME_ENV` 表 31 → 36 键） | `TANSR_SERVE_LOG_LEVEL`（缺省 `warn`）· `TANSR_SERVE_SSE_MAX_FRAME_BYTES`（SDK2 装配缺省 2 MiB 单帧硬帽）· `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS`（基础认证源限界）· `TANSR_SERVE_LEGACY_V1`（已废弃的 `/v1` 过渡旋钮） |
+| 0.13.0 – 0.15.0 新增（`SERVE_RUNTIME_ENV` 表 31 → 36 → 38 键） | `TANSR_SERVE_LOG_LEVEL`（缺省 `warn`）· `TANSR_SERVE_SSE_MAX_FRAME_BYTES`（SDK2 装配缺省 2 MiB 单帧硬帽）· `TANSR_SERVE_AUTH_MAX_PENDING` / `TANSR_SERVE_AUTH_TIMEOUT_MS`（基础认证源限界）· `TANSR_SERVE_LEGACY_V1`（已废弃的 `/v1` 过渡旋钮）· `TANSR_SERVE_LEGACY_PREFIX`（0.15.0；`readwrite` 缺省 / `readonly` / `off`）· `TANSR_SERVE_LEGACY_SUNSET`（0.15.0；旧前缀 `Sunset` 头日期，缺省不发） |
 
 准入拒绝恒 `503 overloaded` 携 `Retry-After`（「本机忙，稍后再来」）；平台铸令牌撞 429 / 5xx / 网络错则 `503 upstream_unavailable`（「上游坏，加压无益」），两者刻意分开。缺省全部不设硬帽——唯一例外是每轮墙钟：**`tansr serve` 命令行形态自 0.9.0 起缺省 30 分钟**（`TANSR_SERVE_TURN_WALL_CLOCK_MS` 缺席 = 1 800 000 ms，显式 `0` = 停用），单轮预期超过 30 分钟的部署需显式设更大值或 `0`；库 `startServer` 与 `resolveServeRuntimeOptions` 不带此缺省，仍是缺席即不设墙钟（且不接受 `0`）。
 
