@@ -1,5 +1,25 @@
 {
   "cli": {
+    "0.10.3": {
+      "date": "2026-10-10",
+      "added": [],
+      "changed": [
+        "内嵌的 `@tansr/serve` 升级到 0.15.1（见其发布说明）：首次设备绑定不再被「尚未建立的执行能力」循环卡住；业务工具沿设备执行链受控地实时回传输出、保留原默认执行超时且不回落到 `tansr serve` 主机执行；统一错误信封的状态与重试动作映射修正；检查点恢复先结算已消费的材料。`tansr serve` 的使用者升级即获得同一组修复，无需改动启动参数。",
+        "`tansr` 命令行本身无新命令、子命令或旗标，ACP 协议面亦无变化；npm 包与单文件可执行版按同一主线重新构建。迁移：无。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包（`@tansr/cli` 0.10.3）已于 2026-10-10 与 `@tansr/sdk` 0.19.0、`@tansr/serve` 0.15.1 同批发布；`@tansr/api-client` 0.4.0 与 `@tansr/protocol` 0.2.0 源码零差量、本批不重发。单文件可执行版（Linux x64 / arm64）同日上架官方分发点，内置更新器可直接升级到本版；Windows 与 macOS 单文件版仍未发布，这两个平台以 npm 为唯一安装渠道。"
+    },
+    "0.10.2": {
+      "date": "2026-10-06",
+      "added": [],
+      "changed": [
+        "内嵌的 `@tansr/serve` 升级到 0.15.0（见其发布说明）：`tansr serve --v2` 新认两个环境变量 `TANSR_SERVE_LEGACY_PREFIX=readwrite|readonly|off`（缺省 `readwrite`）与 `TANSR_SERVE_LEGACY_SUNSET=<HTTP-date 或 ISO-8601>`，分别控制旧 `/v2`、`/v3/*` 前缀的退役窗口与 `Sunset` 头；两键经既有的环境变量表流入服务端，非 `--v2` 启动时按既有规则出现在「legacy 组未生效」提示里。缺省行为与 0.10.1 相同；门面在场时旧前缀的每个响应多出 `Deprecation` / `Link`（设置了 `TANSR_SERVE_LEGACY_SUNSET` 时再加 `Sunset`）三个标准头，响应体与状态码不变。对你意味着：升级无需动作；想提前演练只读窗口的部署设 `TANSR_SERVE_LEGACY_PREFIX=readonly`，并观察结构化日志事件 `api.legacy_prefix_rejected`，回滚只需改回 `readwrite`。迁移：无。",
+        "`tansr` 命令行源码零改动：无新命令、子命令、旗标或输出面，本版只是版本号与内嵌服务端的升级。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包（`@tansr/cli` 0.10.2）已于 2026-10-06 与 `@tansr/serve` 0.15.0、`@tansr/api-client` 0.4.0 同批发布；`@tansr/sdk` 本批无新版本（仍为 0.18.1）。单文件可执行版本版未上架（分发点停留在 0.10.1，下一版 0.10.3 恢复同步）。`@tansr/serve` 0.15.0 的发布说明曾预告后续版本会把旧前缀窗口缺省改为 `readonly`；截至 0.15.1 该切换尚未发生，届时以对应版本的发布说明为准。"
+    },
     "0.10.1": {
       "date": "2026-10-04",
       "added": [
@@ -13,7 +33,7 @@
       "fixed": [
         "`tansr bg kill --force` 在 Windows 上的进程身份探针不再依赖 PowerShell 模块自动发现（显式导入所需模块，并把探针子进程的模块路径钉到系统目录）：在装有大量第三方模块的机器上，探针不再因超时而把 `--force` 判为「不可核验」拒杀；后台任务启动时的身份登记同样受益。旗标、输出与退出码零变化。"
       ],
-      "note": "本版 npm 包（`@tansr/cli` 0.10.1）已于 2026-10-04 与 `@tansr/sdk` 0.18.1、`@tansr/serve` 0.14.0、`@tansr/api-client` 0.3.0 同批发布；无新命令、子命令或输出面。如实披露：启用编译缓存后，TUI 启动至可输入的热态中位用时为 287 ms（目标 300 ms，已达标）；首次启动（建缓存）361 ms、关闭缓存 348 ms。单文件可执行版本版仍未发布，npm 为唯一安装渠道。"
+      "note": "本版 npm 包（`@tansr/cli` 0.10.1）已于 2026-10-04 与 `@tansr/sdk` 0.18.1、`@tansr/serve` 0.14.0、`@tansr/api-client` 0.3.0 同批发布；无新命令、子命令或输出面。如实披露：启用编译缓存后，TUI 启动至可输入的热态中位用时为 287 ms（目标 300 ms，已达标）；首次启动（建缓存）361 ms、关闭缓存 348 ms。单文件可执行版（Linux x64 / arm64）已于 2026-10-05 另行上架官方分发点；Windows 与 macOS 单文件版未发布，这两个平台以 npm 为唯一安装渠道。"
     },
     "0.10.0": {
       "date": "2026-10-02",
@@ -172,6 +192,32 @@
     }
   },
   "sdk": {
+    "0.20.0": {
+      "added": [
+        "平台模型角色与主备裁决策略的公共类型：`AppBundleModelRole` / `AppBundleModelRoles` / `AppBundleModelRoleSelection` / `AppBundleModelRoleRevision`、`AppBundleAdjudicatorPolicies`、`PlatformRoleModel`，并声明能力 `adjudicator-policy-slots-v1`：会话按应用生效的 main / fast / adjudicator 三角色主备与实际使用的策略槽运行，模型许可、档位、预算与超限处置采用同一实际槽；否决、预算耗尽、受理结果未知或已开始输出时不借备用槽绕过；平台默认不是用户档位的上限。接入方须升级真实的 SDK 安装物，管理端保存成功不代表旧包已具备配对消费能力。",
+        "`defineTool` 新增可选 `permission: 'inherit' | 'allow' | 'ask'`：缺省 `inherit` 沿原权限链；`allow` 只豁免缺省询问、`ask` 每次交用户确认，两者都不调用裁决模型；拒绝规则、硬安全边界与应用能力边界仍优先。`query` / `createSession` 派生的 Task 子、孙代理复用宿主的 `permission.askUser`，显式 `ask` 每次重新询问，无通道则拒绝。远端 SDK2 / 统一 API 的声明不增加该字段。"
+      ],
+      "changed": [
+        "已协商双槽裁决、但首次装配没有可用裁决人的会话：合法配置修复后同一会话可恢复裁决，继续使用原权限引擎与累计预算；显式 `adjudication: { enabled: false }` 不会因配置刷新被重新启用；配置刷新沿原身份隔离、失效与合法恢复边界，同一引擎的预算不因刷新重置。Electron 仍在主进程使用完整 SDK / kernel 与 IPC，不改为远端客户端。",
+        "相对 `@tansr/sdk` 0.19.0，根入口公共类型有新增与签名变化（候选登记时为 6 项新增、13 项签名变化，最终以冻结后的导出门为准）；使用 bundle 公共类型、自定义工具或装配扩展的调用方升级后须重新做类型检查。未变的 SDK2 / 统一 API 冻结合同不随此版本重定义。"
+      ],
+      "fixed": [],
+      "note": "本版尚未发布到 npm：以上为候选源码的候发内容，以实际发版为准；公开可安装的最新版仍是 0.19.0，不含这些模型角色与主备策略能力。"
+    },
+    "0.19.0": {
+      "date": "2026-10-10",
+      "added": [
+        "新增非聊天操作客户端 `createPlatformNonchatClient(options)`（返回 `PlatformNonchatClient`；失败抛 `PlatformNonchatError`，携 `status` / `platformCode` / `outcomeUnknown` / `taskId`，区分「确定被拒」与「提交结果未知」）：以应用令牌、稳定幂等键与有界查询调用平台的嵌入（`embeddings`）、重排（`rerank`）、文档（`document`）、音乐（`music`）、音色（`voice`）与视频（`video`）操作，`listModels` 列出授权候选目录，`submit` / `getTask` / `wait` 提交并轮询任务（`unknown` / `failed` / `succeeded` 都停止轮询，资金状态以账单为准），`listVoices` / `getVoice` 找回当前身份的私有音色，`uploadMusicSource` / `listMusicSources` / `getMusicSource` / `getMusicSourceByTask` 管理私有音乐素材。这些操作只在你显式调用时发出，不会在聊天会话中自动执行。随之导出 `NONCHAT_PROTOCOL`、`NONCHAT_OPERATION_PATHS` 与 `Nonchat*` / `Embeddings*` / `Rerank*` / `Document*` / `Music*` / `Voice*` / `PlatformOperationModel` / `PlatformVideoInput` 等类型及对应的 `*Schema` 值。",
+        "新增实时连接合同：`createRealtimeSession` / `getRealtimeSession` / `realtimeConnectionOptions`（子协议常量 `REALTIME_SUBPROTOCOL`；类型 `RealtimeSessionInput` / `RealtimeSessionSubmission` / `RealtimeSessionState` / `RealtimeHandshake` / `RealtimeConnectionOptions`）：返回经校验的同源连接材料，供你的 WebSocket 工厂单次消费，SDK 不自动连接、不重连；连接票据过期或握手不可用时抛 `PlatformNonchatError`。",
+        "新增文档临时上传与显式清理：`uploadDocument` 把文档暂存到平台当前实例十分钟（不要求幂等键、不自动重提、不提交收费模型任务），`deleteDocumentUpload` 幂等删除；上传引用、有效期与资源归属仍由平台按授权校验，你需要沿这组接口管理自己的资源生命周期。新增应用额度类型 `AppQuota` / `AppQuotaSchema`（日 token、每终端用户日 token、RPM / TPM、图像张数 / 视频秒数 / 识别秒数 / 合成字数与操作单元等上限字段，均可为 null）。"
+      ],
+      "changed": [
+        "`CLIENT_FEATURES` 新增 `'nonchat-operations-v1'`，出线头 `x-tansr-client-features` 的缺省声明串随之变化，升级后首次装配会按新指纹重拉一次 bundle（旧指纹条目自然失效，无需手清缓存）；对 `ClientFeature` 做穷举 `switch` 的代码补该分支。`AppCapabilitiesSchema` 加可选位 `realtimeAudio`；`SpeakInput` 加可选 `voiceRef`（应用私有音色资源引用，与系统 `voice` 互斥，作用域与目标模型由平台校验）。迁移：无需动作。",
+        "原 `createSession` / `query` 用法、Electron 主进程完整 SDK 与 IPC 接线保持兼容；档案材料生命周期的实现随主线修正内联进本版，调用面零变化。"
+      ],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-10-10 发布（与 `@tansr/serve` 0.15.1、`@tansr/cli` 0.10.3 同批）；根入口导出集相对 0.18.1 由 532 项增至 581 项（新增 49、删除 0；签名变化 3 处：`CLIENT_FEATURES` / `AppCapabilitiesSchema` / `SpeakInput`，均为加法），`./extensions` 子入口零差量。本版把此前已合入主线、但未随 0.18.1 发布的平台非聊天能力正式纳入发布物。"
+    },
     "0.18.1": {
       "date": "2026-10-04",
       "added": [],
@@ -339,6 +385,45 @@
     }
   },
   "serve": {
+    "0.16.0": {
+      "added": [
+        "平台会话装配协商 `adjudicator-policy-slots-v1`：复用与 SDK 共同的 kernel 实现，消费应用生效的主备模型与每个策略槽的档位、预算与升级处置；只有原本可信的零出站故障可切到合法备用槽，否决、预算耗尽、受理结果未知与已开始输出不换备；保留宿主询问姿态、权限硬边界与同引擎累计预算。",
+        "纳入已合入主线的持久化公开加法：会话事件日志快照、冷材料耐久覆盖，以及 `./extensions` 中的共享归档、MySQL 预算 / 命令存储、冷存储索引与维护。这些是显式装配的宿主能力，不因更新包自动启用，也不改变冻结的远端执行合同；自定义 Store / 后端实现须对照随包声明重新类型检查。"
+      ],
+      "changed": [
+        "已协商双槽的会话在合法配置恢复后保留原权限引擎预算、显式关闭不复活；Task 在裁决关闭或没有可用裁决配置时不再借父主模型继续机器裁决，原人工询问通道仍保留；撤权后结算已发生的用量时按实际请求的模型归属，不记到配置刷新后的另一模型。",
+        "旧前缀行为保持：缺省 `legacyPrefixes` 仍为 `readwrite`。0.15.0 的发布说明曾计划在 0.16.0 改为 `readonly`，本候选不执行该迁移；显式 `readonly` / `off` 沿原合同，后续退役动作另行按原兼容与授权边界实施。",
+        "相对 0.15.1，根与子入口导出在候选登记时有 79 项新增、17 项签名变化、零删除，最终差集以冻结候选的构建与导出门为准；原生各语言客户端仍经 HTTP 连接服务端，不要求复制本地裁决实现，实际能力由所连服务端运行物决定。"
+      ],
+      "fixed": [],
+      "note": "本版尚未发布到 npm：以上为候选源码的候发内容，以实际发版为准；公开可安装的最新版仍是 0.15.1，升级平台管理配置不能替代升级实际的服务端运行物。"
+    },
+    "0.15.1": {
+      "date": "2026-10-10",
+      "added": [],
+      "changed": [
+        "业务工具（客户端声明的工具）沿设备执行链支持受控实时输出：输出走终端输出管道，总量由服务端固定为该绑定的 `limits.maxRetainedBytes`（客户端参数、平台声明或新的观察窗口都不能加额），分块与批次按 `maxBlockBytes` / `maxBatchBytes` 校验，正文只在原调用仍在进行时受理（完成后可读保留窗，取消或期限届满后不能继续追加）；工具未声明超时时沿用既有的 30 s 缺省；执行恒不回落到 `tansr serve` 主机。对你意味着：接设备执行链的原生客户端可以边执行边看到业务工具输出，预算与权限边界与此前相同。迁移：无。"
+      ],
+      "fixed": [
+        "首次设备绑定不再被循环前置卡住：绑定资格与「连接已就绪」分开判断，`GET /api/sessions/:id/capabilities` 执行域的 `bound-device` 能力按绑定资格取源，不再要求目标已经绑定；可执行能力仍由原身份、平台与策略授权决定，资格判断只读、不刷新策略、不续租、不改绑定。对你意味着：原生客户端（Go / Rust / C++ 等）在新会话上首次绑定设备时不再遇到「能力不可用」。",
+        "统一错误信封的映射修正：`result_unknown` 的 `retryAction` 只会是 `query-status` 或 `rebind`（原域动作留在 `detail.domainRetryAction`），不再因域动作映射变成重发建议；未登记在映射矩阵的域码统一答 `internal_error` / HTTP 500（原状态留在 `detail.domainStatus`），此前会保留原状态码；未知的审批错误保留原错误语义。对你意味着：按统一 `code` / `retryAction` 编写的客户端不会再被引导重发副作用未知的请求。",
+        "检查点恢复与压缩重写先结算已消费的材料，保持未消费与仍持有材料的约束；材料生命周期与来源确认不被绕过。",
+        "旧前缀窗口缺省仍为 `readwrite`，本版不提前启用只读窗口。"
+      ],
+      "note": "本版 npm 包已于 2026-10-10 发布（与 `@tansr/sdk` 0.19.0、`@tansr/cli` 0.10.3 同批）；导出名集与签名相对 0.15.0 零差量（根入口 434 项 + `./extensions` 98 项 + `./process` 6 项），为纯修复版。"
+    },
+    "0.15.0": {
+      "date": "2026-10-06",
+      "added": [
+        "旧 `/v2`、`/v3/*` 前缀的退役窗口旋钮：`StartServerOptions.legacyPrefixes?: 'readwrite' | 'readonly' | 'off'`（缺省 `readwrite`；环境变量 `TANSR_SERVE_LEGACY_PREFIX`）与 `legacyPrefixSunset?: string`（环境变量 `TANSR_SERVE_LEGACY_SUNSET`，HTTP-date 或 ISO-8601，缺省不发 `Sunset`）。只在门面在场（`--v2`）时装配，SDK1-only 部署零变化。`readwrite` = 旧前缀全部受理，体与状态同 0.14.0；`readonly` = 旧前缀上 manifest 登记为 `write` 的 38 个操作答 `410 gone` 统一信封（`code: gone`、`retryAction: rediscover`、`detail.domainCode: legacy_prefix_retired`，`message` 指向对应的 `/api` 操作），39 个读操作与 4 个流操作仍受理，manifest 未登记的旧路径不拒；`off` = 旧前缀全部答 `404 not_found` 统一信封。非法值 → `startServer` 抛 `TypeError`（环境变量非法值按既有规则告警并忽略）。对你意味着：本版升级无行为变化；要提前演练只读窗口的部署设 `TANSR_SERVE_LEGACY_PREFIX=readonly` 并观察 `api.legacy_prefix_rejected`，回滚只需改回 `readwrite`、无数据变化。迁移：请用 `route` 标签把 `/v2/…`、`/v3/…` 的写流量清零；缺省切到 `readonly` 的版本届时另出说明。",
+        "旧前缀响应附 `Deprecation` / `Link` / `Sunset` 头（RFC 9745 / 8288 / 8594；对「旧前缀逐字节不变」纪律的有意例外）：门面在场时 `/v2`、`/v3/*` 的每个响应（含 SSE，含 `readonly` / `off` 的拒绝）附 `Deprecation: @1790900340`（即 0.13.0 公告退役的时刻 2026-10-02T00:19:00Z）与 `Link: </api/manifest>; rel=\"deprecation\"`；设置 `legacyPrefixSunset` 后再附 `Sunset: <IMF-fixdate>`（本版不内置日期）。`readwrite` 下响应体与状态码逐字节不变；`/api` 响应不附这些头。对你意味着：旧前缀客户端若有「未知响应头即拒绝」的规则须放行这三个标准头（`@tansr/api-client` 0.3.x / 0.4.0 均忽略）。迁移：无。",
+        "结构化日志两个新事件（`warn` 级）：`api.legacy_prefix_mixed`——同一会话 id 先后经 `/api/sessions/:id/**` 与 `/v2/sessions/:id/**` 或 `/v3/sdk2/sessions/:id/**` 访问时记一条 `{ route, family, from, to }`（按会话 id 保留最近 4096 条，每次切换记一次；本版只留痕不拒绝）；`api.legacy_prefix_rejected`——`readonly` / `off` 下每个 `method route` 模板首次被拒记一条 `{ route, method, mode, status }`。对你意味着：两事件计数持续为 0 一个观察窗（建议不短于一个发布周期）即可作为切到只读窗口的证据。迁移：无。",
+        "环境变量表由 36 键增至 38 键（即上述两键）；`ServeRuntimeEnvStringFormat` 加 `'http-date'`，`TANSR_SERVE_LEGACY_SUNSET` 为非法日期时告警 `HTTP date (IMF-fixdate) or ISO-8601 timestamp` 并忽略该键。"
+      ],
+      "changed": [],
+      "fixed": [],
+      "note": "本版 npm 包已于 2026-10-06 发布（与 `@tansr/cli` 0.10.2、`@tansr/api-client` 0.4.0 同批）；导出名集不变（根入口 434 项 + `./extensions` 98 项 + `./process` 6 项），签名加法 5 处（`StartServerOptions`、`ServeRuntimeServerOptions`、`ServeRuntimeEnvStringFormat`，以及根入口与 `./process` 的 `LOG_EVENT`）。`/api` 面、manifest（revision 7）与旧前缀响应体零变化，旧前缀响应头是本版唯一的有意例外。同批的 `@tansr/api-client` 0.4.0 把 `./sdk2` / `./terminal` 冻结入口的缺省路由表改到 `/api` 门面，仍要打旧前缀的调用方须显式注入旧路由表。"
+    },
     "0.14.0": {
       "date": "2026-10-04",
       "added": [
