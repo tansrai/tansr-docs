@@ -21,7 +21,7 @@ sources:
   - tansr-cli:packages/server/src/api/facade.ts
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api`는 "요청 한 번을 어떻게 표현하는가"와 "실패 한 번을 어떻게 표현하는가"를 각 도메인 하위 계약에서 꺼내 통일되게 정의합니다. 이 페이지는 그 두 가지의 사실표입니다. 성공 응답 본문은 이 페이지의 범위 밖이며, 각 도메인 하위 계약이 정하고 이전 접두사와 바이트 단위로 동일합니다.
@@ -133,11 +133,11 @@ lastVerified: '2026-10-05'
 | `payload_too_large` | 413 | `none` | 본문 상한 초과 |
 | `rejected` | 422 | `none` | 의미 검증을 통과하지 못함 |
 | `capacity_exceeded` | 429(원래가 503이면 유지) | `same-request` | 속도 제한, 드레인 중, 과부하, 인증 소스 사용 불가. `retry-after` 포함 |
-| `internal_error` | 500(등록되지 않은 패밀리 코드는 원래 상태 유지) | `none` | 서버 내부 오류, 또는 매트릭스에 등록되지 않은 도메인 코드 |
+| `internal_error` | 500 | `none` | 서버 내부 오류, 또는 매트릭스에 등록되지 않은 도메인 코드(원래 상태는 `detail.domainStatus`에만 남음) |
 | `upstream_unavailable` | 503 | `same-request` | 상류 / 능력 소스를 일시적으로 사용할 수 없음 |
-| `result_unknown` | 503 | `query-status` | 부작용 결과를 알 수 없음: 조회만 하고 재전송하지 않음 |
+| `result_unknown` | 503 | `query-status` | 부작용 결과를 알 수 없음: 조회만 하고 재전송하지 않음. `retryAction`은 `query-status` 또는 `rebind`만 가능하며, 패밀리 동작 매핑 때문에 재전송 제안으로 바뀌지 않음 |
 
-상태 재작성 규칙: 각 통합 코드에는 기본 상태가 하나 있습니다. 원래 패밀리 상태가 RFC가 허용하는 대체 열(400/422, 409/412, 409/410, 404/403, 429/503)에 들어가면 원래 상태를 유지하고, 아니면 기본값을 가집니다. 따라서 `session_ended`(이전 접두사에서 409)는 `/api`에서 410 `gone`으로 나가고, `binding_closed`도 마찬가지로 410, `unsupported_capability`(이전 접두사에서 422 또는 409)는 404 `capability_unavailable`, `commit_unknown`은 503 `result_unknown`으로 나갑니다. 원래 상태는 항상 `detail.domainStatus`에 있습니다.
+상태 재작성 규칙: 각 통합 코드에는 기본 상태가 하나 있습니다. 원래 패밀리 상태가 RFC가 허용하는 대체 열(400/422, 409/412, 409/410, 404/403, 429/503)에 들어가면 원래 상태를 유지하고, 아니면 기본값을 가집니다. 따라서 `session_ended`(이전 접두사에서 409)는 `/api`에서 410 `gone`으로 나가고, `binding_closed`도 마찬가지로 410, `unsupported_capability`(이전 접두사에서 422 또는 409)는 404 `capability_unavailable`, `commit_unknown`은 503 `result_unknown`으로 나갑니다. 원래 상태는 항상 `detail.domainStatus`에 있습니다. 매트릭스에 등록되지 않은 도메인 코드는 이 규칙을 따르지 않습니다. `@tansr/serve` 0.15.1부터는 일률적으로 500 `internal_error`가 되며(0.15.0 이전은 원래 상태 유지), 원래 상태는 마찬가지로 `detail.domainStatus`에만 남습니다.
 
 파사드가 직접 답하는 코드는 8개뿐입니다. `unauthorized`, `not_found`, `method_not_allowed`, `invalid_request`, `capability_unavailable`, `capacity_exceeded`, `precondition_failed`, `upstream_unavailable`. 나머지는 도메인 오류의 정규화에서 옵니다.
 

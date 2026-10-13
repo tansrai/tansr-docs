@@ -21,7 +21,7 @@ sources:
   - tansr-cli:packages/server/src/api/facade.ts
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` は「1 回のリクエストをどう表すか」と「1 回の失敗をどう表すか」を各ドメインサブ契約から取り出して統一的に定義します。このページはその 2 つの事実表です。成功レスポンス本文はこのページの範囲外で、各ドメインサブ契約が決め、旧プレフィックスとバイト単位で同一です。
@@ -133,11 +133,11 @@ lastVerified: '2026-10-05'
 | `payload_too_large` | 413 | `none` | 本文上限を超えた |
 | `rejected` | 422 | `none` | セマンティック検証に通らなかった |
 | `capacity_exceeded` | 429（元が 503 なら維持） | `same-request` | レート制限、ドレイン中、過負荷、認証ソースが利用できない。`retry-after` 付き |
-| `internal_error` | 500（未登録のファミリーコードは元のステータスを維持） | `none` | サーバー内部エラー、またはマトリクスに登録されていないドメインコード |
+| `internal_error` | 500 | `none` | サーバー内部エラー、またはマトリクスに登録されていないドメインコード（元のステータスは `detail.domainStatus` にのみ残る） |
 | `upstream_unavailable` | 503 | `same-request` | 上流 / 能力ソースが一時的に利用できない |
-| `result_unknown` | 503 | `query-status` | 副作用の結果が不明：照会だけ、再送はしない |
+| `result_unknown` | 503 | `query-status` | 副作用の結果が不明：照会だけ、再送はしない。`retryAction` は `query-status` か `rebind` のどちらかにしかならず、ファミリーの動作マッピングで再送の提案に変わることはない |
 
-ステータス書き換えのルール：各統一コードには既定ステータスが 1 つあります。元のファミリーのステータスが RFC の許す代替列（400/422、409/412、409/410、404/403、429/503）に入っていれば元のステータスを維持し、そうでなければ既定値を取ります。したがって `session_ended`（旧プレフィックスでは 409）は `/api` では 410 `gone` として出て、`binding_closed` も同じく 410、`unsupported_capability`（旧プレフィックスでは 422 または 409）は 404 `capability_unavailable`、`commit_unknown` は 503 `result_unknown` として出ます。元のステータスは常に `detail.domainStatus` にあります。
+ステータス書き換えのルール：各統一コードには既定ステータスが 1 つあります。元のファミリーのステータスが RFC の許す代替列（400/422、409/412、409/410、404/403、429/503）に入っていれば元のステータスを維持し、そうでなければ既定値を取ります。したがって `session_ended`（旧プレフィックスでは 409）は `/api` では 410 `gone` として出て、`binding_closed` も同じく 410、`unsupported_capability`（旧プレフィックスでは 422 または 409）は 404 `capability_unavailable`、`commit_unknown` は 503 `result_unknown` として出ます。元のステータスは常に `detail.domainStatus` にあります。マトリクスに登録されていないドメインコードはこのルールの対象外です。`@tansr/serve` 0.15.1 以降は一律に 500 `internal_error` となり（0.15.0 以前は元のステータスを維持）、元のステータスは同じく `detail.domainStatus` にのみ残ります。
 
 ファサード自身が直接答えるコードは 8 つだけです。`unauthorized`、`not_found`、`method_not_allowed`、`invalid_request`、`capability_unavailable`、`capacity_exceeded`、`precondition_failed`、`upstream_unavailable`。残りはドメインエラーの正規化から来ます。
 

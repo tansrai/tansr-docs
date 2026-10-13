@@ -18,7 +18,7 @@ sources:
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 的能力是**可发现**的：清单告诉你这个版本的服务端定义了哪些操作，部署级能力告诉你这台服务端装配了哪些领域，会话级能力围栏告诉你在某个会话里、以当前授权，哪些操作此刻放行。三个端点都只读、都要鉴权、都不返回任何可导航的 URL。
@@ -88,6 +88,6 @@ lastVerified: '2026-10-05'
 
 - **只记录，不切换逻辑。** 修订推进是加法（新操作、新字段），旧客户端继续按自己的目录调用；缺失的操作会在围栏里显示 `unavailable`，或在调用时得到 `capability_unavailable` / `not_found`。
 - 不要据此改解析器，也不要去旧前缀「试一试」——那正是纪律第一条禁止的静默降级。
-- 需要新操作时，升级客户端到对应 revision 的版本（`@tansr/api-client` 0.3.0 对齐 revision 7）。
+- 需要新操作时，升级客户端到对应 revision 的版本（`@tansr/api-client` 自 0.3.0 起对齐 revision 7，0.4.0 的 `./api` 子入口未变）。
 
 `@tansr/api-client/api` 提供 `onContract` 回调，每个响应的 `{ manifestRevision, schemaHash, domain }` 都会经过它，适合接到你的排障日志。

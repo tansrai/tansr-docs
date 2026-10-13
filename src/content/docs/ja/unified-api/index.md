@@ -22,7 +22,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` は `@tansr/serve` が外部に公開する**唯一**の HTTP 呼び出し面です。セッション、実行、アーカイブ、キャッシュ、ターミナルなどすべてのドメインがこの 1 つのプレフィックスの下にあり、同じリクエストヘッダー、レスポンスヘッダー、エラーエンベロープ、イベントエンベロープを共有します。契約名は `unified-v1` で、`@tansr/serve` 0.13.0（2026-10-02 リリース）から正式に利用できます。それ以前のドメインごとに分かれていた `/v2`、`/v3/sdk2`、`/v3/terminal*` はプロセス内に残っていますが、内部アダプターの入口としてだけ使われます。`/v1` は `/api` を組み込んだデプロイでは既定でオフです。
@@ -72,8 +72,13 @@ content-type: application/json
 | `@tansr/serve` 0.14.0 | 2026-10-04 | マニフェスト revision 7：81 操作、`approval.credential.submit`（`POST /api/approvals/:id/credential`）を追加、許可 / 質問への応答が `:ticketId` プレースホルダーに変更。3 つのリクエストヘッダー `Idempotency-Key`、`If-Match`（`ETag` と対）、`deadline` を配線。`--legacy-v1` / `TANSR_SERVE_LEGACY_V1` は非推奨になり、起動時に警告 |
 | `@tansr/cli` 0.10.1 | 2026-10-04 | `tansr serve --legacy-v1` が非推奨（引き続き有効） |
 | `@tansr/api-client` 0.3.0 | 2026-10-04 | 正式版：`@tansr/api-client/api` エントリ（`createApiClient`）、操作カタログは revision 7 に整合、3 つのリクエストヘッダーを呼び出しオプションとして公開。旧エントリ `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` は凍結され、削除はされない |
+| `@tansr/serve` 0.15.0 | 2026-10-06 | 旧プレフィックス退役ウィンドウのつまみ `legacyPrefixes`（`TANSR_SERVE_LEGACY_PREFIX=readwrite \| readonly \| off`、既定は `readwrite`）と `legacyPrefixSunset`（`TANSR_SERVE_LEGACY_SUNSET`）。ファサードがある場合、`/v2`、`/v3/*` のレスポンスに `Deprecation` / `Link` が付く（設定後は `Sunset` も）。同じセッションでプレフィックスを混用すると `api.legacy_prefix_mixed` を記録。`/api` の面とマニフェストは変更なし |
+| `@tansr/cli` 0.10.2 | 2026-10-06 | `tansr serve --v2` で上記 2 つの環境変数が使える。既定の挙動は変わらない |
+| `@tansr/api-client` 0.4.0 | 2026-10-06 | 凍結エントリ `./sdk2`、`./terminal` は `routePrefixes` を渡さなければ既定で `/api` を通る。ファサード経由のエラーボディは統一エンベロープとして復元。`./api` エントリは変更なし |
+| `@tansr/serve` 0.15.1 | 2026-10-10 | 統一エラーエンベロープのマッピング修正：マトリクスに登録されていないドメインコードは一律 500 `internal_error`（元のステータスは `detail.domainStatus` にのみ残る）、`result_unknown` の `retryAction` は `query-status` か `rebind` のみ。セッション単位のクロージャは `execution.binding.create` に対して、利用可能なデバイスツールが既にあることを要求しなくなった。旧プレフィックスウィンドウの既定は引き続き `readwrite` |
+| `@tansr/cli` 0.10.3 | 2026-10-10 | `@tansr/serve` 0.15.1 を内蔵。新しいコマンドやフラグはない |
 
-この章のすべてのページは上の表の**リリース済み**バージョンに基づいて事実を記述しています。書かれている能力はすべて `@tansr/serve` 0.14.0 で利用でき、「候補」の項目はありません。
+この章のすべてのページは上の表の**リリース済み**バージョンに基づいて事実を記述しています。書かれている能力はすべて `@tansr/serve` 0.15.1（現在の npm `latest`）で利用でき、「候補」の項目はありません。
 
 ## 最短で動く例（Node）
 
@@ -121,4 +126,4 @@ for await (const frame of api.events('session.events.observe', { params: { id: s
 | [統一リクエストヘッダー、レスポンスヘッダーとエラーエンベロープ](/ja/unified-api/headers-and-errors/) | リクエストに付けられるヘッダー、すべてのレスポンスが必ず持つヘッダー、19 の統一コードと 6 種の `retryAction` の読み方 |
 | [イベントストリームと統一イベントエンベロープ](/ja/unified-api/events/) | 4 本の SSE ルート、明示的な交渉、7 キーのエンベロープ、`terminalStatus` の判定と再開 |
 | [移行と廃止のタイムテーブル](/ja/unified-api/migration/) | `/v1`、`/v2`、`/v3` から `/api` へどう切り替えるか、旧プレフィックスはいつ廃止されるか、どうペアでロールバックするか |
-| [各言語のクライアント](/ja/unified-api/clients/) | Node / .NET / Android / iOS / HarmonyOS / Go それぞれの unified-v1 への整合状況 |
+| [各言語のクライアント](/ja/unified-api/clients/) | Node / .NET / Go / Rust / Python / C++ と Android / iOS / HarmonyOS それぞれの unified-v1 への整合状況 |

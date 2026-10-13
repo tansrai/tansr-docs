@@ -1,6 +1,6 @@
 ---
 title: 迁移与退役时间表
-description: 从 /v2、/v3/sdk2、/v3/terminal* 切到 /api 的路径对照与请求 / 错误形差异；会话服务 /v1 自 @tansr/serve 0.13.0 起在装配 /api 的部署上缺省关闭与 --legacy-v1 过渡；六步迁移法截至 0.15.0 的进度；/v2 与 /v3/* 的退役节奏，以及服务端与客户端成对回滚的纪律。
+description: 从 /v2、/v3/sdk2、/v3/terminal* 切到 /api 的路径对照与请求 / 错误形差异；会话服务 /v1 自 @tansr/serve 0.13.0 起在装配 /api 的部署上缺省关闭与 --legacy-v1 过渡；六步迁移法截至 0.15.1 的进度；/v2 与 /v3/* 的退役节奏，以及服务端与客户端成对回滚的纪律。
 zone: docs
 category: unified-api
 sidebar:
@@ -23,14 +23,14 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 不是一套新协议，而是把既有领域子合同收到同一个前缀、同一套信封之下。因此迁移的主体工作是换路径、换头、换错误判定，而不是重写业务逻辑；成功响应体与事件载荷一字不变。
 
 ## 路径对照
 
-旧前缀与 `/api` 的对应关系登记在 manifest 每个操作的 `legacy` 字段里，下面是最常用的一部分：
+旧前缀与 `/api` 的对应关系登记在 manifest 每个操作的 `legacyPath` / `legacyOffloadPath` 字段里，下面是最常用的一部分：
 
 | 旧路径 | `/api` | 备注 |
 |---|---|---|
@@ -61,7 +61,7 @@ lastVerified: '2026-10-12'
 | 方面 | 旧前缀 | `/api` |
 |---|---|---|
 | 会话族 | 由路径区分（`/v2` 与 `/v3/sdk2`） | 路径相同，请求头 `tansr-session-family` |
-| 子合同修订 | 部分在路径或体里 | GET 读走查询串 `protocol=` / `contract=`；POST 写不接受查询串 |
+| 子合同修订 | 部分在路径或体里 | GET 读与流走查询串 `protocol=` / `contract=`；写操作不接受查询串（唯一例外：`session.checkpoint.import` 的 `label`） |
 | 响应头 | 无统一头 | 每个响应必带 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` |
 | 错误体 | `{ error: { code, message, detail? } }`，码为各族词表 | 八键统一信封，`code` 为 19 个统一码，族码退到 `detail.domainCode` |
 | 部分错误的状态 | `session_ended` 409、`binding_closed` 409、`unsupported_capability` 422 / 409 | 410 `gone`、410 `gone`、404 `capability_unavailable`（原状态在 `detail.domainStatus`） |
@@ -102,7 +102,7 @@ lastVerified: '2026-10-12'
 | 2026-10-02 | `@tansr/serve` 0.13.0、`@tansr/protocol` 0.2.0、`@tansr/cli` 0.10.0 | `/api` 正式可用；装配 `/api` 的部署上 `/v1` 缺省关闭；预告 `/v2`、`/v3/*` 于 1.0.0 退役 |
 | 2026-10-04 | `@tansr/serve` 0.14.0、`@tansr/cli` 0.10.1、`@tansr/api-client` 0.3.0 | manifest revision 7、三个请求头；`--legacy-v1` 标废弃 |
 | 2026-10-06 | `@tansr/serve` 0.15.0、`@tansr/cli` 0.10.2、`@tansr/api-client` 0.4.0 | 步四告警已生效，缺省不拒绝；步五只读窗口可显式打开，缺省仍是 `readwrite`；旧前缀响应附 `Deprecation` / `Link`；冻结的 api-client 入口缺省改走 `/api` |
-| 2026-10-10 | `@tansr/serve` 0.15.1、`@tansr/cli` 0.10.3 | 旧前缀窗口缺省仍是 `readwrite`。同车的 Go / Rust / C++ 消费修复不改变 `/api` 信封 |
+| 2026-10-10 | `@tansr/serve` 0.15.1、`@tansr/cli` 0.10.3 | 旧前缀窗口缺省仍是 `readwrite`；统一错误信封两处映射修正——矩阵未登记的域码一律 500 `internal_error`，`result_unknown` 的 `retryAction` 收敛为 `query-status` / `rebind`；manifest、路径与成功体不变 |
 | 1.0.0 | `@tansr/serve` 1.0.0、`@tansr/api-client` 1.0.0 | 移除 `/v2`、`/v3/*` 外部入口，`/api` 成为唯一调用面；`unified-v1` 族由 `candidate` 转 `frozen`；`@tansr/api-client` 的 SDK1 入口标废弃，2.0 移除 |
 
 `/v1` 关闭与 `/v2`、`/v3/*` 退役是两项独立的对外合同变更，各有各的发行说明。
@@ -111,7 +111,7 @@ lastVerified: '2026-10-12'
 
 - **服务端回滚必须与客户端成对。** 0.12.0 没有 `/api`：已切 `/api` 的客户端会收到旧形 404 且没有 `tansr-contract` 头，按纪律上报「合同不可用」而不会自动退回旧前缀。把服务端回到 0.12.0 时，Node 回到 `@tansr/api-client` 0.2.0 并改回旧入口，移动端回到上一发行物。
 - **客户端可以单独回滚。** 0.13.0、0.14.0、0.15.0 与 0.15.1 在缺省 `readwrite` 下仍保留 `/v2`、`/v3/*`，旧客户端没有协议断层；这一点一直保持到 1.0.0 之前。显式把 `TANSR_SERVE_LEGACY_PREFIX` 设成 `readonly` 或 `off` 之后，旧客户端的写操作或全部旧前缀会按该模式被拒绝。
-- 0.13.0 与 0.14.0 没有存储格式变化：会话 store、档案宿主、缓存介质在回滚中不需要迁移。
+- 0.13.0 与 0.14.0 没有存储格式变化：会话 store、档案宿主、缓存介质在回滚中不需要迁移。0.15.x 的旧前缀窗口旋钮改回 `readwrite` 同样无数据变化。
 - 反代模板与客户端切流必须同向：客户端已切 `/api` 而模板回滚，会丢失分片亲和。
 
 ## Node 客户端的入口迁移

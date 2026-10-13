@@ -18,7 +18,7 @@ sources:
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api`의 능력은 **발견 가능**합니다. 매니페스트는 이 버전의 서버가 어떤 작업을 정의하는지, 배포 단위 능력은 이 서버가 어떤 도메인을 조립했는지, 세션 단위 능력 클로저는 어떤 세션 안에서 현재 인가로 지금 어떤 작업이 통과하는지 알려 줍니다. 세 엔드포인트는 모두 읽기 전용이고 인증이 필요하며 탐색 가능한 URL을 전혀 돌려주지 않습니다.
@@ -88,6 +88,6 @@ lastVerified: '2026-10-05'
 
 - **기록만 하고 로직은 바꾸지 않는다.** 리비전 전진은 덧셈(새 작업, 새 필드)입니다. 이전 클라이언트는 자기 카탈로그대로 계속 호출하고, 없는 작업은 클로저에서 `unavailable`로 표시되거나 호출 시 `capability_unavailable` / `not_found`를 받습니다.
 - 이를 이유로 파서를 바꾸지 말고, 이전 접두사를 "시험해 보지도" 마세요. 그것이 바로 규율 제1조가 금지하는 조용한 다운그레이드입니다.
-- 새 작업이 필요하면 해당 리비전에 대응하는 버전으로 클라이언트를 업그레이드하세요(`@tansr/api-client` 0.3.0은 revision 7에 정렬).
+- 새 작업이 필요하면 해당 리비전에 대응하는 버전으로 클라이언트를 업그레이드하세요(`@tansr/api-client`는 0.3.0부터 revision 7에 정렬되어 있으며, 0.4.0에서도 `./api` 진입점은 바뀌지 않음).
 
 `@tansr/api-client/api`는 `onContract` 콜백을 제공하며 모든 응답의 `{ manifestRevision, schemaHash, domain }`이 그것을 거칩니다. 장애 조사 로그에 연결하기에 알맞습니다.

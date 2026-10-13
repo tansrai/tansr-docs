@@ -18,7 +18,7 @@ sources:
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 The capabilities of `/api` are **discoverable**: the manifest tells you which operations this server version defines, the deployment-wide capabilities tell you which domains this server has assembled, and the per-session capability closure tells you which operations are allowed right now, in a given session, under the current authorisation. All three endpoints are read-only, require authentication and return no navigable URL.
@@ -88,6 +88,6 @@ Every `/api` response carries `tansr-manifest-revision`. Official clients lock t
 
 - **Log it, do not switch logic.** Revision advances are additive (new operations, new fields); an older client keeps calling according to its own catalogue, and operations it lacks show up as `unavailable` in the closure or answer `capability_unavailable` / `not_found` when called.
 - Do not change the parser because of it, and do not "try" the old prefix: that is exactly the silent downgrade forbidden by rule one.
-- When you need new operations, upgrade the client to the version aligned with that revision (`@tansr/api-client` 0.3.0 is aligned with revision 7).
+- When you need new operations, upgrade the client to the version aligned with that revision (`@tansr/api-client` has been aligned with revision 7 since 0.3.0; the `./api` entry is unchanged in 0.4.0).
 
 `@tansr/api-client/api` offers an `onContract` callback through which the `{ manifestRevision, schemaHash, domain }` of every response passes; it is a good hook for your diagnostics log.

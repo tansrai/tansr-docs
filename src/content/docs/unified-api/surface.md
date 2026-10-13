@@ -19,7 +19,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/server/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 的全部可调用面由一份机器可读的能力清单（manifest）定义：每个操作有稳定的名字、HTTP 方法、路径模板、允许的查询键和读 / 写 / 流分类。官方客户端的路径模块都是从这份清单生成的，本页把其中与「怎么调」有关的事实摊开。
@@ -95,17 +95,17 @@ lastVerified: '2026-10-05'
 
 ## 查询串里的修订标识
 
-领域子合同的修订号不走路径，而走查询串，且只在 **GET 读操作**上出现：
+领域子合同的修订号不走路径，而走查询串，且只在 **GET 操作（读与流）**上出现：
 
 | 领域 | 查询键 | 取值 |
 |---|---|---|
-| `execution`、`archive` 的 GET 读 | `protocol` | `sdk2-ext-v1` |
+| `execution`、`archive` 的 GET 读与流，以及 `session.capabilities`（`GET /api/capabilities/sessions`） | `protocol` | `sdk2-ext-v1` |
 | `cache` 的 GET 读 | `protocol` | `sdk2-cache-v1`；`cache.core.diagnostics` 用 `sdk2-cache-core-v1` |
 | `terminal`、`terminal-observation`、`terminal-profile` 的 GET 读与流 | `contract`、`sessionContract` | `terminal-services-v1` / `terminal-observation-v1` / `terminal-profile-v1`；`sessionContract` 指会话所属族 |
 
 三条规则：
 
-- POST 写操作、`GET /api/capabilities/archive`、`GET /api/capabilities/cache` 不接受任何查询键；多余的键一律 400 `invalid_request`。
+- 写操作不接受查询键（唯一例外是 `session.checkpoint.import` 的可选 `label`）；三个发现端点、`GET /api/capabilities/archive`、`GET /api/capabilities/cache` 同样不接受；多余的键一律 400 `invalid_request`。
 - 带了 `protocol` 但值不是该操作登记的修订（例如 `protocol=sdk2-ext-v0`）→ 400 `protocol_mismatch`。
 - 每个操作允许的查询键是封闭白名单（例如 `archive.records.read` 允许 `protocol`、`historyEpoch`、`deletionGeneration`、`projectionRevision`、`limit`、`maxBytes`、`afterSequence`），白名单之外的键同样 400。
 

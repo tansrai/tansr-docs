@@ -22,7 +22,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api`는 `@tansr/serve`가 외부에 공개하는 **유일한** HTTP 호출 표면입니다. 세션, 실행, 아카이브, 캐시, 터미널 등 모든 도메인이 이 하나의 접두사 아래에 있으며 같은 요청 헤더, 응답 헤더, 오류 봉투, 이벤트 봉투를 공유합니다. 계약명은 `unified-v1`이고, `@tansr/serve` 0.13.0(2026-10-02 릴리스)부터 정식으로 사용할 수 있습니다. 그 이전에 도메인별로 나뉘어 있던 `/v2`, `/v3/sdk2`, `/v3/terminal*`는 프로세스 안에 남아 있지만 내부 어댑터 진입점으로만 쓰입니다. `/v1`은 `/api`를 조립한 배포에서 기본적으로 꺼져 있습니다.
@@ -72,8 +72,13 @@ content-type: application/json
 | `@tansr/serve` 0.14.0 | 2026-10-04 | 매니페스트 revision 7: 81개 작업, `approval.credential.submit`(`POST /api/approvals/:id/credential`) 추가, 권한 / 질문 응답이 `:ticketId` 자리표시자로 변경. 세 요청 헤더 `Idempotency-Key`, `If-Match`(`ETag`와 짝), `deadline` 연결. `--legacy-v1` / `TANSR_SERVE_LEGACY_V1`은 사용 중단 표시되고 시작 시 경고 |
 | `@tansr/cli` 0.10.1 | 2026-10-04 | `tansr serve --legacy-v1` 사용 중단 표시(여전히 유효) |
 | `@tansr/api-client` 0.3.0 | 2026-10-04 | 정식판: `@tansr/api-client/api` 진입점(`createApiClient`), 작업 카탈로그는 revision 7에 정렬, 세 요청 헤더를 호출 옵션으로 노출. 이전 진입점 `./sdk2`, `./sdk2/node`, `./terminal`, `./terminal/node`는 동결되며 삭제되지 않음 |
+| `@tansr/serve` 0.15.0 | 2026-10-06 | 이전 접두사 퇴역 창 손잡이 `legacyPrefixes`(`TANSR_SERVE_LEGACY_PREFIX=readwrite \| readonly \| off`, 기본값 `readwrite`)와 `legacyPrefixSunset`(`TANSR_SERVE_LEGACY_SUNSET`). 파사드가 있으면 `/v2`, `/v3/*` 응답에 `Deprecation` / `Link`가 붙음(설정 후에는 `Sunset`도). 같은 세션에서 접두사를 섞어 쓰면 `api.legacy_prefix_mixed`를 기록. `/api` 표면과 매니페스트는 변경 없음 |
+| `@tansr/cli` 0.10.2 | 2026-10-06 | `tansr serve --v2`에서 위 두 환경 변수를 사용할 수 있음. 기본 동작은 변하지 않음 |
+| `@tansr/api-client` 0.4.0 | 2026-10-06 | 동결 진입점 `./sdk2`, `./terminal`은 `routePrefixes`를 넘기지 않으면 기본으로 `/api`를 탐. 파사드를 거친 오류 본문은 통합 봉투로 복원. `./api` 진입점은 변경 없음 |
+| `@tansr/serve` 0.15.1 | 2026-10-10 | 통합 오류 봉투 매핑 수정: 매트릭스에 등록되지 않은 도메인 코드는 일률적으로 500 `internal_error`(원래 상태는 `detail.domainStatus`에만 남음), `result_unknown`의 `retryAction`은 `query-status` 또는 `rebind`만 가능. 세션 단위 클로저가 `execution.binding.create`에 대해 이미 사용 가능한 장치 도구를 더는 요구하지 않음. 이전 접두사 창의 기본값은 여전히 `readwrite` |
+| `@tansr/cli` 0.10.3 | 2026-10-10 | `@tansr/serve` 0.15.1 내장. 새 명령이나 플래그 없음 |
 
-이 장의 모든 페이지는 위 표의 **릴리스된** 버전을 기준으로 사실을 기술합니다. 적힌 능력은 모두 `@tansr/serve` 0.14.0에서 사용할 수 있으며 "후보" 항목은 없습니다.
+이 장의 모든 페이지는 위 표의 **릴리스된** 버전을 기준으로 사실을 기술합니다. 적힌 능력은 모두 `@tansr/serve` 0.15.1(현재 npm `latest`)에서 사용할 수 있으며 "후보" 항목은 없습니다.
 
 ## 가장 짧은 실행 가능 예제(Node)
 
@@ -121,4 +126,4 @@ for await (const frame of api.events('session.events.observe', { params: { id: s
 | [통합 요청 헤더, 응답 헤더와 오류 봉투](/ko/unified-api/headers-and-errors/) | 요청에 붙일 수 있는 헤더, 모든 응답이 반드시 가지는 헤더, 19개 통합 코드와 6종 `retryAction`을 읽는 법 |
 | [이벤트 스트림과 통합 이벤트 봉투](/ko/unified-api/events/) | 4개의 SSE 라우트, 명시적 협상, 7키 봉투, `terminalStatus` 판정과 재개 |
 | [마이그레이션과 폐기 일정](/ko/unified-api/migration/) | `/v1`, `/v2`, `/v3`에서 `/api`로 어떻게 전환하는지, 이전 접두사는 언제 폐기되는지, 어떻게 짝으로 롤백하는지 |
-| [언어별 클라이언트](/ko/unified-api/clients/) | Node / .NET / Android / iOS / HarmonyOS / Go 각각의 unified-v1 정렬 현황 |
+| [언어별 클라이언트](/ko/unified-api/clients/) | Node / .NET / Go / Rust / Python / C++와 Android / iOS / HarmonyOS 각각의 unified-v1 정렬 현황 |

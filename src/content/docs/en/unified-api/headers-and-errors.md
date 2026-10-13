@@ -21,7 +21,7 @@ sources:
   - tansr-cli:packages/server/src/api/facade.ts
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` lifts "how a request is expressed" and "how a failure is expressed" out of the domain subcontracts and defines both uniformly. This page is the fact table for those two things; success bodies are out of scope, since they are constrained by the domain subcontracts and byte-identical to the old prefixes.
@@ -133,11 +133,11 @@ Every JSON error body with status ≥ 400 on `/api` has the same shape:
 | `payload_too_large` | 413 | `none` | Over a body cap |
 | `rejected` | 422 | `none` | Semantic validation failed |
 | `capacity_exceeded` | 429 (kept when the original status is 503) | `same-request` | Rate limited, draining, overloaded, authentication source unavailable; with `retry-after` |
-| `internal_error` | 500 (an unregistered family code keeps its original status) | `none` | Internal server error, or a domain code not registered in the matrix |
+| `internal_error` | 500 | `none` | Internal server error, or a domain code not registered in the matrix (the original status is only in `detail.domainStatus`) |
 | `upstream_unavailable` | 503 | `same-request` | Upstream / capability source temporarily unavailable |
-| `result_unknown` | 503 | `query-status` | The outcome of a side effect is unknown: query only, never replay |
+| `result_unknown` | 503 | `query-status` | The outcome of a side effect is unknown: query only, never replay. `retryAction` is only ever `query-status` or `rebind`; a family action mapping never turns it into a resend suggestion |
 
-Status rewrite rule: every unified code has a default status; when the original family status falls within the alternatives the RFC allows for that code (400/422, 409/412, 409/410, 404/403, 429/503) the original status is kept, otherwise the default applies. Hence `session_ended` (409 on the old prefixes) leaves `/api` as 410 `gone`, `binding_closed` is likewise 410, `unsupported_capability` (422 or 409 on the old prefixes) becomes 404 `capability_unavailable`, and `commit_unknown` becomes 503 `result_unknown`; the original status is always in `detail.domainStatus`.
+Status rewrite rule: every unified code has a default status; when the original family status falls within the alternatives the RFC allows for that code (400/422, 409/412, 409/410, 404/403, 429/503) the original status is kept, otherwise the default applies. Hence `session_ended` (409 on the old prefixes) leaves `/api` as 410 `gone`, `binding_closed` is likewise 410, `unsupported_capability` (422 or 409 on the old prefixes) becomes 404 `capability_unavailable`, and `commit_unknown` becomes 503 `result_unknown`; the original status is always in `detail.domainStatus`. Domain codes not registered in the matrix do not follow this rule: since `@tansr/serve` 0.15.1 they always get 500 `internal_error` (0.15.0 and earlier kept the original status), and the original status is likewise only in `detail.domainStatus`.
 
 The facade itself answers directly with only 8 codes: `unauthorized`, `not_found`, `method_not_allowed`, `invalid_request`, `capability_unavailable`, `capacity_exceeded`, `precondition_failed`, `upstream_unavailable`; all others come from normalised domain errors.
 

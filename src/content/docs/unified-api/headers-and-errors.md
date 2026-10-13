@@ -21,7 +21,7 @@ sources:
   - tansr-cli:packages/server/src/api/facade.ts
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 把「怎么表达一次请求」和「怎么表达一次失败」从各领域子合同里抽出来统一定义。本页是这两件事的事实表；成功响应体不在本页范围——它由各领域子合同约束，且与旧前缀逐字节相同。
@@ -133,11 +133,11 @@ lastVerified: '2026-10-05'
 | `payload_too_large` | 413 | `none` | 超过体帽 |
 | `rejected` | 422 | `none` | 语义校验未通过 |
 | `capacity_exceeded` | 429（原状态为 503 时保留） | `same-request` | 限流、排空中、过载、鉴权源不可用；带 `retry-after` |
-| `internal_error` | 500（未登记的族码保留原状态） | `none` | 服务端内部错误，或矩阵未登记的域码 |
+| `internal_error` | 500 | `none` | 服务端内部错误，或矩阵未登记的域码（原状态只在 `detail.domainStatus`） |
 | `upstream_unavailable` | 503 | `same-request` | 上游 / 能力源暂不可用 |
-| `result_unknown` | 503 | `query-status` | 副作用结果未知：只能查询，不能重放 |
+| `result_unknown` | 503 | `query-status` | 副作用结果未知：只能查询，不能重放。`retryAction` 只会是 `query-status` 或 `rebind`，不会因族动作映射变成重发建议 |
 
-状态改写规则：每个统一码有一个缺省状态；原族状态落在 RFC 允许的备选列内（400/422、409/412、409/410、404/403、429/503）时保留原状态，否则取缺省。因此 `session_ended`（旧前缀 409）经 `/api` 出线为 410 `gone`，`binding_closed` 同样 410，`unsupported_capability`（旧前缀 422 或 409）出线为 404 `capability_unavailable`，`commit_unknown` 出线为 503 `result_unknown`；原状态恒在 `detail.domainStatus`。
+状态改写规则：每个统一码有一个缺省状态；原族状态落在 RFC 允许的备选列内（400/422、409/412、409/410、404/403、429/503）时保留原状态，否则取缺省。因此 `session_ended`（旧前缀 409）经 `/api` 出线为 410 `gone`，`binding_closed` 同样 410，`unsupported_capability`（旧前缀 422 或 409）出线为 404 `capability_unavailable`，`commit_unknown` 出线为 503 `result_unknown`；原状态恒在 `detail.domainStatus`。矩阵未登记的域码不走这条规则：自 `@tansr/serve` 0.15.1 起一律 500 `internal_error`（0.15.0 及更早保留原状态），原状态同样只在 `detail.domainStatus`。
 
 门面自己直接作答的只有 8 个码：`unauthorized`、`not_found`、`method_not_allowed`、`invalid_request`、`capability_unavailable`、`capacity_exceeded`、`precondition_failed`、`upstream_unavailable`；其余由领域错误归一而来。
 

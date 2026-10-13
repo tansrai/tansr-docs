@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 下有四条事件流，各自的帧载荷由所属领域子合同定义。统一事件包络不改变这些载荷，而是在你**显式要求**时给每一帧套上一层同形的外壳，让不同领域的流可以用同一段代码判断「这是哪个领域、游标到哪了、有没有终态」。
@@ -28,7 +28,7 @@ lastVerified: '2026-10-05'
 | 操作 | 路径 | 领域 | 帧里有什么 |
 |---|---|---|---|
 | `session.events.observe` | `GET /api/sessions/:id/events` | `session` | 内核事件（`msg.*`、`tool.*`、`turn.*`、`session.*`）与 `server.*` 控制帧 |
-| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`、`archive.records-available`、`material.status`、`binding.status` |
+| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`、`archive.records-available`、`material.request`、`material.status`、`binding.status` |
 | `terminal.executor.events.observe` | `GET /api/terminal/executors/:id/events` | `terminal` | `operations-available`、`operation-cancelled`、`reconcile-required` |
 | `terminal.output.observe` | `GET /api/terminal/sessions/:id/tool-output` | `terminal` | `output.block`、`output.status` |
 
@@ -98,7 +98,7 @@ lastVerified: '2026-10-05'
 | 会话 | `server.*` 控制帧、`msg.*`、`tool.*`、未知类型 | `null` |
 | 档案 | `material.status`：`received` → `accepted`（只表示受理）；`core-consumed` → `completed`；`rejected` → `aborted`；`pending` / `verified` → `null` | 如左 |
 | 档案 | `binding.status`：`closed` → `completed`；`active` / `backpressured` / `closing` → `null` | 如左 |
-| 档案 | `archive.status`、`archive.records-available` | `null` |
+| 档案 | `archive.status`、`archive.records-available`、`material.request` | `null` |
 | 执行器 | `operation-cancelled` → `aborted`；`operations-available`、`reconcile-required` → `null`（对账要求不是终态） | 如左 |
 | 工具输出 | `output.status`：`complete` → `completed`；`available` / `receiving` / `truncated` / `gap` / `unavailable` → `null`；`output.block` → `null` | 如左 |
 

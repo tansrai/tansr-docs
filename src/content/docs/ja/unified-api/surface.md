@@ -19,7 +19,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/server/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` の呼び出し面全体は、機械可読な 1 つの能力マニフェスト（manifest）で定義されています。各操作には安定した名前、HTTP メソッド、パステンプレート、許可されるクエリキー、読み / 書き / ストリームの分類があります。公式クライアントのパスモジュールはすべてこのマニフェストから生成されており、このページではそのうち「どう呼ぶか」に関わる事実を広げて示します。
@@ -95,17 +95,17 @@ lastVerified: '2026-10-05'
 
 ## クエリ文字列のリビジョン識別子
 
-ドメインサブ契約のリビジョンはパスではなくクエリ文字列に置かれ、**GET の読み操作**にだけ現れます。
+ドメインサブ契約のリビジョンはパスではなくクエリ文字列に置かれ、**GET 操作（読みとストリーム）**にだけ現れます。
 
 | ドメイン | クエリキー | 値 |
 |---|---|---|
-| `execution`、`archive` の GET 読み | `protocol` | `sdk2-ext-v1` |
+| `execution`、`archive` の GET 読みとストリーム、および `session.capabilities`（`GET /api/capabilities/sessions`） | `protocol` | `sdk2-ext-v1` |
 | `cache` の GET 読み | `protocol` | `sdk2-cache-v1`。`cache.core.diagnostics` は `sdk2-cache-core-v1` |
 | `terminal`、`terminal-observation`、`terminal-profile` の GET 読みとストリーム | `contract`、`sessionContract` | `terminal-services-v1` / `terminal-observation-v1` / `terminal-profile-v1`。`sessionContract` はセッションが属するファミリーを指す |
 
 3 つのルール：
 
-- POST の書き操作、`GET /api/capabilities/archive`、`GET /api/capabilities/cache` はクエリキーを一切受け付けません。余分なキーはすべて 400 `invalid_request` です。
+- 書き操作はクエリキーを受け付けません（唯一の例外は `session.checkpoint.import` の省略可能な `label`）。3 つのディスカバリーエンドポイント、`GET /api/capabilities/archive`、`GET /api/capabilities/cache` も同様に受け付けません。余分なキーはすべて 400 `invalid_request` です。
 - `protocol` を付けたのに値がその操作に登録されたリビジョンでない場合（たとえば `protocol=sdk2-ext-v0`）は 400 `protocol_mismatch` です。
 - 各操作が許可するクエリキーは閉じた許可リストです（たとえば `archive.records.read` は `protocol`、`historyEpoch`、`deletionGeneration`、`projectionRevision`、`limit`、`maxBytes`、`afterSequence` を許可します）。リスト外のキーも同様に 400 です。
 

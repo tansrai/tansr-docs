@@ -19,7 +19,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/server/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api`의 호출 가능한 표면 전체는 기계가 읽을 수 있는 하나의 능력 매니페스트(manifest)로 정의됩니다. 각 작업에는 안정적인 이름, HTTP 메서드, 경로 템플릿, 허용되는 쿼리 키, 읽기 / 쓰기 / 스트림 분류가 있습니다. 공식 클라이언트의 경로 모듈은 모두 이 매니페스트에서 생성되며, 이 페이지는 그중 "어떻게 호출하는가"와 관련된 사실을 펼쳐 보입니다.
@@ -95,17 +95,17 @@ lastVerified: '2026-10-05'
 
 ## 쿼리 문자열의 리비전 식별자
 
-도메인 하위 계약의 리비전은 경로가 아니라 쿼리 문자열에 들어가며 **GET 읽기 작업**에만 나타납니다.
+도메인 하위 계약의 리비전은 경로가 아니라 쿼리 문자열에 들어가며 **GET 작업(읽기와 스트림)**에만 나타납니다.
 
 | 도메인 | 쿼리 키 | 값 |
 |---|---|---|
-| `execution`, `archive`의 GET 읽기 | `protocol` | `sdk2-ext-v1` |
+| `execution`, `archive`의 GET 읽기와 스트림, 그리고 `session.capabilities`(`GET /api/capabilities/sessions`) | `protocol` | `sdk2-ext-v1` |
 | `cache`의 GET 읽기 | `protocol` | `sdk2-cache-v1`. `cache.core.diagnostics`는 `sdk2-cache-core-v1` |
 | `terminal`, `terminal-observation`, `terminal-profile`의 GET 읽기와 스트림 | `contract`, `sessionContract` | `terminal-services-v1` / `terminal-observation-v1` / `terminal-profile-v1`. `sessionContract`는 세션이 속한 패밀리를 가리킴 |
 
 세 가지 규칙:
 
-- POST 쓰기 작업, `GET /api/capabilities/archive`, `GET /api/capabilities/cache`는 쿼리 키를 전혀 받지 않습니다. 남는 키는 모두 400 `invalid_request`입니다.
+- 쓰기 작업은 쿼리 키를 받지 않습니다(유일한 예외는 `session.checkpoint.import`의 선택적 `label`). 디스커버리 엔드포인트 3개, `GET /api/capabilities/archive`, `GET /api/capabilities/cache`도 마찬가지로 받지 않습니다. 남는 키는 모두 400 `invalid_request`입니다.
 - `protocol`을 붙였는데 값이 그 작업에 등록된 리비전이 아니면(예: `protocol=sdk2-ext-v0`) 400 `protocol_mismatch`입니다.
 - 각 작업이 허용하는 쿼리 키는 닫힌 허용 목록입니다(예: `archive.records.read`는 `protocol`, `historyEpoch`, `deletionGeneration`, `projectionRevision`, `limit`, `maxBytes`, `afterSequence`를 허용). 목록 밖의 키도 마찬가지로 400입니다.
 

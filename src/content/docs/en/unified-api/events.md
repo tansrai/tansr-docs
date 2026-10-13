@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 There are four event streams under `/api`, and the payload of each frame is defined by the owning domain subcontract. The unified event envelope does not change those payloads; when you **explicitly ask for it**, it wraps every frame in an outer shell of the same shape, so that streams from different domains can be handled by one piece of code that asks "which domain is this, where is the cursor, is there a terminal state".
@@ -28,7 +28,7 @@ There are four event streams under `/api`, and the payload of each frame is defi
 | Operation | Path | Domain | What the frames contain |
 |---|---|---|---|
 | `session.events.observe` | `GET /api/sessions/:id/events` | `session` | Kernel events (`msg.*`, `tool.*`, `turn.*`, `session.*`) and `server.*` control frames |
-| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`, `archive.records-available`, `material.status`, `binding.status` |
+| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`, `archive.records-available`, `material.request`, `material.status`, `binding.status` |
 | `terminal.executor.events.observe` | `GET /api/terminal/executors/:id/events` | `terminal` | `operations-available`, `operation-cancelled`, `reconcile-required` |
 | `terminal.output.observe` | `GET /api/terminal/sessions/:id/tool-output` | `terminal` | `output.block`, `output.status` |
 
@@ -98,7 +98,7 @@ The five cursors are not interchangeable: resume the session stream only with `e
 | Session | `server.*` control frames, `msg.*`, `tool.*`, unknown types | `null` |
 | Archive | `material.status`: `received` is `accepted` (acceptance only); `core-consumed` is `completed`; `rejected` is `aborted`; `pending` / `verified` is `null` | as stated |
 | Archive | `binding.status`: `closed` is `completed`; `active` / `backpressured` / `closing` is `null` | as stated |
-| Archive | `archive.status`, `archive.records-available` | `null` |
+| Archive | `archive.status`, `archive.records-available`, `material.request` | `null` |
 | Executor | `operation-cancelled` is `aborted`; `operations-available` and `reconcile-required` are `null` (a reconciliation request is not a terminal state) | as stated |
 | Tool output | `output.status`: `complete` is `completed`; `available` / `receiving` / `truncated` / `gap` / `unavailable` is `null`; `output.block` is `null` | as stated |
 

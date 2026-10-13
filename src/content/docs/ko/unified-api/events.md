@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 아래에는 4개의 이벤트 스트림이 있고 각 프레임의 페이로드는 소속 도메인 하위 계약이 정의합니다. 통합 이벤트 봉투는 그 페이로드를 바꾸지 않습니다. 여러분이 **명시적으로 요구했을 때** 모든 프레임에 같은 형태의 바깥 껍질을 씌워, 서로 다른 도메인의 스트림을 같은 코드로 "이것은 어느 도메인인가, 커서는 어디까지 왔는가, 종료 상태가 있는가"라고 판단할 수 있게 합니다.
@@ -28,7 +28,7 @@ lastVerified: '2026-10-05'
 | 작업 | 경로 | 도메인 | 프레임에 담긴 것 |
 |---|---|---|---|
 | `session.events.observe` | `GET /api/sessions/:id/events` | `session` | 커널 이벤트(`msg.*`, `tool.*`, `turn.*`, `session.*`)와 `server.*` 제어 프레임 |
-| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`, `archive.records-available`, `material.status`, `binding.status` |
+| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`, `archive.records-available`, `material.request`, `material.status`, `binding.status` |
 | `terminal.executor.events.observe` | `GET /api/terminal/executors/:id/events` | `terminal` | `operations-available`, `operation-cancelled`, `reconcile-required` |
 | `terminal.output.observe` | `GET /api/terminal/sessions/:id/tool-output` | `terminal` | `output.block`, `output.status` |
 
@@ -98,7 +98,7 @@ lastVerified: '2026-10-05'
 | 세션 | `server.*` 제어 프레임, `msg.*`, `tool.*`, 알 수 없는 종류 | `null` |
 | 아카이브 | `material.status`: `received`는 `accepted`(수리만 뜻함), `core-consumed`는 `completed`, `rejected`는 `aborted`, `pending` / `verified`는 `null` | 왼쪽과 같음 |
 | 아카이브 | `binding.status`: `closed`는 `completed`, `active` / `backpressured` / `closing`은 `null` | 왼쪽과 같음 |
-| 아카이브 | `archive.status`, `archive.records-available` | `null` |
+| 아카이브 | `archive.status`, `archive.records-available`, `material.request` | `null` |
 | 실행기 | `operation-cancelled`는 `aborted`, `operations-available`, `reconcile-required`는 `null`(대사 요구는 종료 상태가 아님) | 왼쪽과 같음 |
 | 도구 출력 | `output.status`: `complete`는 `completed`, `available` / `receiving` / `truncated` / `gap` / `unavailable`은 `null`, `output.block`은 `null` | 왼쪽과 같음 |
 
