@@ -10,6 +10,35 @@
 (sdk 面见 `packages/sdk/CHANGELOG.md`)。版本号 = `packages/server/package.json`(包目录 `server`,发布名 `@tansr/serve`);
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.6.0 之前的历史见 git(`git log -- packages/server`)。
 
+## 0.16.0 — 候选(待发布;MODEL-ROLE-04)
+
+MODEL-ROLE 发行准备：本段描述候选源码，尚未发布到 npm。公开 `@tansr/serve@0.15.1` 于2026-10-10发行，不含后续模型角色和主备独立策略；升级平台管理配置不能替代升级实际 Serve 运行物。
+
+- 平台会话装配协商 `adjudicator-policy-slots-v1`，复用共同 SDK／kernel 消费 App 有效主备模型与每槽档位、预算、升级处置。仅原可信零出站故障可切合法备用；否决、预算尽、未知受理和已输出不换备。保留宿主询问姿态、权限硬边界与同引擎累计预算。
+- 复用已协商双槽会话的合法配置恢复，保留原权限引擎预算，显式关闭不复活；Task 在裁决关闭或没有可用裁决配置时不再借父主模型继续机器裁决，原人工询问通道仍保留。撤权后结算已发生用量时，按实际请求模型归属，避免记到配置刷新后的另一模型。
+- 纳入已合主线的持久化公开加法：会话事件日志快照、冷材料耐久覆盖，以及 `./extensions` 中的共享归档、MySQL预算／命令存储、冷存储索引与维护。自定义 Store／后端实现须对照随包声明重新类型检查；这些显式宿主能力不因更新包自动启用，也不改变冻结远端执行合同。
+- 相对正式0.15.1的已提交根／子入口快照有79项新增、17项签名变化，原0.x导出门要求minor；最终差集由冻结候选的原构建及exports门确认。原生各语言客户端仍经HTTP连接Serve；本次不要求它们复制本地TS裁决实现，实际能力由所连Serve运行物决定。
+- **旧前缀行为保持：** 本版默认 `legacyPrefixes` 仍为 `readwrite`。0.15.0历史发行说明曾计划0.16.0改为`readonly`，本次模型角色与消费修复不执行该协议迁移；显式`readonly`／`off`选项沿原合同。后续退役动作须单独按原兼容与授权边界实施。
+
+## 0.15.1 — 2026-10-10
+
+REL-FULL-20261010：纳入公开 0.15.0 之后已合主线的 Go、Rust 与 C++ 消费修复，发布状态以本版发行回执为准。
+
+- 首次设备绑定解除对尚未建立 capability 的循环前置，继续由原身份、平台与策略授权决定可执行能力（GO-01）。
+- 业务工具沿原设备执行链支持受控实时输出，并保留工具既有的默认执行超时；不向 Serve 宿主回落执行（RUST-03）。
+- 修正统一错误状态与重试动作的合同映射，未知审批错误保留原错误语义（RUST-02 / RUST-03）。
+- 检查点恢复先结算已消费的材料，保持未消费及仍持有的材料约束；原材料生命周期与来源 ACK 不被绕过（CPP-04）。
+- 旧前缀窗口默认仍为 readwrite，不提前启用 0.16.0 的 readonly 计划；不纳入未合主线的 persistence 开发内容。
+
+## 0.15.0 — 2026-10-06
+
+「0.15.0 车」(REL-0.15.0;UAPI 方案 §0 **D51**,用户 2026-10-06 18:33「发车」;冻结 2026-10-06;发布状态以 `doc/release/serve-0.15.0.md` 回执为准)。本车 = 迁移报告 §3.4 / §3.5 的服务端动作(同会话跨前缀混用告警 + 旧前缀退役窗口旋钮 + 机器可读退役头)与 `@tansr/api-client 0.4.0` 冻结入口缺省切 `/api` 同车(D36 一版间隔:本版旋钮缺省 `readwrite`,**0.16.0 缺省 `readonly`**,1.0.0 移除)。版本号按 gate ④ 口径 minor:导出名集仍 434(根)+ `./extensions` 98 + `./process` 6,签名加法四处(`StartServerOptions` 新增两可选键、`ServeRuntimeServerOptions` Pick 同步、`ServeRuntimeEnvStringFormat` 加 `'http-date'`、`LOG_EVENT` 两新事件)→ 根 **+0 / −0 / ~4**、`./process` ~1(`LOG_EVENT`),所需 minor、实际 minor。`/api` 面、manifest(r7)、旧前缀**响应体**零变化;旧前缀**响应头**是有意例外(第二条)。
+
+- **旧 `/v2` `/v3/*` 前缀退役窗口旋钮 `StartServerOptions.legacyPrefixes?: 'readwrite' | 'readonly' | 'off'`(缺省 `readwrite`;环境 `TANSR_SERVE_LEGACY_PREFIX`,`SERVE_RUNTIME_ENV` legacy 组)与 `legacyPrefixSunset?: string`(`TANSR_SERVE_LEGACY_SUNSET`,HTTP-date 或 ISO-8601;缺省不发 `Sunset`)**(`packages/server/src/api/legacy-window.ts`,`http-server.ts` 在 `dispatchLegacy` 前一行接线):只在门面在场(`options.v2`)时装配,SDK1-only 部署零变化。`readwrite`(本版缺省)= 旧前缀全部受理,体与状态同 0.14.0;`readonly` = manifest `kind: write` 的 38 个操作在旧前缀答 **`410 gone`** 统一信封(`contract: unified-v1`、`code: gone`、`retryAction: rediscover`、`requestId: null`、`detail: { domainCode: legacy_prefix_retired, mode, route, operation, apiPath }`,`tansr-contract: unified-v1` 头在场;`message` 指向对应 `/api` 操作),`read`(39)/ `stream`(4)仍受理,manifest 未登记的旧路径不拒;`off` = 旧前缀全部 **`404 not_found`** 统一信封(1.0.0 形预演)。非法值 → `startServer` 抛 `TypeError`(环境变量非法值按既有律 `warnings` 提示并忽略)。对你意味着:本版升级**无行为变化**;要提前演练只读窗口的部署设 `TANSR_SERVE_LEGACY_PREFIX=readonly` 并看 `api.legacy_prefix_rejected`;回滚 = 改回 `readwrite`,无数据变化。迁移:0.16.0 缺省将改为 `readonly`,请在此前用 `route` 标签把 `/v2/…` `/v3/…` 的写流量清零(迁移报告 §3.5 验证列)。
+- **旧前缀响应附 `Deprecation` / `Link` / `Sunset` 头(RFC 9745 / 8288 / 8594;对「旧前缀逐字节不变」纪律(方案 §7 ②)的有意例外,迁移报告 §3.5 已预告)**:门面在场时 `/v2`、`/v3/*` 的每个响应(含 SSE、含 `readonly` / `off` 的拒绝)附 `Deprecation: @1790900340`(= 0.13.0 公告退役的时刻 `2026-10-02T00:19:00Z`)与 `Link: </api/manifest>; rel="deprecation"`;设置 `legacyPrefixSunset` 后再附 `Sunset: <IMF-fixdate>`(1.0.0 计划日**待拍板**,本版不内置日期)。`readwrite` 下响应体与状态码逐字节不变;`/api` 响应不附这些头。对你意味着:旧前缀客户端若有「未知响应头即拒绝」的律须放行这三个标准头(`@tansr/api-client` 0.3.x / 0.4.0 均忽略);旧链回归卷断言体与状态,不断言头集。迁移:无。
+- **结构化日志两新事件(`LOG_EVENT.apiLegacyPrefixMixed = 'api.legacy_prefix_mixed'`、`LOG_EVENT.apiLegacyPrefixRejected = 'api.legacy_prefix_rejected'`,`warn`;`LOG_EVENT_NAMES` +2)**:同一会话 id 先后经 `/api/sessions/:id/**` 与 `/v2/sessions/:id/**` / `/v3/sdk2/sessions/:id/**` 访问时记一条 `{ route, family: 'api' | 'v2' | 'v3', from, to }`(按会话 id LRU 4096 条,每次切换记一次;迁移报告 §3.4「本步不拒绝」,`readwrite` 下只留痕);`readonly` / `off` 下每个 `method route` 模板首次被拒记一条 `{ route, method, mode, status }`。对你意味着:两事件计数为 0 持续一个观察窗(建议 ≥ 一个发布周期)= 可进 0.16.0 缺省 `readonly` 的证据。迁移:无。
+- **`SERVE_RUNTIME_ENV` 36 → 38 键**(上两键;`pnpm env:example` 再生 `packages/server/.env.example` 与 README 表,`deploy/serve-v2/.env.example` / README 同步注释行与两表行)。`ServeRuntimeEnvStringFormat` 加 `'http-date'`(`TANSR_SERVE_LEGACY_SUNSET` 非法日期 → `warnings` 提示 `HTTP date (IMF-fixdate) or ISO-8601 timestamp`,忽略该键)。
+
 ## 0.14.0 — 2026-10-04
 
 「0.14.0 批」(USDK-11;UAPI 方案 §0 D23,冻结 2026-10-04;发布状态以 `doc/release/serve-0.14.0.md` 回执为准)。本段由 SRV-OWNER-01 / CI-FLAKY-TRIAGE-01 / U7-HDR / U7-OPS / PERF-01 (c)(d) 五批候选登记合并,各批引言保留为事实;版本号按 gate ④ 口径定为 minor:导出**名集**仍 434 项(根)+ `./extensions` 98 + `./process` 6,签名加法两处(`AgentExecutionOptions.memoryFor()` 返回键 `deviceIoBudgetMs?`;`LOG_EVENT` / `LOG_EVENT_NAMES` 新增 `serverDeprecatedOption`),行为收紧一处(`leaseMs` 下限 1000 → 5000),`/api` 操作加法 r7。导出集相对 `@tansr/serve@0.13.0`(tag → `29a21769`)的实测差量(gate ④,冻结日重建 dist 再生快照与仓内一致):**+0 / −0 / ~3**(`AgentExecutionOptions` / `LOG_EVENT` / `LOG_EVENT_NAMES` 三项 `signatureHash`),所需 minor、实际 minor(读数登记于 `doc/report/USDK-11-发行执行单-2026-10-03.md` §4)。

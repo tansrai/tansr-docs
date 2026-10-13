@@ -237,7 +237,8 @@ test('package.json:只加脚本名 vendor:auto,不加依赖', () => {
 test('README 部署段:「上游接线」说明在场(dispatch 命令 · DOCS_DISPATCH_TOKEN 候拍 · 不改兄弟仓)', () => {
   const md = readFileSync(join(ROOT, 'README.md'), 'utf8');
   assert.match(md, /上游接线/);
-  assert.match(md, /gh api repos\/cpple\/tansr-docs\/dispatches -f event_type=upstream-updated/);
+  // 公开源自 2026-10-12 起为 tansrai/tansr-docs(package.json repository 同);上游两私有仓仍为 cpple/*,见 vendor.yml 断言
+  assert.match(md, /gh api repos\/tansrai\/tansr-docs\/dispatches -f event_type=upstream-updated/);
   assert.match(md, /DOCS_DISPATCH_TOKEN/);
   assert.match(md, /UPSTREAM_READ_TOKEN/);
   assert.match(md, /vendor:auto/);
