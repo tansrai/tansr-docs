@@ -22,7 +22,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` 是 `@tansr/serve` 对外的**唯一** HTTP 调用面：会话、执行、档案、缓存、终端等所有领域都在这一个前缀下，共用同一套请求头、响应头、错误信封与事件包络。合同名为 `unified-v1`，自 `@tansr/serve` 0.13.0（2026-10-02 发布）起正式可用。此前按领域分散的 `/v2`、`/v3/sdk2`、`/v3/terminal*` 仍在进程内，但只作为内部适配入口；`/v1` 在装配了 `/api` 的部署上缺省关闭。
@@ -72,8 +72,13 @@ content-type: application/json
 | `@tansr/serve` 0.14.0 | 2026-10-04 | manifest revision 7：81 个操作，新增 `approval.credential.submit`（`POST /api/approvals/:id/credential`），权限 / 提问应答改用 `:ticketId` 占位；三个请求头 `Idempotency-Key`、`If-Match`（配 `ETag`）、`deadline` 接线；`--legacy-v1` / `TANSR_SERVE_LEGACY_V1` 标废弃并在启动时告警 |
 | `@tansr/cli` 0.10.1 | 2026-10-04 | `tansr serve --legacy-v1` 标废弃（仍生效） |
 | `@tansr/api-client` 0.3.0 | 2026-10-04 | 正式版：`@tansr/api-client/api` 子入口（`createApiClient`），操作目录对齐 revision 7，三个请求头以调用选项暴露；`./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node` 旧入口冻结不删 |
+| `@tansr/serve` 0.15.0 | 2026-10-06 | 旧前缀退役窗口旋钮 `legacyPrefixes`（`TANSR_SERVE_LEGACY_PREFIX=readwrite \| readonly \| off`，缺省 `readwrite`）与 `legacyPrefixSunset`（`TANSR_SERVE_LEGACY_SUNSET`）；门面在场时 `/v2`、`/v3/*` 响应附 `Deprecation` / `Link`（设置后再附 `Sunset`）；同一会话跨前缀混用记 `api.legacy_prefix_mixed`；`/api` 面与 manifest 零变化 |
+| `@tansr/cli` 0.10.2 | 2026-10-06 | `tansr serve --v2` 可用上述两个环境变量；缺省行为不变 |
+| `@tansr/api-client` 0.4.0 | 2026-10-06 | 冻结入口 `./sdk2`、`./terminal` 不传 `routePrefixes` 时缺省走 `/api`；经门面时的错误体按统一信封还原；`./api` 子入口零变化 |
+| `@tansr/serve` 0.15.1 | 2026-10-10 | 统一错误信封映射修正：矩阵未登记的域码一律 500 `internal_error`（原状态只留 `detail.domainStatus`），`result_unknown` 的 `retryAction` 只会是 `query-status` 或 `rebind`；会话级围栏对 `execution.binding.create` 不再要求已有可用的设备工具；旧前缀窗口缺省仍是 `readwrite` |
+| `@tansr/cli` 0.10.3 | 2026-10-10 | 内置 `@tansr/serve` 0.15.1；无新命令、旗标 |
 
-本章所有页面按上表的**已发布**版本写事实；写到的能力都已在 `@tansr/serve` 0.14.0 上可用，没有「候选」项。
+本章所有页面按上表的**已发布**版本写事实；写到的能力都已在 `@tansr/serve` 0.15.1（当前 npm `latest`）上可用，没有「候选」项。
 
 ## 最短可运行示例（Node）
 
@@ -121,4 +126,4 @@ for await (const frame of api.events('session.events.observe', { params: { id: s
 | [统一请求头、响应头与错误信封](/unified-api/headers-and-errors/) | 每个请求能带哪些头，每个响应必带哪些头，19 个统一码与 6 种 `retryAction` 怎么判 |
 | [事件流与统一事件包络](/unified-api/events/) | 四条 SSE 路由、显式协商、7 键包络、`terminalStatus` 判定与续流 |
 | [迁移与退役时间表](/unified-api/migration/) | 从 `/v1`、`/v2`、`/v3` 怎么切到 `/api`，旧前缀什么时候退役，怎样成对回滚 |
-| [各语言客户端](/unified-api/clients/) | Node / .NET / Android / iOS / 鸿蒙 / Go 各自对 unified-v1 的对齐状态 |
+| [各语言客户端](/unified-api/clients/) | Node / .NET / Go / Rust / Python / C++ 与 Android / iOS / 鸿蒙各自对 unified-v1 的对齐状态 |

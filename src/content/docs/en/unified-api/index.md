@@ -22,7 +22,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` is the **only** public HTTP surface of `@tansr/serve`: sessions, execution, archive, cache, terminal and every other domain live under this one prefix and share the same request headers, response headers, error envelope and event envelope. The contract is named `unified-v1` and has been generally available since `@tansr/serve` 0.13.0 (released 2026-10-02). The older per-domain prefixes `/v2`, `/v3/sdk2` and `/v3/terminal*` are still inside the process but only as internal adapter entries; `/v1` is off by default on deployments that assemble `/api`.
@@ -72,8 +72,13 @@ Every `/api` response (including 2xx and the opening of an SSE stream) carries t
 | `@tansr/serve` 0.14.0 | 2026-10-04 | Manifest revision 7: 81 operations, new `approval.credential.submit` (`POST /api/approvals/:id/credential`), permission and question answers switch to the `:ticketId` placeholder; the three request headers `Idempotency-Key`, `If-Match` (with `ETag`) and `deadline` are wired; `--legacy-v1` / `TANSR_SERVE_LEGACY_V1` deprecated with a startup warning |
 | `@tansr/cli` 0.10.1 | 2026-10-04 | `tansr serve --legacy-v1` deprecated (still effective) |
 | `@tansr/api-client` 0.3.0 | 2026-10-04 | Stable release: `@tansr/api-client/api` entry (`createApiClient`), operation catalogue aligned to revision 7, the three request headers exposed as call options; the old entries `./sdk2`, `./sdk2/node`, `./terminal` and `./terminal/node` are frozen, not removed |
+| `@tansr/serve` 0.15.0 | 2026-10-06 | Legacy-prefix retirement window knobs `legacyPrefixes` (`TANSR_SERVE_LEGACY_PREFIX=readwrite \| readonly \| off`, default `readwrite`) and `legacyPrefixSunset` (`TANSR_SERVE_LEGACY_SUNSET`); with the facade present, `/v2` and `/v3/*` responses carry `Deprecation` / `Link` (plus `Sunset` once configured); mixing prefixes on the same session logs `api.legacy_prefix_mixed`; the `/api` surface and manifest are unchanged |
+| `@tansr/cli` 0.10.2 | 2026-10-06 | `tansr serve --v2` accepts the two environment variables above; default behaviour unchanged |
+| `@tansr/api-client` 0.4.0 | 2026-10-06 | The frozen entries `./sdk2` and `./terminal` default to `/api` when `routePrefixes` is not passed; error bodies received through the facade are restored as the unified envelope; the `./api` entry is unchanged |
+| `@tansr/serve` 0.15.1 | 2026-10-10 | Unified error envelope mapping fixes: domain codes not registered in the matrix always get 500 `internal_error` (the original status only in `detail.domainStatus`), and the `retryAction` of `result_unknown` is only ever `query-status` or `rebind`; the session-level closure no longer requires an already available device tool for `execution.binding.create`; the legacy-prefix window still defaults to `readwrite` |
+| `@tansr/cli` 0.10.3 | 2026-10-10 | Bundles `@tansr/serve` 0.15.1; no new commands or flags |
 
-Every page in this chapter states facts as of the **released** versions above; everything described is available on `@tansr/serve` 0.14.0, with no "candidate" items.
+Every page in this chapter states facts as of the **released** versions above; everything described is available on `@tansr/serve` 0.15.1 (the current npm `latest`), with no "candidate" items.
 
 ## Shortest runnable example (Node)
 
@@ -121,4 +126,4 @@ These seven rules come from the contract text and every official client implemen
 | [Unified request headers, response headers and the error envelope](/en/unified-api/headers-and-errors/) | Which headers a request may carry, which headers every response must carry, how to read the 19 unified codes and 6 `retryAction` values |
 | [Event streams and the unified event envelope](/en/unified-api/events/) | The four SSE routes, explicit negotiation, the 7-key envelope, `terminalStatus` and resuming |
 | [Migration and retirement timetable](/en/unified-api/migration/) | How to move from `/v1`, `/v2` and `/v3` to `/api`, when the old prefixes retire, how to roll back in pairs |
-| [Clients by language](/en/unified-api/clients/) | Where Node / .NET / Android / iOS / HarmonyOS / Go each stand on unified-v1 |
+| [Clients by language](/en/unified-api/clients/) | Where Node / .NET / Go / Rust / Python / C++ and Android / iOS / HarmonyOS each stand on unified-v1 |

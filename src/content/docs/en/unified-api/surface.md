@@ -19,7 +19,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/server/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 The whole callable surface of `/api` is defined by one machine-readable capability manifest: every operation has a stable name, an HTTP method, a path template, the query keys it allows and a read / write / stream classification. The path modules of the official clients are generated from this manifest; this page spreads out the facts in it that concern "how to call".
@@ -95,17 +95,17 @@ The read / write / stream distinction is more than the HTTP method: only **write
 
 ## Revision identifiers in the query string
 
-The revision of a domain subcontract does not go in the path but in the query string, and only on **GET read operations**:
+The revision of a domain subcontract does not go in the path but in the query string, and only on **GET operations (reads and streams)**:
 
 | Domain | Query key | Value |
 |---|---|---|
-| GET reads of `execution` and `archive` | `protocol` | `sdk2-ext-v1` |
+| GET reads and streams of `execution` and `archive`, plus `session.capabilities` (`GET /api/capabilities/sessions`) | `protocol` | `sdk2-ext-v1` |
 | GET reads of `cache` | `protocol` | `sdk2-cache-v1`; `cache.core.diagnostics` uses `sdk2-cache-core-v1` |
 | GET reads and streams of `terminal`, `terminal-observation`, `terminal-profile` | `contract`, `sessionContract` | `terminal-services-v1` / `terminal-observation-v1` / `terminal-profile-v1`; `sessionContract` names the family the session belongs to |
 
 Three rules:
 
-- POST writes, `GET /api/capabilities/archive` and `GET /api/capabilities/cache` accept no query keys at all; any extra key is 400 `invalid_request`.
+- Write operations accept no query keys (the only exception is the optional `label` of `session.checkpoint.import`); the three discovery endpoints, `GET /api/capabilities/archive` and `GET /api/capabilities/cache` accept none either; any extra key is 400 `invalid_request`.
 - A `protocol` whose value is not the revision registered for the operation (for example `protocol=sdk2-ext-v0`) is 400 `protocol_mismatch`.
 - The query keys allowed per operation form a closed allow-list (for example `archive.records.read` allows `protocol`, `historyEpoch`, `deletionGeneration`, `projectionRevision`, `limit`, `maxBytes`, `afterSequence`); keys outside the list are also 400.
 

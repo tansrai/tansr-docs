@@ -1,6 +1,6 @@
 ---
 title: Migration and retirement timetable
-description: Path mapping and request / error shape differences when moving from /v2, /v3/sdk2 and /v3/terminal* to /api; the session service's /v1 being off by default since @tansr/serve 0.13.0 on deployments with /api, and the --legacy-v1 transition; progress of the six-step migration as of 0.15.0; the retirement cadence for /v2 and /v3/*, and the discipline of rolling server and clients back in pairs.
+description: Path mapping and request / error shape differences when moving from /v2, /v3/sdk2 and /v3/terminal* to /api; the session service's /v1 being off by default since @tansr/serve 0.13.0 on deployments with /api, and the --legacy-v1 transition; progress of the six-step migration as of 0.15.1; the retirement cadence for /v2 and /v3/*, and the discipline of rolling server and clients back in pairs.
 zone: docs
 category: unified-api
 sidebar:
@@ -23,14 +23,14 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 `/api` is not a new protocol; it gathers the existing domain subcontracts under one prefix and one envelope. Most of the migration therefore consists of changing paths, headers and error handling rather than rewriting business logic; success bodies and event payloads do not change by a single byte.
 
 ## Path mapping
 
-The relation between the old prefixes and `/api` is recorded in the `legacy` field of every manifest operation. The most common entries:
+The relation between the old prefixes and `/api` is recorded in the `legacyPath` / `legacyOffloadPath` fields of every manifest operation. The most common entries:
 
 | Old path | `/api` | Notes |
 |---|---|---|
@@ -61,7 +61,7 @@ Do not maintain this table by hand: the path modules of the official clients are
 | Aspect | Old prefixes | `/api` |
 |---|---|---|
 | Session family | Distinguished by path (`/v2` vs `/v3/sdk2`) | Same path, request header `tansr-session-family` |
-| Subcontract revision | Partly in the path or body | GET reads use the query keys `protocol=` / `contract=`; POST writes accept no query string |
+| Subcontract revision | Partly in the path or body | GET reads and streams use the query keys `protocol=` / `contract=`; write operations accept no query string (the only exception: the `label` of `session.checkpoint.import`) |
 | Response headers | No uniform headers | Every response carries `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash` |
 | Error body | `{ error: { code, message, detail? } }`, codes from each family's vocabulary | Eight-key unified envelope, `code` is one of 19 unified codes, the family code moves to `detail.domainCode` |
 | Status of some errors | `session_ended` 409, `binding_closed` 409, `unsupported_capability` 422 / 409 | 410 `gone`, 410 `gone`, 404 `capability_unavailable` (original status in `detail.domainStatus`) |
@@ -102,7 +102,7 @@ Self-hosted multi-replica deployments must adjust their reverse proxy before ste
 | 2026-10-02 | `@tansr/serve` 0.13.0, `@tansr/protocol` 0.2.0, `@tansr/cli` 0.10.0 | `/api` generally available; `/v1` off by default on deployments with `/api`; retirement of `/v2` and `/v3/*` announced for 1.0.0 |
 | 2026-10-04 | `@tansr/serve` 0.14.0, `@tansr/cli` 0.10.1, `@tansr/api-client` 0.3.0 | Manifest revision 7, the three request headers; `--legacy-v1` deprecated |
 | 2026-10-06 | `@tansr/serve` 0.15.0, `@tansr/cli` 0.10.2, `@tansr/api-client` 0.4.0 | Step 4 warnings are on and do not reject by default; the step 5 read-only window can be opened explicitly, and the default remains `readwrite`; old-prefix responses carry `Deprecation` / `Link`; frozen api-client entries default to `/api` |
-| 2026-10-10 | `@tansr/serve` 0.15.1, `@tansr/cli` 0.10.3 | The old-prefix window still defaults to `readwrite`. The Go / Rust / C++ consumer fixes in the same release do not change the `/api` envelope |
+| 2026-10-10 | `@tansr/serve` 0.15.1, `@tansr/cli` 0.10.3 | The old-prefix window still defaults to `readwrite`; two mapping fixes in the unified error envelope — domain codes not registered in the matrix always get 500 `internal_error`, and the `retryAction` of `result_unknown` is narrowed to `query-status` / `rebind`; the manifest, paths and success bodies are unchanged |
 | 1.0.0 | `@tansr/serve` 1.0.0, `@tansr/api-client` 1.0.0 | External `/v2` and `/v3/*` entries removed, `/api` becomes the only surface; the `unified-v1` family moves from `candidate` to `frozen`; the SDK1 entry of `@tansr/api-client` deprecated, removed in 2.0 |
 
 Turning off `/v1` and retiring `/v2` and `/v3/*` are two independent changes to the public contract, each with its own release notes.
@@ -111,7 +111,7 @@ Turning off `/v1` and retiring `/v2` and `/v3/*` are two independent changes to 
 
 - **A server rollback must be paired with a client rollback.** 0.12.0 has no `/api`: a client that has cut over receives old-shape 404s without the `tansr-contract` header and, by the rules, reports "contract unavailable" instead of falling back to the old prefix automatically. When rolling the server back to 0.12.0, roll Node back to `@tansr/api-client` 0.2.0 and the old entries, and mobile clients back to their previous release.
 - **A client can roll back on its own.** The 0.13.0, 0.14.0, 0.15.0 and 0.15.1 servers keep `/v2` and `/v3/*` under the default `readwrite` mode, so old clients see no protocol break; this holds until 1.0.0. After `TANSR_SERVE_LEGACY_PREFIX` is set to `readonly` or `off`, old clients' writes, or every old prefix, are rejected in that mode.
-- 0.13.0 and 0.14.0 change no storage format: the session store, archive host and cache medium need no migration during a rollback.
+- 0.13.0 and 0.14.0 change no storage format: the session store, archive host and cache medium need no migration during a rollback. Turning the 0.15.x old-prefix window knob back to `readwrite` likewise changes no data.
 - Reverse-proxy templates and client cut-over must move in the same direction: a client already on `/api` with a rolled-back template loses shard affinity.
 
 ## Entry migration for the Node client

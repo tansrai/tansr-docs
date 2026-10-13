@@ -18,7 +18,7 @@ sources:
   - tansr-cli:doc/rfc/RFC-UAPI-1-统一信封与canonical单模块.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 `/api` の下には 4 本のイベントストリームがあり、それぞれのフレームのペイロードは所属ドメインのサブ契約が定義します。統一イベントエンベロープはそのペイロードを変えません。あなたが**明示的に要求した**ときに、すべてのフレームに同じ形の外殻をかぶせ、異なるドメインのストリームを同じコードで「これはどのドメインか、カーソルはどこまで進んだか、終端状態はあるか」と判断できるようにします。
@@ -28,7 +28,7 @@ lastVerified: '2026-10-05'
 | 操作 | パス | ドメイン | フレームの中身 |
 |---|---|---|---|
 | `session.events.observe` | `GET /api/sessions/:id/events` | `session` | カーネルイベント（`msg.*`、`tool.*`、`turn.*`、`session.*`）と `server.*` 制御フレーム |
-| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`、`archive.records-available`、`material.status`、`binding.status` |
+| `archive.events.observe` | `GET /api/archive/bindings/:id/events` | `archive` | `archive.status`、`archive.records-available`、`material.request`、`material.status`、`binding.status` |
 | `terminal.executor.events.observe` | `GET /api/terminal/executors/:id/events` | `terminal` | `operations-available`、`operation-cancelled`、`reconcile-required` |
 | `terminal.output.observe` | `GET /api/terminal/sessions/:id/tool-output` | `terminal` | `output.block`、`output.status` |
 
@@ -98,7 +98,7 @@ lastVerified: '2026-10-05'
 | セッション | `server.*` 制御フレーム、`msg.*`、`tool.*`、未知の種別 | `null` |
 | アーカイブ | `material.status`：`received` は `accepted`（受理を表すだけ）、`core-consumed` は `completed`、`rejected` は `aborted`、`pending` / `verified` は `null` | 左のとおり |
 | アーカイブ | `binding.status`：`closed` は `completed`、`active` / `backpressured` / `closing` は `null` | 左のとおり |
-| アーカイブ | `archive.status`、`archive.records-available` | `null` |
+| アーカイブ | `archive.status`、`archive.records-available`、`material.request` | `null` |
 | エグゼキューター | `operation-cancelled` は `aborted`、`operations-available`、`reconcile-required` は `null`（照合の要求は終端状態ではない） | 左のとおり |
 | ツール出力 | `output.status`：`complete` は `completed`、`available` / `receiving` / `truncated` / `gap` / `unavailable` は `null`、`output.block` は `null` | 左のとおり |
 

@@ -1,6 +1,6 @@
 ---
 title: 마이그레이션과 폐기 일정
-description: /v2, /v3/sdk2, /v3/terminal*에서 /api로 전환할 때의 경로 대응표와 요청 / 오류 형태 차이. @tansr/serve 0.13.0부터 /api를 조립한 배포에서 세션 서비스의 /v1이 기본적으로 꺼지는 것과 --legacy-v1 전환기. 0.15.0 시점의 6단계 마이그레이션 진행 상황. /v2와 /v3/*의 폐기 일정, 그리고 서버와 클라이언트를 짝으로 롤백하는 규율.
+description: /v2, /v3/sdk2, /v3/terminal*에서 /api로 전환할 때의 경로 대응표와 요청 / 오류 형태 차이. @tansr/serve 0.13.0부터 /api를 조립한 배포에서 세션 서비스의 /v1이 기본적으로 꺼지는 것과 --legacy-v1 전환기. 0.15.1 시점의 6단계 마이그레이션 진행 상황. /v2와 /v3/*의 폐기 일정, 그리고 서버와 클라이언트를 짝으로 롤백하는 규율.
 zone: docs
 category: unified-api
 sidebar:
@@ -23,14 +23,14 @@ sources:
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:packages/server/contract/api-manifest.json
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 `/api`는 새 프로토콜이 아니라 기존 도메인 하위 계약을 같은 접두사, 같은 봉투 아래에 모은 것입니다. 따라서 마이그레이션의 주된 작업은 경로, 헤더, 오류 판정을 바꾸는 것이지 업무 로직을 다시 쓰는 것이 아닙니다. 성공 응답 본문과 이벤트 페이로드는 한 바이트도 바뀌지 않습니다.
 
 ## 경로 대응표
 
-이전 접두사와 `/api`의 대응은 매니페스트 각 작업의 `legacy` 필드에 등록되어 있습니다. 자주 쓰는 것을 추리면 다음과 같습니다.
+이전 접두사와 `/api`의 대응은 매니페스트 각 작업의 `legacyPath` / `legacyOffloadPath` 필드에 등록되어 있습니다. 자주 쓰는 것을 추리면 다음과 같습니다.
 
 | 이전 경로 | `/api` | 비고 |
 |---|---|---|
@@ -61,7 +61,7 @@ lastVerified: '2026-10-12'
 | 측면 | 이전 접두사 | `/api` |
 |---|---|---|
 | 세션 패밀리 | 경로로 구분(`/v2`와 `/v3/sdk2`) | 경로는 같고 요청 헤더 `tansr-session-family` |
-| 하위 계약 리비전 | 일부는 경로나 본문에 | GET 읽기는 쿼리 문자열 `protocol=` / `contract=`, POST 쓰기는 쿼리 문자열을 받지 않음 |
+| 하위 계약 리비전 | 일부는 경로나 본문에 | GET 읽기와 스트림은 쿼리 문자열 `protocol=` / `contract=`, 쓰기 작업은 쿼리 문자열을 받지 않음(유일한 예외: `session.checkpoint.import`의 `label`) |
 | 응답 헤더 | 통합 헤더 없음 | 모든 응답이 `tansr-contract` / `tansr-manifest-revision` / `tansr-domain` / `tansr-schema-hash`를 가짐 |
 | 오류 본문 | `{ error: { code, message, detail? } }`, 코드는 각 패밀리의 어휘 | 8키 통합 봉투. `code`는 19개 통합 코드이고 패밀리 코드는 `detail.domainCode`로 내려감 |
 | 일부 오류의 상태 | `session_ended` 409, `binding_closed` 409, `unsupported_capability` 422 / 409 | 410 `gone`, 410 `gone`, 404 `capability_unavailable`(원래 상태는 `detail.domainStatus`) |
@@ -102,7 +102,7 @@ lastVerified: '2026-10-12'
 | 2026-10-02 | `@tansr/serve` 0.13.0, `@tansr/protocol` 0.2.0, `@tansr/cli` 0.10.0 | `/api` 정식 사용 가능. `/api`를 조립한 배포에서 `/v1` 기본 꺼짐. `/v2`, `/v3/*`의 1.0.0 폐기 예고 |
 | 2026-10-04 | `@tansr/serve` 0.14.0, `@tansr/cli` 0.10.1, `@tansr/api-client` 0.3.0 | 매니페스트 revision 7, 세 요청 헤더. `--legacy-v1` 사용 중단 표시 |
 | 2026-10-06 | `@tansr/serve` 0.15.0, `@tansr/cli` 0.10.2, `@tansr/api-client` 0.4.0 | 4단계 경고는 켜져 있고 기본적으로 거부하지 않습니다. 5단계 읽기 전용 창은 명시적으로 열 수 있으며 기본값은 `readwrite`입니다. 이전 접두사 응답에 `Deprecation` / `Link`가 붙습니다. 동결된 api-client 진입점은 기본적으로 `/api`로 갑니다 |
-| 2026-10-10 | `@tansr/serve` 0.15.1, `@tansr/cli` 0.10.3 | 이전 접두사 창의 기본값은 여전히 `readwrite`입니다. 같은 릴리스의 Go / Rust / C++ 소비 수정은 `/api` 봉투를 바꾸지 않습니다 |
+| 2026-10-10 | `@tansr/serve` 0.15.1, `@tansr/cli` 0.10.3 | 이전 접두사 창의 기본값은 여전히 `readwrite`입니다. 통합 오류 봉투의 매핑 두 곳을 수정했습니다 — 매트릭스에 등록되지 않은 도메인 코드는 일률적으로 500 `internal_error`, `result_unknown`의 `retryAction`은 `query-status` / `rebind`로 좁혀집니다. 매니페스트, 경로, 성공 본문은 변하지 않습니다 |
 | 1.0.0 | `@tansr/serve` 1.0.0, `@tansr/api-client` 1.0.0 | `/v2`, `/v3/*` 외부 진입점을 제거하고 `/api`가 유일한 호출 표면이 됨. `unified-v1` 패밀리가 `candidate`에서 `frozen`으로. `@tansr/api-client`의 SDK1 진입점은 사용 중단 표시되고 2.0에서 제거 |
 
 `/v1` 끄기와 `/v2`, `/v3/*` 폐기는 두 개의 독립된 공개 계약 변경이며 각각 릴리스 노트가 있습니다.
@@ -111,7 +111,7 @@ lastVerified: '2026-10-12'
 
 - **서버 롤백은 클라이언트와 짝이어야 합니다.** 0.12.0에는 `/api`가 없습니다. `/api`로 전환한 클라이언트는 `tansr-contract` 헤더가 없는 이전 형태의 404를 받고, 규율에 따라 "계약을 사용할 수 없음"으로 보고하며 자동으로 이전 접두사로 돌아가지 않습니다. 서버를 0.12.0으로 되돌릴 때 Node는 `@tansr/api-client` 0.2.0과 이전 진입점으로 되돌리고 모바일은 이전 릴리스로 되돌리세요.
 - **클라이언트는 단독으로 롤백할 수 있습니다.** 0.13.0, 0.14.0, 0.15.0, 0.15.1 서버는 기본 `readwrite`에서 `/v2`, `/v3/*`를 유지하므로 이전 클라이언트에 프로토콜 단절이 없습니다. 이는 1.0.0 전까지 유지됩니다. `TANSR_SERVE_LEGACY_PREFIX`를 `readonly` 또는 `off`로 두면, 그 모드에 맞춰 이전 클라이언트의 쓰기 또는 이전 접두사 전체가 거부됩니다.
-- 0.13.0과 0.14.0에는 저장 형식 변경이 없습니다. 세션 스토어, 아카이브 호스트, 캐시 매체는 롤백 중 마이그레이션이 필요하지 않습니다.
+- 0.13.0과 0.14.0에는 저장 형식 변경이 없습니다. 세션 스토어, 아카이브 호스트, 캐시 매체는 롤백 중 마이그레이션이 필요하지 않습니다. 0.15.x의 이전 접두사 창 손잡이를 `readwrite`로 되돌리는 것도 마찬가지로 데이터 변경이 없습니다.
 - 리버스 프록시 템플릿과 클라이언트 전환은 같은 방향으로 움직여야 합니다. 클라이언트가 이미 `/api`로 전환했는데 템플릿을 되돌리면 샤드 친화성을 잃습니다.
 
 ## Node 클라이언트의 진입점 마이그레이션
