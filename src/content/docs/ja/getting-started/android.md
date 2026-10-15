@@ -20,41 +20,42 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-Android と iOS の SDK はどちらも tansr セッションサービス（`/v2` プロトコル）の**薄いプロトコルクライアント**です。入力を送り、イベントストリームを描画し、あなたが明示的に登録したローカルツールを実行し、権限と質問のダイアログに応答します。エージェントのカーネル、権限エンジン、コンテキストのガバナンスはすべてあなたがデプロイした `@tansr/serve` のサーバー側で動き、スマートフォン上にはプラットフォームの認証情報が一切ありません。両プラットフォームは同じ契約と同じビュー還元のゴールデンサンプルを共有します。このページは Android を主に扱い、最後の節で iOS の対応する書き方を示します。バージョンの基準（2026-10-05 に確認）：Android `com.tansr.sdk:*` **0.4.0**（Maven Central、2026-09-14）、iOS の公開バイナリパッケージ `tansr-ios-spm` **0.3.0**、サーバー側 `@tansr/serve` 0.14.0。公開済みのモバイル SDK は引き続き `/v2` に直結し、サーバー側 0.13.0 で追加された統一呼び出し面 `/api` はそれらに対して透過的です。両リポジトリのメインラインで進む `/api`（manifest revision 7、統一エラーエンベロープ、3 つのリクエストヘッダー）への整合は、**まだどのバージョンでも公開されていません**。
+Android と iOS の SDK はどちらも tansr セッションサービスの**薄いプロトコルクライアント**です。入力を送り、イベントストリームを描画し、あなたが明示的に登録したローカルツールを実行し、権限と質問のダイアログに応答します。エージェントのカーネル、権限エンジン、コンテキストのガバナンスはすべてあなたがデプロイした `@tansr/serve` のサーバー側で動き、スマートフォン上にはプラットフォームの認証情報が一切ありません。両プラットフォームは同じ契約と同じビュー還元のゴールデンサンプルを共有します。このページは Android を主に扱い、最後の節で iOS の対応する書き方を示します。バージョンの基準（2026-10-13 に確認）：Android `com.tansr.sdk:*` **0.5.0**（Maven Central、2026-10-07）、iOS の公開バイナリパッケージ `tansr-ios-spm` **0.4.0**（2026-10-09）、サーバー側 `@tansr/serve` 0.15.1（npm latest、2026-10-10）。この 2 つのモバイル SDK バージョンからのリクエストは、サーバー側が 0.13.0 以降で提供する統一呼び出し面 `/api` だけを通ります（manifest revision 7 に整合し、エラーは統一コードを主とし、`ApiCallOptions` が 3 つのリクエストヘッダー `Idempotency-Key` / `If-Match` / `deadline` を運びます）。`/v2` へ直結することはなく、フォールバックもしません。それより古い Android 0.1.0 – 0.4.0 と iOS 0.3.0 は引き続き `/v2` に直結しますが、サーバー側の `/v2` は 0.13.0 以降は内部アダプターの入口にすぎず、1.0.0 で外部入口が削除されます。アップグレードしてください。
 
 ## スマートフォン側はユーザーメッセージを送り、サーバー側がシステムプロンプトを設定する
 
-`CreateSessionRequest(prompt=...)` と `session.send(...)` はどちらも通常のユーザーメッセージを送信します。Android / iOS は `/v2` 経由で `system` を渡しません。共有の役割はプラットフォームのアプリ設定で管理し、コードでカスタマイズする役割は serve の `platform.system` が提供し、ホストの説明は `platform.systemAppend` を使います。
+`CreateSessionRequest(prompt=...)` と `session.send(...)` はどちらも通常のユーザーメッセージを送信します。Android / iOS は `/api` のセッションリクエスト経由で `system` を渡しません。共有の役割はプラットフォームのアプリ設定で管理し、コードでカスタマイズする役割は serve の `platform.system` が提供し、ホストの説明は `platform.systemAppend` を使います。
 
 プロンプトとポリシー機能は `@tansr/serve` 0.8.0 以降で利用でき、プラットフォーム側は 2026-09-14 に本番公開済みです。デフォルトの `fallback` では SDK の明示した `system`（空配列を含む）がプラットフォームのセグメントを置き換え、`prepend` ではプラットフォームのセグメントを先頭に保持します。プラットフォームのプロンプトとポリシーは次の新しいターンの前に更新され、現在実行中のターンは固定されます。フォアグラウンド / バックグラウンドの再接続、SSE の復旧、attach では元のセッションと履歴を保持でき、更新を受け取るためにセッションを作り直す必要はありません。業務セグメントの競合はアプリ管理者が解消してください。権限は引き続き独立した仕組みで扱われます。詳細は[アプリケーションシステムプロンプト](/ja/sdk/system-prompts/)を参照。
 
 ## 前提
 
-- 到達可能な `@tansr/serve` サービス（[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)を参照）。ローカル開発では、まずリポジトリ内のサンプル `examples/serve-demo` を起動しても構いません。デフォルトで `127.0.0.1:8788` を待ち受けます。Android エミュレーターは `10.0.2.2:8788` でホストマシンにアクセスし、iOS シミュレーターは `127.0.0.1` をそのまま使います。
+- 到達可能な `@tansr/serve` サービス（[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)を参照）で、統一呼び出し面 `/api` が組み込まれていること（0.13.0 以降）。ローカル開発では、まずリポジトリ内のサンプル `examples/serve-demo` を起動しても構いません。`DEMO_SERVE_ONLY=1` と `DEMO_PORT=8788` を指定して常駐サービスとして起動します（ソースコードのデフォルトポートは 8799）。Android 側では先に `adb reverse tcp:8788 tcp:8788` を実行してから `127.0.0.1:8788` に接続し（エミュレーターは `10.0.2.2:8788` でも可）、iOS シミュレーターは `127.0.0.1` をそのまま使います。
 - Android：minSdk 26。Kotlin コルーチン、kotlinx.serialization、OkHttp。iOS：iOS 16+ / macOS 13+、Xcode 15+。
 - あなた自身のログインの仕組み：SDK はリクエストごとにヘッダー（通常は `Authorization: Bearer <あなたのログイン token>`）を渡してもらう必要があり、サーバー側の `authenticate` フックがそこから `endUserId` を取り出します。
 
 ## インストール
 
-Maven Central の座標。3 つから必要なものを選びます。
+Maven Central の座標。4 つから必要なものを選びます。
 
 | 座標 | 内容 |
 |---|---|
-| `com.tansr.sdk:core` | 純粋な Kotlin/JVM：プロトコルモデル、イベントの sealed class（47 型 + `Unknown` の許容）、`SessionView` reducer、再接続ステートマシン、`defineTool` と 2 つのブリッジ |
+| `com.tansr.sdk:core` | 純粋な Kotlin/JVM：プロトコルモデルと生成された `/api` 契約、イベントの sealed class（47 型 + `Unknown` の許容）、`SessionView` reducer、再接続ステートマシン、`defineTool` と 2 つのブリッジ、SDK 2.0 の薄いクライアント |
 | `com.tansr.sdk:client` | OkHttp トランスポート実装、`TansrAgent` エントリーファクトリ |
 | `com.tansr.sdk:compose` | Compose バインディングの薄い層：ライフサイクルの開始 / 停止、デフォルトの権限 / 質問ダイアログ、`TansrMessageList` / `TansrToolCard` などのコンポーネント |
+| `com.tansr.sdk:receiver-android` | 任意（0.5.0 で初公開）：SDK 2.0 の端末側 SQLite アーカイブレシーバー、同期ストア、実行ジャーナル。SDK 2.0 の端末実行を組み込むときだけ追加します |
 
 ```kotlin
 dependencies {
-    implementation("com.tansr.sdk:client:0.4.0")
-    implementation("com.tansr.sdk:compose:0.4.0")
+    implementation("com.tansr.sdk:client:0.5.0")
+    implementation("com.tansr.sdk:compose:0.5.0")
 }
 ```
 
-現在の公開バージョンは 0.4.0（2026-09-14 に Maven Central へ掲載。0.1.0 → 0.2.0 → 0.3.0 → 0.4.0 の 4 版がすべて存在）です。3 つのモジュールは同じバージョン番号を共有します。アップグレードは 3 つ同時に行ってアプリを再ビルドし、異なるバージョンの SDK バイナリを混在させないでください。
+現在の公開バージョンは 0.5.0（2026-10-07 に Maven Central へ掲載。`core` / `client` / `compose` は 0.1.0 以降の 5 版がすべて存在し、`receiver-android` は 0.5.0 から）です。4 つのモジュールは同じバージョン番号を共有します。アップグレードは同時に行ってアプリを再ビルドし、異なるバージョンの SDK バイナリを混在させないでください。0.4.0 からのアップグレードは破壊的変更です。HTTP エラーは統一コードを主とする `TansrAgentException.Unified` になり、旧来のファミリー別 sealed 型（`SessionNotFound` など）は `@Deprecated` が付いて 1 バージョンだけ残ります。
 
 ## 認証情報：あなた自身のログイン状態だけ
 
@@ -126,22 +127,23 @@ val session = client.openSession(scope, CreateSessionRequest(),
 
 | 現象 | 対処 |
 |---|---|
-| 接続するとすぐ 401 | `authProvider` が返すヘッダーをサーバー側の `authenticate` が認めていません。SDK は `authProvider` からトークンを再取得して最大 2 回再接続し、それでも 401 なら `Failed(Unauthorized)` の終端状態に入ります。ログイン状態を直してから明示的に `start()` してください |
-| エミュレーターから接続できない | Android では `127.0.0.1` ではなく `10.0.2.2` を使う。実機ではサーバー側が `0.0.0.0` を待ち受け、平文 http を許可する（または TLS を使う）必要があります |
-| 新しいセッションが 429 | エンドユーザー 1 人あたりデフォルトで最大 8 つのアクティブセッション。使わないセッションは `close()` してください。枠を解放しつつストレージは保持され、resume は引き続き可能です |
+| 接続するとすぐ 401 | `authProvider` が返すヘッダーをサーバー側の `authenticate` が認めていません。SDK は `authProvider` からトークンを再取得して最大 2 回再接続し、それでも 401 なら `Failed` の終端状態（`code = unauthorized`）に入ります。ログイン状態を直してから明示的に `start()` してください |
+| 接続するとすぐ `ContractUnavailable` | `baseUrl` が `/api` ファサードを指していません（サーバーが 0.13.0 より古い、またはプロキシ / キャプティブポータルのページがレスポンスヘッダーを書き換えている）。SDK は旧プレフィックスへフォールバックせず、ポンプは `Failed` の終端状態に入ります。デプロイを直してから明示的に `start()` してください |
+| エミュレーター / USB 実機から接続できない | 先に `adb reverse tcp:8788 tcp:8788` を実行して `127.0.0.1` を使います（エミュレーターは `10.0.2.2` でも可）。LAN 上の実機ではサーバー側が `0.0.0.0` を待ち受け、自前の `DEMO_AUTH_SECRET` を設定し、平文 http を許可する（または TLS を使う）必要があります |
+| 新しいセッションが 429 | `capacity_exceeded`（`domainCode = session_limit_exceeded`）：エンドユーザー 1 人あたりデフォルトで最大 8 つのアクティブセッション。使わないセッションは `close()` してください。枠を解放しつつストレージは保持され、resume は引き続き可能です |
 
 ## iOS でも同じ手順
 
-iOS は SwiftPM で公開のバイナリパッケージ `tansr-ios-spm`（現在 `0.3.0`）を追加します。3 つのモジュールが Android の 3 モジュールに 1 対 1 で対応します：`TansrCore`（純粋な Swift のプロトコル層）、`TansrClient`（URLSession トランスポート + `TansrAgent` ファクトリ）、`TansrUI`（SwiftUI バインディングとデフォルトコンポーネント）。`Package.swift` に次のように宣言するか、Xcode の「Add Package Dependencies」に同じリポジトリのアドレスを入力します：
+iOS は SwiftPM で公開のバイナリパッケージ `tansr-ios-spm`（現在 `0.4.0`、2026-10-09 公開）を追加します。3 つのモジュールが Android の 3 モジュールに 1 対 1 で対応します：`TansrCore`（純粋な Swift のプロトコル層）、`TansrClient`（URLSession トランスポート + `TansrAgent` ファクトリ）、`TansrUI`（SwiftUI バインディングとデフォルトコンポーネント）。`Package.swift` に次のように宣言するか、Xcode の「Add Package Dependencies」に同じリポジトリのアドレスを入力します：
 
 ```swift
-.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.3.0")
+.package(url: "https://github.com/tansrai/tansr-ios-spm.git", exact: "0.4.0")
 // App target dependencies:
 .product(name: "TansrClient", package: "tansr-ios-spm")
 .product(name: "TansrUI", package: "tansr-ios-spm")
 ```
 
-公開パッケージには SDK 実装のソースコードは含まれず、iOS 16+ の実機とシミュレーター、および macOS 13+ をカバーします。同じアプリの依存グラフ内でソース版 SDK とバイナリ版 SDK を混在させないでください。
+公開パッケージには SDK 実装のソースコードは含まれず、iOS 16+ の実機とシミュレーター、および macOS 13+ をカバーします。同じアプリの依存グラフ内でソース版 SDK とバイナリ版 SDK を混在させないでください。0.3.0 からのアップグレードでは、HTTP エラーが `TansrAgentError.kind == .unified`（統一コード + `retryAction`、元のファミリーコードは `domainCode`）になります。旧来の kind で分岐しているコードは移行してください。
 
 クライアントと最初のセッション：
 

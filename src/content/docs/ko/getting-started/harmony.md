@@ -15,31 +15,31 @@ sources:
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/harmony`는 세션 서비스 `/v2`의 **네이티브 ArkTS 얇은 프로토콜 클라이언트**(HAR)입니다. 입력을 보내고, 이벤트 스트림을 리덕션하고, 당신이 명시적으로 등록한 로컬 도구를 실행하며, 권한과 질문에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve`에서 실행되고, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 뷰 리덕션은 Android / iOS와 같은 골든 샘플을 공유합니다. HAR는 **ArkUI 페이지를 포함하지 않습니다**. 녹음, 재생, 리스트 가상화는 호스트가 담당합니다.
+`@tansr/harmony`는 세션 서비스의 **네이티브 ArkTS 얇은 프로토콜 클라이언트**(HAR)입니다. 입력을 보내고, 이벤트 스트림을 리덕션하고, 당신이 명시적으로 등록한 로컬 도구를 실행하며, 권한과 질문에 응답합니다. 에이전트 커널, 권한 엔진, 컨텍스트 거버넌스는 모두 당신이 배포한 `@tansr/serve`에서 실행되고, 휴대폰에는 플랫폼 자격 증명이 전혀 없습니다. 뷰 리덕션은 Android / iOS와 같은 골든 샘플을 공유합니다. HAR는 **ArkUI 페이지를 포함하지 않습니다**. 녹음, 재생, 리스트 가상화는 호스트가 담당합니다.
 
-Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 현재 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 현재 산출물은 독립 배포된 버전 release 바이트코드 HAR(0.1.0)입니다. 공개 OHPM에는 없고, 공개 채널에서 최신판을 자동으로 가져오지 않습니다(2026-10-05 확인, 여전히 0.1.0). 서버는 `@tansr/serve` 0.14.0 기준으로 확인했습니다. 0.13.0부터 추가된 통합 호출 표면 `/api`는 0.1.0 HAR에 투명하며, HAR는 계속 `/v2`에 직접 연결합니다. 저장소 메인라인의 `/api` 정렬과 RDB 수신기 / HUKS 암호화 같은 기능은 모두 로컬 후보이며 **아직 어떤 버전으로도 공개되지 않았습니다**. 이 문서에서는 다루지 않습니다.
+Android 호환 스택만 있는 이전 HarmonyOS 기기는 계속 [Android SDK](/ko/getting-started/android/)를 사용합니다. 선언된 최솟값은 HarmonyOS 6.0 / API 20(Stage 모델. 빌드는 API 22 툴체인)입니다. HarmonyOS 5.x 네이티브 호환은 후속 작업이며, 이 문서는 사용 가능하다고 주장하지 않습니다. 현재 산출물은 독립 배포된 버전 release 바이트코드 HAR(0.2.0, 2026-10-10)이며 `harmony-sdk.zip`으로 배포됩니다. 공개 OHPM에는 없고, 공개 채널에서 최신판을 자동으로 가져오지 않습니다(2026-10-13 확인). 서버는 `@tansr/serve` 0.15.1 기준으로 확인했습니다. 0.2.0 HAR의 모든 요청은 서버 0.13.0부터 제공되는 통합 호출 표면 `/api`만 통과합니다(manifest revision 7. 오류는 통합 코드를 기준으로 하며, 통합 응답 헤더가 빠지면 폴백하지 않고 명시적으로 실패합니다). SDK 2.0의 RDB 아카이브 수신기 / 실행 저널 / 터미널 서비스 클라이언트도 같은 패키지에 들어 있습니다. 0.1.0 HAR는 여전히 `/v2`에 직접 연결하지만, 서버 쪽 `/v2`는 0.13.0부터 내부 어댑터 진입점일 뿐이고 1.0.0에서 외부 진입점이 제거되므로 업그레이드하세요. 2026-10-10 이후 메인라인에 들어간 암호화 메모리 발행, 암호화 증분 RDB 프로필, 읽기 전용 복사본 같은 기능은 **아직 어떤 버전으로도 공개되지 않았습니다**. 이 문서에서는 다루지 않습니다.
 
 ## 휴대폰은 사용자 메시지를 보내고, 서버가 시스템 프롬프트를 설정한다
 
-`createSession`과 `session.send(...)`는 모두 일반 사용자 메시지를 보냅니다. HarmonyOS SDK는 `/v2`를 통해 `system`을 전달하지 않습니다. 공유 역할은 플랫폼 앱 설정이 관리하고, 코드로 맞춤 설정하는 역할은 serve의 `platform.system`이 제공하며, 호스트 설명은 `platform.systemAppend`를 사용합니다.
+`createSession`과 `session.send(...)`는 모두 일반 사용자 메시지를 보냅니다. HarmonyOS SDK는 `/api`의 세션 요청을 통해 `system`을 전달하지 않습니다. 공유 역할은 플랫폼 앱 설정이 관리하고, 코드로 맞춤 설정하는 역할은 serve의 `platform.system`이 제공하며, 호스트 설명은 `platform.systemAppend`를 사용합니다.
 
 프롬프트와 정책 기능은 `@tansr/serve` 0.8.0부터 제공되며, 플랫폼 측은 2026-09-14에 이미 온라인입니다. 기본 `fallback`에서는 SDK가 명시한 `system`(빈 배열 포함)이 플랫폼 세그먼트를 대체하고, `prepend`에서는 플랫폼 세그먼트를 앞에 유지합니다. 플랫폼 프롬프트와 정책은 다음 새 턴 전에 새로 고치고, 현재 실행 중인 턴은 고정됩니다. 포그라운드 재연결, SSE 복구, attach는 원래 세션과 이력을 유지할 수 있어, 업데이트를 받으려고 세션을 다시 열 필요는 없습니다. 업무 세그먼트 충돌은 앱 관리자가 해소해야 하며, 권한은 계속 독립 메커니즘입니다. 자세한 내용은 [애플리케이션 시스템 프롬프트](/ko/sdk/system-prompts/)를 참고하세요.
 
 ## 전제 조건
 
-- 도달 가능한 `@tansr/serve` 서비스([세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) 참고). 로컬 개발에서는 저장소 안의 `examples/serve-demo`를 먼저 띄워도 됩니다(기본 `127.0.0.1:8788`).
-- DevEco Studio 6.0 이상, HarmonyOS SDK API 20 이상. 호스트 HAP는 `ohos.permission.INTERNET`을 선언합니다. 녹음 등 권한은 그 능력을 실제로 쓰는 호스트가 선언하고 요청합니다.
+- 도달 가능한 `@tansr/serve` 서비스([세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) 참고). 통합 호출 표면 `/api`가 어셈블리되어 있어야 합니다(0.13.0 이상). 로컬 개발에서는 저장소 안의 `examples/serve-demo`를 먼저 띄워도 됩니다. `DEMO_SERVE_ONLY=1`과 `DEMO_PORT=8788`을 지정해 상주 서비스로 실행합니다(소스 코드 기본 포트는 8799). 독립 개발자 로그인 서비스 `pnpm login`은 기본으로 `127.0.0.1:8787`에서 수신합니다.
+- DevEco Studio 6.0 이상, HarmonyOS SDK API 20 이상(SDK 자체는 DevEco Studio 6.0.2 / API 22 툴체인으로 빌드). 호스트 HAP는 `ohos.permission.INTERNET`을 선언합니다. 녹음 등 권한은 그 능력을 실제로 쓰는 호스트가 선언하고 요청합니다.
 - 당신 자신의 로그인 체계: SDK는 요청마다 `AuthProvider`에서 단기 인증 헤더(보통 `Authorization: Bearer <당신의 로그인 token>`)를 받고, 서버 쪽 `authenticate` 훅이 그것으로 `endUserId`를 풀어냅니다. 플랫폼 AppKey, 업스트림 모델 키, 서버 서명 개인 키를 클라이언트에 두지 마세요.
 
 ## 설치
 
-받은 독립 배포 SDK 패키지에서 `libs/tansr-harmony-0.1.0.har`를 꺼내고, 같은 디렉터리의 `SHA256SUMS`를 먼저 대조합니다. HAR에는 공식 ABC 바이트코드와 타입 선언이 들어 있고 SDK 구현 ETS는 없습니다. 바이트코드가 절대 비밀을 보장하지는 않습니다. 업무 모듈로 복사한 뒤:
+독립 배포 SDK 패키지 `harmony-sdk.zip`을 풀면 고정 디렉터리 `harmony-sdk/`가 나옵니다. 거기서 `libs/tansr-harmony-0.2.0.har`를 꺼내고 `libs/SHA256SUMS`를 먼저 대조합니다. HAR에는 공식 ABC 바이트코드와 타입 선언이 들어 있고 SDK 구현 ETS는 없습니다. 바이트코드가 절대 비밀을 보장하지는 않습니다. 업무 모듈로 복사한 뒤:
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.2.0.har" } }
 ```
 
 앱의 `app.products[].buildOption.strictMode`에 `useNormalizedOHMUrl: true`를 설정한 다음 `ohpm install`을 실행합니다. 업그레이드할 때는 버전 패키지 전체를 교체하고 요약을 다시 대조하세요. HAR만 바꾸거나 요약을 고쳐 검사를 건너뛰지 마세요. SDK에는 외부 런타임 의존성이 없고 Node.js, React Native, WebView, Android 호환 런타임도 포함하지 않습니다. 독립 패키지만 있으면 연결할 수 있으며, SDK 소스를 빌드할 필요도, Demo HAP를 앱에 넣을 필요도 없습니다.
@@ -127,9 +127,10 @@ OS 마이크 권한과 에이전트 도구 허가는 두 층이며, 한쪽이 �
 | 증상 | 조치 |
 |---|---|
 | 연결하자마자 401 | `AuthProvider`가 준 헤더를 서버 쪽 `authenticate`가 인정하지 않습니다. 로그인 상태를 고친 뒤 `start()`하세요 |
+| 연결하자마자 `contract_unavailable` | `baseUrl`이 `/api` 파사드를 가리키지 않습니다(서버가 0.13.0보다 오래되었거나, 프록시 / 캡티브 포털 페이지가 응답 헤더를 바꿔 씁니다). SDK는 옛 접두사로 폴백하지 않습니다. 배포를 고친 뒤 `start()`하세요 |
 | 에뮬레이터 / 실기기가 연결되지 않음 | 루프백은 로컬 디버그만. 개발 머신 사설 주소에 닿으려면 `allowPrivateNetworkHttp`가 필요합니다. 프로덕션은 항상 TLS |
-| 세션 생성이 400 | `clientTools.parameters`를 JSON Schema 전체로 썼습니다. 파라미터 이름 사전이어야 합니다 |
-| 새 세션이 429 | 최종 사용자당 기본 최대 8개의 활성 세션입니다. 쓰지 않는 세션은 `close()`하세요 |
+| 세션 생성이 400 | `invalid_request`: `clientTools.parameters`를 JSON Schema 전체로 썼습니다. 파라미터 이름 사전이어야 합니다 |
+| 새 세션이 429 | `capacity_exceeded`(`domainCode = session_limit_exceeded`): 최종 사용자당 기본 최대 8개의 활성 세션입니다. 쓰지 않는 세션은 `close()`하세요 |
 
 ## 다음 단계
 

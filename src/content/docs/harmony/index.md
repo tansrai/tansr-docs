@@ -20,16 +20,16 @@ sources:
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-harmony:doc/HM-01-Demo接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前独立发布版本 0.1.0，未上架公共 OHPM）是会话服务 `/v2` 的原生 ArkTS 薄客户端。最低 HarmonyOS 6.0 / API 20，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。服务端按 `@tansr/serve` 0.14.0 核对（2026-10-05）：0.13.0 起新增的统一调用面 `/api` 对 0.1.0 HAR 透明，`/v2` 的端点、载荷与 SSE 帧字节不变；仓库主线对 `/api` 的对齐未随任何 HAR 版本发布，本页不按它描述行为。`/v2` 自 0.13.0 起定义为内部适配入口、1.0.0 移除外部入口，时间表见[部署与鉴权](/serve/deploy-and-auth/)。
+鸿蒙 SDK（HAR 坐标 `@tansr/harmony`，当前独立发布版本 0.2.0，随 `harmony-sdk.zip` 分发，未上架公共 OHPM）是会话服务的原生 ArkTS 薄客户端，实现 Agent 会话服务契约，全部请求经统一调用面 `/api` 出线。声明最低 HarmonyOS 6.0 / API 20（`compatibleSdkVersion`），以 API 22 工具链构建，Stage 模型。这一篇讲快速开始之后你会遇到的设计点：事件怎么变成 UI 状态、断线怎么恢复、工具与对话框怎么接、语音与媒体怎么接。HAR 不提供 ArkUI 页面，也不自动申请麦克风。服务端按 `@tansr/serve` 0.15.1（npm latest，2026-10-10）核对（2026-10-13）：0.2.0 HAR（2026-10-10 发行候选 `88d917c`，字节码 HAR SHA-256 `7d5deedb…`）起客户端只向服务端 0.13.0 起提供的 `/api` 前缀发请求（D10，不回退 `/v2`），路径、方法、别名与响应头名来自按 manifest revision 7 生成的 `ApiContractGenerated` / `ApiOps`，会话族由请求头 `tansr-session-family: sdk1 | sdk2-offload-v1` 携带；≥400 的错误体是统一信封，按统一码 + `retryAction` 判定（D19）；2xx 与事件流缺统一响应头时显式失败、不回退（D38）。0.1.0 HAR 仍直连 `/v2`——服务端 `/v2` 自 0.13.0 起只是内部适配入口、1.0.0 移除外部入口，请升级到 0.2.0，时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
-兼容 Android 的旧鸿蒙设备继续使用 [Android SDK](/android/)。HarmonyOS 5.x 原生兼容是后续工作，当前不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR，尚未上架公共 OHPM；签名安装与真机矩阵不在本文范围。接入步骤见[鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/)。
+兼容 Android 的旧鸿蒙设备继续使用 [Android SDK](/android/)。HarmonyOS 5.x 原生兼容是后续工作，当前不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR，尚未上架公共 OHPM；签名安装与真机矩阵不在本文范围（0.2.0 发行回执登记无签名 HAP、无真机运行）。接入步骤见[鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/)。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
-`createSession` 与 `session.send(...)` 都发送普通用户消息；鸿蒙 SDK 不经 `/v2` 传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
+`createSession` 与 `session.send(...)` 都发送普通用户消息；鸿蒙 SDK 不经 `/api` 的会话请求传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
 
 提示词与策略功能自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史。详见[应用系统提示词](/sdk/system-prompts/)。
 
@@ -37,15 +37,21 @@ lastVerified: '2026-10-05'
 
 | 导出 | 职责 |
 |---|---|
-| `TansrAgentClient` | `/v2` 纯合同客户端：建会 / 元信息 / 历史 / 发消息 / 同轮输入 / 音频直连。网络不确定时不自动重发变更请求 |
-| `NativeHttpTransport` | 系统 RCP 传输；选项控制 HTTPS、回环 HTTP、内网 HTTP、超时与响应帽 |
+| `TansrAgentClient` | 会话服务纯合同客户端（经 `/api`）：建会 / 元信息 / 历史 / 发消息 / 同轮输入 / 音频直连。网络不确定时不自动重发变更请求 |
+| `NativeHttpTransport` | 系统 RCP 传输；选项控制 HTTPS、回环 HTTP、内网 HTTP、超时与响应帽；`NativeHttpOptions.certificateAuthorityPem` 可为自有服务配置 PEM CA bundle（只替换本 transport 的信任根，仍校验证书链与主机名） |
 | `AuthProvider` / `RefreshingAuthProvider` / `StaticAuthProvider` | 按次取认证头。刷新包装处理有效期、并发与身份变化 |
 | `AgentSession` | 一条事件泵：`start` / `stop` / `close`、`send` / `sendBlocks`、桥运行时 |
 | `SessionView` | 纯事件归约。JSON 快照与 Android / iOS 金样同形 |
 | `SpeechPlan` | 朗读预检：平台加权帽与供应商原子 `inputLimit` 双帽；显式同意后分段 |
 | `historyArtifactData` / `isRenderableArtifact` | 历史工具产物投影；坏媒体预览不改写工具原始成功 / 失败 |
+| `API_CONTRACT` / `API_MANIFEST_REVISION` / `UnifiedCode` / `UnifiedRetryAction` | `/api` 合同生成物：前缀、头名、manifest revision 与 19 个统一码 / 6 个重试动作；81 个操作的路径模板由 SDK 内部按清单生成，宿主不手拼 `/v2` 等旧路径 |
+| `AgentError` / `ApiFacadeError` / `ApiContractError` | 统一错误：SDK1 的 `AgentError` 以 `unified` / `retryAction` / `domainCode` 还原统一信封；SDK 2.0 与终端服务面直抛 `ApiFacadeError`（`Sdk2HttpError` 标废弃、保留一版）；响应头门 / 信封门违例为 `ApiContractError`（`contract_unavailable`） |
+| `ApiCallOptions` | 三请求头 `Idempotency-Key` / `If-Match` / `deadline`，不合形在发出前本地拒 |
+| `Sdk2Client` / `Sdk2Executor` / `NativeSdk2Transport` / `Sdk2ClientToolAdapter` | SDK 2.0 薄客户端与显式传输入口；端侧只执行显式授权的设备操作 |
+| `openSdk2RdbArchiveReceiver` / `openSdk2EncryptedRdbArchiveReceiver` / `openSdk2RdbExecutionJournal` / `Sdk2ArchiveSyncClient` / `openSdk2RdbArchiveCache` / `Sdk2ReplicatedArchiveReceiver` | 本机 RDB 档案接收器（可选正文加密，密钥由 HUKS 保管）、RDB 耐久执行日志、档案同步与副本接收器 |
+| `TerminalClient` | 终端服务客户端（配置 / 记忆命令），经 `/api/terminal/*` |
 
-SDK 没有外部运行依赖。宿主 HAP 必须声明 `ohos.permission.INTERNET`。
+0.2.0 HAR 共 116 个公共导出，以上是接入时会直接碰到的部分。SDK 没有外部运行依赖。宿主 HAP 必须声明 `ohos.permission.INTERNET`。
 
 ## 事件归约
 
@@ -112,7 +118,7 @@ session.bridges.onQuestion = (request) => { /* answerQuestion */ };
 - HTTP 状态、网络错误与抓取失败按工具实际结果解释；搜索空结果不等于网站不存在，已知域名可明确让 WebFetch 读取。
 - 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
 
-SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；鸿蒙侧的显式传输入口、本机 RDB 档案接收器与同步、本机业务工具与可选 HUKS 正文加密仍是本地开发候选，未随 HAR 发布、也未完成真机验收，已发布版本的行为不变，见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；鸿蒙侧自 0.2.0 HAR 起随包提供显式传输入口 `NativeSdk2Transport`、薄客户端 `Sdk2Client` / `Sdk2Executor`、本机 RDB 档案接收器（`openSdk2RdbArchiveReceiver`，可选正文加密 `openSdk2EncryptedRdbArchiveReceiver`，密钥由 HUKS 保管）、RDB 耐久执行日志 `openSdk2RdbExecutionJournal`、档案同步 `Sdk2ArchiveSyncClient` 与副本接收器，以及终端服务客户端 `TerminalClient`。它们是加法能力：不显式装配就不建同步库、不发 SDK 2.0 请求，SDK1 会话行为不变；真机验收不在发行回执范围。2026-10-10 发行候选之后进入主线的加密记忆发布、保源迁移轮钥、加密增量 RDB 档位与只读副本等持久化能力**尚未随任何 HAR 版本发布**，本页不描述。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 语音：两条链
 
@@ -161,7 +167,7 @@ const speech = await client.audioSpeech(session.sessionId, assistantText, undefi
 
 ## 联调与构建
 
-- 对接仓内 `examples/serve-demo`（echo 径缺省端口 8788）。Demo 的 `DeveloperLogin` 是宿主适配器，不是 HAR 内置登录：先向你的登录服务 `POST /login`，再拿短期票访问 `/v2`。自定义登录协议替换该适配器，不修改 SDK 的会话归属。
-- 明文 http 仅回环或显式内网；生产恒上 TLS。
-- SDK 仓门禁：`pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm check:contract`。原生：`./scripts/native.ps1 -Action lint` / `har` / `hap`。
-- 示例 HAP 展示聊天、连接、详情、媒体、工具五类导航，不是 SDK 保证的 UI 合同。
+- 对接仓内 `examples/serve-demo`：`pnpm start` / `pnpm real` 都是真实模型入口，常驻联调以 `DEMO_SERVE_ONLY=1`、`DEMO_PORT=8788` 起服（源码缺省端口 8799；已无公开的 echo 启动命令），独立开发者登录服务 `pnpm login` 缺省 `127.0.0.1:8787`。Demo 的 `DeveloperLogin` 是宿主适配器，不是 HAR 内置登录：先向你的登录服务 `POST /login` 换短期票（`POST /refresh` 续期），再拿票访问 serve 的 `/api`。自定义登录协议替换该适配器，不修改 SDK 的会话归属。
+- 明文 http 仅回环或显式内网；生产恒上 TLS（自有 CA 经 `NativeHttpOptions.certificateAuthorityPem` 配置，不忽略证书错误）。
+- SDK 仓门禁：`pnpm test`、`pnpm typecheck`、`pnpm lint`、`pnpm check:contract`。原生：`./scripts/native.ps1 -Action lint` / `har` / `hap` / `test-hap`（工具链 DevEco Studio 6.0.2 / HarmonyOS SDK API 22）。
+- 示例 HAP 展示聊天、连接、详情、媒体、工具五类导航，不是 SDK 保证的 UI 合同；公开下载的 `harmony-demo.zip` 内 `libs/` 随附同一枚 0.2.0 HAR 与 `SHA256SUMS`。

@@ -15,31 +15,31 @@ sources:
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/harmony` is a **native ArkTS thin client** (HAR) of the session service `/v2` protocol: it sends input, reduces the event stream, runs the local tools you explicitly register, and answers permission and question prompts. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential. View reduction shares the same golden samples as Android / iOS. The HAR **does not include ArkUI pages**; recording, playback and list virtualization belong to the host.
+`@tansr/harmony` is a **native ArkTS thin client** (HAR) of the session service: it sends input, reduces the event stream, runs the local tools you explicitly register, and answers permission and question prompts. The agent kernel, permission engine and context governance all run in the `@tansr/serve` you deploy; the phone holds no platform credential. View reduction shares the same golden samples as Android / iOS. The HAR **does not include ArkUI pages**; recording, playback and list virtualization belong to the host.
 
-Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The current minimum is HarmonyOS 6.0 / API 20 (Stage model). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The current delivery is an independently published versioned release bytecode HAR (0.1.0). It is not on public OHPM and will not pull the latest version from a public channel (re-verified 2026-10-05: still 0.1.0). Server side verified against `@tansr/serve` 0.14.0: the unified call surface `/api` added in 0.13.0 is transparent to the 0.1.0 HAR, which keeps talking to `/v2`; the repository's alignment to `/api` and capabilities such as the RDB receiver / HUKS encryption are local candidates that have **not shipped in any release**, so this page does not describe them.
+Devices that only run the Android-compatible HarmonyOS stack keep using the [Android SDK](/en/getting-started/android/). The declared minimum is HarmonyOS 6.0 / API 20 (Stage model; built with the API 22 toolchain). Native HarmonyOS 5.x compatibility is follow-on work; this article does not claim it is available. The current delivery is an independently published versioned release bytecode HAR (0.2.0, 2026-10-10) distributed in `harmony-sdk.zip`. It is not on public OHPM and will not pull the latest version from a public channel (re-verified 2026-10-13). Server side verified against `@tansr/serve` 0.15.1: every request from the 0.2.0 HAR goes only through the unified call surface `/api` that the server provides since 0.13.0 (manifest revision 7; errors keyed by unified codes; missing unified response headers fail explicitly instead of falling back), and the SDK 2.0 RDB archive receiver / execution journal / terminal-services client ship in the same package. The 0.1.0 HAR still talks to `/v2` directly, while server-side `/v2` has been an internal adapter entry since 0.13.0 and its external entry is removed in 1.0.0 — please upgrade. Capabilities that entered the main branch after 2026-10-10, such as encrypted memory publication, the encrypted incremental RDB profile and read-only copies, have **not shipped in any release**, so this page does not describe them.
 
 ## Send user messages on the phone; configure system prompts on the server
 
-`createSession` and `session.send(...)` send ordinary user messages. The HarmonyOS SDK does not submit `system` through `/v2`. Manage the shared role in platform application settings, a code-managed role in serve `platform.system`, and host notes in `platform.systemAppend`.
+`createSession` and `session.send(...)` send ordinary user messages. The HarmonyOS SDK does not submit `system` through the session requests on `/api`. Manage the shared role in platform application settings, a code-managed role in serve `platform.system`, and host notes in `platform.systemAppend`.
 
 The prompt and policy features are available since `@tansr/serve` 0.8.0; the platform side has been live since 2026-09-14. Default `fallback` lets explicit SDK `system` (including an empty array) replace the platform segment; `prepend` retains the platform segment first. Platform prompts and policies refresh before a subsequent turn, while an executing turn keeps its configuration. Foreground reconnects, SSE recovery, and live attach preserve the session and history without reopening to get an update. Application managers must resolve conflicting business instructions, and permissions remain separate. See [Application system prompts](/en/sdk/system-prompts/).
 
 ## Prerequisites
 
-- A reachable `@tansr/serve` service (see [Session service in 5 minutes](/en/getting-started/serve/)). For local development you can start the in-repo sample `examples/serve-demo` (default `127.0.0.1:8788`).
-- DevEco Studio 6.0+, HarmonyOS SDK API 20+; the host HAP declares `ohos.permission.INTERNET`. Recording and similar permissions are declared and requested by the host that actually uses them.
+- A reachable `@tansr/serve` service (see [Session service in 5 minutes](/en/getting-started/serve/)) with the unified call surface `/api` assembled (0.13.0 or later). For local development you can start the in-repo sample `examples/serve-demo`: run it as a resident service with `DEMO_SERVE_ONLY=1` and `DEMO_PORT=8788` (the source default port is 8799); the standalone developer login service `pnpm login` listens on `127.0.0.1:8787` by default.
+- DevEco Studio 6.0+, HarmonyOS SDK API 20+ (the SDK itself is built with the DevEco Studio 6.0.2 / API 22 toolchain); the host HAP declares `ohos.permission.INTERNET`. Recording and similar permissions are declared and requested by the host that actually uses them.
 - Your own login system: on every request the SDK takes a short-lived auth header from `AuthProvider` (usually `Authorization: Bearer <your login token>`), and the server's `authenticate` hook resolves it to an `endUserId`. Do not hold a platform AppKey, upstream model key, or server signing private key on the client.
 
 ## Install
 
-From the independently published SDK package you received, take `libs/tansr-harmony-0.1.0.har` and verify the sibling `SHA256SUMS` first. The HAR contains official ABC bytecode and type declarations, not SDK implementation ETS; bytecode is not an absolute secrecy guarantee. Copy it into the business module, then:
+Unzip the standalone SDK package `harmony-sdk.zip` into its fixed directory `harmony-sdk/`, take `libs/tansr-harmony-0.2.0.har` from it and verify `libs/SHA256SUMS` first. The HAR contains official ABC bytecode and type declarations, not SDK implementation ETS; bytecode is not an absolute secrecy guarantee. Copy it into the business module, then:
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.2.0.har" } }
 ```
 
 Set `useNormalizedOHMUrl: true` on the app `app.products[].buildOption.strictMode`, then run `ohpm install`. To upgrade, replace the whole versioned package and re-check the checksums; do not swap only the HAR or edit checksums to skip verification. The SDK has no external runtime dependency and does not include Node.js, React Native, WebView, or an Android compatibility runtime. The independent package is enough to integrate; you do not need to compile the SDK source, and you do not need to embed the demo HAP in your app.
@@ -127,9 +127,10 @@ OS microphone permission and agent tool permission are two layers; one cannot re
 | Symptom | What to do |
 |---|---|
 | 401 as soon as it connects | The headers from `AuthProvider` are not accepted by the server's `authenticate`. Fix the login state, then `start()` again |
+| `contract_unavailable` as soon as it connects | `baseUrl` does not point at the `/api` facade (the server predates 0.13.0, or a proxy / captive portal page rewrites the response headers). The SDK never falls back to the old prefixes; fix the deployment, then `start()` again |
 | Emulator / device cannot connect | Loopback is local debugging only; reaching a private address on the development machine needs `allowPrivateNetworkHttp`. Production always uses TLS |
-| createSession returns 400 | `clientTools.parameters` was written as a whole JSON Schema; it must be a parameter-name dictionary |
-| New session returns 429 | Each end user has at most 8 live sessions by default; `close()` unused sessions |
+| createSession returns 400 | `invalid_request`: `clientTools.parameters` was written as a whole JSON Schema; it must be a parameter-name dictionary |
+| New session returns 429 | `capacity_exceeded` (`domainCode = session_limit_exceeded`): each end user has at most 8 live sessions by default; `close()` unused sessions |
 
 ## Next steps
 
