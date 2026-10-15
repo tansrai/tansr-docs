@@ -20,12 +20,12 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露多会话 REST + SSE 协议面——统一调用面 `/api`（0.13.0 起 GA）与它背后的 `/v2` 会话协议——对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。本文按 `@tansr/serve` **0.14.0**（2026-10-04 发布）核对。
+`@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露多会话 REST + SSE 协议面——统一调用面 `/api`（0.13.0 起 GA）与它背后的 `/v2` 会话协议——对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。本文按 `@tansr/serve` **0.15.1**（2026-10-10 发布，当前 npm `latest`）核对。
 
-Android / iOS / 鸿蒙 SDK 的已发布版本连的就是这个服务（走 `/v2`）；Node 侧的薄客户端是 `@tansr/api-client` 0.3.0（子入口 `./api`，正式版 2026-10-04）。**新集成请直接走 `/api`**：同一会话、同一载荷字节，多四个 `tansr-*` 响应头与统一错误信封；`/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口，已上线的 `/v2` 调用现在不必改。
+Android / iOS / 鸿蒙 SDK 的已发布版本连的就是这个服务（走 `/v2`）；Node 侧的薄客户端是 `@tansr/api-client` 0.4.0（子入口 `./api`；2026-10-06 发布，本版起冻结子入口 `./sdk2` / `./terminal` 不传 `routePrefixes` 时也缺省打 `/api`）。**新集成请直接走 `/api`**：同一会话、同一载荷字节，多四个 `tansr-*` 响应头与统一错误信封；`/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口。0.15.0 起旧前缀 `/v2`、`/v3/*` 的响应附 `Deprecation` / `Link` 退役头，但旧前缀窗口截至 0.15.1 缺省仍是 `readwrite`（读写照常受理），已上线的 `/v2` 调用现在不必改；窗口旋钮与时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 在平台或宿主配置应用角色
 
@@ -42,7 +42,7 @@ Android / iOS / 鸿蒙 SDK 的已发布版本连的就是这个服务（走 `/v2
 ## 安装
 
 ```bash
-npm install @tansr/serve        # 现行 0.14.0
+npm install @tansr/serve        # 现行 0.15.1
 ```
 
 唯一第三方运行时依赖是 `zod`;tansr 内部包已编译内联，不会出现在你的依赖树里。0.13.0 起包内另有子入口 `@tansr/serve/extensions`（SDK2 归档 / 缓存 / 终端服务宿主，须显式装配）与 `@tansr/serve/process`，本文的根入口用法不依赖它们。
@@ -108,13 +108,13 @@ const server = await startServer({
 
 进程信号归宿主：引擎不会替你监听 SIGTERM。至少接上 `server.drain({ timeoutMs: 30_000 })` 再退出，详见[部署与鉴权](/serve/deploy-and-auth/)。
 
-想先离线看协议、不接真平台？仓内示例 `examples/serve-demo` 用一个回显 Agent 打通了全部 `/api` / `/v2` 协议层，起服务一条命令：`pnpm --filter tansr-example-serve-demo start`，缺省监听 `127.0.0.1:8788`。
+想先用现成示例看协议？仓内示例 `examples/serve-demo` 的 `pnpm start`（与 `pnpm real` 相同）走真模型入口 `agent-real.ts`，从 `examples/serve-demo/.env` 读 `TANSR_APP_KEY_ID` / `TANSR_APP_KEY`（可选 `TANSR_API_BASE`），缺凭据即退出、不回退到回显。未设常驻开关时它只自动跑一轮冒烟便退出；要起一台常驻服务给 curl 或移动端联调，在 `.env` 里加 `DEMO_SERVE_ONLY=1`，端口由 `DEMO_PORT` 指定（源码缺省 `8799`，示例 README 用 `8788`）。回显 Agent 自 2026-09-14 起只是仓内测试夹具，没有公开的离线启动命令。
 
 ## 第一个会话
 
 用 curl 直接走一遍。`<你的登录 token>` 是你自己体系签发、`authenticate` 能验的那枚。下面用统一调用面 `/api`；把 `/api/sessions` 换成 `/v2/sessions` 得到的是同一会话、同一响应体（少四个 `tansr-*` 响应头，错误体为旧信封）。
 
-先看一眼这台服务装配了什么（manifest revision 7 = `@tansr/serve` 0.14.0）：
+先看一眼这台服务装配了什么（manifest revision 7，自 `@tansr/serve` 0.14.0 起，0.15.1 未变）：
 
 ```bash
 curl -s http://127.0.0.1:8787/api/manifest -H "Authorization: Bearer <你的登录 token>" -D - -o /dev/null
@@ -168,7 +168,7 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 
 ## 命令行形态的 serve
 
-`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面挂进命令行形态（**tansr 命令行 0.6.0 起提供**），0.10.0 起同时装配 `/api` 门面，且 `--v2` 在场时 `/v1` 面缺省关闭——确需保留的 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` 自 0.10.1 起已标废弃（出 `server.deprecated_option` 警告，1.0.0 移除）。命令行形态现行 **0.10.1**（npm `@tansr/cli`，2026-10-04）；SDK2 归档 / 缓存 / 终端服务宿主在命令行形态只经 `--host-module <absolute.cjs> --host-module-sha256 <sha256>` 可达。也可继续使用上文的 `@tansr/serve` npm 嵌入形（0.8.0 起，现行 0.14.0）。
+`tansr serve --token <值>` 也能起一个常驻服务，但它是单运维方的 `/v1` 面（`POST /v1/sessions`、`GET /v1/sessions/:id/events` 等六端点，同一枚 Bearer token），适合编排系统接入，不是多租户产品后端。`tansr serve --v2` 把 `/v2` 面挂进命令行形态（**tansr 命令行 0.6.0 起提供**），0.10.0 起同时装配 `/api` 门面，且 `--v2` 在场时 `/v1` 面缺省关闭——确需保留的 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` 自 0.10.1 起已标废弃（出 `server.deprecated_option` 警告，1.0.0 移除）。命令行形态现行 **0.10.3**（npm `@tansr/cli`，2026-10-10；内联 `@tansr/serve` 0.15.1 同一服务实现，0.10.2 / 0.10.3 未新增命令或旗标）；SDK2 归档 / 缓存 / 终端服务宿主在命令行形态只经 `--host-module <absolute.cjs> --host-module-sha256 <sha256>` 可达。也可继续使用上文的 `@tansr/serve` npm 嵌入形（0.8.0 起，现行 0.15.1）。
 
 ## 下一步
 
@@ -176,4 +176,4 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 - [v2 协议与 webhook](/serve/v2-and-webhooks/)：端点全形、三级恢复链、轮末出站通知与签名。
 - [保留期与治理](/serve/retention-and-governance/)：保留窗、闲置回收、并发帽、会话存储、0.14.0 的三个请求头。
 - [环境变量表](/serve/env)：全部 `TANSR_SERVE_*` 旋钮。
-- [SDK 2.0 扩展入口](/sdk/sdk2-preview/)：`@tansr/serve/extensions` 显式宿主、`@tansr/api-client` 0.3.0 与性能披露。
+- [SDK 2.0 扩展入口](/sdk/sdk2-preview/)：`@tansr/serve/extensions` 显式宿主、`@tansr/api-client` 0.4.0 与性能披露。

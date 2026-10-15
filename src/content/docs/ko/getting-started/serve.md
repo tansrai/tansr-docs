@@ -20,12 +20,12 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/serve`는 tansr의 **Agent 세션 엔진**입니다. npm 패키지 하나로 당신의 Node 서비스에 내장되어, 밖으로는 다중 세션 REST + SSE 프로토콜 면(통합 호출 표면 `/api`(0.13.0부터 GA)와 그 뒤의 `/v2` 세션 프로토콜)을 노출하고, 안으로는 당신의 앱 키로 tansr 플랫폼에 연결해 실제로 모델을 호출합니다. 이것은 **게이트웨이가 아닙니다.** 사용자가 어떻게 로그인하고, 어떻게 속도를 제한하고, 어떻게 과금하는지는 모두 당신의 체계에 속합니다. 엔진은 전송, 프로토콜, 세션 거버넌스만 담당합니다. 이 페이지는 `@tansr/serve` **0.14.0**(2026-10-04 공개)을 기준으로 확인했습니다.
+`@tansr/serve`는 tansr의 **Agent 세션 엔진**입니다. npm 패키지 하나로 당신의 Node 서비스에 내장되어, 밖으로는 다중 세션 REST + SSE 프로토콜 면(통합 호출 표면 `/api`(0.13.0부터 GA)와 그 뒤의 `/v2` 세션 프로토콜)을 노출하고, 안으로는 당신의 앱 키로 tansr 플랫폼에 연결해 실제로 모델을 호출합니다. 이것은 **게이트웨이가 아닙니다.** 사용자가 어떻게 로그인하고, 어떻게 속도를 제한하고, 어떻게 과금하는지는 모두 당신의 체계에 속합니다. 엔진은 전송, 프로토콜, 세션 거버넌스만 담당합니다. 이 페이지는 `@tansr/serve` **0.15.1**(2026-10-10 공개, 현재 npm `latest`)을 기준으로 확인했습니다.
 
-공개된 Android / iOS / HarmonyOS SDK가 연결하는 것이 바로 이 서비스입니다(`/v2` 경유). Node 쪽 얇은 클라이언트는 `@tansr/api-client` 0.3.0(하위 진입점 `./api`, 정식판 2026-10-04)입니다. **새 통합은 바로 `/api`로 가세요.** 같은 세션, 같은 페이로드 바이트에 `tansr-*` 응답 헤더 넷과 통합 오류 봉투가 더해집니다. `/v2`는 0.13.0부터 내부 어댑터 진입점으로 정의되며 1.0.0에서 외부 진입점이 제거됩니다. 이미 운영 중인 `/v2` 호출을 지금 바꿀 필요는 없습니다.
+공개된 Android / iOS / HarmonyOS SDK가 연결하는 것이 바로 이 서비스입니다(`/v2` 경유). Node 쪽 얇은 클라이언트는 `@tansr/api-client` 0.4.0(하위 진입점 `./api`. 2026-10-06 공개이며, 이 버전부터 동결된 하위 진입점 `./sdk2` / `./terminal`도 `routePrefixes`를 넘기지 않으면 기본으로 `/api`를 호출합니다)입니다. **새 통합은 바로 `/api`로 가세요.** 같은 세션, 같은 페이로드 바이트에 `tansr-*` 응답 헤더 넷과 통합 오류 봉투가 더해집니다. `/v2`는 0.13.0부터 내부 어댑터 진입점으로 정의되며 1.0.0에서 외부 진입점이 제거됩니다. 0.15.0부터 구 접두사 `/v2`, `/v3/*`의 응답에는 `Deprecation` / `Link` 퇴역 헤더가 붙지만, 구 접두사 창은 0.15.1 기준으로도 기본값이 `readwrite`(읽기와 쓰기 모두 종전처럼 처리)이므로 이미 운영 중인 `/v2` 호출을 지금 바꿀 필요는 없습니다. 창 손잡이와 일정은 [배포와 인증](/ko/serve/deploy-and-auth/)을 보세요.
 
 ## 플랫폼 또는 호스트에서 앱 역할 설정
 
@@ -42,7 +42,7 @@ lastVerified: '2026-10-05'
 ## 설치
 
 ```bash
-npm install @tansr/serve        # 现行 0.14.0
+npm install @tansr/serve        # 现行 0.15.1
 ```
 
 유일한 서드파티 런타임 의존성은 `zod`입니다. tansr 내부 패키지는 컴파일 시 인라인되어 당신의 의존성 트리에 나타나지 않습니다. 0.13.0부터 패키지에는 하위 진입점 `@tansr/serve/extensions`(SDK2 아카이브 / 캐시 / 터미널 서비스 호스트, 명시적 조립 필요)와 `@tansr/serve/process`도 들어 있지만, 이 페이지의 루트 진입점 사용법은 거기에 의존하지 않습니다.
@@ -108,13 +108,13 @@ const server = await startServer({
 
 프로세스 시그널은 호스트의 책임입니다. 엔진은 당신을 대신해 SIGTERM을 감시하지 않습니다. 최소한 `server.drain({ timeoutMs: 30_000 })`을 연결한 뒤 종료하세요. 자세한 내용은 [배포와 인증](/ko/serve/deploy-and-auth/)을 참고하세요.
 
-실제 플랫폼에 연결하지 않고 먼저 오프라인으로 프로토콜을 보고 싶나요? 저장소 안의 예제 `examples/serve-demo`는 에코 Agent로 `/api` / `/v2` 프로토콜 층 전체를 뚫어 놓았습니다. 서비스 시작은 명령 하나입니다: `pnpm --filter tansr-example-serve-demo start`. 기본으로 `127.0.0.1:8788`에서 수신합니다.
+먼저 준비된 예제로 프로토콜을 보고 싶나요? 저장소 안의 예제 `examples/serve-demo`에서 `pnpm start`(`pnpm real`과 동일)는 실제 모델 진입점 `agent-real.ts`를 실행하며, `examples/serve-demo/.env`에서 `TANSR_APP_KEY_ID` / `TANSR_APP_KEY`(선택적으로 `TANSR_API_BASE`)를 읽습니다. 자격 증명이 없으면 에코로 돌아가지 않고 종료합니다. 상주 스위치를 설정하지 않으면 스모크 한 턴만 자동으로 돌리고 종료합니다. curl이나 모바일 연동용 상주 서버를 띄우려면 `.env`에 `DEMO_SERVE_ONLY=1`을 추가하고 포트는 `DEMO_PORT`로 지정하세요(소스 기본값 `8799`, 예제 README는 `8788` 사용). 에코 Agent는 2026-09-14부터 저장소 내부 테스트 픽스처일 뿐이며 공개된 오프라인 시작 명령은 없습니다.
 
 ## 첫 세션
 
 curl로 직접 한 바퀴 돌아 봅니다. `<당신의 로그인 token>`은 당신의 체계가 발급하고 `authenticate`가 검증할 수 있는 토큰입니다. 아래는 통합 호출 표면 `/api`를 사용합니다. `/api/sessions`를 `/v2/sessions`로 바꿔도 같은 세션, 같은 응답 본문을 얻습니다(`tansr-*` 응답 헤더 넷이 빠지고 오류 본문은 예전 봉투가 됩니다).
 
-먼저 이 서비스에 무엇이 조립되어 있는지 확인합니다(manifest revision 7 = `@tansr/serve` 0.14.0):
+먼저 이 서비스에 무엇이 조립되어 있는지 확인합니다(manifest revision 7. `@tansr/serve` 0.14.0부터이며 0.15.1에서도 변동 없음):
 
 ```bash
 curl -s http://127.0.0.1:8787/api/manifest -H "Authorization: Bearer <你的登录 token>" -D - -o /dev/null
@@ -168,7 +168,7 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 
 ## CLI 형태의 serve
 
-`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로(**tansr CLI 0.6.0부터 사용할 수 있습니다**), 0.10.0부터는 `/api` 파사드도 함께 조립하며 `--v2`가 있으면 `/v1` 면은 기본적으로 꺼집니다. 꼭 남겨야 할 때 쓰는 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1`은 0.10.1부터 사용 중단 예정입니다(`server.deprecated_option` 경고를 내고 1.0.0에서 제거). CLI 형태의 현재 버전은 **0.10.1**(npm `@tansr/cli`, 2026-10-04)입니다. SDK2 아카이브 / 캐시 / 터미널 서비스 호스트는 CLI 형태에서 `--host-module <absolute.cjs> --host-module-sha256 <sha256>`을 통해서만 쓸 수 있습니다. 위의 `@tansr/serve` npm 내장 형태(0.8.0 이상, 현재 0.14.0)도 계속 사용할 수 있습니다.
+`tansr serve --token <값>`으로도 상주 서비스를 띄울 수 있지만, 이것은 단일 운영자용 `/v1` 면(`POST /v1/sessions`, `GET /v1/sessions/:id/events` 등 여섯 엔드포인트, 같은 Bearer token 하나)으로, 오케스트레이션 시스템 연동에 적합하며 다중 테넌트 제품 백엔드가 아닙니다. `tansr serve --v2`는 `/v2` 면도 CLI 형태에 올리는 것으로(**tansr CLI 0.6.0부터 사용할 수 있습니다**), 0.10.0부터는 `/api` 파사드도 함께 조립하며 `--v2`가 있으면 `/v1` 면은 기본적으로 꺼집니다. 꼭 남겨야 할 때 쓰는 `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1`은 0.10.1부터 사용 중단 예정입니다(`server.deprecated_option` 경고를 내고 1.0.0에서 제거). CLI 형태의 현재 버전은 **0.10.3**(npm `@tansr/cli`, 2026-10-10. `@tansr/serve` 0.15.1과 같은 서비스 구현을 인라인하며, 0.10.2 / 0.10.3에서 추가된 명령이나 플래그는 없습니다)입니다. SDK2 아카이브 / 캐시 / 터미널 서비스 호스트는 CLI 형태에서 `--host-module <absolute.cjs> --host-module-sha256 <sha256>`을 통해서만 쓸 수 있습니다. 위의 `@tansr/serve` npm 내장 형태(0.8.0 이상, 현재 0.15.1)도 계속 사용할 수 있습니다.
 
 ## 다음 단계
 
@@ -176,4 +176,4 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 - [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/): 엔드포인트 전체 형태, 3단계 복구 체인, 턴 종료 아웃바운드 알림과 서명.
 - [보존 기간과 거버넌스](/ko/serve/retention-and-governance/): 보존 창, 유휴 회수, 동시 실행 상한, 세션 저장소, 0.14.0의 요청 헤더 셋.
 - [환경 변수 표](/serve/env): 모든 `TANSR_SERVE_*` 손잡이.
-- [SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/): `@tansr/serve/extensions` 명시적 호스트, `@tansr/api-client` 0.3.0, 성능 공개.
+- [SDK 2.0 확장 진입점](/ko/sdk/sdk2-preview/): `@tansr/serve/extensions` 명시적 호스트, `@tansr/api-client` 0.4.0, 성능 공개.

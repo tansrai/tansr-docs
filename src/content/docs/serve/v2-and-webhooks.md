@@ -22,12 +22,12 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:examples/serve-demo/README.md
   - tansr-android:README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`/v2` 是 `@tansr/serve` 的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS / 鸿蒙 SDK 已发布版本封装的正是这套协议；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。本页按 `@tansr/serve` 0.14.0（2026-10-04 发布）核对；`/v2` 的端点、载荷与 SSE 帧字节自 0.9.0 以来未变。
+`/v2` 是 `@tansr/serve` 的多会话协议面：SSE 下行、POST 上行，内核事件直接下发、由客户端归约。Android / iOS / 鸿蒙 SDK 已发布版本封装的正是这套协议；如果你自己写客户端，或者要接服务端半场的 webhook，这一篇是你需要的全部事实。本页按 `@tansr/serve` 0.15.1（2026-10-10 发布，当前 npm `latest`）核对；`/v2` 的端点、载荷与 SSE 帧字节自 0.9.0 以来未变，0.15.0 起只在响应头上多了退役标记（见下段）。
 
-**新集成请改走统一调用面 `/api`**（`@tansr/serve` 0.13.0 起 GA，2026-10-02 发布）：同一组会话操作在 `/api/sessions/**` 上可达，领域载荷字节不变，但错误改为统一信封、响应携统一头，并有 manifest 与会话级能力围栏可供发现。`/v2` 自 0.13.0 起定义为**内部适配入口**，至 1.0.0（`unified-v1` 冻结）移除外部入口；0.14.0 没有移除任何 `/v2` 路由、没有进入只读窗口。本页下文的 `/v2` 事实在那之前继续成立，只是请不要在新代码里手写 `/v2` 前缀，也不要在同一会话族里新旧前缀混用。`/api` 的路由表、统一头与错误信封见[统一 API](/unified-api/)与[统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
+**新集成请改走统一调用面 `/api`**（`@tansr/serve` 0.13.0 起 GA，2026-10-02 发布）：同一组会话操作在 `/api/sessions/**` 上可达，领域载荷字节不变，但错误改为统一信封、响应携统一头，并有 manifest 与会话级能力围栏可供发现。`/v2` 自 0.13.0 起定义为**内部适配入口**，至 1.0.0（`unified-v1` 冻结）移除外部入口；截至 0.15.1 没有移除任何 `/v2` 路由。0.15.0 起旧前缀有了退役窗口旋钮 `legacyPrefixes` / `TANSR_SERVE_LEGACY_PREFIX`：缺省 `readwrite`（0.15.1 未变）读写照常受理；显式 `readonly` 时 `/v2` 上 manifest `kind: write` 的操作改答 `410 gone` 统一信封（`detail.domainCode: legacy_prefix_retired`、`retryAction: rediscover`），读与事件流仍受理；`off` 时旧前缀全部 404。门面在场时 `/v2` 的每个响应（含 SSE）另附 `Deprecation: @1790900340` 与 `Link: </api/manifest>; rel="deprecation"`（配置了 `TANSR_SERVE_LEGACY_SUNSET` 再附 `Sunset`），`readwrite` 下响应体与状态码逐字节不变；同一会话 id 在 `/api` 与 `/v2` 之间交叉访问会记一条 `api.legacy_prefix_mixed` 告警，缺省不拒绝。本页下文的 `/v2` 事实在外部入口移除之前继续成立，只是请不要在新代码里手写 `/v2` 前缀，也不要在同一会话族里新旧前缀混用。`/api` 的路由表、统一头与错误信封见[统一 API](/unified-api/)与[统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
 
 ## 在平台或宿主配置应用角色
 
@@ -96,6 +96,7 @@ lastVerified: '2026-10-05'
 | `rate_limited` | 429 | 宿主限流缝拒绝，或平台套餐配额（`detail: { scope: 'plan' }`）；恒携 `Retry-After` |
 | `internal_error` | 500 | 路由层统一错误边界兜底，进程恒不退出 |
 | `store_corrupted` | 500 | 会话存储损坏，恒不静默回残缺历史 |
+| `gone`（统一信封，非 `{ error }` 形；原因在 `detail.domainCode: legacy_prefix_retired`） | 410 | 仅 0.15.0 起显式 `TANSR_SERVE_LEGACY_PREFIX=readonly` 时 `/v2` 上的写操作；缺省 `readwrite` 不出现。`retryAction: rediscover`——读 `/api/manifest` 改走对应 `/api` 操作，不要重试旧路径 |
 
 客户端退避纪律：429 / 503 携 `Retry-After` 时按整秒值等待；5xx 无 `Retry-After` 时指数退避 + 抖动；未知 code 按状态码兜底。平台原码（`asr_not_configured`、`insufficient_balance`、`plan_required` 等）在音频端点与铸令牌拒绝处原样透传，含义见[错误码表](/errors/codes)。
 

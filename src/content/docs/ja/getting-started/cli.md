@@ -13,26 +13,33 @@ sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:CHANGELOG.md
   - tansr-cli:doc/report/REL-SEA-发行执行单-2026-10-05.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`tansr` は開発者向けのエージェント CLI です。同じ 1 つのカーネルを、対話式ターミナル（TUI）、ヘッドレススクリプト（headless）、常駐サービス（serve）、エディタエージェント（acp）、MCP ツールサービス（mcp serve）の 5 つの形態で提供します。このページでは最短経路だけを進みます：インストール、ログイン、ひと言話す、イベントストリームを一度見る。現在のバージョンは **0.10.1**（npm `@tansr/cli`、2026-10-04 公開）です。
+`tansr` は開発者向けのエージェント CLI です。同じ 1 つのカーネルを、対話式ターミナル（TUI）、ヘッドレススクリプト（headless）、常駐サービス（serve）、エディタエージェント（acp）、MCP ツールサービス（mcp serve）の 5 つの形態で提供します。このページでは最短経路だけを進みます：インストール、ログイン、ひと言話す、イベントストリームを一度見る。現在のバージョンは **0.10.3**（npm `@tansr/cli`、2026-10-10 公開。0.10.2 / 0.10.3 は新しい `@tansr/serve` をインライン化しただけで、コマンド、フラグ、ACP 面は 0.10.1 と同じです）です。
 
 ## 前提
 
-- Node.js ≥ 22.19。現時点で公開されている形態は npm パッケージだけです。単一ファイル実行版（SEA、Node ランタイム同梱）はまだ公開されていません。後述を参照してください。
+- Node.js ≥ 22.19（npm パッケージ形態）。単一ファイル実行版（SEA、Node ランタイム同梱）は現時点では Linux x64 / arm64 の 2 種類だけです。後述を参照してください。
 - Windows / macOS / Linux をサポートします。Windows では Windows Terminal を推奨します。従来の conhost では自動的に ASCII グリフ段階に切り替わりますが、機能に影響はありません。
 
 ## インストール
 
 ```bash
 npm i -g @tansr/cli
-tansr --version          # 0.10.1
+tansr --version          # 0.10.3
 ```
 
 パッケージ名は `@tansr/cli`、コマンド名は `tansr` です。アップグレードも同じく `npm i -g @tansr/cli@latest` で行います。0.10.1 以降、インストールした各バージョンの初回起動時にユーザーキャッシュディレクトリへ約 2 MB の Node コンパイルキャッシュを書き込みます（同じバージョンの 2 回目以降の起動が速くなります。`TANSR_COMPILE_CACHE=0` で無効化できます。[設定と doctor](/ja/cli/settings-and-doctor/)を参照）。
 
-**単一ファイル形態（SEA）と OSS 配布サイト：未公開。** 2026-10-05 時点で、公式配布サイト `bash.tansr.com` には 0.10.x に対応する実行ファイルも `SHA256SUMS` もありません（Windows 版は当面掲載しないことが決まっています）。配布サイトをインストール元として扱わないでください。SEA が公開され次第、本ページにダウンロードと検証の手順を追加します。
+**単一ファイル形態（SEA）：Linux の 2 種類を公開中。** 公式配布サイト `https://bash.tansr.com` の `stable` チャネルでは 2026-10-05 以降、`tansr-sea-linux-x64` と `tansr-sea-linux-arm64`（glibc ≥ 2.28）を配布しており、現在は 0.10.3（2026-10-10、npm パッケージと同じソースからビルド）です。Windows 版はコード署名証明書が整うまで掲載せず、macOS 版は Apple Developer 証明書と公証待ち、musl / alpine は SEA の約束の対象外です——これらのプラットフォームでは npm パッケージを使ってください。インストールは「ダウンロード → 検証 → 配置」の 3 ステップのスクリプトで行い、まずダウンロードして内容を確認してから実行します：
+
+```bash
+curl -fsSLO https://bash.tansr.com/install.sh
+sh install.sh            # 可选参数 stable|beta;缺省落位 ~/.local/bin/tansr
+```
+
+スクリプトはチャネルの `SHA256SUMS` と実測ハッシュを比較し、一致しなければファイルを削除してインストールを拒否します。`TANSR_INSTALL_DIR` / `TANSR_CHANNEL` でデフォルトを上書きできます。SEA でインストールした後の `tansr update`（`--install` を付けたときだけインストール）は、デフォルトで配布サイトの署名付きエンベロープ `release/{channel}/sea/latest.signed.json` を読み、内蔵の公開鍵（`release-signing-v1`）で検証してからバージョンを比較します。npm でインストールした場合の `tansr update` は npm レジストリを照会し、この経路は使いません。
 
 ## 認証情報：個人アクセストークンでログイン
 
@@ -121,4 +128,4 @@ for await (const line of createInterface({ input: child.stdout })) {
 
 - [設定と doctor](/ja/cli/settings-and-doctor/)：5 層の設定、よく使う環境変数、`tansr doctor` の各セクションの読み方。
 - [コマンドとフラグのリファレンス](/cli/commands)：すべてのサブコマンドとフラグ。
-- 自分のエージェントを他の人にも使わせたい？[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)をご覧ください。CLI 形態の `tansr serve --v2` は 0.10.0 以降、統一呼び出し面 `/api` も同時にマウントします（新規の統合はこちらへ）。`--v2` 構成では `/v1` 面はデフォルトで無効になり、移行用フラグ `--legacy-v1` は 0.10.1 以降は非推奨です。詳しくは[デプロイと認証](/ja/serve/deploy-and-auth/)を参照してください。
+- 自分のエージェントを他の人にも使わせたい？[セッションサービスを 5 分で動かす](/ja/getting-started/serve/)をご覧ください。CLI 形態の `tansr serve --v2` は 0.10.0 以降、統一呼び出し面 `/api` も同時にマウントします（新規の統合はこちらへ）。`--v2` 構成では `/v1` 面はデフォルトで無効になり、移行用フラグ `--legacy-v1` は 0.10.1 以降は非推奨です。0.10.2 以降は環境変数 `TANSR_SERVE_LEGACY_PREFIX`（デフォルト `readwrite`、0.10.3 でも変更なし）で旧 `/v2`、`/v3/*` プレフィックスの廃止ウィンドウを制御できます。詳しくは[デプロイと認証](/ja/serve/deploy-and-auth/)を参照してください。

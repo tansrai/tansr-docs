@@ -20,12 +20,12 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes a multi-session REST + SSE protocol surface — the unified call surface `/api` (GA since 0.13.0) and the `/v2` session protocol behind it; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance. This page is verified against `@tansr/serve` **0.14.0** (released 2026-10-04).
+`@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes a multi-session REST + SSE protocol surface — the unified call surface `/api` (GA since 0.13.0) and the `/v2` session protocol behind it; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance. This page is verified against `@tansr/serve` **0.15.1** (released 2026-10-10, the current npm `latest`).
 
-The released Android / iOS / HarmonyOS SDKs connect to this service (over `/v2`); the Node-side thin client is `@tansr/api-client` 0.3.0 (sub-entry `./api`, GA 2026-10-04). **New integrations should go straight to `/api`**: same sessions, same payload bytes, plus four `tansr-*` response headers and the unified error envelope. `/v2` is defined as an internal adapter entry since 0.13.0 and its external entry is removed in 1.0.0; `/v2` calls already in production do not need to change today.
+The released Android / iOS / HarmonyOS SDKs connect to this service (over `/v2`); the Node-side thin client is `@tansr/api-client` 0.4.0 (sub-entry `./api`; released 2026-10-06 — since this version the frozen sub-entries `./sdk2` / `./terminal` also target `/api` by default when no `routePrefixes` is passed). **New integrations should go straight to `/api`**: same sessions, same payload bytes, plus four `tansr-*` response headers and the unified error envelope. `/v2` is defined as an internal adapter entry since 0.13.0 and its external entry is removed in 1.0.0. Since 0.15.0, responses on the legacy prefixes `/v2` and `/v3/*` carry `Deprecation` / `Link` retirement headers, but the legacy-prefix window still defaults to `readwrite` as of 0.15.1 (reads and writes are served as before), so `/v2` calls already in production do not need to change today; the window knob and timetable are in [Deployment and authentication](/en/serve/deploy-and-auth/).
 
 ## Configure the application role on the platform or host
 
@@ -42,7 +42,7 @@ These options are available since `@tansr/serve` 0.8.0; the platform side has be
 ## Install
 
 ```bash
-npm install @tansr/serve        # 现行 0.14.0
+npm install @tansr/serve        # 现行 0.15.1
 ```
 
 The only third-party runtime dependency is `zod`; tansr's internal packages are compiled inline and do not appear in your dependency tree. Since 0.13.0 the package also ships the sub-entries `@tansr/serve/extensions` (SDK2 archive / cache / terminal-service hosts, explicit assembly required) and `@tansr/serve/process`; nothing on this page depends on them.
@@ -108,13 +108,13 @@ Always wire the `store`: without it, one process restart wipes the context of ev
 
 Process signals belong to the host: the engine does not listen for SIGTERM on your behalf. At minimum call `server.drain({ timeoutMs: 30_000 })` before exiting; see [Deployment and authentication](/en/serve/deploy-and-auth/).
 
-Want to look at the protocol offline first, without a real platform connection? The in-repo sample `examples/serve-demo` exercises the whole `/api` / `/v2` protocol layer with an echo agent; start it with one command, `pnpm --filter tansr-example-serve-demo start`, listening on `127.0.0.1:8788` by default.
+Want to see the protocol with a ready-made sample? In the in-repo sample `examples/serve-demo`, `pnpm start` (identical to `pnpm real`) runs the real-model entry `agent-real.ts`, which reads `TANSR_APP_KEY_ID` / `TANSR_APP_KEY` (optionally `TANSR_API_BASE`) from `examples/serve-demo/.env`; with no credentials it exits instead of falling back to an echo. Without the long-running switch it only runs one automatic smoke turn and exits; to keep a server up for curl or mobile integration, add `DEMO_SERVE_ONLY=1` to `.env` and pick the port with `DEMO_PORT` (source default `8799`; the sample README uses `8788`). Since 2026-09-14 the echo agent is only an in-repo test fixture with no public offline start command.
 
 ## First session
 
 Walk through it with curl. `<your login token>` is the one issued by your own system that `authenticate` can verify. The examples below use the unified call surface `/api`; replacing `/api/sessions` with `/v2/sessions` yields the same session and the same response body (minus the four `tansr-*` response headers, and errors come in the legacy envelope).
 
-First, see what this deployment has assembled (manifest revision 7 = `@tansr/serve` 0.14.0):
+First, see what this deployment has assembled (manifest revision 7, since `@tansr/serve` 0.14.0 and unchanged in 0.15.1):
 
 ```bash
 curl -s http://127.0.0.1:8787/api/manifest -H "Authorization: Bearer <你的登录 token>" -D - -o /dev/null
@@ -168,7 +168,7 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 
 ## serve in CLI form
 
-`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2` mounts the `/v2` surface in the CLI form as well (**available since tansr CLI 0.6.0**); since 0.10.0 it also mounts the `/api` facade, and with `--v2` present the `/v1` surface is off by default — the escape hatch `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` is deprecated since 0.10.1 (emits a `server.deprecated_option` warning; removed in 1.0.0). The CLI form is currently **0.10.1** (npm `@tansr/cli`, 2026-10-04); SDK2 archive / cache / terminal-service hosts are reachable in the CLI form only through `--host-module <absolute.cjs> --host-module-sha256 <sha256>`. The `@tansr/serve` npm embedding above remains available (0.8.0 and later, currently 0.14.0).
+`tansr serve --token <value>` also starts a long-running service, but it is the single-operator `/v1` surface (`POST /v1/sessions`, `GET /v1/sessions/:id/events` and four more endpoints, one shared Bearer token) — suitable for orchestration systems, not a multi-tenant product backend. `tansr serve --v2` mounts the `/v2` surface in the CLI form as well (**available since tansr CLI 0.6.0**); since 0.10.0 it also mounts the `/api` facade, and with `--v2` present the `/v1` surface is off by default — the escape hatch `--legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` is deprecated since 0.10.1 (emits a `server.deprecated_option` warning; removed in 1.0.0). The CLI form is currently **0.10.3** (npm `@tansr/cli`, 2026-10-10; it inlines the same service implementation as `@tansr/serve` 0.15.1, and 0.10.2 / 0.10.3 added no commands or flags); SDK2 archive / cache / terminal-service hosts are reachable in the CLI form only through `--host-module <absolute.cjs> --host-module-sha256 <sha256>`. The `@tansr/serve` npm embedding above remains available (0.8.0 and later, currently 0.15.1).
 
 ## Next steps
 
@@ -176,4 +176,4 @@ curl -N http://127.0.0.1:8787/api/sessions/<sessionId>/events \
 - [v2 protocol and webhooks](/en/serve/v2-and-webhooks/): the full endpoint set, the three-level recovery chain, end-of-turn outbound notifications and signing.
 - [Retention and governance](/en/serve/retention-and-governance/): retention windows, idle reclamation, concurrency caps, session storage, the three 0.14.0 request headers.
 - [Environment variables](/serve/env): every `TANSR_SERVE_*` knob.
-- [SDK 2.0 extension entries](/en/sdk/sdk2-preview/): explicit `@tansr/serve/extensions` hosts, `@tansr/api-client` 0.3.0 and the performance disclosure.
+- [SDK 2.0 extension entries](/en/sdk/sdk2-preview/): explicit `@tansr/serve/extensions` hosts, `@tansr/api-client` 0.4.0 and the performance disclosure.
