@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 문제 해결 순서: 먼저 `tansr doctor`(CLI) 또는 오류 코드(다른 형태)를 보고, 그다음 아래 표에서 처리를 찾습니다. 열에 아홉은 사람에게 연락할 필요가 없습니다.
@@ -50,7 +50,7 @@ tansr doctor --json   # 机器可读
 
 ### TUI 안의 `/doctor`
 
-TUI 안의 `/doctor`는 네트워크 없음, 자식 프로세스 없음의 별도 어셈블리 상태 자가 점검으로, 항목마다 ✓ / ✗를 표시합니다. 항목 목록은 실제 출력이 기준입니다(작성 시점 11개): `node_version`(≥ 22.19), `config_sources`(5층에 skipped 없음), `config_diagnostics`(error 수준 진단 없음), `model_resolution`, `context_window`, `context_scheme`(production 아닌 스킴에 경고 표시), `custom_commands`(명령 소스에 skipped 없음), `mcp_connections`(지연 연결의 미연결도 정상으로 봄. 실패한 서버는 오류 코드를 보고 `/mcp reconnect`), `terminal`(TTY와 크기), `workspace_trust`, `output_style`(스타일 이름이 없으면 정직하게 오류 보고). ✗는 힌트일 뿐이며 `tansr doctor`의 차단 문제와 같지 않습니다.
+TUI 안의 `/doctor`는 네트워크 없음, 자식 프로세스 없음의 별도 어셈블리 상태 자가 점검으로, 항목마다 ✓ / ✗를 표시합니다. 항목 목록은 실제 출력이 기준입니다(작성 시점 12개): `node_version`(≥ 22.19), `config_sources`(5층에 skipped 없음), `config_diagnostics`(error 수준 진단 없음), `model_resolution`, `context_window`, `context_scheme`(production 아닌 스킴에 경고 표시), `custom_commands`(명령 소스에 skipped 없음), `mcp_connections`(지연 연결의 미연결도 정상으로 봄. 실패한 서버는 오류 코드를 보고 `/mcp reconnect`), `terminal`(TTY와 크기), `workspace_trust`, `output_style`(스타일 이름이 없으면 정직하게 오류 보고), `session_driver_state`(현재 위상, 세대, 턴 수와 최근 전이. 위상 자체는 고장이 아니므로 이 항목은 항상 ✓). ✗는 힌트일 뿐이며 `tansr doctor`의 차단 문제와 같지 않습니다.
 
 ### CLI에서 흔한 메시지
 

@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 The order of troubleshooting: look at `tansr doctor` (CLI) or the error code (other forms) first, then find the fix in the tables below; nine times out of ten you will not need to contact anyone.
@@ -50,7 +50,7 @@ Zero model calls, zero network, read-only (it creates no directories); **exit co
 
 ### `/doctor` inside the TUI
 
-`/doctor` in the TUI is a separate assembly self-check with zero network and zero subprocesses, one ✓ / ✗ per item; the list is whatever the actual output shows (11 items at the time of writing): `node_version` (≥ 22.19), `config_sources` (none of the five layers skipped), `config_diagnostics` (no error-level diagnostics), `model_resolution`, `context_window`, `context_scheme` (a non-production scheme is flagged), `custom_commands` (no command source skipped), `mcp_connections` (a lazy server not yet connected still counts as healthy; for a failed server look at its error code, `/mcp reconnect`), `terminal` (TTY and size), `workspace_trust`, `output_style` (a non-existent style name is reported honestly). A ✗ is only a hint and is not the same as a `tansr doctor` blocking problem.
+`/doctor` in the TUI is a separate assembly self-check with zero network and zero subprocesses, one ✓ / ✗ per item; the list is whatever the actual output shows (12 items at the time of writing): `node_version` (≥ 22.19), `config_sources` (none of the five layers skipped), `config_diagnostics` (no error-level diagnostics), `model_resolution`, `context_window`, `context_scheme` (a non-production scheme is flagged), `custom_commands` (no command source skipped), `mcp_connections` (a lazy server not yet connected still counts as healthy; for a failed server look at its error code, `/mcp reconnect`), `terminal` (TTY and size), `workspace_trust`, `output_style` (a non-existent style name is reported honestly), `session_driver_state` (current phase, generation, turn count and recent transitions; the phase itself is not a fault, so this item is always ✓). A ✗ is only a hint and is not the same as a `tansr doctor` blocking problem.
 
 ### Common CLI messages
 

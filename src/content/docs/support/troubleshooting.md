@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 排障的顺序：先看 `tansr doctor`（命令行）或错误码（其他形态），再按下面的表找处置；十之八九不用联系人。
@@ -50,7 +50,7 @@ tansr doctor --json   # 机器可读
 
 ### TUI 里的 `/doctor`
 
-TUI 内 `/doctor` 是另一份零网络、零子进程的装配态自检，逐项 ✓ / ✗，清单以实际输出为准（写作时点 11 项）：`node_version`（≥ 22.19）、`config_sources`（五层无 skipped）、`config_diagnostics`（无 error 级诊断）、`model_resolution`、`context_window`、`context_scheme`（非 production 方案标警）、`custom_commands`（命令源无 skipped）、`mcp_connections`（懒台未连也算健康；失败台看错误码，`/mcp reconnect`）、`terminal`（TTY 与尺寸）、`workspace_trust`、`output_style`（风格名不存在会诚实报错）。✗ 只是提示，不等于 `tansr doctor` 的阻断问题。
+TUI 内 `/doctor` 是另一份零网络、零子进程的装配态自检，逐项 ✓ / ✗，清单以实际输出为准（写作时点 12 项）：`node_version`（≥ 22.19）、`config_sources`（五层无 skipped）、`config_diagnostics`（无 error 级诊断）、`model_resolution`、`context_window`、`context_scheme`（非 production 方案标警）、`custom_commands`（命令源无 skipped）、`mcp_connections`（懒台未连也算健康；失败台看错误码，`/mcp reconnect`）、`terminal`（TTY 与尺寸）、`workspace_trust`、`output_style`（风格名不存在会诚实报错）、`session_driver_state`（当前相位、代际、轮数与最近迁移；相位本身不是故障，这一项恒为 ✓）。✗ 只是提示，不等于 `tansr doctor` 的阻断问题。
 
 ### 命令行常见提示
 

@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 トラブルシューティングの順序：まず `tansr doctor`（CLI）またはエラーコード（他の形態）を見て、次に下の表で対処を探します。十中八九、人に連絡する必要はありません。
@@ -50,7 +50,7 @@ tansr doctor --json   # 机器可读
 
 ### TUI の `/doctor`
 
-TUI 内の `/doctor` は、ネットワークゼロ・子プロセスゼロの別のアセンブリ状態セルフチェックで、項目ごとに ✓ / ✗ を出します。項目一覧は実際の出力が基準です（執筆時点で 11 項目）：`node_version`（≥ 22.19）、`config_sources`（5 層に skipped なし）、`config_diagnostics`（error レベルの診断なし）、`model_resolution`、`context_window`、`context_scheme`（production 以外のスキームに警告）、`custom_commands`（コマンドソースに skipped なし）、`mcp_connections`（遅延接続の未接続も健全と見なす。失敗したサーバーはエラーコードを見て `/mcp reconnect`）、`terminal`（TTY とサイズ）、`workspace_trust`、`output_style`（スタイル名が存在しない場合は正直にエラーを報告）。✗ はヒントにすぎず、`tansr doctor` のブロッキング問題と同じではありません。
+TUI 内の `/doctor` は、ネットワークゼロ・子プロセスゼロの別のアセンブリ状態セルフチェックで、項目ごとに ✓ / ✗ を出します。項目一覧は実際の出力が基準です（執筆時点で 12 項目）：`node_version`（≥ 22.19）、`config_sources`（5 層に skipped なし）、`config_diagnostics`（error レベルの診断なし）、`model_resolution`、`context_window`、`context_scheme`（production 以外のスキームに警告）、`custom_commands`（コマンドソースに skipped なし）、`mcp_connections`（遅延接続の未接続も健全と見なす。失敗したサーバーはエラーコードを見て `/mcp reconnect`）、`terminal`（TTY とサイズ）、`workspace_trust`、`output_style`（スタイル名が存在しない場合は正直にエラーを報告）、`session_driver_state`（現在のフェーズ、世代、ターン数と直近の遷移。フェーズ自体は故障ではないため、この項目は常に ✓）。✗ はヒントにすぎず、`tansr doctor` のブロッキング問題と同じではありません。
 
 ### CLI でよく見るメッセージ
 
