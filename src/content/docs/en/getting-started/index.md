@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run". The neutral bridge, the Harness, how Skill differs from the runtime, the current two steps, and the roadmap that is not offered yet are on [Technical stance](/en/getting-started/principles/). The same statements, for a coding assistant to collect, are in [`/llms.txt`](/llms.txt). The homepage keeps only a collapsed entry at the bottom.
@@ -66,7 +66,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | `@tansr/serve` | Node.js ≥ 22.19; the only third-party runtime dependency is `zod` |
 | Android SDK | minSdk 26; Kotlin coroutines + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+; SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20; Stage model; independently published HAR `@tansr/harmony` 0.1.0 |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20; Stage model; independently published HAR `@tansr/harmony` 0.2.0 (2026-10-10, not on OHPM yet) |
 
 ## Once it runs, what to read next
 

@@ -24,7 +24,7 @@ export const GLOSSARY = Object.freeze([
   { zh: '开发者文档', en: 'developer docs', ja: '開発者ドキュメント', ko: '개발자 문서' },
   { zh: '帮助中心', en: 'help center', ja: 'ヘルプセンター', ko: '도움말 센터', avoid: ['support center', 'help desk'] },
   { zh: '资料站', en: 'docs site', ja: 'ドキュメントサイト', ko: '문서 사이트' },
-  { zh: '鸿蒙 SDK', en: 'HarmonyOS SDK', ja: 'HarmonyOS SDK', ko: 'HarmonyOS SDK', note: '原生 ArkTS HAR `@tansr/harmony`;独立发布版本化字节码 HAR 0.1.0,尚未上架 OHPM;兼容 Android 的旧鸿蒙设备继续用 Android SDK', avoid: ['Harmony SDK', 'OpenHarmony SDK'] },
+  { zh: '鸿蒙 SDK', en: 'HarmonyOS SDK', ja: 'HarmonyOS SDK', ko: 'HarmonyOS SDK', note: '原生 ArkTS HAR `@tansr/harmony`;独立发布版本化字节码 HAR 0.2.0(2026-10-10),尚未上架 OHPM;0.1.0 仍走旧前缀;兼容 Android 的旧鸿蒙设备继续用 Android SDK', avoid: ['Harmony SDK', 'OpenHarmony SDK'] },
 
   // 凭据
   { zh: '密钥', en: 'key', ja: 'キー', ko: '키', note: '泛指;具体形态见下四条', avoid: ['secret key'] },

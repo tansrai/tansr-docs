@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。中立桥梁、Harness、Skill 与运行时的分工、当前两步，以及尚未提供的规划，写在[技术立场](/getting-started/principles/)；给编程助手采集的同一份条文在 [`/llms.txt`](/llms.txt)。首页只在页尾放折叠入口。
@@ -66,7 +66,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
 | Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+;SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20；Stage 模型；独立发布 HAR `@tansr/harmony` 0.1.0 |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20；Stage 模型；独立发布 HAR `@tansr/harmony` 0.2.0（2026-10-10，尚未上架 OHPM） |
 
 ## 一次跑通后，接下来看什么
 

@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 tansr はエージェントランタイムです。同じ 1 つのカーネル（クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮）を、いくつかの異なる形態で提供します。すべてを理解する必要はありません。「エージェントをどこで動かしたいか」に合わせて道を 1 つ選ぶだけです。中立な橋、Harness、Skill とランタイムの分担、今の 2 ステップ、そしてまだ提供していない計画は[技術上の立場](/ja/getting-started/principles/)にあります。プログラミング助手が収集する同じ条文は [`/llms.txt`](/llms.txt) にあります。資料サイトの最初の画面には出さず、ページ末尾の折りたたみに置きます。
@@ -66,7 +66,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | `@tansr/serve` | Node.js ≥ 22.19。サードパーティのランタイム依存は `zod` のみ |
 | Android SDK | minSdk 26。Kotlin コルーチン + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+。SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20。Stage モデル。独立公開 HAR `@tansr/harmony` 0.1.0 |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20。Stage モデル。独立公開 HAR `@tansr/harmony` 0.2.0（2026-10-10、OHPM 未掲載） |
 
 ## 一度動いたら、次に読むもの
 

@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다. 중립 다리, Harness, Skill과 런타임의 역할 나눔, 현재의 두 단계, 그리고 아직 제공하지 않은 계획은 [기술 입장](/ko/getting-started/principles/)에 있습니다. 코딩 도우미가 수집하는 같은 문장은 [`/llms.txt`](/llms.txt)에 있습니다. 문서 첫 화면에는 두지 않고 페이지 끝의 접힌 항목에 둡니다.
@@ -66,7 +66,7 @@ CLI 사용자는 1층만 필요합니다. SDK와 세션 서비스 개발자는 2
 | `@tansr/serve` | Node.js ≥ 22.19. 서드파티 런타임 의존성은 `zod` 하나뿐 |
 | Android SDK | minSdk 26. Kotlin 코루틴 + kotlinx.serialization + OkHttp |
 | iOS SDK | iOS 16+ / macOS 13+. SwiftPM |
-| HarmonyOS SDK | HarmonyOS 6.0 / API 20. Stage 모델. 독립 배포 HAR `@tansr/harmony` 0.1.0 |
+| HarmonyOS SDK | HarmonyOS 6.0 / API 20. Stage 모델. 독립 배포 HAR `@tansr/harmony` 0.2.0(2026-10-10, OHPM 미게시) |
 
 ## 한 번 실행한 뒤 다음에 읽을 것
 
