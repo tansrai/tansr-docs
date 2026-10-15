@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 tansr はエージェントランタイムです。同じ 1 つのカーネル（クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮）を、いくつかの異なる形態で提供します。すべてを理解する必要はありません。「エージェントをどこで動かしたいか」に合わせて道を 1 つ選ぶだけです。中立な橋、Harness、Skill とランタイムの分担、今の 2 ステップ、そしてまだ提供していない計画は[技術上の立場](/ja/getting-started/principles/)にあります。プログラミング助手が収集する同じ条文は [`/llms.txt`](/llms.txt) にあります。資料サイトの最初の画面には出さず、ページ末尾の折りたたみに置きます。
@@ -61,7 +61,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 
 | 形態 | 最低要件 |
 |---|---|
-| CLI（npm パッケージ） | Node.js ≥ 22.19。Windows / macOS / Linux。単一ファイル実行版（SEA）は未公開で、現在は npm パッケージのみ |
+| CLI | npm パッケージは Node.js ≥ 22.19 が必要で、Windows / macOS / Linux に対応。単一ファイル実行版（SEA）はランタイムを同梱しており、現時点では Linux x64 / arm64 向けだけ提供 |
 | `@tansr/sdk` | Node.js ≥ 22.19。Electron ≥ 39。ESM only。TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19。サードパーティのランタイム依存は `zod` のみ |
 | Android SDK | minSdk 26。Kotlin コルーチン + kotlinx.serialization + OkHttp |
@@ -77,7 +77,7 @@ CLI ユーザーに必要なのは第 1 層だけです。SDK とセッション
 | あるエラーコードの意味、再試行できるか | [エラー処理と再試行](/ja/sdk/errors-and-retries/) · [エラーコード表](/errors/codes) |
 | サーバーのデプロイ、グレースフルシャットダウン、複数レプリカでのシャーディング | [デプロイと認証](/ja/serve/deploy-and-auth/) |
 | セッションサービスの HTTP 面（`/api`）を直接呼びたい、または自分でクライアントを書きたい | [統一 API（/api）](/ja/unified-api/) |
-| プログラミング助手に、自分の説明から動く製品を作ってほしい | `@tansr/skill` 0.1.6 | [プログラミング助手で製品を作る](/ja/getting-started/skill/) |
+| プログラミング助手に、自分の説明から動く製品を作ってほしい（`@tansr/skill` 0.1.6） | [プログラミング助手で製品を作る](/ja/getting-started/skill/) |
 | 形態をなぜ分けるのか、2 ステップと計画がそれぞれ何を意味するか | [技術上の立場](/ja/getting-started/principles/) |
 | SDK 2.0 の拡張入口（アーカイブホスト、キャッシュホスト、統一 API）のうち、どこまでが正式公開済みか | [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/) |
 | セッションはいつまで保持され、いつ回収されるか | [保持期間とガバナンス](/ja/serve/retention-and-governance/) |

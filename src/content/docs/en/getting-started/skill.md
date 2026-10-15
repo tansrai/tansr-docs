@@ -8,7 +8,7 @@ related:
   - getting-started/serve
   - unified-api/clients
   - security
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 Tansr Skill is development guidance installed into a coding assistant. It is not a runtime skill inside your app, and it is not `@tansr/sdk`. You describe the product; the assistant follows that guidance to produce a runnable interface, business data, and Tansr wiring. Installation does not create a platform account, call a model, or deploy an app.

@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-10'
+lastVerified: '2026-10-13'
 ---
 
 문제 해결 순서: 먼저 `tansr doctor`(CLI) 또는 오류 코드(다른 형태)를 보고, 그다음 아래 표에서 처리를 찾습니다. 열에 아홉은 사람에게 연락할 필요가 없습니다.
@@ -26,32 +26,37 @@ tansr doctor          # 人读报告
 tansr doctor --json   # 机器可读
 ```
 
-모델 호출 없음, 네트워크 없음, 자식 프로세스 없음. **종료 코드 0 = 사용 가능, 1 = 차단 문제 있음**. TUI 안의 `/doctor`도 같은 것입니다. 표시되는 것은 가장 최근 어셈블리 가져오기의 사실입니다. 콘솔에서 설정을 바꿨으면 CLI를 한 번 실행하면 새로 고쳐집니다.
+모델 호출 없음, 네트워크 없음, 읽기 전용(디렉터리를 전혀 만들지 않음). **종료 코드 0 = 사용 가능, 1 = 차단 문제 있음**. 표시되는 것은 가장 최근 어셈블리 가져오기의 사실입니다. 콘솔에서 설정을 바꿨으면 CLI를 한 번 실행하면 새로 고쳐집니다. TUI 안의 `/doctor`는 별도의 더 짧은 어셈블리 상태 점검표이며(아래 참조) 종료 코드에 영향을 주지 않습니다.
 
-### 섹션 대조표
+### 무엇이 차단으로 계산되나
+
+`tansr doctor`는 네 종류의 문제만 차단(종료 코드 1)으로 계산합니다: `no_provider`(사용 가능한 provider가 하나도 없음), `unresolved_model`(기본 별칭이 모델로 해석되지 않음), `missing_credential`(해석된 provider의 API key 환경 변수가 없음), `session_store_unwritable`(세션 저장소 디렉터리에 쓸 수 없음). `--connectors`를 명시적으로 붙여 배포 커넥터를 탐지하면 그 차단 문제도 같은 결론에 합쳐집니다. 나머지 섹션은 모두 귀속과 힌트이며 종료 코드를 바꾸지 않습니다.
+
+### 보고서 섹션 대조표
 
 | 섹션 | 정상일 때의 모습 | 이상할 때 어떻게 하나 | 차단?|
 |---|---|---|---|
-| `node_version` | ≥ 22.19 | Node를 업그레이드하거나, 단일 파일 실행 파일(런타임 내장)로 바꿈 | 예 |
-| `config_sources` | 5층 각각 loaded / absent, skipped 없음 | skipped = 그 층의 JSONC 구문 오류 또는 루트 노드가 객체가 아님. 파일을 고치거나 삭제 | 예 |
-| `config_diagnostics` | 0건 또는 info 수준 | 건마다 층 / 키 경로 / 기대 타입을 제시. 잘못된 값은 이미 제거되어 더 낮은 층으로 폴백됨 | error 수준은 차단 |
-| `model_resolution` | 별칭 → provider / 모델 | "알 수 없는 모델 별칭 또는 ref"면 `modelAliases`와 `providers.models`를 대조. "API key 없음: 환경 변수 X가 설정되지 않음"이면 그 변수를 export | 예 |
-| `context_window` / `context_scheme` | 창 두 값과 클램프 쪽. 스킴 `production` | 창 알 수 없음 → 모델에 `maxContext`를 선언. production 아닌 스킴은 경고일 뿐 | 아니요 |
-| `custom_commands` / `mcp_connections` | skipped 없음. 지연 연결의 미연결도 정상으로 봄 | MCP 실패는 오류 코드를 봄. `/mcp reconnect` | 아니요 |
-| `terminal` / `workspace_trust` / `output_style` | TTY와 크기. 신뢰됨. 스타일 존재 | 신뢰되지 않음 = 읽기 전용 샌드박스, `/trust grant`. 스타일 이름이 없으면 정직하게 오류 보고 | 아니요 |
+| 설정 소스와 진단 | 5층 각각 loaded / absent, skipped 없음. error 수준 진단 0건 | skipped = 그 층의 JSONC 구문 오류 또는 루트 노드가 객체가 아님. 파일을 고치거나 삭제. 진단은 건마다 층 / 키 경로 / 기대 타입을 제시하며, 잘못된 값은 이미 제거되어 더 낮은 층으로 폴백됨 | 아니요 |
+| provider / 모델 해석 / 자격 증명 | 기본 별칭 → provider / 모델. 자격 증명이 존재하며 `sk-...끝4자리` 형태로만 표시됨 | "알 수 없는 모델 별칭 또는 ref"면 `modelAliases`와 `providers.models`를 대조. "API key 없음: 환경 변수 X가 설정되지 않음"이면 그 변수를 export | 예(`no_provider` / `unresolved_model` / `missing_credential`) |
 | `localProviders`(귀속) | 플랫폼 모드: 로컬 providers가 프루닝되는 것은 예상된 동작. 이스케이프 해치: 배너 표시 | "provider가 설정되지 않음"은 먼저 여기를 보고 설정이 안 된 것인지 프루닝된 것인지 구분 | 아니요 |
 | 자격 증명 저장소(귀속) | 키체인 | 평문 파일로 폴백되었으면 디렉터리 권한을 확인. `tansr init` 다시 실행 | 아니요 |
 | 모델 선택 귀속 | `model.selected` 값과 제공 층. 억제 상태 | 프로젝트 층이 `modelAliases.main`을 고정했을 때 사용자 층의 고착 선택이 억제되는 것은 예상된 동작 | 아니요 |
 | 플랜 | "개인(CLI만, 플랜 요금 없음)" 또는 "등급 이름 · 만료 · 상태" | 개인 등급은 고장이 아님. 유예 / 회귀 상태는 콘솔에서 갱신 | 아니요 |
 | 미디어 도구 | 네 면 `byo` / `platform` / `none` | 전부 `none`이면 개통 안내가 붙음: 자체 엔드포인트 세 변수, 또는 관리자에게 미디어 풀 개방 요청 | 아니요 |
 | 무인 기준선 | `auto`이며 격리 흔적 있음 | 흔적이 없으면 눈에 띄게 안내. 격리를 확인했으면 `TANSR_ISOLATED=1`로 억제 | 아니요 |
-| 세션 저장소 / memory | 세션 수, 바이트, 산출물 디렉터리, 손상 디렉터리 | 읽기만 하고 대신 삭제하지 않음. 정리는 `tansr sessions prune` | 아니요 |
+| 컨텍스트 / memory | 창 두 값과 클램프 쪽, 활성 스킴, 최근 7일 압축 통계. 메모리 디렉터리와 인덱스 점유량 | 창 알 수 없음 → 모델에 `maxContext`를 선언. production 아닌 스킴은 경고일 뿐 | 아니요 |
+| 세션 저장소 | 세션 수, 바이트, sidecar-only 디렉터리, 손상 디렉터리. 쓰기 가능 프로브 통과 | 읽기만 하고 대신 삭제하지 않음. 정리는 `tansr sessions prune`. 디렉터리에 쓸 수 없으면 권한을 고치거나 `TANSR_STORAGE_ROOT`를 다른 곳으로 지정 | 쓰기 불가는 차단(`session_store_unwritable`) |
+| 작업 공간 신뢰 | 신뢰됨 | 신뢰되지 않음은 사용자의 명시적 선택이지 고장이 아님. 풀려면 TUI에서 `/trust grant` | 아니요 |
+
+### TUI 안의 `/doctor`
+
+TUI 안의 `/doctor`는 네트워크 없음, 자식 프로세스 없음의 별도 어셈블리 상태 자가 점검으로, 항목마다 ✓ / ✗를 표시합니다. 항목 목록은 실제 출력이 기준입니다(작성 시점 11개): `node_version`(≥ 22.19), `config_sources`(5층에 skipped 없음), `config_diagnostics`(error 수준 진단 없음), `model_resolution`, `context_window`, `context_scheme`(production 아닌 스킴에 경고 표시), `custom_commands`(명령 소스에 skipped 없음), `mcp_connections`(지연 연결의 미연결도 정상으로 봄. 실패한 서버는 오류 코드를 보고 `/mcp reconnect`), `terminal`(TTY와 크기), `workspace_trust`, `output_style`(스타일 이름이 없으면 정직하게 오류 보고). ✗는 힌트일 뿐이며 `tansr doctor`의 차단 문제와 같지 않습니다.
 
 ### CLI에서 흔한 메시지
 
 | 증상 | 처리 |
 |---|---|
-| "TUI에는 대화형 터미널(TTY)이 필요합니다" | 파이프 안에서 `tansr`를 시작했습니다. 비대화형 상황에서는 `-p`를 사용 |
+| "대화형 UI를 시작할 수 없음: 현재 대화형 터미널(TTY)이 아님" | 파이프 안에서 `tansr`를 시작했습니다. 스크립트 / 파이프 상황에서는 `tansr -p "<프롬프트>"`를 사용 |
 | "API token이 없습니다: --token <값>을 전달하거나 TANSR_SERVE_TOKEN을 설정하세요" | `tansr serve`는 fail-closed이며 인증 없는 서비스를 띄우지 않음 |
 | "서버 시작 실패" / "--port 값이 유효하지 않음" | 포트가 사용 중이거나 잘못됨 |
 | "세션이 존재하지 않음" / "세션을 복구할 수 없음" | `--resume`의 id가 틀렸거나 디렉터리가 사용 중. 인자 없는 `tansr --resume`으로 선택기를 열어 확인 |

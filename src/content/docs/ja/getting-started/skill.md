@@ -8,7 +8,7 @@ related:
   - getting-started/serve
   - unified-api/clients
   - security
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 Tansr Skill はプログラミング助手に入れる開発手順です。アプリ実行時のスキルではなく、`@tansr/sdk` でもありません。作りたい製品を書くと、助手がその手順で動く画面、業務データ、Tansr の接続を作ります。インストールだけではプラットフォームのアカウントはできず、モデルも呼ばず、アプリも配備しません。

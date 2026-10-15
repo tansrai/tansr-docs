@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-08'
+lastVerified: '2026-10-13'
 ---
 
 排障的顺序：先看 `tansr doctor`（命令行）或错误码（其他形态），再按下面的表找处置；十之八九不用联系人。
@@ -26,32 +26,37 @@ tansr doctor          # 人读报告
 tansr doctor --json   # 机器可读
 ```
 
-零模型调用、零网络、零子进程；**退出码 0 = 可用，1 = 有阻断问题**。TUI 内 `/doctor` 是同一份。它呈现的是最近一次装配拉取的事实——控制台改了配置，跑一次 CLI 即刷新。
+零模型调用、零网络、只读（不创建任何目录）；**退出码 0 = 可用，1 = 有阻断问题**。它呈现的是最近一次装配拉取的事实——控制台改了配置，跑一次 CLI 即刷新。TUI 内的 `/doctor` 是另一份更短的装配态检查单（见下），不影响退出码。
 
-### 段位对照表
+### 哪些算阻断
+
+`tansr doctor` 只把四类问题计入阻断（退出码 1）：`no_provider`（没有任何可用 provider）、`unresolved_model`（缺省别名解析不到模型）、`missing_credential`（解析到的 provider 缺 API key 环境变量）、`session_store_unwritable`（会话存储目录不可写）。显式加 `--connectors` 探测部署连接器时，其阻断问题并入同一结论。其余各段都是归因与提示，不改退出码。
+
+### 报告段对照表
 
 | 段 | 正常长什么样 | 异常时怎么办 | 阻断？|
 |---|---|---|---|
-| `node_version` | ≥ 22.19 | 升级 Node，或改用单文件可执行版（自带运行时） | 是 |
-| `config_sources` | 五层各自 loaded / absent，无 skipped | skipped = 该层 JSONC 语法错误或根节点非对象；修文件或删掉 | 是 |
-| `config_diagnostics` | 0 条或 info 级 | 逐条给层 / 键路径 / 期望类型；非法值已被剔除并回退更低层 | error 级为阻断 |
-| `model_resolution` | 别名 → provider / 模型 | 「未知的模型别名或 ref」核对 `modelAliases` 与 `providers.models`；「缺少 API key：环境变量 X 未设置」导出该变量 | 是 |
-| `context_window` / `context_scheme` | 窗口两值与钳位侧；方案 `production` | 窗口未知 → 给模型声明 `maxContext`；非 production 方案只是警示 | 否 |
-| `custom_commands` / `mcp_connections` | 无 skipped；懒台未连也算健康 | MCP 失败台看错误码；`/mcp reconnect` | 否 |
-| `terminal` / `workspace_trust` / `output_style` | TTY 与尺寸；已信任；风格存在 | 未信任 = 只读沙箱，`/trust grant`；风格名不存在会诚实报错 | 否 |
+| 配置来源与诊断 | 五层各自 loaded / absent，无 skipped；error 级诊断 0 条 | skipped = 该层 JSONC 语法错误或根节点非对象，修文件或删掉；诊断逐条给层 / 键路径 / 期望类型，非法值已被剔除并回退更低层 | 否 |
+| provider / 模型解析 / 凭据 | 缺省别名 → provider / 模型；凭据在场，只以 `sk-...尾4位` 形态呈现 | 「未知的模型别名或 ref」核对 `modelAliases` 与 `providers.models`；「缺少 API key：环境变量 X 未设置」导出该变量 | 是（`no_provider` / `unresolved_model` / `missing_credential`） |
 | `localProviders`（归因） | 平台模式：本地 providers 被剪枝属预期；逃生态：出横幅 | 「未配置 provider」先看这里分清是没配还是被剪 | 否 |
 | 凭据存储（归因） | 密钥库 | 降级明文文件时确认目录权限；`tansr init` 重跑 | 否 |
 | 模型选择归因 | `model.selected` 值与提供层；压制态 | 项目层钉了 `modelAliases.main` 时用户层粘滞选择被压制，属预期 | 否 |
 | 套餐 | 「个人（仅 CLI，无套餐费）」或「档名 · 到期 · 状态」 | 个人档不是故障；宽限 / 回落态到控制台续费 | 否 |
 | 媒体工具 | 四面 `byo` / `platform` / `none` | 全 `none` 附开通指引：自带端点三件变量，或请管理员开媒体池 | 否 |
 | 无人值守基线 | `auto` 且有隔离迹象 | 无迹象时显著提示；确认已隔离后 `TANSR_ISOLATED=1` 压制 | 否 |
-| 会话存储 / memory | 会话数、字节、工件目录、损坏目录 | 只读不代删；清理走 `tansr sessions prune` | 否 |
+| 上下文 / memory | 窗口两值与钳位侧、活动方案、近 7 天压缩统计；记忆目录与索引占用 | 窗口未知 → 给模型声明 `maxContext`；非 production 方案只是警示 | 否 |
+| 会话存储 | 会话数、字节、sidecar-only 目录、损坏目录；可写性探针通过 | 只读不代删；清理走 `tansr sessions prune`；目录不可写要修权限或换 `TANSR_STORAGE_ROOT` | 不可写为阻断（`session_store_unwritable`） |
+| 工作区信任 | 已信任 | 未信任是你的显式选择，不是故障；要放开在 TUI 里 `/trust grant` | 否 |
+
+### TUI 里的 `/doctor`
+
+TUI 内 `/doctor` 是另一份零网络、零子进程的装配态自检，逐项 ✓ / ✗，清单以实际输出为准（写作时点 11 项）：`node_version`（≥ 22.19）、`config_sources`（五层无 skipped）、`config_diagnostics`（无 error 级诊断）、`model_resolution`、`context_window`、`context_scheme`（非 production 方案标警）、`custom_commands`（命令源无 skipped）、`mcp_connections`（懒台未连也算健康；失败台看错误码，`/mcp reconnect`）、`terminal`（TTY 与尺寸）、`workspace_trust`、`output_style`（风格名不存在会诚实报错）。✗ 只是提示，不等于 `tansr doctor` 的阻断问题。
 
 ### 命令行常见提示
 
 | 症状 | 处置 |
 |---|---|
-| 「TUI 需要交互式终端（TTY）」 | 在管道里启动了 `tansr`；非交互场景用 `-p` |
+| 「无法启动交互界面：当前不是交互式终端（TTY）」 | 在管道里启动了 `tansr`；脚本 / 管道场景改用 `tansr -p "<提示词>"` |
 | 「缺少 API token：请传 --token <值> 或设置 TANSR_SERVE_TOKEN」 | `tansr serve` fail-closed，不会起无鉴权服务 |
 | 「服务器启动失败」/ 「--port 的值无效」 | 端口被占或非法 |
 | 「会话不存在」/ 「无法恢复会话」 | `--resume` 的 id 不对或目录被占；`tansr --resume` 无参弹选择器核对 |

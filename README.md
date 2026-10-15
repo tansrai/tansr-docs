@@ -2,9 +2,9 @@
 
 源码以 [MIT](LICENSE) 协议公开在 [tansrai/tansr-docs](https://github.com/tansrai/tansr-docs)。
 
-tansr 的开发者文档与帮助中心(一站两区):`/` 开发者文档(SDK · 会话服务 · CLI · Android / iOS · REST 参考 · 错误码 · 发布说明),`/support/` 帮助中心(账号与计费 · 排障 · 联系支持)。
+tansr 的开发者文档与帮助中心(一站两区):`/` 开发者文档(快速开始 · SDK · 会话服务 · CLI · Android / iOS / 鸿蒙 · 统一 API 合同 · REST 参考 · 错误码 · 安全与隐私 · 发布说明),`/support/` 帮助中心(账号与计费 · 排障 · 联系支持)。
 
-- 站点:Astro + Starlight 静态站,Pagefind 本地搜索,zh-CN 为根、en 第二语言。
+- 站点:Astro + Starlight 静态站,Pagefind 本地搜索,zh-CN 为根,en / ja / ko 三个附加语言走 `/en/` · `/ja/` · `/ko/` 前缀(译文覆盖范围见生成页 `releases/i18n-coverage`)。
 - 事实源律:凡能生成的只生成不手写——错误码表、REST 公开子集、`@tansr/serve` 环境变量表、CLI 命令参考、发布说明、SDK 导出参考皆由 `contract/` 下的 vendored 契约副本再生(`pnpm gen`;`pnpm gen --check` 为门)。手写文章只写用法与原理,引用的常量经 frontmatter `sources` 对表。
 - 方案与计划:`tansr-cli` 仓 `doc/133-资料站方案.md` · `doc/134-资料站开发计划与执行清单.md`。
 
@@ -28,12 +28,13 @@ pnpm vendor --api <tansr-api 检出> --cli <tansr-cli 检出>   # 更新 contrac
 
 ```
 astro.config.mjs       站点 / i18n / 侧栏 / openapi 挂载
-src/content/docs/      文章(zh-CN 根;en/ 前缀)
+src/content/docs/      文章(zh-CN 根;en/ · ja/ · ko/ 前缀)
 src/components/        首页卡片 · 相关文章 · 有帮助吗 · 联系
 contract/              vendored 契约副本 + vendored.json(source / revision / sha256)
 scripts/vendor/        契约拷入与对表
-scripts/gen/           生成器(错误码 · 公开 openapi · serve env · CLI 命令 · 发布说明)
-scripts/check/         门(lint-text · links · frontmatter)
+scripts/gen/           生成器(错误码 · 公开 openapi · serve env · CLI 命令 · 发布说明 · SDK 导出参考 · i18n 覆盖表)
+scripts/check/         门(gate · lint-text · links · frontmatter · release-notes · i18n-coverage · search-rank)
+scripts/test/          站点级测试(i18n 守卫 · 技术立场 / llms.txt · REST 侧栏 · 反馈 / 联系表单客户端 · lighthouse 配置形)
 scripts/deploy/        rsync + 原子切换
 ```
 

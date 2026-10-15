@@ -8,7 +8,7 @@ related:
   - getting-started/serve
   - unified-api/clients
   - security
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 Tansr Skill 是装进编程助手的开发指引，不是应用运行时里的技能，也不是 `@tansr/sdk`。你描述想做的产品，助手按这份指引完成可运行的界面、业务数据和 Tansr 接线。安装本身不创建平台账号、不调用模型、不部署应用。

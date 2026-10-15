@@ -14,7 +14,7 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/98-Agent会话服务v2契约冻结件.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-09'
+lastVerified: '2026-10-13'
 ---
 
 The order of troubleshooting: look at `tansr doctor` (CLI) or the error code (other forms) first, then find the fix in the tables below; nine times out of ten you will not need to contact anyone.
@@ -26,32 +26,37 @@ tansr doctor          # 人读报告
 tansr doctor --json   # 机器可读
 ```
 
-Zero model calls, zero network, zero subprocesses; **exit code 0 = usable, 1 = there is a blocking problem**. `/doctor` inside the TUI is the same report. It shows the facts from the most recent assembly fetch — after changing configuration in the console, run the CLI once to refresh.
+Zero model calls, zero network, read-only (it creates no directories); **exit code 0 = usable, 1 = there is a blocking problem**. It shows the facts from the most recent assembly fetch — after changing configuration in the console, run the CLI once to refresh. `/doctor` inside the TUI is a separate, shorter assembly checklist (see below) and does not affect the exit code.
 
-### Section reference
+### What counts as blocking
+
+`tansr doctor` counts only four kinds of problem as blocking (exit code 1): `no_provider` (no usable provider at all), `unresolved_model` (the default alias does not resolve to a model), `missing_credential` (the resolved provider's API key environment variable is missing) and `session_store_unwritable` (the session storage directory is not writable). When you pass `--connectors` explicitly to probe deployment connectors, their blocking problems are folded into the same verdict. Every other section is attribution and hints and does not change the exit code.
+
+### Report section reference
 
 | Section | What healthy looks like | What to do when it is not | Blocking? |
 |---|---|---|---|
-| `node_version` | ≥ 22.19 | Upgrade Node, or switch to the single-file executable (bundles its own runtime) | Yes |
-| `config_sources` | Each of the five layers loaded / absent, none skipped | skipped = that layer has a JSONC syntax error or a non-object root; fix or delete the file | Yes |
-| `config_diagnostics` | 0 entries, or info level only | Each entry names layer / key path / expected type; invalid values have been dropped and fall back to a lower layer | error level is blocking |
-| `model_resolution` | alias → provider / model | "Unknown model alias or ref": check `modelAliases` and `providers.models`; "Missing API key: environment variable X is not set": export that variable | Yes |
-| `context_window` / `context_scheme` | Both window values and the clamp side; scheme `production` | Unknown window → declare `maxContext` for the model; a non-production scheme is only a warning | No |
-| `custom_commands` / `mcp_connections` | None skipped; a lazy server not yet connected still counts as healthy | For a failed MCP server look at its error code; `/mcp reconnect` | No |
-| `terminal` / `workspace_trust` / `output_style` | TTY and size; trusted; the style exists | Untrusted = read-only sandbox, `/trust grant`; a non-existent style name is reported honestly | No |
+| Config sources and diagnostics | Each of the five layers loaded / absent, none skipped; 0 error-level diagnostics | skipped = that layer has a JSONC syntax error or a non-object root, fix or delete the file; each diagnostic names layer / key path / expected type, and invalid values have been dropped and fall back to a lower layer | No |
+| Provider / model resolution / credentials | Default alias → provider / model; the credential is present and shown only as `sk-...last4` | "Unknown model alias or ref": check `modelAliases` and `providers.models`; "Missing API key: environment variable X is not set": export that variable | Yes (`no_provider` / `unresolved_model` / `missing_credential`) |
 | `localProviders` (attribution) | Platform mode: local providers pruned, as expected; escape hatch: a banner | For "no provider configured", look here first to tell "not configured" from "pruned" | No |
 | Credential storage (attribution) | OS keychain | If it fell back to a plaintext file, check the directory permissions; rerun `tansr init` | No |
 | Model selection attribution | The `model.selected` value and the layer that provided it; suppressed state | When the project layer pins `modelAliases.main`, the user layer's sticky choice is suppressed — expected | No |
 | Plan | "Personal (CLI only, no plan fee)" or "tier · expiry · state" | The Personal tier is not a fault; for grace / fallen-back states renew in the console | No |
 | Media tools | Four facets, each `byo` / `platform` / `none` | All `none` comes with enablement guidance: the three variables for your own endpoint, or ask the administrator to enable a media pool | No |
 | Unattended baseline | `auto` with signs of isolation | Without such signs a prominent notice; once you have confirmed isolation, suppress with `TANSR_ISOLATED=1` | No |
-| Session storage / memory | Session count, bytes, artifact directories, corrupted directories | Read-only, deletes nothing on your behalf; clean up with `tansr sessions prune` | No |
+| Context / memory | Both window values and the clamp side, the active scheme, compaction statistics for the last 7 days; memory directory and index footprint | Unknown window → declare `maxContext` for the model; a non-production scheme is only a warning | No |
+| Session storage | Session count, bytes, sidecar-only directories, corrupted directories; the writability probe passes | Read-only, deletes nothing on your behalf; clean up with `tansr sessions prune`; if the directory is not writable, fix its permissions or point `TANSR_STORAGE_ROOT` elsewhere | Not writable is blocking (`session_store_unwritable`) |
+| Workspace trust | Trusted | Untrusted is your explicit choice, not a fault; to lift it, run `/trust grant` in the TUI | No |
+
+### `/doctor` inside the TUI
+
+`/doctor` in the TUI is a separate assembly self-check with zero network and zero subprocesses, one ✓ / ✗ per item; the list is whatever the actual output shows (11 items at the time of writing): `node_version` (≥ 22.19), `config_sources` (none of the five layers skipped), `config_diagnostics` (no error-level diagnostics), `model_resolution`, `context_window`, `context_scheme` (a non-production scheme is flagged), `custom_commands` (no command source skipped), `mcp_connections` (a lazy server not yet connected still counts as healthy; for a failed server look at its error code, `/mcp reconnect`), `terminal` (TTY and size), `workspace_trust`, `output_style` (a non-existent style name is reported honestly). A ✗ is only a hint and is not the same as a `tansr doctor` blocking problem.
 
 ### Common CLI messages
 
 | Symptom | Fix |
 |---|---|
-| "The TUI needs an interactive terminal (TTY)" | You started `tansr` inside a pipe; use `-p` for non-interactive runs |
+| "Cannot start the interactive UI: this is not an interactive terminal (TTY)" | You started `tansr` inside a pipe; for scripts and pipes use `tansr -p "<prompt>"` instead |
 | "Missing API token: pass --token <value> or set TANSR_SERVE_TOKEN" | `tansr serve` fails closed and will not start an unauthenticated service |
 | "Server failed to start" / "Invalid value for --port" | The port is in use or invalid |
 | "Session does not exist" / "Cannot resume session" | The `--resume` id is wrong or the directory is in use; run `tansr --resume` without an argument to pick from a list |

@@ -8,7 +8,7 @@ related:
   - getting-started/serve
   - unified-api/clients
   - security
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 Tansr Skill은 코딩 도우미에 넣는 개발 안내입니다. 앱 런타임의 스킬이 아니고 `@tansr/sdk`도 아닙니다. 만들 제품을 적으면 도우미가 그 안내에 따라 실행되는 화면, 업무 데이터, Tansr 연결을 만듭니다. 설치만으로 플랫폼 계정이 생기지 않고, 모델을 부르지 않으며, 앱을 배포하지 않습니다.
