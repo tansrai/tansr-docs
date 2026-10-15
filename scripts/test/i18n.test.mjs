@@ -1,5 +1,5 @@
 /**
- * 多语言首批译文卷(资料站 en 首批 + ja / ko 首批 + 移动三端指南):25 篇 × { en, ja, ko } 与 zh-CN 源同 slug / 同扩展名 / 同 frontmatter 契约
+ * 多语言首批译文卷(资料站 en 首批 + ja / ko 首批 + 移动三端指南 + 四篇 SDK 指南):29 篇 × { en, ja, ko } 与 zh-CN 源同 slug / 同扩展名 / 同 frontmatter 契约
  * (zone · category · related · sources 逐字同),代码块与 zh-CN 源**逐字节相同**(含代码块内中文注释 / 提示词——用户拍板:代码块严守照抄),
  * 内链指 /<locale>/...(无译文的生成页 / 根路径例外)且目标存在;正文按语言各有「真译」守卫:
  *   en:零 CJK、零术语禁用变体;
@@ -22,7 +22,7 @@ import { DOCS_DIR } from '../gen/lib.mjs';
 const root = repoRootFrom(import.meta.url);
 const docs = join(root, DOCS_DIR);
 
-/** 首批 22 篇 + 移动三端指南 3 篇(2026-10-13 DS-UAPI 漂移审查补齐)= 25 篇(en / ja / ko 同集) */
+/** 首批 22 篇 + 移动三端指南 3 篇 + SDK 指南 4 篇(2026-10-13 DS-UAPI 漂移审查补齐)= 29 篇(en / ja / ko 同集) */
 export const FIRST_BATCH = Object.freeze([
   'getting-started/index.md',
   'getting-started/sdk.md',
@@ -37,6 +37,10 @@ export const FIRST_BATCH = Object.freeze([
   'sdk/lifecycle.md',
   'sdk/midturn-input.md',
   'sdk/system-prompts.md',
+  'sdk/checkpoints.md',
+  'sdk/errors-and-retries.md',
+  'sdk/platform-bundle.md',
+  'sdk/sessions-and-events.md',
   'security/index.md',
   'support/index.mdx',
   'support/account.md',
@@ -276,7 +280,7 @@ for (const locale of TRANSLATED_LOCALES) {
   }
 }
 
-test('覆盖模型:首批 22 篇 + 移动三端指南 3 篇在 en / ja / ko 全部计入,en 另计 1 篇仅英译页,无孤儿', () => {
+test('覆盖模型:首批 29 篇在 en / ja / ko 全部计入,en 另计 1 篇仅英译页,无孤儿', () => {
   const want = FIRST_BATCH.map(fileToSlug);
   for (const l of TRANSLATED_LOCALES) {
     const extra = l === 'en' ? EN_ONLY_EXTRA.map(fileToSlug) : [];

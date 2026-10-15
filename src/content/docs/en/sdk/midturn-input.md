@@ -14,10 +14,10 @@ sources:
   - tansr-cli:packages/cli/src/headless/input-control.ts
   - tansr-cli:packages/server/src/v2/routes.ts
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-This guide covers `@tansr/sdk@0.13.0`, `@tansr/cli@0.6.0`, and `@tansr/serve@0.8.0` and later (currently 0.18.1 / 0.10.1 / 0.14.0, published 2026-10-04; the same-turn input interfaces are unchanged since then). These versions are published on npm. Mobile apps also require clients that implement capability discovery and same-turn input (see each client's integration guide). Source and documentation validation do not establish acceptance on physical mobile devices.
+This guide covers `@tansr/sdk@0.13.0`, `@tansr/cli@0.6.0`, and `@tansr/serve@0.8.0` and later (currently 0.19.0 / 0.10.3 / 0.15.1, published 2026-10-10; the same-turn input interfaces are unchanged since then). These versions are published on npm. Mobile apps also require clients that implement capability discovery and same-turn input (see each client's integration guide). Source and documentation validation do not establish acceptance on physical mobile devices.
 
 **`submitInput` appends user input only to the specified running turn.** It does not interrupt the active model stream or tools, create a session, or automatically start another turn when the target closes. An already-started request is unchanged. Input enters history at a safe boundary before it can be used by a subsequent model request.
 
@@ -107,7 +107,7 @@ GET /v2/sessions/{sessionId}/inputs/ui-001?historyEpoch=FROM_CAPABILITIES&turnId
 
 URL-encode path and query values. Submission returns **202 + `{ outcome: 'accepted', receipt }`**; a closed target or content conflict returns 409, injection quota 429, unsupported content/capability 422, malformed input 400. Status lookup returns 200 + `{ receipt }`, or 404 if unknown. The existing messages route's 202 keeps its old meaning and is not an input receipt. SSE keeps the existing event protocol; this batch adds no input-status SSE event. Clients refresh status through the lookup route.
 
-Since `@tansr/serve` 0.13.0 the same three operations are also reachable on the unified call surface `/api` — `GET /api/sessions/{sessionId}/input-capabilities`, `POST /api/sessions/{sessionId}/inputs`, `GET /api/sessions/{sessionId}/inputs/{inputId}` — with identical request and 2xx response bytes; only errors switch to the unified envelope (`code` / `status` / `retryAction`, the original code in `detail.domainCode`). New integrations should use `/api`; `/v2` remains an internal adapter entry until 1.0.0. See [Unified API](/en/unified-api/) and [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
+Since `@tansr/serve` 0.13.0 the same three operations are also reachable on the unified call surface `/api` — `GET /api/sessions/{sessionId}/input-capabilities`, `POST /api/sessions/{sessionId}/inputs`, `GET /api/sessions/{sessionId}/inputs/{inputId}` — with identical request and 2xx response bytes; only errors switch to the unified envelope (`code` / `status` / `retryAction`, the original code in `detail.domainCode`). New integrations should use `/api`; `/v2` remains an internal adapter entry until 1.0.0 — still read-write in the current 0.15.1 with unchanged bodies and status codes, but since 0.15.0 legacy-prefix responses carry `Deprecation` / `Link` headers, and mixing prefixes within one session only logs an `api.legacy_prefix_mixed` warning without rejecting the request; keep each session on a single prefix. See [Unified API](/en/unified-api/) and [v2 protocol and webhooks](/en/serve/v2-and-webhooks/).
 
 ## ACP: negotiate the extension
 

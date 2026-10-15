@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:36 篇手写文章中 English 26 篇、日本語 25 篇、한국어 25 篇;另有 593 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:36 篇手写文章中 English 30 篇、日本語 29 篇、한국어 29 篇;另有 593 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-10-15'
@@ -16,9 +16,9 @@ generated: true
 
 | 语言 | 已翻译 / 手写页 | 覆盖率 |
 |---|---|---|
-| English(`en`) | 26 / 36 | 72.2% |
-| 日本語(`ja`) | 25 / 36 | 69.4% |
-| 한국어(`ko`) | 25 / 36 | 69.4% |
+| English(`en`) | 30 / 36 | 83.3% |
+| 日本語(`ja`) | 29 / 36 | 80.6% |
+| 한국어(`ko`) | 29 / 36 | 80.6% |
 | 生成页(不计覆盖率) | 593 | — |
 
 ## 逐页
@@ -38,13 +38,13 @@ generated: true
 | [用编程助手做产品](/getting-started/skill/) `getting-started/skill` | ✓ | ✓ [Build a product with a coding assistant](/en/getting-started/skill/) | ✓ [プログラミング助手で製品を作る](/ja/getting-started/skill/) | ✓ [코딩 도우미로 제품 만들기](/ko/getting-started/skill/) |
 | [鸿蒙接入指南](/harmony/) `harmony` | ✓ | ✓ [HarmonyOS integration guide](/en/harmony/) | ✓ [HarmonyOS 導入ガイド](/ja/harmony/) | ✓ [HarmonyOS 연동 가이드](/ko/harmony/) |
 | [iOS 接入指南](/ios/) `ios` | ✓ | ✓ [iOS integration guide](/en/ios/) | ✓ [iOS 導入ガイド](/ja/ios/) | ✓ [iOS 연동 가이드](/ko/ios/) |
-| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | 回落 | 回落 | 回落 |
-| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | 回落 | 回落 | 回落 |
+| [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | ✓ [Checkpoints and resume](/en/sdk/checkpoints/) | ✓ [チェックポイントと再開](/ja/sdk/checkpoints/) | ✓ [체크포인트와 재개](/ko/sdk/checkpoints/) |
+| [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | ✓ [Errors and retries](/en/sdk/errors-and-retries/) | ✓ [エラー処理と再試行](/ja/sdk/errors-and-retries/) | ✓ [오류 처리와 재시도](/ko/sdk/errors-and-retries/) |
 | [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) | ✓ [セッションを閉じてリソースのクリーンアップを待つ](/ja/sdk/lifecycle/) | ✓ [세션 닫기와 리소스 정리 대기](/ko/sdk/lifecycle/) |
 | [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) | ✓ [タスクの実行中に入力を追加する](/ja/sdk/midturn-input/) | ✓ [작업 진행 중 입력 추가](/ko/sdk/midturn-input/) |
-| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | 回落 | 回落 | 回落 |
+| [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | ✓ [Platform assembly and the bundle](/en/sdk/platform-bundle/) | ✓ [プラットフォームアセンブリとバンドル](/ja/sdk/platform-bundle/) | ✓ [플랫폼 어셈블리와 번들](/ko/sdk/platform-bundle/) |
 | [SDK 2.0 扩展入口：归档宿主、缓存宿主与统一 API](/sdk/sdk2-preview/) `sdk/sdk2-preview` | ✓ | ✓ [SDK 2.0 extension entries: archive host, cache host and the unified API](/en/sdk/sdk2-preview/) | 回落 | 回落 |
-| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | 回落 | 回落 | 回落 |
+| [会话与事件流](/sdk/sessions-and-events/) `sdk/sessions-and-events` | ✓ | ✓ [Sessions and events](/en/sdk/sessions-and-events/) | ✓ [セッションとイベントストリーム](/ja/sdk/sessions-and-events/) | ✓ [세션과 이벤트 스트림](/ko/sdk/sessions-and-events/) |
 | [应用系统提示词与 SDK 拼接策略](/sdk/system-prompts/) `sdk/system-prompts` | ✓ | ✓ [Application system prompts and SDK composition](/en/sdk/system-prompts/) | ✓ [アプリケーションシステムプロンプトと SDK の結合ポリシー](/ja/sdk/system-prompts/) | ✓ [애플리케이션 시스템 프롬프트와 SDK 결합 정책](/ko/sdk/system-prompts/) |
 | [安全与隐私](/security/) `security` | ✓ | ✓ [Security and privacy](/en/security/) | ✓ [セキュリティとプライバシー](/ja/security/) | ✓ [보안과 개인정보](/ko/security/) |
 | [部署与鉴权](/serve/deploy-and-auth/) `serve/deploy-and-auth` | ✓ | 回落 | 回落 | 回落 |

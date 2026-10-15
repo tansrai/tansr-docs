@@ -15,11 +15,11 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-  - tansr-cli:doc/release/sdk-0.18.1.md
-lastVerified: '2026-10-05'
+  - tansr-cli:doc/release/REL-FULL-20261010-核心发行准备.md
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/sdk`는 tansr 커널의 headless 언어 바인딩입니다. prompt가 들어가면 이벤트가 흘러나오며, UI 의존성은 없습니다. 쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축은 모두 커널에서 오며 컴파일 시 인라인되어 있습니다. 당신이 얻는 것은 `tansr` CLI와 같은 런타임을 라이브러리 형태로 당신의 앱에 내장한 것입니다. 이 페이지는 `@tansr/sdk` **0.18.1**(2026-10-04 공개)을 기준으로 확인했습니다. 프로세스 내 `createSession` 사용법은 0.13.0 이후 바뀌지 않았습니다.
+`@tansr/sdk`는 tansr 커널의 headless 언어 바인딩입니다. prompt가 들어가면 이벤트가 흘러나오며, UI 의존성은 없습니다. 쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축은 모두 커널에서 오며 컴파일 시 인라인되어 있습니다. 당신이 얻는 것은 `tansr` CLI와 같은 런타임을 라이브러리 형태로 당신의 앱에 내장한 것입니다. 이 페이지는 `@tansr/sdk` **0.19.0**(2026-10-10 공개)을 기준으로 확인했습니다. 프로세스 내 `createSession` 사용법은 0.13.0 이후 바뀌지 않았습니다.
 
 ## 애플리케이션 프롬프트는 어디에서 설정하나요
 
@@ -43,10 +43,10 @@ Windows Electron에서도 SDK는 메인 프로세스에서 실행되며, rendere
 ## 설치
 
 ```bash
-npm install @tansr/sdk        # 现行 0.18.1
+npm install @tansr/sdk        # 现行 0.19.0
 ```
 
-0.18.0부터 패키지에는 하위 진입점 `@tansr/sdk/extensions`(아카이브 호스트 / 캐시 호스트)와 9곳의 선택적 시그니처 추가가 함께 들어 있습니다. 모두 추가일 뿐이며, 이 페이지의 루트 진입점 사용법과 동작은 그대로입니다. 쓰지 않는다면 읽을 필요가 없습니다. 에이전트를 서버 쪽에 두고 Android / iOS / HarmonyOS나 `@tansr/api-client` 같은 얇은 클라이언트가 HTTP로 접속하게 하려면 [`@tansr/serve`](/ko/getting-started/serve/)를 사용하세요. 새 통합은 통합 호출 표면 `/api`를 사용합니다.
+0.18.0부터 패키지에는 하위 진입점 `@tansr/sdk/extensions`(아카이브 호스트 / 캐시 호스트)와 9곳의 선택적 시그니처 추가가 함께 들어 있습니다. 0.19.0에서는 독립적인 플랫폼 비채팅 작업 클라이언트 `createPlatformNonchatClient`가 추가되었습니다(임베딩 / 리랭킹 / 문서 / 음악 / 보이스 / 실시간 세션 같은 플랫폼 작업을 명시적으로 HTTP 호출하는 것으로, 세션 기록에 들어가지 않고 도구로 조립되지도 않습니다). 모두 추가일 뿐이며, 이 페이지의 루트 진입점 사용법과 동작은 그대로입니다. 쓰지 않는다면 읽을 필요가 없습니다. 에이전트를 서버 쪽에 두고 Android / iOS / HarmonyOS나 `@tansr/api-client` 같은 얇은 클라이언트가 HTTP로 접속하게 하려면 [`@tansr/serve`](/ko/getting-started/serve/)를 사용하세요. 새 통합은 통합 호출 표면 `/api`를 사용합니다.
 
 ## 자격 증명: 모델 출처 세 등급 중 하나를 선택
 

@@ -13,7 +13,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 会话缺省只在内存里。要让它在进程重启后还能接着聊，你需要两件事：一个 `SessionStore`（存到哪），以及 `createSession` 的 `store` / `resume` 两个字段（什么时候存、什么时候取）。上下文压缩之后原文不再在历史里，所以又有了快照（checkpoint）：某时刻完整上下文的自包含只读拷贝，可列举、可恢复、可删除。
@@ -120,7 +120,7 @@ if (restored.status === 'restored') console.log(restored.fromMessages, '→', re
 await session.deleteCheckpoint(mark.checkpointId); // 幂等
 ```
 
-签名（逐字）：
+签名（选项的具名类型 `CompactOptions` / `CheckpointOptions` / `RestoreOptions` 已就地展开，0.19.0 与 0.18.x 相同）：
 
 ```ts
 compact(options?: { instructions?: string; checkpoint?: boolean | { label?: string } }): Promise<CompactResult>;

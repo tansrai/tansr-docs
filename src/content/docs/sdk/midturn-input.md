@@ -14,10 +14,10 @@ sources:
   - tansr-cli:packages/cli/src/headless/input-control.ts
   - tansr-cli:packages/server/src/v2/routes.ts
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0`、`@tansr/cli@0.6.0` 与 `@tansr/serve@0.8.0` 及更高版本（现行 0.18.1 / 0.10.1 / 0.14.0，2026-10-04 发布；其间本页接口的签名、回执与失败边界无变化）。移动端还须使用实现能力发现与同轮输入接口的客户端版本（见各端接入指南）；源码和文档验证不代表手机安装包已完成真机验收。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0`、`@tansr/cli@0.6.0` 与 `@tansr/serve@0.8.0` 及更高版本（现行 0.19.0 / 0.10.3 / 0.15.1，2026-10-10 发布；其间本页接口的签名、回执与失败边界无变化）。移动端还须使用实现能力发现与同轮输入接口的客户端版本（见各端接入指南）；源码和文档验证不代表手机安装包已完成真机验收。
 
 **`submitInput` 只向指定的正在执行轮追加用户输入。** 它不打断当前模型流或工具，不新建会话，也不在目标轮关闭后自动开下一轮。已开始的请求不会被改写；追加文本在安全的输入屏障进入历史，随后才可能用于下一次模型调用。
 
@@ -107,7 +107,7 @@ GET /v2/sessions/{sessionId}/inputs/ui-001?historyEpoch=FROM_CAPABILITIES&turnId
 
 对路径和查询值做 URL 编码。成功提交返回 **202 + `{ outcome: 'accepted', receipt }`**；关闭目标/内容冲突为 409，注入配额为 429，不支持能力/内容为 422，格式错误为 400。状态查询成功为 200 + `{ receipt }`，未找到为 404。原 `POST .../messages` 的 202 含义保持兼容，不等同于新输入回执。SSE 继续传原事件协议；本期不新增输入状态 SSE 事件，客户端调用查询接口更新显示。
 
-`@tansr/serve` 0.13.0 起（2026-10-02 发布）新集成走统一调用面：同一组操作在 `/api/sessions/{sessionId}/input-capabilities`、`/api/sessions/{sessionId}/inputs`、`/api/sessions/{sessionId}/inputs/{inputId}` 上可达，请求体与 `{ outcome, receipt }` 回执字节不变；≥ 400 的错误改为统一信封（`code` 为统一码，原族码在 `detail.domainCode`），全部 `/api` 响应携 `tansr-contract` 等统一响应头。`/v2` 直连面本版仍可用、字节不变，但已定义为内部适配入口，1.0.0 移除外部入口；同一会话只经一种前缀。见[统一 API](/unified-api/)与 [v2 协议与 webhook](/serve/v2-and-webhooks/)。
+`@tansr/serve` 0.13.0 起（2026-10-02 发布）新集成走统一调用面：同一组操作在 `/api/sessions/{sessionId}/input-capabilities`、`/api/sessions/{sessionId}/inputs`、`/api/sessions/{sessionId}/inputs/{inputId}` 上可达，请求体与 `{ outcome, receipt }` 回执字节不变；≥ 400 的错误改为统一信封（`code` 为统一码，原族码在 `detail.domainCode`），全部 `/api` 响应携 `tansr-contract` 等统一响应头。`/v2` 直连面现行 0.15.1 仍可读写、体与状态码不变，但已定义为内部适配入口，1.0.0 移除外部入口；0.15.0 起旧前缀响应附 `Deprecation` / `Link` 响应头，同一会话跨前缀混用只记 `api.legacy_prefix_mixed` 告警日志、不拒绝请求，仍应只经一种前缀。见[统一 API](/unified-api/)与 [v2 协议与 webhook](/serve/v2-and-webhooks/)。
 
 ## ACP：扩展协商，不并发提交普通 prompt
 

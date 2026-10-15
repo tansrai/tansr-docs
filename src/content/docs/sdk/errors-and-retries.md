@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
 SDK 永不 `process.exit`。错误只从三个口子出来：装配期 / 选项期以 `TansrSdkError` 抛出；运行期的模型与工具错误恒经事件流表达（`turn.error` / `tool.failed` / `turn.aborted`）；平台网关的错误码则藏在这两者的载荷里。先判清是哪一类，再决定重不重试。
@@ -38,7 +38,8 @@ SDK 永不 `process.exit`。错误只从三个口子出来：装配期 / 选项�
 | `checkpoint_not_found` | 运行期 | `fork()` / `exportCheckpoint()` 指名的快照不存在 |
 | `checkpoint_import_invalid` | 运行期 | 导入字节不是合法导出体；篡改即拒，零落盘 |
 | `session_store_not_wired` | 运行期 | `fork()` 需要会话 `store` 而未给 |
-| `platform_request_failed` | 运行期 | 令牌档直连 `session.platform.transcribe()` / `speak()` 失败；`status` / `platformCode` / `platformMessage` 携网关事实，`status 0` = 未达平台 |
+| `platform_request_failed` | 运行期 | 令牌档直连 `session.platform.transcribe()` / `speak()` 失败（`PlatformRequestError`）；`status` / `platformCode` / `platformMessage` 携网关事实，`status 0` = 未达平台。0.19.0 起 `createPlatformNonchatClient` 的非聊天操作失败也用此码，但抛 `PlatformNonchatError`（`status` / `platformCode` / `outcomeUnknown` / `taskId?`）：`outcomeUnknown: true` 表示提交结果未知——保留原幂等键与 `taskId`，用 `getTask()` 查原任务，不要换键重提 |
+| `lifecycle_failed` | 收尾期 | `SdkLifecycleError`：`query()` 的收尾结算失败（会话级 `drain()` / `closeAsync()` 不抛，以 `status: 'failed'` 的结果表达）；`failures` 逐项列阶段与码，`cleanup` 在场时可再调用继续回收，`result` 在场时是已完成的 `QueryResult`（见[生命周期与清理](/sdk/lifecycle/)） |
 
 ```ts
 import { TansrSdkError, createSession } from '@tansr/sdk';
@@ -68,7 +69,7 @@ try {
 
 ## 第三类：平台网关错误码
 
-令牌档下，平台的错误码会出现在 `turn.error` 文案首段、`tool.completed.data.errorCode`、`PlatformRequestError.platformCode`，以及你服务端换发令牌的响应里。全部码的权威表在[错误码表](/errors/codes)，这里只讲最常撞到的十几个与处置：
+令牌档下，平台的错误码会出现在 `turn.error` 文案首段、`tool.completed.data.errorCode`、`PlatformRequestError.platformCode` / `PlatformNonchatError.platformCode`，以及你服务端换发令牌的响应里。全部码的权威表在[错误码表](/errors/codes)，这里只讲最常撞到的十几个与处置：
 
 ### 该重试，按 `Retry-After` 等
 
@@ -109,7 +110,7 @@ try {
 
 用 `@tansr/serve` 时，同一批平台码经服务端映射后到达移动端：套餐并发帽映射为 `429 rate_limited` + `Retry-After` + `detail: { scope: 'plan' }`;`plan_required` / `plan_tier_insufficient` 以 403 原码透传 + `detail.scope: 'plan'`；上游限流 / 5xx / 网络错映射为 `503 upstream_unavailable`。端侧退避纪律不变：429 / 503 携 `Retry-After` 时按整秒值等待，5xx 无 `Retry-After` 时指数退避 + 抖动。详见[v2 协议与 webhook](/serve/v2-and-webhooks/)。
 
-上面说的是 `/v2` 直连面的错误体 `{ error: { code, message, detail? } }`，它的字节在 `@tansr/serve` 0.13.0 / 0.14.0 保持不变。
+上面说的是 `/v2` 直连面的错误体 `{ error: { code, message, detail? } }`，它的字节在 `@tansr/serve` 0.13.0 … 0.15.1 保持不变；0.15.0 起旧前缀响应只多出 `Deprecation` / `Link` 两个响应头（`@tansr/api-client` 0.3.x / 0.4.0 均忽略），体与状态码不变。
 
 ## 经 `/api` 时的统一错误信封
 
@@ -124,4 +125,4 @@ try {
 - 0.14.0 起三个请求头 `Idempotency-Key` / `If-Match`+`ETag` / `deadline` 的拒绝也走这同一信封，不新增错误码，细因在 `detail.reason`（如 `idempotency_key_reused`、`if_match_stale`、`deadline_exceeded`）；`412 precondition_failed` 自此既可能是围栏陈旧（`rediscover`）也可能是资源版本陈旧（`refresh`），按 `detail.domainCode` 区分。
 - 响应缺 `tansr-contract` 头、或 `/api` 返回非 JSON / 代理页，一律按「合同不可用」上报，**不能**据此猜成旧版服务而切回 `/v2`。
 
-`@tansr/api-client` 0.3.0（2026-10-04 正式版，dist-tag `latest`）的 `./api` 子入口把这套解码做成 `ApiError`（`code` / `retryAction` / `domainCode` / `domainStatus` / `closureId` 读法）与 `retryAdvice` / `retrySameRequest` 工具，`result_unknown` 恒降为 `query-status`。统一码全表、`retryAction` 来源映射与各族 `domainCode` 对照见 [统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
+`@tansr/api-client` 0.3.0 起（2026-10-04 正式版；现行 0.4.0，2026-10-06，`./api` 子入口与根入口零变化）的 `./api` 子入口把这套解码做成 `ApiError`（`code` / `retryAction` / `domainCode` / `domainStatus` / `closureId` 读法）与 `retryAdvice` / `retrySameRequest` 工具，`result_unknown` 恒降为 `query-status`。统一码全表、`retryAction` 来源映射与各族 `domainCode` 对照见 [统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。

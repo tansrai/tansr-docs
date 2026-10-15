@@ -23,10 +23,10 @@ sources:
   - tansr-cli:packages/server/src/v2/platform-session-factory.ts
   - tansr-cli:packages/sdk/CHANGELOG.md
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及以后（现行 0.18.1）与 `@tansr/serve@0.8.0` 及以后（现行 0.14.0）；tansr 命令行自 0.6.0 起同源（现行 0.10.1）。平台侧 `systemPrompt` / `systemPromptPolicy`（API 与控制台）已于 2026-09-14 上线。0.14.0 … 0.18.1 的 SDK 与 0.9.0 … 0.14.0 的 serve 对本页的拼接策略、`applicationPrompt` 只读摘要与刷新时点无变化；更早的 SDK / serve 版本可能忽略平台段或不支持策略，不能仅凭平台已配置判断客户端支持。会话服务侧的提示词装配在 `/v2` 直连面与 0.13.0 起的 `/api` 统一调用面上行为相同，领域载荷字节不变。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及以后（现行 0.19.0）与 `@tansr/serve@0.8.0` 及以后（现行 0.15.1）；tansr 命令行自 0.6.0 起同源（现行 0.10.3）。平台侧 `systemPrompt` / `systemPromptPolicy`（API 与控制台）已于 2026-09-14 上线。0.14.0 … 0.19.0 的 SDK 与 0.9.0 … 0.15.1 的 serve 对本页的拼接策略、`applicationPrompt` 只读摘要与刷新时点无变化；更早的 SDK / serve 版本可能忽略平台段或不支持策略，不能仅凭平台已配置判断客户端支持。会话服务侧的提示词装配在 `/v2` 直连面与 0.13.0 起的 `/api` 统一调用面上行为相同，领域载荷字节不变。
 
 应用管理员可以在控制台「应用 → 概览 → 应用系统提示词」集中维护角色、回答风格和业务指引。开发者也可以在 SDK 中传入 `system`。两种来源可以独立使用，或由平台设置选择拼接。
 
