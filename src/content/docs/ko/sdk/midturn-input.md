@@ -14,10 +14,10 @@ sources:
   - tansr-cli:packages/cli/src/headless/input-control.ts
   - tansr-cli:packages/server/src/v2/routes.ts
   - tansr-cli:packages/server/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-이 페이지는 `@tansr/sdk@0.13.0`, `@tansr/cli@0.6.0`, `@tansr/serve@0.8.0` 이상을 기준으로 하며, 해당 버전은 npm에 게시되었습니다(현재 0.18.1 / 0.10.1 / 0.14.0, 2026-10-04 게시. 그 사이 이 페이지 인터페이스의 시그니처, 영수증, 실패 경계에는 변화가 없습니다). 모바일 앱에도 기능 탐색과 동일 턴 입력을 구현한 클라이언트 버전이 필요합니다(각 클라이언트 연동 가이드 참고). 소스 코드와 문서 검증은 휴대폰 실제 기기 검수를 의미하지 않습니다.
+이 페이지는 `@tansr/sdk@0.13.0`, `@tansr/cli@0.6.0`, `@tansr/serve@0.8.0` 이상을 기준으로 하며, 해당 버전은 npm에 게시되었습니다(현재 0.19.0 / 0.10.3 / 0.15.1, 2026-10-10 게시. 그 사이 이 페이지 인터페이스의 시그니처, 영수증, 실패 경계에는 변화가 없습니다). 모바일 앱에도 기능 탐색과 동일 턴 입력을 구현한 클라이언트 버전이 필요합니다(각 클라이언트 연동 가이드 참고). 소스 코드와 문서 검증은 휴대폰 실제 기기 검수를 의미하지 않습니다.
 
 **`submitInput`은 지정한 실행 중인 턴에만 사용자 입력을 추가합니다.** 현재 모델 스트림이나 도구를 끊지 않고, 새 세션을 만들지 않으며, 대상 턴이 닫힌 뒤 자동으로 다음 턴을 열지도 않습니다. 이미 시작된 요청은 다시 쓰이지 않습니다. 추가한 텍스트는 안전한 입력 배리어에서 기록에 들어가고, 그 뒤에야 다음 모델 호출에 쓰일 수 있습니다.
 
@@ -107,7 +107,7 @@ GET /v2/sessions/{sessionId}/inputs/ui-001?historyEpoch=FROM_CAPABILITIES&turnId
 
 경로와 쿼리 값은 URL 인코딩하세요. 제출 성공은 **202 + `{ outcome: 'accepted', receipt }`**를 반환합니다. 대상 닫힘 / 내용 충돌은 409, 주입 할당량은 429, 지원하지 않는 기능 / 내용은 422, 형식 오류는 400입니다. 상태 조회 성공은 200 + `{ receipt }`, 찾을 수 없음은 404입니다. 기존 `POST .../messages`의 202 의미는 호환성을 유지하며, 새 입력 영수증과 같지 않습니다. SSE는 기존 이벤트 프로토콜을 계속 전송합니다. 이번 단계에서는 입력 상태 SSE 이벤트를 추가하지 않으며, 클라이언트는 조회 인터페이스를 호출해 표시를 업데이트합니다.
 
-`@tansr/serve` 0.13.0부터(2026-10-02 게시) 새 통합은 통합 호출 표면을 사용합니다. 같은 작업 묶음이 `/api/sessions/{sessionId}/input-capabilities`, `/api/sessions/{sessionId}/inputs`, `/api/sessions/{sessionId}/inputs/{inputId}`에서 도달 가능하며, 요청 본문과 `{ outcome, receipt }` 영수증의 바이트는 변하지 않습니다. 400 이상의 오류는 통합 봉투로 바뀌고(`code`는 통합 코드, 원래 도메인 코드는 `detail.domainCode`), 모든 `/api` 응답에 `tansr-contract` 등 통합 응답 헤더가 붙습니다. `/v2` 직접 연결 표면은 이 버전에서도 사용할 수 있고 바이트도 변하지 않지만, 내부 어댑터 진입점으로 정의되어 1.0.0에서 외부 진입점이 제거됩니다. 같은 세션은 한 가지 접두사만 사용하세요. [통합 API](/ko/unified-api/)와 [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/)을 참고하세요.
+`@tansr/serve` 0.13.0부터(2026-10-02 게시) 새 통합은 통합 호출 표면을 사용합니다. 같은 작업 묶음이 `/api/sessions/{sessionId}/input-capabilities`, `/api/sessions/{sessionId}/inputs`, `/api/sessions/{sessionId}/inputs/{inputId}`에서 도달 가능하며, 요청 본문과 `{ outcome, receipt }` 영수증의 바이트는 변하지 않습니다. 400 이상의 오류는 통합 봉투로 바뀌고(`code`는 통합 코드, 원래 도메인 코드는 `detail.domainCode`), 모든 `/api` 응답에 `tansr-contract` 등 통합 응답 헤더가 붙습니다. `/v2` 직접 연결 표면은 현재 0.15.1에서도 읽기와 쓰기가 가능하고 본문과 상태 코드도 변하지 않지만, 내부 어댑터 진입점으로 정의되어 1.0.0에서 외부 진입점이 제거됩니다. 0.15.0부터 이전 접두사의 응답에는 `Deprecation` / `Link` 헤더가 붙고, 같은 세션에서 접두사를 섞어 쓰면 `api.legacy_prefix_mixed` 경고 로그만 남을 뿐 요청이 거부되지는 않습니다. 그래도 같은 세션은 한 가지 접두사만 사용하세요. [통합 API](/ko/unified-api/)와 [v2 프로토콜과 webhook](/ko/serve/v2-and-webhooks/)을 참고하세요.
 
 ## ACP: 확장 협상, 일반 prompt를 동시에 제출하지 않음
 

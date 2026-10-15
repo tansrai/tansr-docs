@@ -11,10 +11,10 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-This guide covers `@tansr/sdk@0.13.0` and later (currently 0.18.1, published 2026-10-04) with `@tansr/serve@0.8.0` and later (currently 0.14.0), all published on npm; anything marked "since 0.14.0" requires `@tansr/sdk` 0.14.0 (published 2026-09-14) or newer. Releases 0.15.0 through 0.18.1 changed neither the signatures nor the behaviour of the cleanup interfaces on this page. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
+This guide covers `@tansr/sdk@0.13.0` and later (currently 0.19.0, published 2026-10-10) with `@tansr/serve@0.8.0` and later (currently 0.15.1), all published on npm; anything marked "since 0.14.0" requires `@tansr/sdk` 0.14.0 (published 2026-09-14) or newer. Releases 0.15.0 through 0.19.0 changed neither the signatures nor the behaviour of the cleanup interfaces on this page. A terminal event and completed resource cleanup are separate milestones. The interfaces below require these compatible releases.
 
 | Operation | Contract |
 | --- | --- |
@@ -68,6 +68,10 @@ if (cleanup) showCleanupReceipt(await cleanup.drain({ timeoutMs: 30_000 }));
 ```
 
 Managed and token query options now accept explicit skills and MCP configuration, using the same capability checks and ownership rules as createSession. Omitting extensions does not read skill directories. The injected-client tier does not silently assemble extensions.
+
+## The non-chat operations client is outside the cleanup chain (since 0.19.0)
+
+`createPlatformNonchatClient({ baseUrl, token })` is a standalone platform HTTP client: it is not attached to any session and has no `dispose`. Every call is bounded by its own `signal` / `timeoutMs`, and `wait()` additionally has a poll-count limit. Platform tasks that have already been submitted are not cancelled by `close()` / `closeAsync()`, and the cleanup receipt does not wait for them; before exiting, the host decides whether to `wait()` for the terminal state or to keep the task id and idempotency key and query with `getTask()` after a restart. When the task or settlement state is unknown, never resubmit under a new key.
 
 ## MCP and platform boundaries
 

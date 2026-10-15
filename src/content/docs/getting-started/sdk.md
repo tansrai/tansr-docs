@@ -15,11 +15,11 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-  - tansr-cli:doc/release/sdk-0.18.1.md
-lastVerified: '2026-10-05'
+  - tansr-cli:doc/release/REL-FULL-20261010-核心发行准备.md
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。本文按 `@tansr/sdk` **0.18.1**（2026-10-04 发布）核对；进程内 `createSession` 的用法自 0.13.0 以来未变。
+`@tansr/sdk` 是 tansr 内核的 headless 语言绑定：prompt 进、事件流出，零 UI 依赖。查询环、工具调度、权限引擎、上下文压缩全部来自内核并已编译内联，你拿到的是与 `tansr` 命令行同一套运行时，以库的形态嵌进你的应用。本文按 `@tansr/sdk` **0.19.0**（2026-10-10 发布）核对；进程内 `createSession` 的用法自 0.13.0 以来未变。
 
 ## 应用提示词从哪里设置
 
@@ -43,10 +43,10 @@ Windows Electron 仍由主进程运行 SDK，renderer 发送的是用户输入�
 ## 安装
 
 ```bash
-npm install @tansr/sdk        # 现行 0.18.1
+npm install @tansr/sdk        # 现行 0.19.0
 ```
 
-0.18.0 起包内另有子入口 `@tansr/sdk/extensions`（归档宿主 / 缓存宿主）与 9 处可选签名加法，全部是加法——本文的根入口用法与行为不变，不用它们就不必读。要把智能体放到服务端、让 Android / iOS / 鸿蒙或 `@tansr/api-client` 这类薄客户端经 HTTP 接入，走 [`@tansr/serve`](/getting-started/serve/)，新集成用统一调用面 `/api`。
+0.18.0 起包内另有子入口 `@tansr/sdk/extensions`（归档宿主 / 缓存宿主）与 9 处可选签名加法；0.19.0 再加独立的平台非聊天操作客户端 `createPlatformNonchatClient`（嵌入 / 重排 / 文档 / 音乐 / 音色 / 实时会话等平台操作的显式 HTTP 调用，不进会话历史、不装成工具）。两者全部是加法——本文的根入口用法与行为不变，不用它们就不必读。要把智能体放到服务端、让 Android / iOS / 鸿蒙或 `@tansr/api-client` 这类薄客户端经 HTTP 接入，走 [`@tansr/serve`](/getting-started/serve/)，新集成用统一调用面 `/api`。
 
 ## 凭据：三档模型来源，选一档
 

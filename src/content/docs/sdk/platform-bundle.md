@@ -17,10 +17,10 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/server/README.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。版本基线：`@tansr/sdk` 0.18.1 / `@tansr/serve` 0.14.0（均已于 2026-10-04 发布）。
+令牌档的核心承诺是**本地零配置**：模型目录、能力位、媒体授权集、套餐状态都由平台按「应用」配置成一份 bundle，SDK 使用令牌读取它，并在装配期完成裁剪。不同字段有各自的生效边界：应用提示词与策略在每轮开始前核验，不能据此推断其他配置也会在同一会话中热更新。这一篇讲 bundle 里有什么、工具怎么选、位关了会怎样。版本基线：`@tansr/sdk` 0.19.0 / `@tansr/serve` 0.15.1（均已于 2026-10-10 发布）。
 
 ## 应用系统提示词也是装配配置
 
@@ -84,7 +84,7 @@ await createSession({
 | `tools.webFetch` | 关 | | `platform.videoGen` | 关 |
 | `tools.webSearch` | 关 | | `platform.webSearch` | 关 |
 
-平台位另有 `platform.speechToText` / `platform.textToSpeech`，共五个平台位；`CAPABILITY_TOOL_KEYS` / `CAPABILITY_PLATFORM_KEYS` 是事实源。`tools.agent` 位开时 Task 子代理族自动装配，子代理沿用会话模型与权限门。
+平台位另有 `platform.speechToText` / `platform.textToSpeech`（缺省关），以上五个是聊天会话会消费的平台位。`@tansr/sdk` 0.19.0 起 `AppCapabilitiesSchema` 再认六个可选平台位 `platform.embedding` / `rerank` / `document` / `music` / `voiceCreate` / `realtimeAudio`，共十一位：它们只授权对应的独立非聊天 HTTP 操作（经 `createPlatformNonchatClient` 显式调用），**不装配任何聊天工具、不进会话**；bundle 里缺席等效 `false`（`DEFAULT_APP_CAPABILITIES.platform` 仍只列前五位），消费方只能以 `=== true` 判开。这六位随 `x-tansr-client-features` 里新增的 `nonchat-operations-v1` 协商下发，`CLIENT_FEATURES` 词表变化会让升级后的首次装配重新拉取 bundle 而不命中旧缓存。`CAPABILITY_TOOL_KEYS` / `CAPABILITY_PLATFORM_KEYS` 是事实源。`tools.agent` 位开时 Task 子代理族自动装配，子代理沿用会话模型与权限门。
 
 ## webSearch 为什么有两个位
 
@@ -99,7 +99,7 @@ await createSession({
 
 移动应用的会话装配在你的 `@tansr/serve` 上（托管拓扑）。这类应用可勾选的工具位只有 `todoWrite`、`askUser`、`customTools`、`webFetch`、`http`、`webSearch` 与平台位，文件、命令等本地族固定关；`customTools` 经 `clientTools` 远程工具通路申报，由手机执行。
 
-- **版本**：`tools.webFetch`（网页抓取 WebFetch）与 `tools.http`（HTTP 请求 Http）由 `@tansr/serve` 0.12.0 / `@tansr/sdk` 0.17.0 起装配（2026-09-16 发布，现行 0.14.0 / 0.18.1 同样适用）；0.11.0 及更早的 serve 不为移动应用装配这两件。两位缺省关，须在控制台为该应用显式开启；`tools.webSearch` 另需 `platform.webSearch` 通道开通（见上节）。
+- **版本**：`tools.webFetch`（网页抓取 WebFetch）与 `tools.http`（HTTP 请求 Http）由 `@tansr/serve` 0.12.0 / `@tansr/sdk` 0.17.0 起装配（2026-09-16 发布，现行 0.15.1 / 0.19.0 同样适用）；0.11.0 及更早的 serve 不为移动应用装配这两件。两位缺省关，须在控制台为该应用显式开启；`tools.webSearch` 另需 `platform.webSearch` 通道开通（见上节）。
 - **在哪执行**：三件工具都在**你的会话服务主机**上执行，沿用同一核心工具与权限链；Android / iOS / 鸿蒙 SDK 不在手机上代发网络请求，也不自动批准。服务端显式配置的工具白名单只能进一步收窄。
 - **何时生效**：改能力位后，新建会话或从存储重新装配的会话才生效；换票与提示词刷新不会改动活动会话的工具表。紧急撤回须停止对应会话。
 - **执行边界**：托管 Http 不能引用宿主环境变量里的凭据，模型也不能自行解除宿主的私网访问上限；配置出网代理时，须在代理侧同样限制私网目标。WebFetch 沿用原有出网规则，跨主机跳转可能触发新的权限询问——按错误里给出的公开目标另发一次明确请求，不要自动批准跳转。
@@ -108,7 +108,7 @@ await createSession({
 ## bundle 还下发了什么
 
 - **模型目录**：别名 / handle / `displayName` / `manufacturer` / `family`;`setModel` 传 handle。`model.modelId` 为可选字段，读它的调用方按 `string | undefined` 处置。`@tansr/sdk` 0.18.0 起另有只读投影 `model.adapterDiagnostics?`（`request` / `billing` 两段各携 `adapterId` / `operation` / `status ∈ 'ready' | 'review' | 'unresolved'`，加 `conflicts[]`），描述当前目录证据是否足以选择请求 / 计费适配器，供界面展示模型的调用 / 计量能力；不携供应商凭据、价格原文或可执行适配器对象，平台未下发时 `undefined`，段坏形只丢诊断不丢模型条目。
-- **媒体授权集** `platformModels`：四媒体工具描述自动列出集内模型名，顺位第一即缺省；集成方恒不手配模型名。
+- **媒体授权集** `platformModels`：四媒体工具描述自动列出集内模型名，顺位第一即缺省；集成方恒不手配模型名。0.19.0 起令牌档直连 `session.platform.speak()` 的 `SpeakInput` 多一个可选 `voiceRef`（应用私有音色资源 id，与系统 `voice` 互斥；作用域与目标模型由平台验证），私有音色本身经非聊天客户端创建与查询，不在 bundle 内下发。
 - **套餐投影** `plan`:`{ tier, caps{ concurrency, apps, orgMembers, monthlyEndUsers, gatewayLane }, status: 'active' | 'grace' | 'lapsed', expiresAt }`,`null` = 个人档无套餐。它只是投影，硬执行恒在服务端，SDK 恒不本地判限。
 - **裁决人档** `adjudicator`：令牌档缺省装配控制台任命的裁决人，资格档 `tier` 决定它能把多大半径的「询问」软化为放行。
 
@@ -127,3 +127,5 @@ bundle 解析与装配期的非致命事实经 `createSession({ onPlatformWarnin
 ## 计量与对账
 
 `cost.usage.updated` 逐请求到事件流。终端自查用 `GET /v1/my-usage`（恒无金额字段）；开发者对账用 `GET /v1/app-usage/by-end-user`（含金额，恒不代理给终端）。计量与计费分离——对终端如何转售由你自主。
+
+0.19.0 起 SDK 导出应用配额的字段形 `AppQuotaSchema` / `AppQuota`（`dailyTokens` / `endUserDailyTokens` / `rpm` 恒在场可 `null`，`tpm` 与媒体、非聊天操作次数的 `endUserDaily*` / `dailyOperationUnits` 等为可选），供读写平台应用配置时校验。配额**不随 bundle 下发**，硬执行恒在平台；本地持有的配额值不是剩余额度，SDK 不据此本地判限。

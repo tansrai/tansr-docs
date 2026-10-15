@@ -11,10 +11,10 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（当前 0.18.1，2026-10-04 发布）与 `@tansr/serve@0.8.0` 及更高版本（当前 0.14.0）；标注「0.14.0 起」的部分需要 `@tansr/sdk` 0.14.0（2026-09-14 发布）或更高。0.15.0 … 0.18.1 对本页的收尾接口无签名或行为变化。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（当前 0.19.0，2026-10-10 发布）与 `@tansr/serve@0.8.0` 及更高版本（当前 0.15.1）；标注「0.14.0 起」的部分需要 `@tansr/sdk` 0.14.0（2026-09-14 发布）或更高。0.15.0 … 0.19.0 对本页的收尾接口无签名或行为变化。业务事件结束与资源真正关闭是两个时点；以下接口须使用上述配套版本。
 
 | 操作 | 用途 |
 | --- | --- |
@@ -68,6 +68,10 @@ if (cleanup) showCleanupReceipt(await cleanup.drain({ timeoutMs: 30_000 }));
 ```
 
 托管／令牌档 query 可显式提供 `skills` 和 `mcp`，与 createSession 共用能力位检查及所有权规则。省略扩展不主动读取技能目录；注入 client 档不隐式装配扩展。
+
+## 非聊天操作客户端不在收尾链内（0.19.0 起）
+
+`createPlatformNonchatClient({ baseUrl, token })` 是独立的平台 HTTP 客户端，不挂在任何会话上，也没有 `dispose`：每次调用以自己的 `signal` / `timeoutMs` 限界，`wait()` 另有轮询次数上限。已提交的平台任务不会因 `close()` / `closeAsync()` 取消，收尾回执也不等待它们；退出前由宿主自行决定是 `wait()` 到终态，还是保留任务 id 与幂等键、重启后用 `getTask()` 查询。任务或结算状态为未知时不要换键重提。
 
 ## MCP 所有权与跨端
 

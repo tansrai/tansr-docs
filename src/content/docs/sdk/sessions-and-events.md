@@ -15,13 +15,13 @@ sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:packages/sdk/CHANGELOG.md
-  - tansr-cli:doc/release/sdk-0.18.1.md
-lastVerified: '2026-10-05'
+  - tansr-cli:doc/release/REL-FULL-20261010-核心发行准备.md
+lastVerified: '2026-10-13'
 ---
 
 SDK 的一句话分工：**智能体循环归 SDK，交互体验归你**。你提供 UI（或没有 UI）、业务函数、权限确认交互；SDK 提供模型接入、工具执行、事件流与状态投影。这一篇讲事件流这条主干。
 
-本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（现行 **0.18.1**，2026-10-04 发布；配套 `@tansr/serve` 0.14.0、`tansr` 命令行 0.10.1）。0.18.0 / 0.18.1 对本页的进程内 API **零行为变化**：`createSession` / `query` / `runAgent` 三档、事件包络、`SessionView` 均与 0.14.0 以来一致；统一 HTTP 调用面 `/api` 是会话服务的事，Electron / Node 内嵌 SDK 不经它。版本差异只在本页末尾「0.18.x 的加法」一节。
+本页适用于已在 npm 发布的 `@tansr/sdk@0.13.0` 及更高版本（现行 **0.19.0**，2026-10-10 发布；配套 `@tansr/serve` 0.15.1、`tansr` 命令行 0.10.3）。0.18.0 / 0.18.1 / 0.19.0 对本页的进程内 API **零行为变化**：`createSession` / `query` / `runAgent` 三档、事件包络、`SessionView` 均与 0.14.0 以来一致；统一 HTTP 调用面 `/api` 是会话服务的事，Electron / Node 内嵌 SDK 不经它。版本差异只在本页末尾「0.18.x 的加法」与「0.19.0 的加法」两节。
 
 ## system 与普通输入的边界
 
@@ -148,7 +148,16 @@ await pump;
 - **`CLIENT_FEATURES` 新增 `'bound-device-v1'`**：出线头 `x-tansr-client-features` 的缺省声明串随之变化，升级后首次装配会按新指纹重拉一次 bundle（旧缓存条目自然失效，无需手清）；对 `ClientFeature` 做穷举 `switch` 的代码补一个分支。进程内 SDK 不消费 bundle 的 `execution` 段，设备工具授权只在会话服务的 SDK2 执行档生效，见[平台装配与 bundle](/sdk/platform-bundle/)。
 - **`SessionStore` 可选能力位 `attachmentCheckpoints`**：内置 `createFileSessionStore` 已实现，`resume` 自此把附件准入状态随历史冷恢复；自定义五方法 Store 不声明即保持 0.17 行为，见[检查点与恢复](/sdk/checkpoints/)。
 
-0.18.0 之后主线仍在推进（例如平台非聊天操作面），这些改动**尚未随任何 npm 版本发布**，本页不作描述。
+## 0.19.0 的加法
+
+`@tansr/sdk` 0.19.0（2026-10-10，与 `@tansr/serve` 0.15.1、命令行 0.10.3 同车）相对 0.18.1 的 `src` 改动全部在 `platform/*`，`session.ts` / `query.ts` / `run-agent.ts` 零改动；对本页而言仍是**可选加法**：
+
+- **独立的平台非聊天操作客户端 `createPlatformNonchatClient({ baseUrl, token, onUnauthorized? })`**：嵌入 / 重排 / 文档抽取 / 音乐 / 私有音色 / 视频任务与实时会话等平台操作的显式 HTTP 客户端。它**不挂在 `AgentSession` 上、不进会话历史、不签发会话事件、不自动注册任何聊天工具**——只发送调用方显式请求的操作；提交类方法要求稳定的 `idempotencyKey`，`wait()` 以 `timeoutMs` / `maxPolls` 限界并回 `reason: 'terminal' | 'timeout' | 'poll_limit'`。失败抛 `PlatformNonchatError`（`code: 'platform_request_failed'`，携 `status` / `platformCode` / `outcomeUnknown` / `taskId?`），处置见[错误处理与重试](/sdk/errors-and-retries/)。`onUnauthorized` 只在令牌失效的 401 上被调用一次，用于换发新令牌后重放同键同体。
+- **六个可选平台位与 `CLIENT_FEATURES` 新增 `'nonchat-operations-v1'`**：出线头缺省声明串再次变化，升级后首次装配按新指纹重拉一次 bundle；穷举 `ClientFeature` 的 `switch` 再补一个分支。六位只授权上述非聊天操作，缺席等效 `false`，见[平台装配与 bundle](/sdk/platform-bundle/)。
+- **`SpeakInput.voiceRef?`**：令牌档直连 `session.platform.speak()` 可指定应用私有音色资源，与系统 `voice` 互斥。
+- **`AppQuotaSchema` / `AppQuota`、实时连接与文档临时上传的合同类型**：只是类型与 zod 形的导出，进程内会话不消费它们。
+
+0.19.0 之后主线仍在推进（例如模型角色主备裁决策略、工具函数级许可、私有音色按任务找回与令牌续期的同身份隔离），这些改动**尚未随任何 npm 版本发布**，本页不作描述。
 
 ## 相关
 
