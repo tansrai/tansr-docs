@@ -22,10 +22,10 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-このページには**あなたができること**だけを書きます：トラフィックの行き先を知る、認証情報を正しい場所に置く、データがどこに残るかを知る、ローテーションできるようになる。tansr 内部の防御線（権限エンジン、保護パス、ハードなセキュリティレッドライン、監査チェーン）は各形態のガイドですでに展開されており、ここではあなたの操作に関係する場合にだけ参照します。バージョンの基準：`tansr` CLI 0.10.1、`@tansr/sdk` 0.18.1、`@tansr/serve` 0.14.0（いずれも 2026-10-04 公開）。
+このページには**あなたができること**だけを書きます：トラフィックの行き先を知る、認証情報を正しい場所に置く、データがどこに残るかを知る、ローテーションできるようになる。tansr 内部の防御線（権限エンジン、保護パス、ハードなセキュリティレッドライン、監査チェーン）は各形態のガイドですでに展開されており、ここではあなたの操作に関係する場合にだけ参照します。バージョンの基準：`tansr` CLI 0.10.3、`@tansr/sdk` 0.19.0、`@tansr/serve` 0.15.1（いずれも 2026-10-10 公開）。
 
 ## 外向き通信：トラフィックはどこへ行き、どう絞るか
 
@@ -34,7 +34,7 @@ lastVerified: '2026-10-05'
 | 宛先 | いつ | 無効化できるか |
 |---|---|---|
 | tansr プラットフォームゲートウェイ `api.tansr.com` | プラットフォームモードにログイン後：モデル呼び出し、設定バンドルの取得、ハートビート、使用量の報告、残高 | `TANSR_ESCAPE_LOCAL=1` を設定して完全ローカルモードに入れば全体を停止 |
-| 公式配布サイト `bash.tansr.com` | あなたが明示的に `/update` または `tansr update` を実行したときだけ。起動時に自動チェックは行わない | `TANSR_UPDATE_CHANNEL=none` または `TANSR_NO_UPDATE_CHECK=1`。企業はセルフホストのマニフェスト `TANSR_UPDATE_MANIFEST_URL` を指定可能 |
+| 更新チェック：npm インストール形態は npm レジストリ `registry.npmjs.org` を、単一ファイル実行版（SEA）は公式配布サイト `bash.tansr.com` の署名付きポインタを照会する | あなたが明示的に `/update` または `tansr update` を実行したときだけ。起動時に自動チェックは行わない | `TANSR_UPDATE_CHANNEL=none` または `TANSR_NO_UPDATE_CHECK=1`。企業はセルフホストのマニフェスト `TANSR_UPDATE_MANIFEST_URL` を指定可能（指定があれば両形態ともそこにだけ接続する） |
 | あなたが設定したモデルプロバイダー | 完全ローカルモードでの `providers.*.baseUrl` | あなたが決める |
 | あなたが設定した MCP サーバー / 自前の検索・メディアエンドポイント | セッション内のツール呼び出し | あなたが決める。プロジェクト層の MCP サーバーは明示的に信頼を付与する必要がある |
 | モデルがツール経由でアクセスする任意の URL（WebFetch / Http） | セッション内 | 権限ルールの制約を受ける。`deny` ルールでツール全体を無効化できる |
@@ -58,6 +58,7 @@ lastVerified: '2026-10-05'
 - **リクエストヘッダーはすべて明示的な交渉であり、認証要素ではありません。** `tansr-session-family`、`tansr-closure-id`、`tansr-event-envelope`、`Idempotency-Key` / `If-Match` / `deadline`（後ろの 3 つは 0.14.0 以降）が該当しないリクエストに現れた場合は一律 `400 invalid_request` で、黙って無視されることはありません。どのヘッダーも付けなければ、挙動はバイト単位で変わりません。
 - **能力クロージャのフェンス**：`GET /api/sessions/:id/capabilities` は各ドメインの既存の能力ソースを読み取り専用で連合し、操作の三状態表（`enabled` / `disabled` / `unavailable`）と `tansr-closure-id` を返します。これは**新しい認可エンジンを作るものではなく**、フェンス内の操作は引き続きドメインの handler がアプリの能力ビット、ユーザーの認可、セッション状態、承認に基づいて裁定します。書き込み操作は前回の `tansr-closure-id` を前提条件として付けられます。フェンスが変わっていれば `412 precondition_failed`（`rediscover`。再発見してから再送するかを決め、古い値のまま強引に再送してはいけません）、フェンスを越えて `disabled` の操作を呼べば `403 capability_unavailable` です。未知のセッション、他人のセッション、アーカイブホストにだけ存在するセッションはいずれも `404 not_found` で、存在の有無を漏らしません。
 - **`/v1` はデフォルトで無効**：ファサードがあるデプロイでは `/v1/sessions*`、`/v1/status`、`/v1/approvals/:id/credential` がデフォルトで 404 になります（SDK2 の明示的なホストがある場合は常に無効）。移行用のノブ `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` は 0.14.0 / CLI 0.10.1 以降は非推奨です（1.0.0 で削除。有効にすると `warn` イベント `server.deprecated_option` が出ます）。承認用の認証情報の送付は `POST /api/approvals/:id/credential` に移ります。ヘルスチェックは `/healthz` `/readyz` に替え、`/v1` の Bearer で `/v1/status` を探るのはやめてください。
+- **旧プレフィックス `/v2`、`/v3/*` の退役ウィンドウは設定できる**（`@tansr/serve` 0.15.0 / CLI 0.10.2 以降、ファサードがあるときに有効）：`TANSR_SERVE_LEGACY_PREFIX=readwrite|readonly|off`（ファクトリオプション `legacyPrefixes`）——`readwrite` がデフォルトで（0.15.1 でも同じ）、旧プレフィックスの要求をすべて受け付けます。`readonly` では manifest が書き込みとして登録している操作が旧プレフィックスで `410 gone` を返し（`message` は対応する `/api` の操作を指す）、読み取りとストリームはそのまま使えます。`off` では旧プレフィックスの要求がすべて `404 not_found` になります。`TANSR_SERVE_LEGACY_SUNSET`（`legacyPrefixSunset`）で退役予定の時刻を指定すると、旧プレフィックスの応答に既存の `Deprecation` / `Link` ヘッダーに加えて `Sunset` ヘッダーが付きます。同じセッションで旧プレフィックスと `/api` を混ぜて使うとログに `warn` イベント `api.legacy_prefix_mixed` が出て、拒否された旧プレフィックスの要求には `api.legacy_prefix_rejected` が出ます——両方がゼロのまま続くことが、ウィンドウを狭めてよい根拠です。デフォルトがいつ変わるかは[移行と退役のタイムライン](/ja/unified-api/migration/)を参照してください。
 - 統一エラーエンベロープの `message` は字面を保証せず、`detail.path` にはリクエストされた `/api` のパスが書き戻され、`/v2` / `/v3` の内部プレフィックスとホストのパスは外に漏れません。各ヘッダーとコード表は[統一 API のリクエストヘッダーとエラーエンベロープ](/ja/unified-api/headers-and-errors/)を参照してください。
 
 ## システムツールとターミナルツールの分離（SDK 2.0 リモートプロファイル）

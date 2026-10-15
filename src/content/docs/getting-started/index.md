@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。中立桥梁、Harness、Skill 与运行时的分工、当前两步，以及尚未提供的规划，写在[技术立场](/getting-started/principles/)；给编程助手采集的同一份条文在 [`/llms.txt`](/llms.txt)。首页只在页尾放折叠入口。
@@ -61,7 +61,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 
 | 形态 | 最低要求 |
 |---|---|
-| 命令行（npm 包） | Node.js ≥ 22.19；Windows / macOS / Linux。单文件可执行版（SEA）尚未发布，当前只有 npm 包 |
+| 命令行 | npm 包要 Node.js ≥ 22.19，Windows / macOS / Linux；单文件可执行版（SEA）自带运行时，目前只提供 Linux x64 / arm64 |
 | `@tansr/sdk` | Node.js ≥ 22.19;Electron ≥ 39;ESM only;TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19；唯一第三方运行时依赖是 `zod` |
 | Android SDK | minSdk 26；Kotlin 协程 + kotlinx.serialization + OkHttp |
@@ -77,7 +77,7 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 某个错误码是什么意思、能不能重试 | [错误处理与重试](/sdk/errors-and-retries/) · [错误码表](/errors/codes) |
 | 服务端怎么部署、怎么优雅关闭、多副本怎么分片 | [部署与鉴权](/serve/deploy-and-auth/) |
 | 我想直接调会话服务的 HTTP 接口（`/api`），或自己写一个客户端 | [统一 API 合同（/api）](/unified-api/) |
-| 我想让编程助手按我的描述做出可运行的产品 | `@tansr/skill` 0.1.6 | [用编程助手做产品](/getting-started/skill/) |
+| 我想让编程助手按我的描述做出可运行的产品（`@tansr/skill` 0.1.6） | [用编程助手做产品](/getting-started/skill/) |
 | 这些形态为什么这样分、两步和规划分别意味着什么 | [技术立场](/getting-started/principles/) |
 | SDK 2.0 的扩展入口（归档宿主、缓存宿主、统一 API）哪些已正式发布 | [SDK 2.0 扩展入口](/sdk/sdk2-preview/) |
 | 会话保留多久、什么时候被回收 | [保留期与治理](/serve/retention-and-governance/) |

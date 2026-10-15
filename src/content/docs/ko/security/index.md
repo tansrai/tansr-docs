@@ -22,10 +22,10 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-이 페이지는 **당신이 할 수 있는 것**만 씁니다: 트래픽이 어디로 가는지 알기, 자격 증명을 올바른 곳에 두기, 데이터가 어디에 남는지 알기, 교체할 수 있게 되기. tansr 내부의 방어선(권한 엔진, 보호 경로, 하드 보안 레드라인, 감사 체인)은 각 형태의 가이드에서 이미 다루었으며, 여기서는 당신의 조작과 관련될 때만 참조합니다. 버전 기준: `tansr` CLI 0.10.1, `@tansr/sdk` 0.18.1, `@tansr/serve` 0.14.0(모두 2026-10-04 공개).
+이 페이지는 **당신이 할 수 있는 것**만 씁니다: 트래픽이 어디로 가는지 알기, 자격 증명을 올바른 곳에 두기, 데이터가 어디에 남는지 알기, 교체할 수 있게 되기. tansr 내부의 방어선(권한 엔진, 보호 경로, 하드 보안 레드라인, 감사 체인)은 각 형태의 가이드에서 이미 다루었으며, 여기서는 당신의 조작과 관련될 때만 참조합니다. 버전 기준: `tansr` CLI 0.10.3, `@tansr/sdk` 0.19.0, `@tansr/serve` 0.15.1(모두 2026-10-10 공개).
 
 ## 아웃바운드 통신: 트래픽이 어디로 가고, 어떻게 좁히는가
 
@@ -34,7 +34,7 @@ lastVerified: '2026-10-05'
 | 목적지 | 언제 | 끌 수 있는가 |
 |---|---|---|
 | tansr 플랫폼 게이트웨이 `api.tansr.com` | 플랫폼 모드 로그인 후: 모델 호출, 설정 번들 가져오기, 하트비트, 사용량 보고, 잔액 | `TANSR_ESCAPE_LOCAL=1`을 설정해 완전 로컬 모드로 들어가면 전체 비활성화 |
-| 공식 배포 지점 `bash.tansr.com` | 당신이 명시적으로 `/update` 또는 `tansr update`를 실행할 때만. 시작 시 자동 확인은 절대 하지 않음 | `TANSR_UPDATE_CHANNEL=none` 또는 `TANSR_NO_UPDATE_CHECK=1`. 기업은 자체 호스팅 매니페스트 `TANSR_UPDATE_MANIFEST_URL`을 지정할 수 있음 |
+| 업데이트 확인: npm 설치 형태는 npm 레지스트리 `registry.npmjs.org`를, 단일 파일 실행 파일(SEA)은 공식 배포 지점 `bash.tansr.com`의 서명된 포인터를 조회 | 당신이 명시적으로 `/update` 또는 `tansr update`를 실행할 때만. 시작 시 자동 확인은 절대 하지 않음 | `TANSR_UPDATE_CHANNEL=none` 또는 `TANSR_NO_UPDATE_CHECK=1`. 기업은 자체 호스팅 매니페스트 `TANSR_UPDATE_MANIFEST_URL`을 지정할 수 있음(지정되어 있으면 두 형태 모두 거기에만 연결) |
 | 당신이 설정한 모델 공급자 | 완전 로컬 모드에서 `providers.*.baseUrl` | 당신이 결정 |
 | 당신이 설정한 MCP 서버 / 자체 검색과 미디어 엔드포인트 | 세션 안의 도구 호출 | 당신이 결정. 프로젝트 층 MCP 서버는 명시적으로 신뢰를 부여해야 함 |
 | 모델이 도구를 통해 접근하는 임의의 URL(WebFetch / Http) | 세션 안 | 권한 규칙의 제약을 받음. `deny` 규칙으로 도구 전체를 비활성화할 수 있음 |
@@ -58,6 +58,7 @@ lastVerified: '2026-10-05'
 - **요청 헤더는 모두 명시적 협상이지 인증 요소가 아닙니다.** `tansr-session-family`, `tansr-closure-id`, `tansr-event-envelope`, `Idempotency-Key` / `If-Match` / `deadline`(뒤의 셋은 0.14.0부터)이 해당하지 않는 요청에 나타나면 일률적으로 `400 invalid_request`이며 조용히 무시되지 않습니다. 어떤 헤더도 붙이지 않으면 동작은 바이트 단위로 변하지 않습니다.
 - **기능 폐포 울타리**: `GET /api/sessions/:id/capabilities`는 각 도메인의 기존 기능 소스를 읽기 전용으로 연합해 작업 삼태 표(`enabled` / `disabled` / `unavailable`)와 `tansr-closure-id`를 돌려줍니다. 이것은 **새 인가 엔진을 만들지 않으며**, 울타리 안의 작업은 여전히 도메인 handler가 앱 기능 비트, 사용자 인가, 세션 상태, 승인에 따라 판정합니다. 쓰기 작업은 지난번 `tansr-closure-id`를 전제 조건으로 붙일 수 있습니다. 울타리가 바뀌었으면 `412 precondition_failed`(`rediscover`. 다시 발견한 뒤 재전송 여부를 정하고, 옛 값을 그대로 억지로 재전송하지 마세요), 울타리를 넘어 `disabled`인 작업을 호출하면 `403 capability_unavailable`입니다. 알 수 없는 세션, 타인의 세션, 아카이브 호스트에만 있는 세션은 모두 `404 not_found`로 답해 존재 여부를 누설하지 않습니다.
 - **`/v1`은 기본적으로 꺼짐**: 파사드가 있는 배포에서는 `/v1/sessions*`, `/v1/status`, `/v1/approvals/:id/credential`이 기본적으로 404입니다(SDK2 명시적 호스트가 있으면 항상 꺼짐). 전환용 손잡이 `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1`은 0.14.0 / CLI 0.10.1부터 사용 중단 예정입니다(1.0.0에서 제거. 켜면 `warn` 이벤트 `server.deprecated_option`이 나옴). 승인 자격 증명 전달은 `POST /api/approvals/:id/credential`로 옮깁니다. 헬스 체크는 `/healthz` `/readyz`로 바꾸고, `/v1` Bearer로 `/v1/status`를 찔러 보지 마세요.
+- **구 접두사 `/v2`, `/v3/*`의 퇴역 창은 설정할 수 있음**(`@tansr/serve` 0.15.0 / CLI 0.10.2부터, 파사드가 있을 때 적용): `TANSR_SERVE_LEGACY_PREFIX=readwrite|readonly|off`(팩토리 옵션 `legacyPrefixes`). `readwrite`가 기본값이며(0.15.1에서도 그대로) 구 접두사의 요청을 모두 받아들입니다. `readonly`에서는 매니페스트가 쓰기로 등록한 작업이 구 접두사에서 `410 gone`을 답하고(`message`는 대응하는 `/api` 작업을 가리킴) 읽기와 스트림은 그대로 동작합니다. `off`에서는 구 접두사의 모든 요청이 `404 not_found`가 됩니다. `TANSR_SERVE_LEGACY_SUNSET`(`legacyPrefixSunset`)로 퇴역 예정 시각을 지정하면 구 접두사 응답에 기존 `Deprecation` / `Link` 헤더 외에 `Sunset` 헤더가 붙습니다. 같은 세션에서 구 접두사와 `/api`를 섞어 쓰면 로그에 `warn` 이벤트 `api.legacy_prefix_mixed`가 나오고, 거부된 구 접두사 요청에는 `api.legacy_prefix_rejected`가 나옵니다. 둘 다 0으로 유지되는 것이 창을 좁혀도 된다는 증거입니다. 기본값이 언제 바뀌는지는 [마이그레이션과 퇴역 일정](/ko/unified-api/migration/)을 참고하세요.
 - 통합 오류 봉투의 `message`는 글자 그대로를 보장하지 않고, `detail.path`에는 요청한 `/api` 경로가 되돌려 적히며, `/v2` / `/v3` 내부 접두사와 호스트 경로는 밖으로 새지 않습니다. 각 헤더와 코드 표는 [통합 API의 요청 헤더와 오류 봉투](/ko/unified-api/headers-and-errors/)를 참고하세요.
 
 ## 시스템 도구와 터미널 도구의 격리(SDK 2.0 원격 프로필)

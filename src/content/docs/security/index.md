@@ -22,10 +22,10 @@ sources:
   - tansr-cli:doc/96-Android开发指导书.md
   - tansr-cli:CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。版本基线：`tansr` 命令行 0.10.1、`@tansr/sdk` 0.18.1、`@tansr/serve` 0.14.0（均 2026-10-04 发布）。
+这一页只写**你能做的事**：知道流量去哪、把凭据放对地方、知道数据留在哪、会轮换。tansr 内部的防线（权限引擎、保护路径、硬安全红线、审计链）在各形态的指南里已经展开，这里只在与你的操作相关时引用。版本基线：`tansr` 命令行 0.10.3、`@tansr/sdk` 0.19.0、`@tansr/serve` 0.15.1（均 2026-10-10 发布）。
 
 ## 出网：流量去哪，怎么收窄
 
@@ -34,7 +34,7 @@ lastVerified: '2026-10-05'
 | 目的地 | 何时 | 能否关 |
 |---|---|---|
 | tansr 平台网关 `api.tansr.com` | 登录平台模式后：模型调用、配置束拉取、心跳、用量上报、余额 | 设 `TANSR_ESCAPE_LOCAL=1` 进完全本地模式即整体停用 |
-| 官方分发点 `bash.tansr.com` | 只在你显式 `/update` 或 `tansr update` 时；启动期恒不自动检查 | `TANSR_UPDATE_CHANNEL=none` 或 `TANSR_NO_UPDATE_CHECK=1`；企业可指自托管清单 `TANSR_UPDATE_MANIFEST_URL` |
+| 更新检查：npm 安装形态查 npm 注册表 `registry.npmjs.org`，单文件可执行版（SEA）查官方分发点 `bash.tansr.com` 的签名指针 | 只在你显式 `/update` 或 `tansr update` 时；启动期恒不自动检查 | `TANSR_UPDATE_CHANNEL=none` 或 `TANSR_NO_UPDATE_CHECK=1`；企业可指自托管清单 `TANSR_UPDATE_MANIFEST_URL`（在场时两种形态都只连它） |
 | 你配置的模型供应商 | 完全本地模式下 `providers.*.baseUrl` | 由你决定 |
 | 你配置的 MCP 服务器 / 自带搜索与媒体端点 | 会话内工具调用 | 由你决定；项目层 MCP 服务器须显式授信 |
 | 模型经工具访问的任意 URL(WebFetch / Http) | 会话内 | 受权限规则约束；可用 `deny` 规则禁用整个工具 |
@@ -58,6 +58,7 @@ lastVerified: '2026-10-05'
 - **请求头都是显式协商，不是鉴权因子。** `tansr-session-family`、`tansr-closure-id`、`tansr-event-envelope`、`Idempotency-Key` / `If-Match` / `deadline`（后三者 0.14.0 起）出现在不适用的请求上一律 `400 invalid_request`，不静默忽略；不携任何一头 = 行为逐字节不变。
 - **能力闭合围栏**：`GET /api/sessions/:id/capabilities` 只读联邦各域既有能力源，回一张操作三态表（`enabled` / `disabled` / `unavailable`）与 `tansr-closure-id`；它**不新造授权引擎**，围栏内的操作仍由域 handler 按应用能力位、用户授权、会话状态与审批裁决。写操作可携上次的 `tansr-closure-id` 作前置条件：围栏已变 → `412 precondition_failed`（`rediscover`，重新发现后再决定是否重发，不得带旧值硬重放）；越围栏调用已 `disabled` 的操作 → `403 capability_unavailable`。未知会话、他人会话与只存在于档案宿主的会话同答 `404 not_found`，不泄漏存在性。
 - **`/v1` 缺省关闭**：门面在场的部署 `/v1/sessions*`、`/v1/status`、`/v1/approvals/:id/credential` 缺省 404（SDK2 显式宿主在场时恒关）。过渡旋钮 `tansr serve --legacy-v1` / `TANSR_SERVE_LEGACY_V1=1` 自 0.14.0 / 命令行 0.10.1 起已标废弃（1.0.0 移除，开启时出 `warn` 事件 `server.deprecated_option`）；审批凭证投递改走 `POST /api/approvals/:id/credential`。健检改 `/healthz` `/readyz`，不要再用 `/v1` Bearer 探 `/v1/status`。
+- **旧前缀 `/v2`、`/v3/*` 的退役窗口可配**（`@tansr/serve` 0.15.0 / 命令行 0.10.2 起，门面在场时生效）：`TANSR_SERVE_LEGACY_PREFIX=readwrite|readonly|off`（工厂选项 `legacyPrefixes`）——`readwrite` 为缺省（0.15.1 仍是），旧前缀全部受理；`readonly` 下 manifest 登记为写的操作在旧前缀答 `410 gone`（`message` 指向对应的 `/api` 操作），读与流照常；`off` 下旧前缀全部 `404 not_found`。`TANSR_SERVE_LEGACY_SUNSET`（`legacyPrefixSunset`）给出计划退役时刻后，旧前缀响应在既有的 `Deprecation` / `Link` 头之外再附 `Sunset` 头。同一会话混用旧前缀与 `/api` 时日志出 `warn` 事件 `api.legacy_prefix_mixed`，被拒的旧前缀请求出 `api.legacy_prefix_rejected`——两者持续为零是可以收窄窗口的证据。缺省何时改变见[迁移与退役时间表](/unified-api/migration/)。
 - 统一错误信封里的 `message` 不承诺字面、`detail.path` 回写为所请求的 `/api` 路径，`/v2` / `/v3` 内部前缀与宿主路径不外泄。各头与码表见[统一 API 的请求头与错误信封](/unified-api/headers-and-errors/)。
 
 ## 系统工具与终端工具的隔离（SDK 2.0 远端档）

@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run". The neutral bridge, the Harness, how Skill differs from the runtime, the current two steps, and the roadmap that is not offered yet are on [Technical stance](/en/getting-started/principles/). The same statements, for a coding assistant to collect, are in [`/llms.txt`](/llms.txt). The homepage keeps only a collapsed entry at the bottom.
@@ -61,7 +61,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 
 | Form | Minimum |
 |---|---|
-| CLI (npm package) | Node.js ≥ 22.19; Windows / macOS / Linux. The single-file executable (SEA) is not released yet; the npm package is currently the only form |
+| CLI | The npm package needs Node.js ≥ 22.19 on Windows / macOS / Linux; the single-file executable (SEA) bundles its own runtime and is currently offered for Linux x64 / arm64 only |
 | `@tansr/sdk` | Node.js ≥ 22.19; Electron ≥ 39; ESM only; TypeScript target ≥ ES2022 |
 | `@tansr/serve` | Node.js ≥ 22.19; the only third-party runtime dependency is `zod` |
 | Android SDK | minSdk 26; Kotlin coroutines + kotlinx.serialization + OkHttp |
@@ -77,7 +77,7 @@ The five form articles (Android and iOS share one; HarmonyOS has its own) unfold
 | What an error code means and whether it is retryable | [Errors and retries](/en/sdk/errors-and-retries/) · [Error codes](/errors/codes) |
 | How to deploy the backend, shut it down gracefully, shard across replicas | [Deployment and authentication](/en/serve/deploy-and-auth/) |
 | I want to call the session service's HTTP surface (`/api`) directly, or write my own client | [Unified API (/api)](/en/unified-api/) |
-| I want a coding assistant to build a running product from my description | `@tansr/skill` 0.1.6 | [Build a product with a coding assistant](/en/getting-started/skill/) |
+| I want a coding assistant to build a running product from my description (`@tansr/skill` 0.1.6) | [Build a product with a coding assistant](/en/getting-started/skill/) |
 | Why the forms are split this way, and what the two steps and the roadmap mean | [Technical stance](/en/getting-started/principles/) |
 | Which parts of the SDK 2.0 extension entry points (archive host, cache host, unified API) are officially released | [SDK 2.0 extension entry points](/en/sdk/sdk2-preview/) |
 | How long sessions are kept and when they are reclaimed | [Retention and governance](/en/serve/retention-and-governance/) |

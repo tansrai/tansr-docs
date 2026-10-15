@@ -13,7 +13,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-12'
+lastVerified: '2026-10-13'
 ---
 
 资料站只写技术立场和它在接入时的边界。首页口号、视觉和售价不在这里展开。可采集的短条文在站点根的 [`/llms.txt`](/llms.txt)，首页只在页尾折叠保留 [同一份入口](/#tansr-principles)。两处与本节使用同一组标识。下面按标识说明这些边界如何落到命令、包和运行形态上。
@@ -121,7 +121,7 @@ Harness 是智能体行动所需的通用运行环境：理解任务、组织步
 当前可以核对的发布事实：
 
 - Tansr Skill 的发布版是 **0.1.6**。`0.1.5` 会在写入前以 `INVALID_RELEASE` 退出，不要安装。见 [用编程助手做产品](/getting-started/skill/)。
-- `@tansr/serve` **0.15.0** 与 `@tansr/cli` **0.10.2**、`@tansr/api-client` **0.4.0** 已于 2026-10-06 发布。旧前缀的告警和可选只读窗口见 [迁移与退役时间表](/unified-api/migration/)。缺省仍受理旧前缀上的写操作。
+- `@tansr/serve` **0.15.1**、`@tansr/cli` **0.10.3** 与 `@tansr/sdk` **0.19.0** 已于 2026-10-10 发布；`@tansr/api-client` **0.4.0** 于 2026-10-06 发布后未再变动。旧前缀的告警和可选只读窗口（0.15.0 起）见 [迁移与退役时间表](/unified-api/migration/)。缺省仍受理旧前缀上的写操作。
 - 更高的候选版本没有发行回执，不在本节列为现行版本。
 
 凭据分层不因立场而改变：个人访问令牌只给本机命令行，应用密钥只留在服务端，短期令牌交给终端。详见 [安全与隐私](/security/)。

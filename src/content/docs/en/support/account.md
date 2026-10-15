@@ -13,7 +13,7 @@ sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-09-09'
+lastVerified: '2026-10-13'
 ---
 
 This page answers the most common account-side questions. Anything that requires an "action" is done in the console; the CLI only signs this machine in and shows status.
@@ -22,7 +22,7 @@ This page answers the most common account-side questions. Anything that requires
 
 **Which sign-in methods does the console support?** Email verification code, SMS verification code, WeChat; an organization can additionally configure an SSO identity source for its members. The CLI itself does not sign in — it initializes with a personal access token (PAT) you create in the console.
 
-**What is the account email used for?** The platform sends four kinds of email: approval to-dos and results, organization invitations, low-balance warnings (at most one per account per day), and new-app-key notifications (including how it was derived, never the key itself). Without an email on file these are silently skipped; nothing else is affected.
+**What is the account email used for?** The platform sends these emails: approval to-dos and results, organization invitations, low-balance warnings (at most one per account per day), new-app-key notifications (including how it was derived, never the key itself), plan expiry and grace-period reminders, organization budget warnings and overrun notices (sent to the organization's owners / admins, at most one per organization per month per kind), and the card key issued for the remaining balance when an organization is dissolved. Without an email on file these are silently skipped; nothing else is affected.
 
 **Can one person belong to several organizations?** Yes. A personal account can create or join organizations; an organization has members, invitations, teams and governance policies; plans are attached to an account (personal or organization).
 
