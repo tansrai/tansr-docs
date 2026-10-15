@@ -43,9 +43,12 @@ const h = (md, level) => [...md.matchAll(new RegExp(`^${'#'.repeat(level)} (.+)$
 // 36 键:tansr-cli@c5219e02 起新增 TANSR_SERVE_HOST_SHELL(session.hostShell),此前 30 键 → 31;
 // tansr-cli@01204b14 再 vendor(serve 0.13.0 已发,2026-10-02)新增 5 键 → 36:TANSR_SERVE_LOG_LEVEL(logger.level)、
 // TANSR_SERVE_SSE_MAX_FRAME_BYTES(sse.maxFrameBytes)、TANSR_SERVE_AUTH_MAX_PENDING(v2.authentication.maxPending)、
-// TANSR_SERVE_AUTH_TIMEOUT_MS(v2.authentication.timeoutMs)、TANSR_SERVE_LEGACY_V1(disableV1);零删除,敏感键集不变。
-const SERVE_ENV_KEYS = 36;
-test('serve-env:解析 .env.example 注释形 → 36 键、组 / 类型 / 缺省 / 敏感齐;头注键数对表', () => {
+// TANSR_SERVE_AUTH_TIMEOUT_MS(v2.authentication.timeoutMs)、TANSR_SERVE_LEGACY_V1(disableV1);零删除,敏感键集不变;
+// tansr-cli@cbad5f9e 再 vendor(serve 0.15.1 已发,2026-10-10;两键随 0.15.0 于 2026-10-06 发布)新增 2 键 → 38:
+// TANSR_SERVE_LEGACY_PREFIX(legacyPrefixes,readwrite|readonly|off)、TANSR_SERVE_LEGACY_SUNSET(legacyPrefixSunset,HTTP-date / ISO-8601),
+// 同入 legacy 组;零删除,敏感键集不变,头注「共 38 键」。
+const SERVE_ENV_KEYS = 38;
+test('serve-env:解析 .env.example 注释形 → 38 键、组 / 类型 / 缺省 / 敏感齐;头注键数对表', () => {
   const text = readFileSync(join(root, 'contract', 'serve.env.example'), 'utf8');
   const parsed = serveEnv.parseEnvExample(text);
   const keys = parsed.groups.flatMap((g) => g.keys);
@@ -61,6 +64,17 @@ test('serve-env:解析 .env.example 注释形 → 36 键、组 / 类型 / 缺省
   ]) {
     assert.ok(keys.some((k) => k.key === key && k.path === path), `serve 0.13.0 新键 ${key} 须带运行时路径 ${path}`);
   }
+  for (const [key, path, spec] of [
+    ['TANSR_SERVE_LEGACY_PREFIX', 'legacyPrefixes', 'readwrite|readonly|off'],
+    ['TANSR_SERVE_LEGACY_SUNSET', 'legacyPrefixSunset', 'HTTP date (IMF-fixdate) or ISO-8601 timestamp'],
+  ]) {
+    const k = keys.find((x) => x.key === key);
+    assert.ok(k && k.path === path, `serve 0.15.0 新键 ${key} 须带运行时路径 ${path}`);
+    assert.equal(k.spec, spec, `${key} 取值形`);
+    assert.ok(!k.sensitive, `${key} 非敏感键`);
+  }
+  const legacy = parsed.groups.find((g) => g.keys.some((k) => k.key === 'TANSR_SERVE_LEGACY_V1'));
+  assert.deepEqual(legacy.keys.map((k) => k.key), ['TANSR_SERVE_LEGACY_V1', 'TANSR_SERVE_LEGACY_PREFIX', 'TANSR_SERVE_LEGACY_SUNSET'], '两新键与 TANSR_SERVE_LEGACY_V1 同入 legacy 组');
   assert.ok(parsed.groups.length >= 5);
   for (const k of keys) {
     assert.match(k.key, /^TANSR_SERVE_[A-Z0-9_]+$/);
@@ -72,7 +86,7 @@ test('serve-env:解析 .env.example 注释形 → 36 键、组 / 类型 / 缺省
   assert.ok(parsed.outside.includes('TANSR_SERVE_TOKEN'), '头注点名的入口级键须被识别(供 #tansr_serve_token 锚点)');
 });
 
-test('serve-env:页面 frontmatter 契约、键锚点 = 小写键名且唯一、总表 36 行', () => {
+test('serve-env:页面 frontmatter 契约、键锚点 = 小写键名且唯一、总表 38 行', () => {
   const [{ content, stats }] = serveEnv.generate(root);
   assertContract(content, { title: 'serve 环境变量', category: 'serve', source: 'serve.env.example', script: 'scripts/gen/serve-env.mjs' });
   assert.equal(stats.keys, SERVE_ENV_KEYS);

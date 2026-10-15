@@ -8914,6 +8914,8 @@ interface CompactionRoundSuccess {
     keptPinnedCount: number;
     /** 压缩 round 自身的 usage(计成本;不入上下文账本锚点) */
     compactionUsage?: IRUsage;
+    /** 实际辅助模型，平台角色备援后与请求默认值可能不同。 */
+    usageModel?: ResolvedModel;
     /** 压缩 round 的 stop 原因(诊断) */
     stopReason: string;
     /**
@@ -8942,6 +8944,7 @@ interface CompactionRoundFailure {
      * usage 在场即沉没成本实报;网络失败/超时通常缺席)。
      */
     usage?: IRUsage;
+    usageModel?: ResolvedModel;
     /** T-CTX14b:计费状态三态(语义见 CompactionBillingStatus) */
     billingStatus?: CompactionBillingStatus;
     /**
@@ -9393,6 +9396,8 @@ interface GovernanceTransform {
     ops: readonly TransformOp[];
     /** 治理自身成本(压缩 fork usage;账本单列,沿 compactionUsage 先例) */
     usage?: IRUsage;
+    /** 平台辅助模型主备切换后的实际费用归属。 */
+    usageModel?: ResolvedModel;
     /** 统一失败形态(auto 计熔断/manual 报错已由策略引擎归类) */
     failure?: GovernanceFailure;
     /**
@@ -9532,7 +9537,7 @@ interface GovernanceExecuteContext {
     publication?: GovernancePublication;
     signal?: AbortSignal;
     /** 终帧已报的摘要费用；查询取消可先于 execute 返回，不得丢弃已知用量。 */
-    onUsage?: (usage: IRUsage) => void;
+    onUsage?: (usage: IRUsage, model?: ResolvedModel) => void;
 }
 /**
  * 治理会话(策略的会话级实例;与 manager 生命周期对齐)。@experimental
@@ -10085,7 +10090,7 @@ interface CompactRequest {
     view: ContextView;
     publication?: GovernancePublication;
     /** 已报摘要用量入辅助账后同步通知；取消等待方可保留已知费用。 */
-    onUsage?: (usage: IRUsage) => void;
+    onUsage?: (usage: IRUsage, model?: ResolvedModel) => void;
     /** 压缩 fork 缺省同模型;调用方可显式降档 */
     model: ResolvedModel;
     trigger: CompactionTrigger;
@@ -10933,6 +10938,8 @@ interface ToolExecutor {
  *   知道窗口大小)。
  */
 interface QueryCompactionOptions {
+    /** 辅助模型固定温度时不继承主请求温度；供应商使用自身固定值。 */
+    temperatureFixed?: number;
     /** 跨轮共享的 ContextManager(优先;提供时下列自建字段忽略) */
     manager?: ContextManager;
     /**
@@ -11527,6 +11534,44 @@ type CommandStructure = ({
 };
 
 /**
+ * CW19-U1 — 统一会话裁决动词与咨询共形(doc/64 §三「三态动词归一」;
+ * kernel 内部抽象,恒不入 packages/protocol)。
+ *
+ * 「会话裁决链」上的一切裁决人档(权限分类器 / 派生裁决链父代理 / 后续
+ * 裁决人池成员)对一次权限咨询只说三个动词:
+ * - `endorse`:担保——恒有界(铁轨 1),效果半径恒由 SOFTEN_RADIUS
+ *   单一事实源裁定(铁轨 4):分类器面 = safe 软化资格位,链面 = 半径内
+ *   父终审;半径外担保自动转上升;
+ * - `reject`:拒绝——收紧不设门(铁轨 2):分类器面 = unsafe→收紧(落地形
+ *   按表面姿态 rejectEffect:deny 或携理由升人终审,doc/113 §二),
+ *   链面 = 任意级即终局短路;
+ * - `escalate`:上升——不能决/失败恒朝严(铁轨 3):分类器面 = 维持
+ *   ask 交询问面,链面 = 上一级接力,链尽落链顶(用户终审或地板)。
+ *
+ * 分类器三态映射(64 §三,D 组已拍板):safe→endorse、unsafe→reject、
+ * unsure→escalate;词表外脏值(运行期模型输出未收敛)→ escalate,与
+ * 引擎既有「词表外维持 ask」逐字节同效(金样 classifier-consult-edges
+ * 锁样)。
+ *
+ * 本词表与派生裁决链的 AdjudicationVerdictKind 是**同一类型**——
+ * ask-router.ts 自本文件再导出(类型归一非重造)。对外契约(protocol
+ * 的权限三态 allow/deny/ask 与分类器三态 safe/unsafe/unsure)恒零改动。
+ */
+
+/** 统一裁决三态动词(会话裁决链全体裁决人档共用词表;kernel 内部) */
+type AdjudicationVerdictKind = 'endorse' | 'reject' | 'escalate';
+/**
+ * 统一裁决咨询意见(最小共形):动词 + 理由。派生裁决链的审计条目
+ * (AdjudicationChainEntry)在此之上扩责任人/途径/耗时字段;分类器
+ * 咨询结果经 classifierOpinion 归一到此形。
+ */
+interface AdjudicationOpinion {
+    verdict: AdjudicationVerdictKind;
+    /** 裁决理由(模型原话;进审计留痕与 deny-and-continue 回喂载荷) */
+    reason: string;
+}
+
+/**
  * OPT-04 — 内置安全保护基线(默认基线集;doc/07 §5.4 决策链 + doc/optimize/02 OPT-04)。
  *
  * 语义定位(引擎接入见 engine.ts 管线 4.5 段):
@@ -11707,6 +11752,8 @@ interface DecideInput {
     toolName: string;
     args: unknown;
     isReadOnly: boolean;
+    /** 仅由可信工具注册表快照注入；模型参数与描述不构成许可配置。 */
+    toolPermission?: ToolPermission;
     cwd: string;
     /**
      * 分类器软化抑制位:auto 下子代理调用的
@@ -11746,6 +11793,8 @@ interface PermissionAdjudicationEntry {
     via: 'model';
     /** 咨询耗时(毫秒;config.now 时钟源与熔断记账同源) */
     elapsedMs: number;
+    /** 实际模型与策略槽的可信审计快照；只在本地裁决记录附着，不进 protocol 事件。 */
+    policy?: ClassifierResultPolicy;
 }
 /** 判定结果——纯结构化数据,由调度器负责落审计事件 */
 interface PermissionDecisionResult {
@@ -12082,7 +12131,41 @@ interface ClassifierBreakerState {
     /** 本会话累计跳闸次数(指标口;人工复位不清零) */
     trips: number;
 }
+/** RFC-MROLE-6：由可信装配闭包绑定实际结果，模型输出或遥测不能提供授权。 */
+interface ClassifierResultPolicy {
+    readonly identity: string;
+    readonly slot: 'primary' | 'backup';
+    readonly profileId: string;
+    readonly revision: string;
+    readonly model: {
+        readonly provider: string;
+        readonly model: string;
+    };
+    readonly tier: EffectiveQualificationTier;
+    readonly rejectEffect: 'deny' | 'ask';
+}
+/** 同一权限引擎持有的同步裁决槽账本；刷新装配不重置已用量。 */
+interface ClassifierPolicyBudgetLedger {
+    register(key: string, slot: 'primary' | 'backup' | 'shared'): void;
+    tryConsume(key: string, limit: number, slot?: 'primary' | 'backup' | 'shared'): boolean;
+    canAfford(key: string, currency: 'CNY' | 'USD', capNano: number, slot: 'primary' | 'backup' | 'shared'): boolean;
+    noteCost(key: string, currency: 'CNY' | 'USD', costNano: number, slot: 'primary' | 'backup' | 'shared'): void;
+}
+/** 分类器和父任务裁决共用的可信执行缝，完全不进入模型响应或协议事件。 */
+interface ClassifierPolicyRuntime {
+    client: ModelClient;
+    resolveRequestPolicy(request: IRRequest): ClassifierResultPolicy | undefined;
+    /** 已发生请求的真实模型，只供用量归属；撤权不改写历史，绝不授予裁决权。 */
+    requestModel?(request: IRRequest): ResolvedModel | undefined;
+    /** 可信宿主预算提前截断时的处置；不提供模型判词或软化权限。 */
+    resolveBudgetPolicy?(): ClassifierResultPolicy | undefined;
+    bindBudgetLedger(ledger: ClassifierPolicyBudgetLedger, host?: Pick<PermissionClassifierConfig, 'rejectEffect' | 'onBudgetExhausted'>): void;
+}
 interface PermissionClassifierConfig {
+    /** 已装配双策略的会话执行器；PermissionEngine 负责注入持续账本。 */
+    policyRuntime?: ClassifierPolicyRuntime;
+    /** 平台主备策略的可信动态模式；只在宿主未显式 setMode 时采用，异常回到 default。 */
+    resolvePermissionMode?: () => 'default' | 'auto';
     classifier: PermissionClassifier;
     /** 咨询超时(毫秒),缺省 DEFAULT_CLASSIFIER_TIMEOUT_MS;超时维持 ask */
     timeoutMs?: number;
@@ -12097,6 +12180,12 @@ interface PermissionClassifierConfig {
      * 不经本位,收紧方向不设资格门槛。
      */
     resolveQualificationTier?: () => EffectiveQualificationTier;
+    /**
+     * 双策略结果授权：只认本次 classifier 产生并由宿主闭包登记的结果对象。
+     * 每次返回及缓存命中均重新校验授权代次/策略版本/治理上限；失效返回 undefined。
+     * 不在场保留原单策略。此扩展不进入 IR、SDK2 或公共事件协议。
+     */
+    resolveResultPolicy?: (result: ClassifierResult) => ClassifierResultPolicy | undefined;
     /**
      * transcript 提供器:每次咨询时取当前轮用户 prompt 切片附进
      * ClassifierInput;缺省或返回 undefined/空集不附。装配层典型实现为
@@ -12163,44 +12252,6 @@ interface ClassifierUsage {
     consultCount: number;
     budget: number;
     budgetExhausted: boolean;
-}
-
-/**
- * CW19-U1 — 统一会话裁决动词与咨询共形(doc/64 §三「三态动词归一」;
- * kernel 内部抽象,恒不入 packages/protocol)。
- *
- * 「会话裁决链」上的一切裁决人档(权限分类器 / 派生裁决链父代理 / 后续
- * 裁决人池成员)对一次权限咨询只说三个动词:
- * - `endorse`:担保——恒有界(铁轨 1),效果半径恒由 SOFTEN_RADIUS
- *   单一事实源裁定(铁轨 4):分类器面 = safe 软化资格位,链面 = 半径内
- *   父终审;半径外担保自动转上升;
- * - `reject`:拒绝——收紧不设门(铁轨 2):分类器面 = unsafe→收紧(落地形
- *   按表面姿态 rejectEffect:deny 或携理由升人终审,doc/113 §二),
- *   链面 = 任意级即终局短路;
- * - `escalate`:上升——不能决/失败恒朝严(铁轨 3):分类器面 = 维持
- *   ask 交询问面,链面 = 上一级接力,链尽落链顶(用户终审或地板)。
- *
- * 分类器三态映射(64 §三,D 组已拍板):safe→endorse、unsafe→reject、
- * unsure→escalate;词表外脏值(运行期模型输出未收敛)→ escalate,与
- * 引擎既有「词表外维持 ask」逐字节同效(金样 classifier-consult-edges
- * 锁样)。
- *
- * 本词表与派生裁决链的 AdjudicationVerdictKind 是**同一类型**——
- * ask-router.ts 自本文件再导出(类型归一非重造)。对外契约(protocol
- * 的权限三态 allow/deny/ask 与分类器三态 safe/unsafe/unsure)恒零改动。
- */
-
-/** 统一裁决三态动词(会话裁决链全体裁决人档共用词表;kernel 内部) */
-type AdjudicationVerdictKind = 'endorse' | 'reject' | 'escalate';
-/**
- * 统一裁决咨询意见(最小共形):动词 + 理由。派生裁决链的审计条目
- * (AdjudicationChainEntry)在此之上扩责任人/途径/耗时字段;分类器
- * 咨询结果经 classifierOpinion 归一到此形。
- */
-interface AdjudicationOpinion {
-    verdict: AdjudicationVerdictKind;
-    /** 裁决理由(模型原话;进审计留痕与 deny-and-continue 回喂载荷) */
-    reason: string;
 }
 
 /**
@@ -12342,26 +12393,6 @@ interface PermissionGate {
 type AskUserCallback = (call: ProposedToolCall, signal?: AbortSignal, decision?: GateDecision) => Promise<'allow' | 'deny'>;
 
 /**
- * 裁决路由器(AskRouter):ask 终局出口的单一路由策略。
- *
- * 背景:权限引擎产出 ask 终局后,出路
- * 此前散落三处——主代理经 askUser 弹卡(TUI/K11 远程审批同为 askUser 的
- * 装配变体)、子代理无通道降 deny、headless 无通道降 deny。本文件把
- * 「往哪去」收敛为一个纯函数,调度器按目标执行:
- * - `parent-adjudication`:派生裁决链(子代理执行器专属)——ask
- *   先由「派生时点上下文中的父代理」裁决(reject/endorse/escalate);
- * - `user-dialog`:本级询问通道(askUser 回调:TUI 弹卡 / K11 挑战投递 /
- *   ACP requestPermission);
- * - `floor-deny`:fail-closed 地板——链的尽头无人时恒 deny,
- *   永不 fail-open。
- *
- * 优先序即安全序:裁决器在场必先走链(链顶仍可能是 user-dialog 或地板);
- * 语境缺省(两者皆无)恒落地板。本函数不感知权限模式——模式门禁在引擎
- * (deny 面不进本路由,INV-D3),模式对链的收窄(dontAsk 不触达用户等)
- * 由装配层经「是否注入 adjudicator/topAskUser」表达(kernel 零模式感知)。
- */
-
-/**
  * 裁决产出途径(审计归因,INV-D4/INV-D6):
  * - `model`:真实模型裁决;
  * - `invalid_output`:模型输出非法(空/非 JSON/未知 verdict/缺字段/超长)
@@ -12397,7 +12428,10 @@ interface AdjudicationRequest {
  * 持有派生时点父上下文快照 + 父模型 client,单轮低配额查询产出三出口。
  * 契约:**永不 throw、永不 fail-open**——一切异常收敛为 escalate 条目。
  */
-type ParentAdjudicator = (request: AdjudicationRequest, signal?: AbortSignal) => Promise<AdjudicationVerdict>;
+type ParentAdjudicator = ((request: AdjudicationRequest, signal?: AbortSignal) => Promise<AdjudicationVerdict>) & {
+    /** 验证原 verdict 对象实际采用的策略；模型返回的策略字段不作为授权依据。 */
+    resolvePolicy?: (verdict: AdjudicationVerdict) => ClassifierResultPolicy | undefined;
+};
 /**
  * 远程裁决人档预算超限处置指令(budgets 机制位):gate
  * 产出的结构化超限出口——装配层按生效档 escalation.mode 定向('parent'
@@ -12636,6 +12670,8 @@ interface ToolResult {
 /** 工具效应词表(应用协议 v1;冻结四值——「批量」是调用属性由参数判,不入表) */
 declare const TOOL_EFFECTS: readonly ["irreversible", "financial", "external", "affects-others"];
 type ToolEffect = (typeof TOOL_EFFECTS)[number];
+/** 可信宿主的逐工具确定性许可策略；缺省 inherit，不从提示词或调用参数推断。 */
+type ToolPermission = 'inherit' | 'allow' | 'ask';
 /**
  * 工具定义:名称、模型可见描述、zod 参数 schema、只读 / 并发安全等静态声明与 execute 实现。
  * 工具只产出结构化数据,渲染归表面层;权限判定由调度器在 execute 之前完成。
@@ -12670,6 +12706,8 @@ interface Tool<Args = unknown> {
     argsValidation?: 'dispatcher' | 'remote';
     /** 只读工具可并发、可在 plan 模式放行(声明即契约,调度器强制) */
     isReadOnly: boolean;
+    /** 注册时快照；allow 只豁免缺省询问，ask 每次交用户，均不调用裁决模型。 */
+    permission?: ToolPermission;
     /**
      * 效应声明(应用协议 v1):开发者对本工具副作用性质的
      * 自述——`irreversible`(不可逆)/ `financial`(资金流动)/ `external`
@@ -13172,7 +13210,10 @@ interface LoadPolicyBundlesOptions {
     source?: string;
 }
 declare class PermissionEngine {
-    private mode;
+    private configuredMode;
+    private modeOverridden;
+    /** 同一可信策略快照驱动工具门和 Task；不重建引擎、缓存或预算账本。 */
+    private get mode();
     private readonly ruleSets;
     /** 规则编译结果按 cwd 缓存(路径模式的相对锚定依赖 cwd) */
     private readonly compiledByCwd;
@@ -13201,6 +13242,7 @@ declare class PermissionEngine {
     private secretTainted;
     /** LLM 权限分类器(OPT-18;缺省不注入 = 无分类器路径) */
     private readonly classifierConfig;
+    private readonly policyBudgetLedger;
     /** 分类器熔断状态(3 连拒 30min 冷却 / 会话累计 20 拒停用) */
     private classifierDenyTotal;
     private classifierDenyStreak;
@@ -13337,6 +13379,10 @@ declare class PermissionEngine {
      * 恒 'none'(无任命即无软化面;早先的布尔位 qualifiedForAllow 已拆除)。
      */
     private resolveClassifierTier;
+    /** 装配者的结果查验是唯一权威；异常/坏值不借会话主档软化。 */
+    private resolveResultPolicy;
+    /** 实际槽半径与当前共同硬权限求交，绝不使用尚未执行的另一槽档位。 */
+    private resultPolicyAllows;
     /**
      * 生效资格档公共查询口:派生裁决链的 auto 父终审
      * 半径与分类器软化共用**同一资格链事实源**(「换裁决人不换半径」)
@@ -13345,6 +13391,8 @@ declare class PermissionEngine {
      * (resolveClassifierTier 已兜 'none')。每次调用现算(validUntil 越期/
      * 天花板/会话覆盖变更即刻生效,与咨询路径同谓词)。
      */
+    /** 父任务裁决沿同一可信槽执行器和同一会话账本，不另建 fallback 或计数。 */
+    getClassifierPolicyRuntime(): ClassifierPolicyRuntime | undefined;
     getEffectiveQualificationTier(): EffectiveQualificationTier;
     /** 窄缓存统计快照(命中率数据;自检面消费) */
     getClassifierCacheStats(): ClassifierCacheStats;
@@ -13616,12 +13664,16 @@ interface EgressClient {
 declare class ToolRegistry {
     #private;
     /** 注册工具;同名重复注册直接 throw(装配期编程错误) */
-    register<Args>(tool: Tool<Args>): void;
+    register<Args>(tool: Tool<Args>, inherited?: {
+        permission: ToolPermission | undefined;
+    }): void;
     /**
      * 移除工具(MCP 单服务器重连需先摘旧桥接工具)。不存在返回 false
      * 不 throw——清理路径对「已不在」宽容幂等(与 register 的装配期严苛相对)。
      */
     unregister(name: string): boolean;
+    /** 可信注册时点的权限快照；缺省与显式 inherit 均沿原权限管道。 */
+    getPermission(name: string): ToolPermission | undefined;
     get(name: string): Tool | undefined;
     has(name: string): boolean;
     /** 已注册工具名(按注册序) */
@@ -13709,6 +13761,8 @@ interface ToolDecisionRecord {
     executionTarget?: ExecutionTarget;
     callId: string;
     toolName: string;
+    /** 直接用户审批的实际子代理身份；空意见链不冒充模型背书。 */
+    childAgentId?: string;
     /** 终局判定(ask 经用户答复/降级/预算重放后的最终值) */
     decision: 'allow' | 'deny';
     /**
@@ -14259,7 +14313,7 @@ interface FsBlobStoreOptions {
     /** 覆写能力自述(测试用,如模拟无条件写后端;行为不随之变——一致性测试套据此揭示「自述不实」) */
     capabilities?: Partial<BlobStoreCapabilities>;
 }
-/** 创建以本地目录为后端的 SegmentBlobStore(双树布局、原子条件写、原生 Range 读);只作冷层。 */
+/** 创建以本地目录为后端的 SegmentBlobStore(双树布局、单工厂条件写、原生 Range 读);只作冷层。 */
 declare function createFsBlobStore(options: FsBlobStoreOptions): SegmentBlobStore;
 
 /** 一致性测试套的运行选项:体量 / 内存预算 / 最终一致窗口 / 隔离前缀 / 并发数 / 清理与取消。 */
@@ -14368,6 +14422,8 @@ interface ColdSessionRef {
     endUserKey: string;
     /** 本地热层会话目录(`manifest.json`、`segments/NNNNNN.jsonl`、`journal.jsonl` 所在) */
     sessionDir: string;
+    /** 原快照根；缺席时沿用既有同居根。 */
+    checkpointRoot?: string;
 }
 /** 会话身份(不含热层目录;remove / gc 用) */
 type ColdSessionId = Pick<ColdSessionRef, 'sessionId' | 'endUserKey'>;
@@ -15316,6 +15372,7 @@ interface SubagentDispatchPolicy {
  * 形态与权限模式注入;缺席 = 现状(子代理 ask 落 fail-closed 地板)。
  */
 interface TaskAdjudicationConfig {
+    policyRuntime?: ClassifierPolicyRuntime;
     /**
      * 动态启用谓词——**派生时点**求值(会话中切模式即时生效):装配层绑
      * 权限模式(仅 default 走链)与 env 逃生口
@@ -15323,6 +15380,8 @@ interface TaskAdjudicationConfig {
      * 不建链(子代理 ask 回地板)。
      */
     enabled: () => boolean;
+    /** 宿主显式保留机器链关闭时的人工批准；缺省 false，沿旧 fail-closed 语义。 */
+    humanReviewWhenDisabled?: boolean;
     /**
      * 链顶终审通道:装配层询问回调**同一实例**(TUI 弹卡 / K11 挑战投递)。
      * dontAsk(「不要问我」禁止上升到用户)与 headless 无通道时不注入——
@@ -15392,6 +15451,8 @@ interface TaskToolConfig {
     sessionId: string;
     /** 父权限门(子代理同实例沿用,不得放宽);缺省全放行(与调度器一致) */
     permissionGate?: PermissionGate;
+    /** 同一用户许可通道向前台、后台及嵌套子代理传递；不向模型暴露。 */
+    askUser?: AskUserCallback;
     /** 子执行器 cwd;缺省取执行时 ToolContext.cwd */
     cwd?: string;
     /** 模型降档映射注入缝(装配层从 provider registry 三档别名构造) */
@@ -17889,27 +17950,27 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
             max?: number | undefined;
             maxAgeDays?: number | undefined;
         } | undefined;
-        sessionsDir?: string | undefined;
-        checkpointsDir?: string | undefined;
-        autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
             maxBytes?: number | undefined;
             enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
+        sessionsDir?: string | undefined;
+        checkpointsDir?: string | undefined;
+        autoCheckpointBeforeCompact?: boolean | undefined;
     }, {
         checkpoints?: {
             max?: number | undefined;
             maxAgeDays?: number | undefined;
         } | undefined;
-        sessionsDir?: string | undefined;
-        checkpointsDir?: string | undefined;
-        autoCheckpointBeforeCompact?: boolean | undefined;
         segmentation?: {
             maxBytes?: number | undefined;
             enabled?: boolean | undefined;
             maxRecords?: number | undefined;
         } | undefined;
+        sessionsDir?: string | undefined;
+        checkpointsDir?: string | undefined;
+        autoCheckpointBeforeCompact?: boolean | undefined;
     }>>;
     http: z.ZodOptional<z.ZodObject<{
         /**
@@ -18221,6 +18282,20 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
     window?: {
         byModel?: Record<string, number> | undefined;
     } | undefined;
+    storage?: {
+        checkpoints?: {
+            max?: number | undefined;
+            maxAgeDays?: number | undefined;
+        } | undefined;
+        segmentation?: {
+            maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
+            maxRecords?: number | undefined;
+        } | undefined;
+        sessionsDir?: string | undefined;
+        checkpointsDir?: string | undefined;
+        autoCheckpointBeforeCompact?: boolean | undefined;
+    } | undefined;
     context?: {
         activeScheme?: string | undefined;
         schemes?: Record<string, {
@@ -18230,20 +18305,6 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
             stage?: "test" | "production" | "experimental" | undefined;
             parentId?: string | undefined;
         }> | undefined;
-    } | undefined;
-    storage?: {
-        checkpoints?: {
-            max?: number | undefined;
-            maxAgeDays?: number | undefined;
-        } | undefined;
-        sessionsDir?: string | undefined;
-        checkpointsDir?: string | undefined;
-        autoCheckpointBeforeCompact?: boolean | undefined;
-        segmentation?: {
-            maxBytes?: number | undefined;
-            enabled?: boolean | undefined;
-            maxRecords?: number | undefined;
-        } | undefined;
     } | undefined;
     usageReporting?: {
         enabled?: boolean | undefined;
@@ -18552,6 +18613,20 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
     window?: {
         byModel?: Record<string, number> | undefined;
     } | undefined;
+    storage?: {
+        checkpoints?: {
+            max?: number | undefined;
+            maxAgeDays?: number | undefined;
+        } | undefined;
+        segmentation?: {
+            maxBytes?: number | undefined;
+            enabled?: boolean | undefined;
+            maxRecords?: number | undefined;
+        } | undefined;
+        sessionsDir?: string | undefined;
+        checkpointsDir?: string | undefined;
+        autoCheckpointBeforeCompact?: boolean | undefined;
+    } | undefined;
     context?: {
         activeScheme?: string | undefined;
         schemes?: Record<string, {
@@ -18561,20 +18636,6 @@ declare const MergedTansrConfigSchema: z.ZodObject<{
             stage?: "test" | "production" | "experimental" | undefined;
             parentId?: string | undefined;
         }> | undefined;
-    } | undefined;
-    storage?: {
-        checkpoints?: {
-            max?: number | undefined;
-            maxAgeDays?: number | undefined;
-        } | undefined;
-        sessionsDir?: string | undefined;
-        checkpointsDir?: string | undefined;
-        autoCheckpointBeforeCompact?: boolean | undefined;
-        segmentation?: {
-            maxBytes?: number | undefined;
-            enabled?: boolean | undefined;
-            maxRecords?: number | undefined;
-        } | undefined;
     } | undefined;
     usageReporting?: {
         enabled?: boolean | undefined;
@@ -19605,6 +19666,13 @@ interface DefineToolOptions<Args = Record<string, unknown>> {
     /** 只读事实声明;缺省 false。参与权限判定,不等于默认免询或允许并发;显式收紧仍优先。 */
     readOnly?: boolean;
     /**
+     * 宿主对本函数的确定性权限策略;缺省 inherit 沿用原权限与裁决人路径。
+     * allow 仅豁免模式兜底询问;ask 每次请求用户许可。两者均跳过模型裁决人,
+     * 不覆盖能力开关、拒绝规则、硬安全、执行目标与 hooks 的收紧;无询问通道则拒绝。
+     * 本字段独立于 description/guide/参数,仅由开发者注册配置。
+     */
+    permission?: Tool['permission'];
+    /**
      * 效应声明(应用协议 v1):`irreversible`(不可逆)/
      * `financial`(资金流动)/ `external`(触达外部系统或第三方)/ `affects-others`
      * (影响其他用户或租户)。信号不是闸门——只进裁决人语境与遥测,不改任何
@@ -20308,7 +20376,21 @@ interface RegistryProviderProfile extends Omit<ProviderProfile, 'capability'> {
  */
 interface RegistryConfig extends Omit<TansrConfig, 'providers' | 'hooks' | 'mcpServers'> {
     providers: Record<string, RegistryProviderProfile>;
+    /** 平台受信装配材料，不属于本地设置或冻结协议；值均为授权后的完整 ref。 */
+    modelRolePolicy?: ModelRolePolicy;
+    /** CLI 原本地开关/平台直连授权闸后的显式 main 选择白名单；令牌 SDK 不注入。 */
+    modelRoleLocalProviders?: readonly string[];
+    /** bundle 已授权且明确 scope=user/org 的网关模型，仅用于显式 main 选择。 */
+    modelRoleOwnedModels?: readonly string[];
+    /** 受信 bundle.models 的完整主模型使用范围；不等于 main 默认主备候选池。 */
+    modelRoleMainModels?: readonly string[];
 }
+type ModelRole = 'main' | 'fast' | 'adjudicator';
+type ModelRolePolicy = Readonly<Record<ModelRole, {
+    readonly candidates: readonly string[];
+    readonly primary: string | null;
+    readonly backup: string | null;
+}>>;
 /** resolveAlias / fallbacksFor 的输出单元(重试/切换的输入) */
 interface ResolvedProviderModel {
     providerId: string;
@@ -20375,9 +20457,9 @@ interface TwpClientOptions {
     stream?: boolean;
     /**
      * 交换前钩子——每次 exchange 发出前 await(CLI 装配注入
-     * 「配置陈旧则重拉 /t1/config」;异常吞掉不阻交换,缺席零行为变化)。
+     * 「配置陈旧则重拉 /t1/config」;明确策略拒绝阻断,普通网络失败保留离线行为)。
      */
-    beforeExchange?: () => void | Promise<void>;
+    beforeExchange?: (request?: IRRequest, options?: ModelCallOptions) => void | Promise<void>;
     /**
      * SSE 帧间 idle 超时(毫秒;缺省 170s——与 api 上游
      * connect+TTFB 预算咬合,见 twp adapter DEFAULT_TWP_IDLE_TIMEOUT_MS
@@ -20458,6 +20540,10 @@ declare class ProviderRegistry {
     /** 按 profile.protocol 构造 AnthropicAdapter / OpenAIChatAdapter;缺 key 抛 MissingApiKeyError */
     createClient(resolved: ResolvedProviderModel, options?: CreateClientOptions): ModelClient;
     /** SC-22:装配层读回注入的治理层(buildAliasClient 取 retryBudget/retryPolicy 增量) */
+    get modelRolePolicy(): RegistryConfig['modelRolePolicy'];
+    get modelRoleLocalProviders(): readonly string[];
+    get modelRoleOwnedModels(): readonly string[];
+    get modelRoleMainModels(): readonly string[];
     get governor(): CreateClientOptions['governor'];
     /**
      * 别名的有序 fallback 链(链首为别名自身;循环引用抛 CyclicFallbackError)。
@@ -20558,6 +20644,10 @@ type IRErrorEvent = Extract<IRStreamEvent, {
  * (共享 retry/idleMs/sleep/timers 配置)——链级语义即「entry 内先重试,
  * 耗尽再切换」;传 false 则 createClient 的返回值按原样使用(调用方自行
  * 决定重试策略,此时本层不含 idle watchdog)。
+ *
+ * model-role 策略复用相同的计时、观测与数据边界，但每候选只尝试一次。
+ * 仅受信的零出站失败允许切备，且重写实际模型并核验备用能力；
+ * 取消、已输出、已受理或状态未知均不切换，工厂错误也不跳过。
  *
  * 跨调用语义(OPT-15 核对锁定):每次 stream() 恒从链首(index 0)开始
  * 尝试——上一次切换到 fallback 不产生粘滞游标,同一会话的下一用户轮仍
@@ -21371,7 +21461,7 @@ declare const HEADER_CLIENT_FEATURES = "x-tansr-client-features";
  * 本 SDK 可理解的可选 bundle 扩展词表:
  * - `platform-audio`:`capabilities.platform.speechToText/textToSpeech` + `platformModels.speechToText/textToSpeech`。
  */
-declare const CLIENT_FEATURES: readonly ["platform-audio", "tts-input-limit-v1", "bound-device-v1", "nonchat-operations-v1"];
+declare const CLIENT_FEATURES: readonly ["platform-audio", "tts-input-limit-v1", "bound-device-v1", "nonchat-operations-v1", "adjudicator-policy-slots-v1"];
 /** 客户端可选扩展词元(CLIENT_FEATURES 的元素类型) */
 type ClientFeature = (typeof CLIENT_FEATURES)[number];
 /** 环2 工具位键(`AppCapabilities.tools` 的键) */
@@ -21615,6 +21705,48 @@ declare const AppQuotaSchema: z.ZodObject<{
 /** 平台执行的应用配额配置，不表示客户端可自行使用的剩余额度。 */
 type AppQuota = z.infer<typeof AppQuotaSchema>;
 
+/** 平台三模型角色的共同解析与注册表投影；缺段才沿用旧平台语义。 */
+
+declare const MODEL_ROLES: readonly ["main", "fast", "adjudicator"];
+/**
+ * 模型用途：main 承担主要对话，fast 承担标题、记忆等辅助任务，adjudicator 裁决工具请求。
+ * 每个角色使用各自的候选模型和主备选择，不会隐式改用另一个角色的默认模型。
+ */
+type AppBundleModelRole = (typeof MODEL_ROLES)[number];
+/**
+ * 平台为一个角色计算出的有效候选集和主备选择，可用于展示当前配置及不可用原因。
+ * 模型值均为同一 AppBundle.models 下发的 handle，不是模型目录 catalogId，也不是供应商模型名。
+ * 非空主备必须属于本角色候选集；primary 为 null 表示该角色默认不可用，不能自行回落到其他角色。
+ * main 显式选模仍可使用 AppBundle.models 中的合法模型，不受默认候选池限制。
+ */
+interface AppBundleModelRoleSelection {
+    /** 本角色默认主备的候选 handle；main 显式用模另由 AppBundle.models 授权。 */
+    candidates: string[];
+    /** 实际生效的首选 handle；null 表示该角色无可用首选。 */
+    primary: string | null;
+    /** 与首选不同的备用 handle；null 表示无备用，不保证失败后一定重试。 */
+    backup: string | null;
+    /** 生效选择来自用户、组织、平台默认或治理绑定；治理绑定不允许备用替代。 */
+    source: 'user' | 'org' | 'platform' | 'governance';
+    /** 平台提供的配置诊断代码，用于说明候选、主备或治理绑定不可用的原因。 */
+    diagnostics: string[];
+}
+/**
+ * main、fast、adjudicator 三个角色的完整有效配置，须与同一响应中的 modelRoleRevision 一起使用。
+ * AppBundle 未下发整个 modelRoles 段时保留旧平台行为；已下发角色的空选择明确表示不可用。
+ */
+type AppBundleModelRoles = Record<AppBundleModelRole, AppBundleModelRoleSelection>;
+/**
+ * 平台角色配置与用户模型偏好的修订号，共同标识本次 modelRoles 配置并参与配置缓存指纹。
+ * 两项均为平台下发的非负整数；它们不是 SDK 或协议版本，调用方不应自行递增或混用不同响应的值。
+ */
+interface AppBundleModelRoleRevision {
+    /** 平台角色候选集和默认选择的配置修订号。 */
+    policy: number;
+    /** 当前用户模型角色偏好的配置修订号。 */
+    preferences: number;
+}
+
 /**
  * bundle 模型计价段(每百万 token 的价格,DECIMAL 字符串,与平台 `/t1/config` 下发形一致)。
  * 宿主可据此喂本地价格簿做会话级预算闸门;服务端用量帧恒为计费权威,本地估算只作闸门 / 展示口径。
@@ -21663,6 +21795,8 @@ interface AppBundleModel {
      * 令牌档下平台不下发本字段,故为可选:缺席 / 空串 / 非字符串一律按键缺席处理,条目本身保留。
      */
     modelId?: string;
+    /** 平台已授权目录的真实归属；缺席不推断，自有模型仅允许显式 main 选择。 */
+    scope?: 'platform' | 'org' | 'user';
     displayName: string;
     /**
      * 原始厂商(法人 / 品牌名,如 'Anthropic')。模型切换器「厂商 → 系列」两级分组呈现的一级维;
@@ -21675,6 +21809,8 @@ interface AppBundleModel {
     protocol: string;
     capabilities: Record<string, unknown>;
     contextWindow: number | null;
+    /** 平台已声明窗口的质量上限；仅收紧，不冒充物理能力声明。 */
+    recommendedContextTokens?: number;
     /** 计价段;缺键 / 坏形状 = null,恒不猜价 */
     pricing: AppBundleModelPricing | null;
     /** 适配器证据诊断；缺键/坏形状 = undefined，不影响模型条目保留。 */
@@ -21708,13 +21844,14 @@ interface AppBundlePlatformModels {
     textToSpeech: AppBundleTextToSpeechModel[];
 }
 /**
- * bundle 生效裁决人档(平台控制台为 App 任命的裁决人;取 bundle `adjudicators[0]`,缺席回落旧形单数键
+ * bundle 生效裁决人档(当前认证用户／组织的有效策略;取 bundle `adjudicators[0]`,缺席回落旧形单数键
  * `adjudicator`)。SDK 令牌档与 serve 据此装配权限分类器裁决人:
- * - `modelHandle`:绑定的裁决模型(bundle 目录内 handle);缺席 = 跟随会话主模型(裁决质量优先,
- *   且与主模型共享前缀缓存);
- * - `tier`:资质档(平台任命档位与组织天花板取交);缺席 / 词表外 = undefined → 装配按 'none'
+ * - `modelHandle`:绑定的裁决模型(bundle 目录内 handle);缺席时，新 modelRoles 段使用独立 adjudicator 主备；
+ *   仅旧 bundle 未下发角色段时跟随会话主模型(沿用前缀缓存);
+ * - `tier`:新 modelRoles 路径为用户／组织有效策略档，普通平台池不再另设业务档位；旧路径保留原任命语义。
+ *   缺席 / 词表外 = undefined → 装配按 'none'
  *   (只收紧不软化,恒不臆造资格);
- * - `callBudget`:每会话裁决咨询预算(组织治理 → 应用覆写);与宿主 `adjudication.callBudget` 取 **min**,
+ * - `callBudget`:每会话裁决咨询预算(用户策略及同作用域组织约束);与宿主 `adjudication.callBudget` 取 **min**,
  *   宿主只能收紧;缺席 / 非正整数 = 不落键 → kernel 缺省 200;
  * - `budgets` / `escalation`:宽松记录(键集随平台演进)。分类器面消费其中 `budgets.maxUsd` / `maxCny`
  *   (按裁决模型同币价目折算为 callBudget 上界,恒不造汇率)与 `escalation.mode:'reject'`(姿态覆写为
@@ -21735,6 +21872,12 @@ interface AppBundleAdjudicator {
      * 缺席 = 平台未下发,不通报。
      */
     evidenceFingerprint?: string;
+}
+/** 已解析的主备裁决策略；槽为 null 表示无当前资格，缺整个段才沿旧单策略路径。 */
+interface AppBundleAdjudicatorPolicies {
+    primary: AppBundleAdjudicator | null;
+    backup: AppBundleAdjudicator | null;
+    budgetMode: 'shared' | 'independent';
 }
 /**
  * bundle 上下文方案段(平台 `contextScheme` 非 null 分支)。SDK 只做**形状级**解析透传(四键之外的
@@ -21773,6 +21916,9 @@ interface AppBundle {
     systemPrompt?: string;
     systemPromptPolicy?: SystemPromptPolicy;
     models: AppBundleModel[];
+    /** 平台独立角色池及已解析的生效主备；缺段才使用旧别名语义。 */
+    modelRoles?: AppBundleModelRoles;
+    modelRoleRevision?: AppBundleModelRoleRevision;
     aliases: Record<string, string>;
     /**
      * App 能力位(平台控制台按 App 配置的工具位 / 平台位)。段缺席 = 进程内缺省档 DEFAULT_APP_CAPABILITIES
@@ -21799,11 +21945,13 @@ interface AppBundle {
     /** 应用身份(应用协议 `<app>` 段)——name 现行键,purpose 可选键 */
     app: AppBundleIdentity;
     /**
-     * 生效裁决人档(`adjudicators[0]` ?? `adjudicator`)。平台底档恒在(两级皆空回落平台内置缺省档),故正常
-     * bundle 恒非 null;null = 段缺席 / 坏形状(旧平台)→ 令牌档无裁决人,权限行为维持现状(default 模式,
-     * 无分类器路径)——朝严方向,无安全回退面。
+     * 生效裁决人档(`adjudicators[0]` ?? `adjudicator`)。新角色路径仅真正未配置策略时由 API 提供保守 low；
+     * 显式策略失效、退休平台引用、空清单或缺段可为 null，此时无裁决资格，保留 ask／deny，
+     * 不回落另一策略或借旧平台池抬档。旧无角色包沿原兼容路径。
      */
     adjudicator: AppBundleAdjudicator | null;
+    /** RFC-MROLE-6 双槽有效策略；在场时 adjudicator 始终投影 primary。 */
+    adjudicatorPolicies?: AppBundleAdjudicatorPolicies;
     /**
      * owner 生效套餐投影(bundle **顶层** `plan` 键)。null = 键缺席(个人无套餐 / 旧平台)或坏形状(任一字段
      * 类型 / 枚举不符即整段 null,恒不臆造档位)。纯呈现 / 开发者面语境位:并发 / 应用数等硬限制恒在服务端
@@ -21847,7 +21995,7 @@ declare function appBundlePricingUpdates(bundle: AppBundle): PricingUpdate[];
  * - app.platform:缺席 / 词表外 = null;
  * - adjudicator:清单首个可解析档 ?? 单数键;皆无 = null(无裁决人,权限行为维持现状);
  * - plan(顶层):缺席(个人无套餐 / 旧平台)/ 坏形 = null,旧 bundle 零行为变化;
- * - contextScheme:形状级透传,缺席 / null / 坏形 = null,方案键不在此映射;
+ * - contextScheme:缺席 / null / 未锁坏形 = null；明确锁定坏形经 kernel 校验拒绝，零本地映射;
  * - governance.sessionRetentionDays:形状级透传,正整数才落键,段缺席 / 坏形 = `{}`。
  */
 declare function parseAppBundle(raw: unknown): AppBundle | null;
@@ -21883,7 +22031,7 @@ interface BundleCacheResolveInput {
     baseUrl: string;
     token: string;
     fetchImpl?: typeof fetch;
-    /** 缓存键的应用维;缺席退化 per-baseUrl 单条目(见文件头) */
+    /** 可信宿主声明的非空同应用共享域;显式空白值拒绝，缺席按非空令牌摘要隔离。自带认证fetch的owner须提供此域或真实稳定token标识,缓存不能反射闭包凭据。 */
     appId?: string;
     /** 首次触发 heartbeat 时随体携带(命中缓存时不出线) */
     sessionId?: string;
@@ -21932,7 +22080,7 @@ interface BundleCacheStats {
     /** heartbeat `bundleEtag` 与条目 etag 不同而触发的条目级失效次数 */
     etagInvalidations: number;
 }
-/** bundle 条目键(与 resolve 入参同形;appId 缺席 = per-baseUrl 退化条目;scope / clientFeatures 缺省同 resolve) */
+/** bundle 失效目标;appId 缺席涵盖同源同径别/声明的匿名凭据条目,不影响显式 App */
 interface BundleCacheKey {
     baseUrl: string;
     appId?: string;
@@ -21947,6 +22095,7 @@ interface BundleCache {
      * 无参:清空全部条目(bundle + features;下次 resolve 无条件重拉,既有 etag 一并丢弃)。
      * 带键:只把该 (baseUrl, appId, scope, featuresFingerprint) 的 bundle 条目标记过期——etag 保留,下次
      * resolve 走 If-None-Match 条件重拉(304 续期 / 200 换新);features 条目不动;键无条目 = 零动作。
+     * appId 缺席时,同 baseUrl/scope/features 下各匿名凭据条目皆过期,不扩大到其他域。
      */
     invalidate(target?: BundleCacheKey): void;
     stats(): BundleCacheStats;
@@ -21957,7 +22106,7 @@ interface BundleCache {
  */
 declare function featuresFingerprintOf(clientFeatures?: readonly string[]): string;
 /**
- * bundle 条目键(四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint;与 resolveBundle 内部键同形)。
+ * bundle 基础键(四维:base(已去尾斜杠)/ appId / scope / featuresFingerprint);匿名 resolve 另加凭据摘要。显式空白 App 标识拒绝，不能变成匿名共享槽。
  * 导出供测试断言键形;消费方不应依赖串形。
  */
 declare function bundleKey(base: string, appId: string | undefined, scope: BundleCacheScope, featuresFingerprint: string): string;
@@ -21972,6 +22121,20 @@ declare function normalizeEtagValue(value: string): string;
  * 同键并发 resolve 只出网一次,过期后带 If-None-Match 条件重拉,heartbeat 回带的 bundleEtag 触发条目级失效。
  */
 declare function createBundleCache(options?: CreateBundleCacheOptions): BundleCache;
+
+/** 平台 Fast 角色给记忆及压缩的同源绑定；不在表面层重新实现模型回退。 */
+
+interface PlatformRoleModel {
+    client: ModelClient;
+    model: ResolvedModel;
+    available: boolean;
+    reportActualModel?: true;
+    source: 'alias';
+    contextWindowTokens?: number;
+    maxOutputTokens?: number;
+    temperatureFixed?: number;
+    thinkingOff?: true;
+}
 
 /**
  * 平台提示帧(TWP t.warn 同形):平台对非致命降级
@@ -22023,14 +22186,16 @@ interface AssemblePlatformModelOptions {
      */
     bundleCache?: BundleCache;
     /**
-     * 缓存键的应用维(令牌所属 app 的公开标识):同一进程对同一 baseUrl 混用多个 app 的令牌时必须传,
-     * 否则缓存退化为 per-baseUrl 单条目(首个令牌拉到的 bundle 被后续会话复用)。app_user 令牌本体不暴露
-     * appId,故无法自推。
+     * 可信宿主声明的同应用共享域(令牌所属 app 的公开标识)。缺席按 API 源、认证径别及令牌摘要隔离,
+     * 不再让不同凭据共享 bundle/inflight;显式传入仍允许该 App 内共享，宿主不能把不同 App 复用同值。
      */
     appId?: string;
 }
 /** 令牌档装配产物:fallback 链 client、解析出的模型、bundle 装配的 registry 与 bundle 各段的 SDK 消费子集 */
 interface AssembledPlatformModel {
+    modelRoles?: AppBundleModelRoles;
+    modelRoleRevision?: AppBundleModelRoleRevision;
+    fastModel?: PlatformRoleModel;
     client: ModelClient;
     model: ResolvedModel;
     contextWindowTokens?: number;
@@ -22059,6 +22224,7 @@ interface AssembledPlatformModel {
      * 无裁决人,行为现状。
      */
     adjudicator: AppBundleAdjudicator | null;
+    adjudicatorPolicies?: AppBundleAdjudicatorPolicies;
     /** 应用身份(应用协议 `<app>` 段:name / purpose;缺席字段 null) */
     app: AppBundleIdentity;
     systemPrompt?: string;
@@ -22361,7 +22527,7 @@ interface AssembledManagedModel {
  * 链装配由 @tansr/providers buildAliasClient 单源承载;本函数保留 SDK 专属职责:错误包装
  * (TansrSdkError `assembly_failed`)与 ResolvedModel / contextWindowTokens 投影。
  */
-declare function buildClientFromRegistry(registry: ProviderRegistry, aliasOrRef: string, onProviderSelected?: (selection: FallbackSelection) => void): {
+declare function buildClientFromRegistry(registry: ProviderRegistry, aliasOrRef: string, onProviderSelected?: (selection: FallbackSelection) => void, modelRole?: ModelRole): {
     client: ModelClient;
     model: ResolvedModel;
     contextWindowTokens?: number;
@@ -22653,34 +22819,6 @@ declare function renderCallPayloadDetailed(input: ClassifierInput, options?: Ren
 declare function renderClassifierStagePrompt(stage: 1 | 2, input: ClassifierInput): string;
 
 /**
- * 分类器裁决人档 — 核心(两阶段 / 单阶段状态机、模型调用面、fail-degrade、观测遥测、脱敏、
- * 窄缓存版本标签)。与 CLI 共用**同一份**实现:SDK 令牌档与 serve 平台内置形皆消费本模块(单源多入口)。
- *
- * 分层与注入面(sdk 恒不 import cli):
- * - **stage 模型调用面**:`ClassifierStageHandle`(client + 已解析 model + temperatureFixed / thinkingOff
- *   能力位)——cli 的辅助模型结构兼容直传;SDK/serve 以 bundle registry 别名解析后构造同形句柄;
- * - **资格解析闭包注入**:`resolveTier: () => EffectiveQualificationTier`——CLI 沿裁决人池任命 ×
- *   managed/env 天花板 × 会话覆盖三源合成;SDK/serve 沿 bundle `adjudicator.tier`(缺席按 'none' =
- *   只收紧不软化)。本核心不含任何任命/天花板数学,只把闭包原样喂给 kernel resolveQualificationTier;
- * - **治理旋钮不在此**:启用开关、tightenOutsideAuto、callBudget 属宿主配置面(cli env/五层配置;
- *   SDK `adjudication` 选项)——宿主在返回体上叠加;stage token 预算覆写以 `budgets` 参数注入
- *   (协议变体 → 指纹现算)。
- *
- * 协议语义(与 cli 原实现逐字节同构;详见 prompts.ts 头注):
- * - stage1 偏拦快筛(fast 档;`no` → safe)→ stage2 独立复审(缺省 main 档;确认 → unsafe 携理由,
- *   推翻 → safe);单阶段一次直出;
- * - **fail-degrade 恒为 unsure**:模型错误/流异常/产出不可解析/句柄现值缺席一律回 unsure
- *   (引擎侧 = 维持 ask,绝不因分类器故障放行或误拦);
- * - 硬化:秘密脱敏后入 prompt(redactDeep,尾 4 位保形);args/结构树被截时 safe 降 unsure
- *   (unsafe 收紧不受限);
- * - 观测遥测:逐阶段观测型终态 + 计时 + 五路用量;不可解析分支附脱敏定长 rawDigest;
- *   只记计时/枚举/用量,不落 thinking 正文;
- * - 活值供给:`liveStages` 在场时每次咨询起点取 stage 句柄现值(单次咨询内同代取值防撕裂),
- *   缓存版本标签随现值现算;
- * - 窄缓存版本标签 = 协议指纹 × stage 模型对(kernel 缓存键分量)。
- */
-
-/**
  * 装配形态二值:两阶段(快筛 + 复审,缺省生产形态)/ 单阶段(一次调用直出)。形态在**装配期定格**
  * (选定后 classify 闭包不变);形态是协议形制非模型身份,由宿主按评估证据选择(SDK/serve 缺省两阶段)。
  */
@@ -22691,6 +22829,16 @@ type ClassifierAssemblyMode = 'two-stage' | 'single-stage';
  * 主模型后构造同形句柄。
  */
 interface ClassifierStageHandle {
+    /** 可信单模型装配事实，复用原备用请求能力守卫。 */
+    resolved?: ResolvedProviderModel;
+    /** 已受理缓存执行链沿原合同禁止另换模型。 */
+    roleFallbackDisabled?: boolean;
+    /** 沿原进程重试预算控制槽切换；单模型链自行登记主请求。 */
+    retryBudget?: RetryBudget;
+    /** 原始SDK单模型链尚未登记请求，仅由槽控制器登记一次。 */
+    retryBudgetNeedsRequestNote?: true;
+    /** 平台角色同 provider 主备的真实响应身份，用于每次调用私有的用量归因。 */
+    reportActualModel?: true;
     client: ModelClient;
     model: ResolvedModel;
     /**
@@ -22807,40 +22955,6 @@ declare function createTwoStageClassifier(options: CreateBlockListClassifierOpti
 declare function createSingleStageClassifier(options: CreateBlockListClassifierOptions): BlockListClassifierConfig;
 
 /**
- * SDK 裁决人装配:令牌档把 bundle 生效裁决人档(控制台「裁决人」页签的任命——任命即授照)装配成
- * kernel PermissionClassifierConfig,注入 PermissionEngine({ mode:'auto', classifier })。
- *
- * 姿态(表面属性,不是应用属性):
- * - `human-in-loop`(人在环):裁决人判危险 → 升到询问面(携理由交用户终审,用户拒即 deny;机器恒不代批);
- * - `headless`(无人环):判危险 → deny(deny-and-continue,理由回喂模型)。
- * 缺省按询问通道推导:`permission.askUser` 在场 → 人在环,缺席 → 无人环;显式人在环而无 askUser →
- * 装配期 fail-fast(恒不出现「选了人在环却一律 deny」的自相矛盾)。
- *
- * 模型(裁决模型 = modelHandle ?? 会话主模型):复审档 = bundle `adjudicator.modelHandle` 经 registry 目录
- * 自动别名解析,缺席 / 目录外回落会话主模型(回落如实通报);快筛档 = bundle `fast` 别名,缺席即复用复审档
- * (两阶段同模型,如实降级;思考模型实证可关时以 thinkingOff 形态跑快筛)。计费归 App(与会话模型同径)。
- *
- * 资格:`adjudicator.tier`(平台任命档位与组织天花板取交)作常量闭包喂 kernel resolveQualificationTier;
- * 缺席 = 'none' = 只收紧不软化。safe→allow 软化半径恒由 kernel SOFTEN_RADIUS(档 × 调用面)单源裁决,
- * 本模块不含任何半径数学。
- *
- * 通知面:预算耗尽 / 熔断跳闸经 onWarn 以平台提示帧形制上报(createSession / query 的 onPlatformWarning 缝;
- * 码 `adjudicator_budget_exhausted` / `adjudicator_breaker_tripped`),恒不静默蒸发。
- *
- * 治理位:bundle 生效裁决人档的三件治理位在分类器面**生效**——
- * - `escalation.mode:'reject'` → 姿态覆写为 headless(判危险 deny-and-continue,不上升终端用户;宿主显式
- *   human-in-loop 被覆写时通报 `adjudicator_posture_overridden`);
- * - `callBudget` → 每会话咨询预算的 bundle 侧值;
- * - `budgets.maxUsd` / `maxCny` → 与裁决模型**同币**价目折算为咨询次数上界(保守 token 估算,恒不造汇率;
- *   价目缺席 / 币种不匹配 = 金额径不可折算,通报 `adjudicator_budget_unenforced` 而非静默);
- * 生效 callBudget = min(bundle callBudget, 金额折算, 宿主 `adjudication.callBudget`)——**宿主只能收紧**;
- * 三者皆缺席 = kernel 缺省 200。推导单点 = resolveAdjudicatorGovernance(sdk / serve 皆经
- * assembleBundleAdjudicator 走同一函数)。
- *
- * 分层:恒 kernel / providers / protocol,恒不 import cli。
- */
-
-/**
  * 每次裁决咨询的**保守** token 估算(金额 → 次数折算用):输入 = 应用协议 system 段 +
  * 工具描述 / 入参(脱敏)+ 当前轮请求切片的上界;输出 = 单阶段 maxTokens。真实用量恒
  * 更低 → 折算只可能偏严(次数更少 → 更早直通 ask),方向安全;恒不作计费口径。
@@ -22870,8 +22984,12 @@ interface AdjudicatorGovernanceInput {
     callBudget?: number;
     /** 实际裁决模型(stage2;价目查表键) */
     model?: ResolvedModel;
-    /** bundle 价目(AssembledPlatformModel.pricingUpdates);缺席 = 金额径不折算 */
+    /** 新角色可能执行的完整链；金额咨询上限取每模型折算的最严值。 */
+    models?: readonly ResolvedModel[];
+    /** bundle 价目(AssembledPlatformModel.pricingUpdates);缺席时正金额不折算，零额度仍约束咨询 */
     pricing?: readonly PricingUpdate[];
+    /** 实际单次分类输出帽，缺省保持原单阶段估算。 */
+    consultOutputTokens?: number;
 }
 /** `resolveAdjudicatorGovernance` 的产物:生效姿态 / 咨询预算及其来源、金额折算明细与待上报的通报 */
 interface AdjudicatorGovernance {
@@ -22894,7 +23012,8 @@ interface AdjudicatorGovernance {
  * - callBudget = min(bundle `callBudget`, 金额折算次数, 宿主 callBudget),宿主只能收紧;
  * - 金额折算:裁决模型在 bundle 价目内且币种与预算键匹配(USD→maxUsd / CNY→maxCny)才
  *   折算;预算键在场而价目缺席 / 币种不匹配 → `adjudicator_budget_unenforced` 通报
- *   (恒不造汇率、恒不静默);预算键坏形同通报。
+ *   (恒不造汇率、恒不静默);预算键坏形同通报。适用零额度无需价格即可阻断咨询；
+ *   未知币种时任一合法零额度取零，已知币种时只读该币种预算。
  */
 declare function resolveAdjudicatorGovernance(input: AdjudicatorGovernanceInput): AdjudicatorGovernance;
 
@@ -22911,7 +23030,7 @@ interface AdjudicationOptions {
     /**
      * 每会话裁决咨询预算(计实际发起的模型咨询;耗尽后直通 ask——方向安全,
      * A 交用户 / B 降 deny)。≥1 整数,或 Number.POSITIVE_INFINITY = 不限;
-     * 缺席 = kernel 缺省。
+     * 缺席 = legacy 沿 kernel 缺省；双槽各自默认200，不额外创建隐式总帽。
      */
     callBudget?: number;
     /**
@@ -22961,15 +23080,17 @@ declare function resolveAdjudicationPosture(api: string, options: AdjudicationOp
  * - thinkingOff(仅 fast 形态请求):思考模型实证可关(reasoning ∧ thinkingOptional)时快筛请求显式关断思考
  *   ——快筛 64 token 预算下 reasoning 耗尽即不可解析(白名单制;能力未实证不发,恒不猜)。
  */
-declare function resolveStageHandle(registry: ProviderRegistry, aliasOrRef: string, role: 'fast' | 'review'): ClassifierStageHandle | undefined;
+declare function resolveStageHandle(registry: ProviderRegistry, aliasOrRef: string, role: 'fast' | 'review', modelRole?: ModelRole): ClassifierStageHandle | undefined;
 /** `assembleBundleAdjudicator` 的输入:令牌档 registry、会话主模型、bundle 裁决人档与宿主给的姿态 / 预算 / 通知面 */
 interface AssembleBundleAdjudicatorOptions {
+    modelRoles?: AppBundleModelRoles;
+    adjudicatorPolicies?: AppBundleAdjudicatorPolicies;
     /** 令牌档 registry(bundle 装配产物;stage 模型经其别名/ref 解析) */
     registry: ProviderRegistry;
     /** 会话主模型(modelHandle 缺席 / 不可解析时的裁决模型) */
     mainModel: ResolvedModel;
-    /** bundle 生效裁决人档(parseAppBundle 产物) */
-    adjudicator: AppBundleAdjudicator;
+    /** bundle 生效裁决人档；已协商双槽可为空，等待可信配置恢复。 */
+    adjudicator: AppBundleAdjudicator | null;
     /**
      * 应用语境(应用协议 `<app>` 段;bundle `app.name` / `app.purpose`)。缺席
      * = 两字段皆 null(渲染 "(not declared)",准则退回保守)。
@@ -23001,9 +23122,9 @@ interface AssembleBundleAdjudicatorOptions {
 interface AssembledBundleAdjudicator {
     /** 直接进 PermissionEngineConfig.classifier(治理旋钮已叠加) */
     config: PermissionClassifierConfig;
-    /** 生效姿态(bundle escalation.mode:'reject' 覆写后;调用方据此推导权限模式) */
+    /** 单策略返回生效姿态；主备独立策略保留宿主姿态，拒绝或升级处置按本次实际采用的策略执行。 */
     posture: AdjudicationPosture;
-    /** 生效资格档(bundle tier ?? 'none') */
+    /** legacy生效档／双槽主档诊断；双槽权限恒读取本次真实采用策略。 */
     tier: EffectiveQualificationTier;
     /** 实际装配的 stage 模型对(诊断/测试面) */
     stage1: ResolvedModel;
@@ -23058,6 +23179,8 @@ declare function assembleTokenTierAdjudicator(prepared: PreparedAdjudication | u
     registry: ProviderRegistry;
     model: ResolvedModel;
     adjudicator: AppBundleAdjudicator | null;
+    adjudicatorPolicies?: AppBundleAdjudicatorPolicies;
+    modelRoles?: AppBundleModelRoles;
     /** 应用身份(bundle `app.name`/`app.purpose`;缺席 = 两字段 null) */
     app?: ClassifierAppContext;
     /** bundle 价目(金额预算 → 咨询次数折算的同币单价源;缺席 = 金额径不折算) */
@@ -24149,6 +24272,7 @@ interface AgentSessionInit {
     } | undefined;
     maxTurnsPerQuery: number;
     compaction: QueryCompactionOptions | undefined;
+    platformContextScheme?: AppBundleContextScheme;
     initialMessages: readonly IRMessage[];
     /** 托管/令牌模式的 registry(setModel 字符串档);注入模式为 null */
     registry: ProviderRegistry | null;
@@ -26378,7 +26502,7 @@ interface CreatePlatformNonchatClientOptions {
     token: AppTokenSource;
     /** serve 可注入既有 refreshingFetch；此时不要再配 onUnauthorized，避免两层重铸。 */
     fetchImpl?: typeof fetch;
-    /** 仅令牌失效白名单 401 调用一次；更新 token getter，或直接返回新令牌。 */
+    /** 仅令牌失效白名单 401 调用一次；返回本次同身份的新令牌，可同时更新 getter。void 不授权跨来源重放。 */
     onUnauthorized?: (context: {
         reason: string;
         signal: AbortSignal;
@@ -26391,6 +26515,8 @@ interface PlatformNonchatClient {
     /** 当前身份的私有音色；包含非 ready 状态，HTTP 暂无分页参数。 */
     listVoices(options?: NonchatCallOptions): Promise<PlatformVoiceListResponse>;
     getVoice(voiceRef: string, options?: NonchatCallOptions): Promise<PlatformVoiceResource>;
+    /** 按原创建任务查找私有音色；未知或跨作用域返回 null，不依赖最新 50 项列表。 */
+    getVoiceByTask(taskId: string, options?: NonchatCallOptions): Promise<PlatformVoiceResource | null>;
     /** 显式上传为平台私有 sourceResourceId；未证明计量上界时平台在外呼前拒绝。 */
     uploadMusicSource(input: MusicUploadInput, options: NonchatSubmitOptions): Promise<PlatformNonchatTask<never>>;
     listMusicSources(options?: NonchatCallOptions): Promise<PlatformMusicSourceListResponse>;
@@ -26720,4 +26846,4 @@ declare function createApplicationPromptRefresher(options: {
 }): (signal: AbortSignal) => Promise<ApplicationPromptSnapshot>;
 
 export { ADJUDICATION_CONSULT_TOKEN_ESTIMATE, ADJUDICATION_POSTURES, ADJUDICATOR_TIERS, ADJUDICATOR_UNAVAILABLE_WARNING, APP_PLATFORMS, APP_PLATFORM_TOPOLOGY, APP_SDK_CONTRACT_VERSION, APP_SINGLE_STAGE_INSTRUCTION, APP_SINGLE_STAGE_PROTOCOL_FINGERPRINT, APP_TOKEN_PLACEHOLDER_ENV, APP_TOKEN_PLACEHOLDER_VALUE, APP_TOKEN_REJECT_REASONS, APP_TOKEN_TRANSIENT_REASONS, AdjudicatorTierSchema, AgentSession, AppBundlePlanSchema, AppCapabilitiesSchema, AppConfigRequestError, AppPlatformSchema, AppQuotaSchema, AppTokenRequestSchema, AppTokenResponseSchema, CAPABILITY_BIT_TOOL_NAMES, CAPABILITY_PLATFORM_KEYS, CAPABILITY_TOOL_KEYS, CAPABILITY_TOPOLOGIES, CHECKPOINT_EXPORT_FORMAT, CLASSIFIER_PROTOCOL_FINGERPRINT, CLASSIFIER_TIMEOUT_POLICY, CLIENT_FEATURES, DEFAULT_APP_CAPABILITIES, DEFAULT_BUNDLE_CACHE_SCOPE, DEFAULT_BUNDLE_CACHE_TTL_MS, DEFAULT_MAX_TOKENS, DEFAULT_MAX_TURNS, DEVELOPER_ONLY_ADJUDICATOR_WARNING_CODES, DocumentUploadInputSchema, DocumentUploadSchema, EndUserIdSchema, HEADER_APP_TOKEN, HEADER_CLIENT_FEATURES, IMAGEGEN_TOOL_MAX_N, IMAGEGEN_TOOL_TIMEOUT_MS, ImageGenArgsSchema, ImageGenDataSchema, LOCAL_END_USER_KEY, McpHost, MusicSourceListSchema, MusicSourceSchema, MusicUploadInputSchema, NONCHAT_OPERATION_PATHS, NONCHAT_PROTOCOL, OUTPUT_TAIL_MAX_CHARS, PLAN_ERROR_CODES, PLAN_ERROR_HTTP_STATUS, PLAN_STATUSES, PLAN_TIERS, PLATFORM_MEDIA_PROVIDER_NAME, PLATFORM_SEARCH_PROVIDER_NAME, PlanCapsSchema, PlanStatusSchema, PlanTierSchema, PlatformNonchatError, PlatformRequestError, QueueChannel, REALTIME_SUBPROTOCOL, SEGMENTED_STORE_DEFAULTS, SESSION_NOTICES_MAX, SESSION_RECOVERY_VERSION, SINGLE_STAGE_PROTOCOL_FINGERPRINT, SPEECH_TO_TEXT_TOOL_TIMEOUT_MS, SdkLifecycleError, SequentialToolExecutor, SpeechAudioSchema, SpeechDataSchema, SpeechToTextArgsSchema, StoreError, TANSR_PROVIDER_ID, TEXT_TO_SPEECH_DEFAULT_MAX_CHARS, TEXT_TO_SPEECH_FORMATS, TEXT_TO_SPEECH_TOOL_TIMEOUT_MS, TOKEN_INVALIDATING_CODES, TOOLS_PLATFORM_DEPRECATED_CODE, TOOL_GUIDE_LABEL, TWO_STAGE_TIMEOUT_MS, TansrSdkError, TextToSpeechArgsSchema, TranscriptDataSchema, TranscriptSegmentSchema, UnavailableChannel, VIDEOGEN_TOOL_MAX_DURATION, VIDEOGEN_TOOL_TIMEOUT_MS, VideoGenArgsSchema, VideoGenDataSchema, VoiceResourceListSchema, VoiceResourceSchema, accumulateUsage, alignHistoryPage, appBundlePricingUpdates, appBundleRegistryConfig, appSingleStageProtocolFingerprintFor, appendUserMessage, applicationPromptFailureMessage, assembleBundleAdjudicator, assembleManagedModel, assemblePlatformModel, assembleSdkSkills, assembleTokenTierAdjudicator, assembleTooling, attachSdkMcp, attachSdkMcpWithDiscover, attachSdkTaskTool, buildClientFromRegistry, buildSdkToolSet, buildToolGuideSegment, bundleKey, classifierProtocolFingerprintFor, countSpeechCharacters, createAppTokenFetch, createApplicationPromptRefresher, createBlockListClassifier, createBundleCache, createChaosBlobStore, createClassifierTranscriptRecorder, createFileCheckpointStore, createFileSessionStore, createFsBlobStore, createImageGenTool, createMcpHost, createMemoryBlobStore, createNarrator, createPlatformAudioClient, createPlatformImageGenProvider, createPlatformNonchatClient, createPlatformSearchProvider, createPlatformSpeechToTextProvider, createPlatformTextToSpeechProvider, createPlatformVideoGenProvider, createSdkPermissionGate, createSession, createSessionView, createSingleStageClassifier, createSpeechToTextTool, createTextToSpeechTool, createTwoStageClassifier, createUnavailablePlatformAudioClient, createVideoGenTool, defaultAppCapabilities, defineSkill, defineTool, describeApplicationPromptFailure, featuresFingerprintOf, fetchAppBundle, fetchTwpFeatures, fetchTwpHeartbeat, hintFor, hostedToolUniverse, inapplicableTrueBits, initialSessionViewState, isPlanErrorCode, isRenderableArtifact, isSessionHistoryStore, isTokenInvalidatingCode, isTransientAppTokenReason, markSourceFailure, normalizeAppCapabilitiesForPlatform, normalizeEtagValue, parseAppBundle, parseCacheControlMaxAgeMs, parseMediaArtifact, parseSpeechData, parseStage1Output, parseStage2Output, parseTranscriptData, planErrorGuidance, planSpeechInput, planUpgradeUrlOf, platformErrorOf, prepareAdjudication, prepareApplicationPromptTurn, providerSwitchedBody, query, readHistoryPage, reduceSessionView, renderAppContext, renderCallPayloadDetailed, renderClassifierStagePrompt, renderEngineFacts, requestPlatformAudio, resolveAdjudicationPosture, resolveAdjudicatorGovernance, resolveApplicationSystem, resolveBuiltinSelection, resolveInitialMessages, resolvePlatformSelection, resolveStageHandle, runAgent, runIdleCompaction, runStorageConformance, serializeTimeoutPolicy, setSessionViewDelivery, singleStageProtocolFingerprintFor, sliceHistoryPage, stripThinkingParts, subagentModelResolverOf, toStoreError, toToolDef, topologyOf, topologyToolUniverse, validateAdjudicationOptions, viewStateFromHistory, zeroAppCapabilities };
-export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdapterDiagnosticStatus, AppBundleAdjudicator, AppBundleBillingAdapterDiagnostic, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelAdapterDiagnostics, AppBundleModelPricing, AppBundlePlan, AppBundlePlatformModels, AppBundleRequestAdapterDiagnostic, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppQuota, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptFailure, ApplicationPromptFailureReason, ApplicationPromptInfo, ApplicationPromptRetry, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, ContextBudgetState, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformNonchatClientOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, DocumentOperationInput, DocumentUpload, DocumentUploadInput, EmbeddingsInput, EmbeddingsResult, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, ModelTransitionBackup, MusicOperationInput, MusicUploadInput, Narrator, NarratorOptions, NarratorVerbosity, NonchatCallOptions, NonchatInput, NonchatModelsResponse, NonchatOperation, NonchatResult, NonchatSubmitOptions, NonchatTaskOperation, NonchatWaitOptions, NonchatWaitResult, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformMusicSource, PlatformMusicSourceListResponse, PlatformNonchatClient, PlatformNonchatTask, PlatformOperationModel, PlatformToolContext, PlatformVideoInput, PlatformVoiceListResponse, PlatformVoiceResource, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RealtimeConnectionOptions, RealtimeHandshake, RealtimeSessionInput, RealtimeSessionState, RealtimeSessionSubmission, RenderPayloadOptions, RequestPlatformAudioOptions, RerankInput, RerankResult, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SendBlocksResult, SequentialToolHandler, SequentialToolResult, SessionBudgetOptions, SessionCheckpointOptions, SessionContextState, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionModelState, SessionNotice, SessionRecord, SessionRecordMeta, SessionRecoveryPolicy, SessionRecoveryReport, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionUserBlock, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechInputPlan, SpeechInputPlanResult, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SwitchModelOptions, SwitchModelResult, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility, VoiceCreateInput, VoiceOperationInput, VoiceReferenceInput };
+export type { ActiveToolStatus, AdjudicationOptions, AdjudicationPosture, AdjudicationWarning, AdjudicatorGovernance, AdjudicatorGovernanceInput, AdjudicatorMoneyFold, AdjudicatorTier, AlignedHistoryPage, Answer, AppBundle, AppBundleAdapterDiagnosticStatus, AppBundleAdjudicator, AppBundleAdjudicatorPolicies, AppBundleBillingAdapterDiagnostic, AppBundleContextScheme, AppBundleGovernance, AppBundleImageModel, AppBundleMediaModel, AppBundleModel, AppBundleModelAdapterDiagnostics, AppBundleModelPricing, AppBundleModelRole, AppBundleModelRoleRevision, AppBundleModelRoleSelection, AppBundleModelRoles, AppBundlePlan, AppBundlePlatformModels, AppBundleRequestAdapterDiagnostic, AppBundleSpeechToTextModel, AppBundleTextToSpeechModel, AppBundleVideoModel, AppCapabilities, AppPlatform, AppQuota, AppTokenRejectReason, AppTokenRequest, AppTokenResponse, ApplicationPromptFailure, ApplicationPromptFailureReason, ApplicationPromptInfo, ApplicationPromptRetry, ApplicationPromptSnapshot, ApplicationPromptTurnOptions, AskUserCallback, AssembleBundleAdjudicatorOptions, AssembleManagedModelOptions, AssemblePlatformModelOptions, AssembleToolingAdjudication, AssembleToolingOptions, AssembledBundleAdjudicator, AssembledManagedModel, AssembledPlatformModel, AssembledSkills, AssembledTooling, AttachSdkTaskToolConfig, AudioAsrConstraints, AudioTtsConstraints, BlobListEntry, BlobMeta, BlobStoreCapabilities, BlockListClassifierConfig, BuildSdkToolSetOptions, BuiltinToolName, BundleCache, BundleCacheKey, BundleCacheResolveInput, BundleCacheScope, BundleCacheStats, ByteRange, Capability, CapabilityPlatformKey, CapabilityToolKey, CapabilityTopology, CapabilityTopologyProfile, ChaosBlobStore, ChaosFaults, ChaosStats, Checkpoint, CheckpointInput, CheckpointMeta, CheckpointOptions, CheckpointRetention, CheckpointStore, CheckpointTrigger, ClassifierAssemblyMode, ClassifierLiveStages, ClassifierProtocol, ClassifierStageBudgetOverrides, ClassifierStageHandle, ClassifierTimeoutPolicy, ClassifierTranscriptRecorder, ClientFeature, StoredSessionMeta as ColdStoredSessionMeta, ColdTierEvent, ColdTierEventType, ColdTierStats, CompactNowOptions, CompactNowResult, CompactOptions, CompactResult, CompactionFailureReason, ConfigDiagnostic, ContextBudgetState, CreateBlockListClassifierOptions, CreateBundleCacheOptions, CreateFileCheckpointStoreOptions, CreateFileSessionStoreOptions, CreateImageGenToolOptions, CreatePlatformAudioClientOptions, CreatePlatformImageGenProviderOptions, CreatePlatformNonchatClientOptions, CreatePlatformSearchProviderOptions, CreatePlatformSpeechToTextProviderOptions, CreatePlatformTextToSpeechProviderOptions, CreatePlatformVideoGenProviderOptions, CreateSdkPermissionGateOptions, CreateSessionOptions, CreateSpeechToTextToolOptions, CreateTextToSpeechToolOptions, CreateVideoGenToolOptions, DecisionSource, DefineSkillOptions, DefineToolOptions, DefinedSkill, DefinedTool, DeliveryConfig, DocumentOperationInput, DocumentUpload, DocumentUploadInput, EmbeddingsInput, EmbeddingsResult, ErrorView, EventBody, EventEnvelope, FetchedAppBundle, ForkOptions, ForkResult, FsBlobStoreOptions, GateDecision, HistoryCommitMeta, HistoryPage, HistoryPageOptions, HistoryRewriteReason, HookOutcomeStatus, IRBlock, IRErrorKind, IRMessage, IRRequest, IRRole, IRStreamEvent, IRSystemSegment, IRToolContent, IRToolDef, IRToolResultBlock, IRUsage, IdleCompactionInput, IdleCompactionResult, ImageGenArgs, ImageGenData, ImageModelConstraints, ImageModelDescriptor, ImportCheckpointOptions, Integrity, JournalKind, JournalRecord, KernelEvent, KernelState, KeyPredicate, LoadConfigOptions, LoadQuery, LoadResult, LoadedConfig, ManagedQueryOptions, McpClientEvent, McpConnectFactory, McpConnection, McpEventObserver, McpHostOptions, McpServerConfig, McpSessionOption, MediaArtifact, MediaHintAudience, MediaHintFace, MediaModelDescriptor, MediaOutputHosting, MemoryBlobStoreOptions, ModelCallOptions, ModelClient, ModelTransitionBackup, MusicOperationInput, MusicUploadInput, Narrator, NarratorOptions, NarratorVerbosity, NonchatCallOptions, NonchatInput, NonchatModelsResponse, NonchatOperation, NonchatResult, NonchatSubmitOptions, NonchatTaskOperation, NonchatWaitOptions, NonchatWaitResult, PermissionDecision, PermissionGate, PermissionMode, PermissionOptions, PermissionRules, PlanCaps, PlanErrorCode, PlanStatus, PlanTier, PlatformAudioCallOptions, PlatformAudioClient, PlatformAudioFace, PlatformAudioResponse, PlatformCapabilityName, PlatformMediaProviderOptions, PlatformMusicSource, PlatformMusicSourceListResponse, PlatformNonchatClient, PlatformNonchatTask, PlatformOperationModel, PlatformRoleModel, PlatformToolContext, PlatformVideoInput, PlatformVoiceListResponse, PlatformVoiceResource, PlatformWarning, PreparedAdjudication, Pricing, PromptCachingMode, PromptChannel, ProposedToolCall, ProtocolKind, ProviderProfile, PutOptions, PutResult, QueryBeforeCompactContext, QueryBeforeCompactHook, QueryCompactionOptions, QueryCounters, QueryHandle, QueryLifecycleOptions, QueryOptions, QueryResult, ResourceSettleOptions as QuerySettleOptions, ResourceSettlementResult as QuerySettlement, ResourceSettlementFailure as QuerySettlementFailure, Question, QuestionOption, RealtimeConnectionOptions, RealtimeHandshake, RealtimeSessionInput, RealtimeSessionState, RealtimeSessionSubmission, RenderPayloadOptions, RequestPlatformAudioOptions, RerankInput, RerankResult, ResolvedBundle, ResolvedModel, RestoreOptions, RestoreResult, RunAgentOptions, SdkCleanupHandle, SdkErrorCode, SdkMcpAttachment, SdkSkillsOptions, SdkToolSet, SdkToolsOptions, SdkToolsetRef, SdkWarning, SegmentBlobStore, SegmentationOptions, SegmentedStorePolicy, SendBlocksResult, SequentialToolHandler, SequentialToolResult, SessionBudgetOptions, SessionCheckpointOptions, SessionContextState, SessionCwdChange, SessionDrainOptions, SessionDrainResult, SessionEventSource, SessionHistoryStore, SessionIndexStore, SessionInputCapabilities, SessionInputContent, SessionInputReceipt, SessionInputRejectCode, SessionInputResult, SessionInputSubmission, SessionInputTarget, SessionLifecycleFailure, SessionLifecyclePhase, SessionModelState, SessionNotice, SessionRecord, SessionRecordMeta, SessionRecoveryPolicy, SessionRecoveryReport, SessionStore, SessionStoreCommitMeta, SessionStoreCreateInit, SessionStoreForkInput, SessionUserBlock, SessionView, SessionViewDeliveryOptions, SessionViewOptions, SessionViewReducerState, SessionViewSource, SessionViewState, SessionViewStatus, SetCwdResult, SetModelBinding, SkillsFileSystem, SpeakInput, SpeechAudio, SpeechData, SpeechInputPlan, SpeechInputPlanResult, SpeechToTextArgs, SpeechToTextModelDescriptor, StorageConformanceCase, StorageConformanceOptions, StorageConformanceReport, StoreErrorKind, StoreErrorOptions, StoreInput, StoredSessionMeta, StreamTransform, SwitchModelOptions, SwitchModelResult, SystemPromptPolicy, TansrConfig, TerminalReason, TextDeliveryMode, TextToSpeechArgs, TextToSpeechModelDescriptor, ThinkingDeliveryMode, TodoView, TokenInvalidatingCode, Tool, ToolCallPartStatus, ToolCallView, ToolContext, ToolErrorType, ToolExecutionContext, ToolExecutionOutcome, ToolExecutor, ToolExecutorYield, ToolParameterSpec, ToolResult, ToolResultContent, TranscribeInput, TranscriptData, TranscriptSegment, TwpHeartbeatResult, UIMessage, UIMessagePart, UITextPart, UIThinkingPart, UIToolCallPart, UsageView, VideoGenArgs, VideoGenData, VideoModelConstraints, VideoModelDescriptor, Visibility, VoiceCreateInput, VoiceOperationInput, VoiceReferenceInput };

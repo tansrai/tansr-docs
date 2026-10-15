@@ -1,6 +1,6 @@
 ---
 title: '多语言覆盖率'
-description: '资料站各语言的翻译进度:36 篇手写文章中 English 23 篇、日本語 22 篇、한국어 22 篇;另有 587 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
+description: '资料站各语言的翻译进度:36 篇手写文章中 English 23 篇、日本語 22 篇、한국어 22 篇;另有 593 篇由脚本生成的页面随源再生,不计覆盖率。未翻译的页面显示中文原文并提示。附中英术语表。'
 zone: 'docs'
 category: 'releases'
 lastVerified: '2026-10-13'
@@ -19,7 +19,7 @@ generated: true
 | English(`en`) | 23 / 36 | 63.9% |
 | 日本語(`ja`) | 22 / 36 | 61.1% |
 | 한국어(`ko`) | 22 / 36 | 61.1% |
-| 生成页(不计覆盖率) | 587 | — |
+| 生成页(不计覆盖率) | 593 | — |
 
 ## 逐页
 
@@ -63,7 +63,7 @@ generated: true
 | [调用面、领域与操作目录](/unified-api/surface/) `unified-api/surface` | ✓ | ✓ [Surface, domains and the operation catalogue](/en/unified-api/surface/) | ✓ [呼び出し面、ドメインと操作カタログ](/ja/unified-api/surface/) | ✓ [호출 표면, 도메인과 작업 카탈로그](/ko/unified-api/surface/) |
 
 <details>
-<summary>生成页(587,不计覆盖率)</summary>
+<summary>生成页(593,不计覆盖率)</summary>
 
 | 页面 | zh-CN | `en` | `ja` | `ko` |
 |---|---|---|---|---|
@@ -209,12 +209,15 @@ generated: true
 | [Answer(生成页)](/sdk/api/interfaces/answer/) `sdk/api/interfaces/answer` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundle(生成页)](/sdk/api/interfaces/appbundle/) `sdk/api/interfaces/appbundle` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleAdjudicator(生成页)](/sdk/api/interfaces/appbundleadjudicator/) `sdk/api/interfaces/appbundleadjudicator` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleAdjudicatorPolicies(生成页)](/sdk/api/interfaces/appbundleadjudicatorpolicies/) `sdk/api/interfaces/appbundleadjudicatorpolicies` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleBillingAdapterDiagnostic(生成页)](/sdk/api/interfaces/appbundlebillingadapterdiagnostic/) `sdk/api/interfaces/appbundlebillingadapterdiagnostic` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleContextScheme(生成页)](/sdk/api/interfaces/appbundlecontextscheme/) `sdk/api/interfaces/appbundlecontextscheme` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleGovernance(生成页)](/sdk/api/interfaces/appbundlegovernance/) `sdk/api/interfaces/appbundlegovernance` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleModel(生成页)](/sdk/api/interfaces/appbundlemodel/) `sdk/api/interfaces/appbundlemodel` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleModelAdapterDiagnostics(生成页)](/sdk/api/interfaces/appbundlemodeladapterdiagnostics/) `sdk/api/interfaces/appbundlemodeladapterdiagnostics` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleModelPricing(生成页)](/sdk/api/interfaces/appbundlemodelpricing/) `sdk/api/interfaces/appbundlemodelpricing` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModelRoleRevision(生成页)](/sdk/api/interfaces/appbundlemodelrolerevision/) `sdk/api/interfaces/appbundlemodelrolerevision` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModelRoleSelection(生成页)](/sdk/api/interfaces/appbundlemodelroleselection/) `sdk/api/interfaces/appbundlemodelroleselection` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundlePlatformModels(生成页)](/sdk/api/interfaces/appbundleplatformmodels/) `sdk/api/interfaces/appbundleplatformmodels` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleRequestAdapterDiagnostic(生成页)](/sdk/api/interfaces/appbundlerequestadapterdiagnostic/) `sdk/api/interfaces/appbundlerequestadapterdiagnostic` | ✓ | 回落 | 回落 | 回落 |
 | [ApplicationPromptFailure(生成页)](/sdk/api/interfaces/applicationpromptfailure/) `sdk/api/interfaces/applicationpromptfailure` | ✓ | 回落 | 回落 | 回落 |
@@ -317,6 +320,7 @@ generated: true
 | [PlatformAudioClient(生成页)](/sdk/api/interfaces/platformaudioclient/) `sdk/api/interfaces/platformaudioclient` | ✓ | 回落 | 回落 | 回落 |
 | [PlatformMediaProviderOptions(生成页)](/sdk/api/interfaces/platformmediaprovideroptions/) `sdk/api/interfaces/platformmediaprovideroptions` | ✓ | 回落 | 回落 | 回落 |
 | [PlatformNonchatClient(生成页)](/sdk/api/interfaces/platformnonchatclient/) `sdk/api/interfaces/platformnonchatclient` | ✓ | 回落 | 回落 | 回落 |
+| [PlatformRoleModel(生成页)](/sdk/api/interfaces/platformrolemodel/) `sdk/api/interfaces/platformrolemodel` | ✓ | 回落 | 回落 | 回落 |
 | [PlatformToolContext(生成页)](/sdk/api/interfaces/platformtoolcontext/) `sdk/api/interfaces/platformtoolcontext` | ✓ | 回落 | 回落 | 回落 |
 | [PlatformWarning(生成页)](/sdk/api/interfaces/platformwarning/) `sdk/api/interfaces/platformwarning` | ✓ | 回落 | 回落 | 回落 |
 | [PreparedAdjudication(生成页)](/sdk/api/interfaces/preparedadjudication/) `sdk/api/interfaces/preparedadjudication` | ✓ | 回落 | 回落 | 回落 |
@@ -421,6 +425,8 @@ generated: true
 | [AppBundleAdapterDiagnosticStatus(生成页)](/sdk/api/type-aliases/appbundleadapterdiagnosticstatus/) `sdk/api/type-aliases/appbundleadapterdiagnosticstatus` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleImageModel(生成页)](/sdk/api/type-aliases/appbundleimagemodel/) `sdk/api/type-aliases/appbundleimagemodel` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleMediaModel(生成页)](/sdk/api/type-aliases/appbundlemediamodel/) `sdk/api/type-aliases/appbundlemediamodel` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModelRole(生成页)](/sdk/api/type-aliases/appbundlemodelrole/) `sdk/api/type-aliases/appbundlemodelrole` | ✓ | 回落 | 回落 | 回落 |
+| [AppBundleModelRoles(生成页)](/sdk/api/type-aliases/appbundlemodelroles/) `sdk/api/type-aliases/appbundlemodelroles` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundlePlan(生成页)](/sdk/api/type-aliases/appbundleplan/) `sdk/api/type-aliases/appbundleplan` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleSpeechToTextModel(生成页)](/sdk/api/type-aliases/appbundlespeechtotextmodel/) `sdk/api/type-aliases/appbundlespeechtotextmodel` | ✓ | 回落 | 回落 | 回落 |
 | [AppBundleTextToSpeechModel(生成页)](/sdk/api/type-aliases/appbundletexttospeechmodel/) `sdk/api/type-aliases/appbundletexttospeechmodel` | ✓ | 回落 | 回落 | 回落 |

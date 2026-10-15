@@ -9,6 +9,29 @@
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.11.0 之前的历史见 git(`git log -- packages/sdk`)。
 `tansr` 命令行 / `serve` 宿主面分别见仓根 `CHANGELOG.md` 与 `packages/server/CHANGELOG.md`(三包同律,`doc/release/README.md`)。
 
+## 0.20.0 — 候选(待发布;MODEL-ROLE-04)
+
+MODEL-ROLE 发行准备：本段描述候选源码，尚未发布到 npm。公开 `@tansr/sdk@0.19.0` 于2026-10-10发行，不含后续合入的模型角色与主备独立策略；历史同版本本地候选不能当作公开发行物。
+
+- 新增 `AppBundleModelRoles` 等角色类型、`AppBundleAdjudicatorPolicies` 和 `PlatformRoleModel`，并声明 `adjudicator-policy-slots-v1`：按 App 的有效 main／fast／adjudicator 主备和实际槽策略运行。模型许可、档位、预算与超限处置采用同一实际槽，否决、预算尽、受理未知或已输出不借备用绕过；平台默认不是用户档位上限。接入方须升级真实 SDK 安装物，管理端保存成功不代表旧包已具备配对消费。
+- 修复已协商裁决双槽、但首次装配没有可用裁决人的会话：合法配置修复后，同一会话可恢复裁决，继续使用原权限引擎及累计预算；显式 `adjudication: { enabled: false }` 不因配置刷新重新启用。接入方无需为这类合法恢复重建会话，原许可与宿主权限边界保持。
+- 配置刷新继续沿原身份隔离、失效与合法恢复边界；同一引擎的预算不因刷新重置。SDK token 档原默认裁决及显式关闭语义保持，CLI 的启用开关和权限模式不在本发行中改动。Electron 仍在主进程使用完整 SDK／kernel 与 IPC，不改为远端客户端。
+- 相对正式 `@tansr/sdk@0.19.0` 的已提交根／子入口快照有6项新增、13项签名变化，原0.x导出门要求minor；最终差集以本候选冻结后原构建和exports门为准。使用 bundle 公共类型、自定义工具或装配扩展的调用方须重新类型检查；未变的SDK2／UAPI冻结合同不随此版本重定义。
+
+### 工具许可（ARB，2026-10-11）
+
+- 每个 `defineTool` 新增可选 `permission: inherit | allow | ask`：默认沿原链，显式豁免或用户许可跳过模型裁决；拒绝规则、硬安全与应用能力边界仍优先。
+- `query` / `createSession` 的 Task 子、孙代理复用宿主 `permission.askUser`，显式 `ask` 每次重新询问；无通道则拒绝。Electron 完整集成方式不变。
+- 本段随0.20.0候选登记，尚未发行；远端SDK2/UAPI声明未增加该字段。新增公共选项按原0.x导出签名门推进minor，不沿用已发布版本号冒称上线。
+
+## 0.19.0 — 2026-10-10
+
+REL-FULL-20261010：将已合入主线、但未包含在公开 0.18.1 成品中的 REL-10 接口正式纳入发行候选；发布状态以本版发行回执为准。
+
+- 新增 createPlatformNonchatClient / PlatformNonchatError 及非聊天操作、模型发现、任务轮询和私有资源恢复类型，覆盖嵌入、重排、文档、音乐、音色及视频等平台操作；只发送调用方显式请求，不在聊天会话中自动执行这些操作。
+- 新增实时连接合同、应用额度类型、文档临时上传与显式清理接口；上传引用、有效期及资源归属仍按平台授权校验，调用方须沿新增接口管理自己的资源生命周期。原 createSession、Electron 主进程完整 SDK 与 IPC 使用方式保持兼容。
+- 内联主线已修正的档案材料生命周期实现；没有合入当前 persistence 开发分支。新增导出按 0.x 期至少 minor 规则升至 0.19.0，精确导出差量由本版 exports 门登记。
+
 ## 0.18.1 — 2026-10-04
 
 「0.14.0 批」(USDK-11;UAPI 方案 §0 D23 / D31,冻结 2026-10-04;发布状态以 `doc/release/sdk-0.18.1.md` 回执为准)。`packages/sdk/src` 自 0.18.0 零改动、导出集相对 `@tansr/sdk@0.18.0`(tag → `29a21769`)**零差量**(gate ④ 所需 patch);随车的原因是**发布物内容有差量**——`./extensions` 子入口把私有工作区包 `@tansr/providers` 打进 dist,而其 `twp/cache-client.ts` / `internal/host-runtime-continuity.ts` / `cache-wire.ts` / `cache-core-wire.ts` 随 PERF-01 (c)(d) 改动(下文第三条);`platform/config-error.ts` 引用的私有 `@tansr/i18n` 其 `catalogs.generated.json` 随 manifest r7 再生。前两条只改仓内测量器与披露口径,包内零字节变化。

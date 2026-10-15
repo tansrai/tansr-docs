@@ -24,9 +24,20 @@ const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
  *     NONCHAT_PROTOCOL / NONCHAT_OPERATION_PATHS 及 Nonchat* / Document* / Music* / Voice* / Embeddings* / Rerank* / PlatformVideoInput /
  *     PlatformOperationModel 类型与 *Schema 值,实时会话 REALTIME_SUBPROTOCOL / Realtime* 类型,配额 AppQuota / AppQuotaSchema。
  *     资料站按事实源法照常生成这些页;发行说明不把它们记作 0.18.1 已发特性。
+ *     → 这 49 项已随 sdk 0.19.0(2026-10-10,tag v0.10.3 → 2ecc2ef0)正式发布:上游 packages/sdk/exports.snapshot.json 在
+ *       v0.10.1 → v0.10.3 间恰为 +49 / −0 / ~3(CLIENT_FEATURES / AppCapabilitiesSchema / SpeakInput),与此处 581 对表;
+ * tansr-cli@cbad5f9e 再 vendor(2026-10-13;sdk 0.19.0 已发 + 其后 main 上 0.20.0 候选的未发布加法)新增 0 值 + 6 类型 = 587,零删除:
+ *   - 未发布(0.20.0 候选,平台模型角色与主备裁决策略)6 类型:AppBundleModelRole / AppBundleModelRoles / AppBundleModelRoleSelection /
+ *     AppBundleModelRoleRevision / AppBundleAdjudicatorPolicies / PlatformRoleModel;另有 14 项签名变化(如 DefineToolOptions.permission、
+ *     AppBundle.modelRoles / adjudicatorPolicies、PlatformNonchatClient.getVoiceByTask),均在 0.19.0 发布之后合入。
+ *     资料站按事实源法照常生成这些页;发行说明不把它们记作 0.19.0 已发特性。
  */
-export const EXPECTED_EXPORTS = 581;
-export const EXPECTED_EXPORT_SPLIT = { values: 212, types: 369 };
+export const EXPECTED_EXPORTS = 587;
+export const EXPECTED_EXPORT_SPLIT = { values: 212, types: 375 };
+/** 0.20.0 候选(未发布)新增的 6 个类型导出;与上游 exports.snapshot.json v0.10.3 → HEAD 的 +6 逐名对表 */
+export const UNRELEASED_MODEL_ROLE_TYPES = Object.freeze([
+  'AppBundleAdjudicatorPolicies', 'AppBundleModelRole', 'AppBundleModelRoleRevision', 'AppBundleModelRoleSelection', 'AppBundleModelRoles', 'PlatformRoleModel',
+]);
 
 function fm(content) {
   const lines = content.split('\n');
@@ -35,16 +46,19 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 581(值212 · 类型369)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 587(值212 · 类型375)', () => {
   const c = countExports(dts);
   assert.deepEqual(c, { ...EXPECTED_EXPORT_SPLIT, total: EXPECTED_EXPORTS });
   const valueExports = dts.match(/^export \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(valueExports?.includes('SESSION_RECOVERY_VERSION'), 'sdk 0.15.0 起导出 SESSION_RECOVERY_VERSION');
+  assert.ok(valueExports?.includes('createPlatformNonchatClient') && valueExports.includes('NONCHAT_PROTOCOL'), 'sdk 0.19.0 起导出非聊天操作客户端');
   const typeExports = dts.match(/^export type \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
   assert.ok(typeExports, '须保留独立的类型导出行');
   for (const name of ['AppBundleAdapterDiagnosticStatus', 'AppBundleRequestAdapterDiagnostic', 'AppBundleBillingAdapterDiagnostic', 'AppBundleModelAdapterDiagnostics']) {
     assert.ok(typeExports.includes(name), `sdk 0.18.0 起导出 ${name}`);
   }
+  for (const name of UNRELEASED_MODEL_ROLE_TYPES) assert.ok(typeExports.includes(name), `0.20.0 候选(未发布)类型 ${name} 须在导出行(逐名登记,不以总数代替)`);
+  assert.ok(!valueExports.some((name) => UNRELEASED_MODEL_ROLE_TYPES.includes(name)), '模型角色 6 项恒为纯类型导出');
   assert.deepEqual(typeExports.filter((name) => name.startsWith('SessionInput')).sort(), [
     'SessionInputCapabilities', 'SessionInputContent', 'SessionInputReceipt', 'SessionInputRejectCode',
     'SessionInputResult', 'SessionInputSubmission', 'SessionInputTarget',

@@ -10,6 +10,17 @@
 迁移方式」并括注卡号(FX-X-nn)与波次(W1–W4);事实源 = 各波收编回执 `doc/report/十王修案-W{1,2,3,4}-收编回执-*.md` §一与泳道终报。
 0.2.0 之前的历史见 git(`git log -- packages/cli`)。
 
+## 0.10.3 — 2026-10-10
+
+- 内置 Serve 更新至本次主线修复集合：首次设备绑定、业务工具受控输出及原超时、统一错误语义、材料结算后的检查点恢复。通过 tansr serve 消费同一修复；无新增 CLI 命令、旗标或 ACP 协议。
+- 随本次冻结主线重新构建 npm CLI 与 SEA；平台资产及正式发布状态以 REL-FULL-20261010 回执为准。当前 persistence 开发分支的未合入工作不在本版。
+
+## 0.10.2 — 2026-10-06
+
+「0.15.0 车」(REL-0.15.0;UAPI 方案 §0 D51,用户 2026-10-06 18:33「发车」;发布状态以 `doc/release/cli-0.10.2.md` 回执为准;git tag `v0.10.2` 本地留档不推,D24)。版本序列 `v0.10.1` +1 patch:`packages/cli/src` **零改动**——`tansr serve` 内嵌 `@tansr/serve` 0.15.0,其两个新环境旋钮经 `SERVE_RUNTIME_ENV` 表整表展开流入 `startServer`(`run-serve-entry.ts` 既有路径),无新命令 / 子命令 / 输出面(D32 口径 patch)。仓根 `package.json` bump 同笔 `pnpm release:sync-recipes --write`。
+
+- **`tansr serve --v2` 可用 `TANSR_SERVE_LEGACY_PREFIX=readwrite|readonly|off`(缺省 `readwrite`)与 `TANSR_SERVE_LEGACY_SUNSET=<HTTP-date | ISO-8601>` 控制旧 `/v2` `/v3/*` 前缀的退役窗口**(语义见 `packages/server/CHANGELOG.md` 0.15.0 段);非 `--v2` 启动时这两键按既有律出现在「legacy 组未生效」提示里。本版缺省行为与 0.10.1 相同;门面在场时旧前缀响应多出 `Deprecation` / `Link`(可选 `Sunset`)头。对你意味着:升级无需动作;打算在 0.16.0(缺省 `readonly`)前演练的宿主可先设 `readonly` 并看 `api.legacy_prefix_rejected`。迁移:无。
+
 ## 0.10.1 — 2026-10-04
 
 「0.14.0 批」(USDK-11;UAPI 方案 §0 D23 / D32,冻结 2026-10-04;发布状态以 `doc/release/cli-0.10.1.md` 回执为准;git tag `v0.10.1` 本地留档不推,D24)。版本序列:`v0.10.0`(2026-10-02)+1 patch——`29a21769..` 的 `packages/cli/src` 差量为六个文件(本段四条),均为修复 / 启动性能 / 启动路径拆函数 / 废弃告警,无新命令、子命令或输出面(D32 一键前复核);`tansr serve` 内嵌 `@tansr/serve` 0.14.0(`packages/server/CHANGELOG.md` 0.14.0 段),其 `leaseMs` 下限收紧只影响库面装配,`tansr serve --v2` 生产路径零变化。仓根 `package.json` bump 同笔 `pnpm release:sync-recipes --write`(recipes/ci 钉 `@tansr/cli@0.10.1`)。
