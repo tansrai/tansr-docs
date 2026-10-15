@@ -20,12 +20,12 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 `@tansr/serve` 是 tansr 的 **Agent 会话引擎**：一个 npm 包，嵌进你自己的 Node 服务，对外暴露多会话 REST + SSE 协议面——统一调用面 `/api`（0.13.0 起 GA）与它背后的 `/v2` 会话协议——对内用你的应用密钥接通 tansr 平台并真调模型。它**不是网关**——你的用户怎么登录、怎么限流、怎么计费，都归你自己的体系；引擎只做传输、协议与会话治理。本文按 `@tansr/serve` **0.15.1**（2026-10-10 发布，当前 npm `latest`）核对。
 
-Android / iOS / 鸿蒙 SDK 的已发布版本连的就是这个服务（走 `/v2`）；Node 侧的薄客户端是 `@tansr/api-client` 0.4.0（子入口 `./api`；2026-10-06 发布，本版起冻结子入口 `./sdk2` / `./terminal` 不传 `routePrefixes` 时也缺省打 `/api`）。**新集成请直接走 `/api`**：同一会话、同一载荷字节，多四个 `tansr-*` 响应头与统一错误信封；`/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口。0.15.0 起旧前缀 `/v2`、`/v3/*` 的响应附 `Deprecation` / `Link` 退役头，但旧前缀窗口截至 0.15.1 缺省仍是 `readwrite`（读写照常受理），已上线的 `/v2` 调用现在不必改；窗口旋钮与时间表见[部署与鉴权](/serve/deploy-and-auth/)。
+Android 0.5.0、iOS 0.4.0 与鸿蒙 HAR 0.2.0 起的已发布移动 SDK 只走 `/api`，更早的公开包仍走 `/v2`；Node 侧的薄客户端是 `@tansr/api-client` 0.4.0（子入口 `./api`；2026-10-06 发布，本版起冻结子入口 `./sdk2` / `./terminal` 不传 `routePrefixes` 时也缺省打 `/api`）。**新集成请直接走 `/api`**：同一会话、同一载荷字节，多四个 `tansr-*` 响应头与统一错误信封；`/v2` 自 0.13.0 起定义为内部适配入口，1.0.0 移除外部入口。0.15.0 起旧前缀 `/v2`、`/v3/*` 的响应附 `Deprecation` / `Link` 退役头，但旧前缀窗口截至 0.15.1 缺省仍是 `readwrite`（读写照常受理），已上线的 `/v2` 调用现在不必改；窗口旋钮与时间表见[部署与鉴权](/serve/deploy-and-auth/)。
 
 ## 在平台或宿主配置应用角色
 

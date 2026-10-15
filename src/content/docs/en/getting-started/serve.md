@@ -20,12 +20,12 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-cli:CHANGELOG.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 `@tansr/serve` is tansr's **agent session engine**: an npm package you embed in your own Node service. Outward it exposes a multi-session REST + SSE protocol surface — the unified call surface `/api` (GA since 0.13.0) and the `/v2` session protocol behind it; inward it connects to the tansr platform with your app key and makes real model calls. It is **not a gateway** — how your users sign in, how you rate-limit, how you bill are all yours; the engine only does transport, protocol and session governance. This page is verified against `@tansr/serve` **0.15.1** (released 2026-10-10, the current npm `latest`).
 
-The released Android / iOS / HarmonyOS SDKs connect to this service (over `/v2`); the Node-side thin client is `@tansr/api-client` 0.4.0 (sub-entry `./api`; released 2026-10-06 — since this version the frozen sub-entries `./sdk2` / `./terminal` also target `/api` by default when no `routePrefixes` is passed). **New integrations should go straight to `/api`**: same sessions, same payload bytes, plus four `tansr-*` response headers and the unified error envelope. `/v2` is defined as an internal adapter entry since 0.13.0 and its external entry is removed in 1.0.0. Since 0.15.0, responses on the legacy prefixes `/v2` and `/v3/*` carry `Deprecation` / `Link` retirement headers, but the legacy-prefix window still defaults to `readwrite` as of 0.15.1 (reads and writes are served as before), so `/v2` calls already in production do not need to change today; the window knob and timetable are in [Deployment and authentication](/en/serve/deploy-and-auth/).
+Released mobile SDKs from Android 0.5.0, iOS 0.4.0 and HarmonyOS HAR 0.2.0 onward talk only to `/api`; earlier public packages still use `/v2`. The Node-side thin client is `@tansr/api-client` 0.4.0 (sub-entry `./api`; released 2026-10-06 — since this version the frozen sub-entries `./sdk2` / `./terminal` also target `/api` by default when no `routePrefixes` is passed). **New integrations should go straight to `/api`**: same sessions, same payload bytes, plus four `tansr-*` response headers and the unified error envelope. `/v2` is defined as an internal adapter entry since 0.13.0 and its external entry is removed in 1.0.0. Since 0.15.0, responses on the legacy prefixes `/v2` and `/v3/*` carry `Deprecation` / `Link` retirement headers, but the legacy-prefix window still defaults to `readwrite` as of 0.15.1 (reads and writes are served as before), so `/v2` calls already in production do not need to change today; the window knob and timetable are in [Deployment and authentication](/en/serve/deploy-and-auth/).
 
 ## Configure the application role on the platform or host
 
