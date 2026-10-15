@@ -132,6 +132,8 @@ val session = client.openSession(scope, CreateSessionRequest(),
 | エミュレーター / USB 実機から接続できない | 先に `adb reverse tcp:8788 tcp:8788` を実行して `127.0.0.1` を使います（エミュレーターは `10.0.2.2` でも可）。LAN 上の実機ではサーバー側が `0.0.0.0` を待ち受け、自前の `DEMO_AUTH_SECRET` を設定し、平文 http を許可する（または TLS を使う）必要があります |
 | 新しいセッションが 429 | `capacity_exceeded`（`domainCode = session_limit_exceeded`）：エンドユーザー 1 人あたりデフォルトで最大 8 つのアクティブセッション。使わないセッションは `close()` してください。枠を解放しつつストレージは保持され、resume は引き続き可能です |
 
+<a id="ios-同法"></a>
+
 ## iOS でも同じ手順
 
 iOS は SwiftPM で公開のバイナリパッケージ `tansr-ios-spm`（現在 `0.4.0`、2026-10-09 公開）を追加します。3 つのモジュールが Android の 3 モジュールに 1 対 1 で対応します：`TansrCore`（純粋な Swift のプロトコル層）、`TansrClient`（URLSession トランスポート + `TansrAgent` ファクトリ）、`TansrUI`（SwiftUI バインディングとデフォルトコンポーネント）。`Package.swift` に次のように宣言するか、Xcode の「Add Package Dependencies」に同じリポジトリのアドレスを入力します：

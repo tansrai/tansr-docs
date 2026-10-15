@@ -134,6 +134,7 @@ export function proseOnly(markdown) {
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`\n]*`/g, '')
     .replace(/\]\([^)]*\)/g, ']')
+    .replace(/<[^>\n]*>/g, '')
     .replace(/^import .*$/gm, '');
 }
 

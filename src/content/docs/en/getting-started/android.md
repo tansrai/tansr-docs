@@ -132,6 +132,8 @@ Unregistered bridges fail closed: the SDK does not respond, and the server degra
 | The emulator / USB device cannot connect | Run `adb reverse tcp:8788 tcp:8788` first and use `127.0.0.1` (the emulator can also use `10.0.2.2`); a device on the LAN needs the server to listen on `0.0.0.0` with your own `DEMO_AUTH_SECRET` and cleartext http to be allowed (or use TLS) |
 | 429 on a new session | `capacity_exceeded` (`domainCode = session_limit_exceeded`): each end user has at most 8 active sessions by default; `close()` sessions you no longer need — that frees the slot but keeps the storage, so they can still be resumed |
 
+<a id="ios-同法"></a>
+
 ## Same on iOS
 
 iOS adds the public binary package `tansr-ios-spm` through SwiftPM (currently `0.4.0`, released 2026-10-09). Its three modules map one-to-one to the three Android modules: `TansrCore` (pure Swift protocol layer), `TansrClient` (URLSession transport + the `TansrAgent` factory), `TansrUI` (SwiftUI bindings and default components). Declare it in `Package.swift` as below, or enter the same repository URL in Xcode's "Add Package Dependencies":

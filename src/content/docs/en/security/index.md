@@ -89,6 +89,8 @@ Three red lines worth repeating: the appkey never leaves your backend; the `app_
 
 The CLI adds one more layer of redaction discipline as a safety net: keys in reports, logs and exported transcripts are always redacted to the form `sk-...` plus the last 4 characters; the output of `tansr sessions export` can go straight into a ticket.
 
+<a id="项目层-hooks-的信任门缺省零执行"></a>
+
 ## The trust gate for project-level hooks: zero execution by default
 
 **Available since tansr CLI 0.7.0.** A repository's `.tansr/settings.json` / `.tansr/settings.local.json` may declare `command` and `http` hooks — code that could run just because you cloned a repository — so the CLI places project-level hooks behind the **workspace trust gate** and does not run them by default:

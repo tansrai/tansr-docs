@@ -95,6 +95,8 @@ Web search is the only capability in the whole table that occupies a flag on bot
 
 The reason is that the webSearch tool itself lives in ring 2 (the same `WebSearch` as the CLI) while the backend is always the platform channel — the SDK form has no bring-your-own search endpoint, and a client holding a search provider's key is exactly the anti-pattern that the app key anti-theft model exists to eliminate. The assembly matrix in one sentence: **implicit selection = use what is there and silently shrink by flag; explicit selection = a claim that must hold, failing fast with a readable, attributed error when it does not** (`capability_disabled` or `invalid_options`).
 
+<a id="移动应用的公网工具"></a>
+
 ## Public-network tools for mobile applications
 
 Sessions for mobile applications are assembled on your `@tansr/serve` (the hosted topology). The only tool flags such applications can tick are `todoWrite`, `askUser`, `customTools`, `webFetch`, `http`, `webSearch` and the platform flags; local families such as files and commands are fixed off; `customTools` are declared through the `clientTools` remote tool channel and executed by the phone.

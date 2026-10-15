@@ -132,6 +132,8 @@ val session = client.openSession(scope, CreateSessionRequest(),
 | 에뮬레이터 / USB 기기에서 연결이 안 됨 | 먼저 `adb reverse tcp:8788 tcp:8788`을 실행하고 `127.0.0.1`을 사용합니다(에뮬레이터는 `10.0.2.2`도 가능). LAN의 실제 기기는 서버가 `0.0.0.0`에서 수신하고, 자체 `DEMO_AUTH_SECRET`을 설정하고, 평문 http를 허용해야 합니다(또는 TLS 적용) |
 | 새 세션이 429 | `capacity_exceeded`(`domainCode = session_limit_exceeded`): 최종 사용자당 기본 최대 8개의 활성 세션. 쓰지 않는 세션은 `close()`하세요. 자리를 비우되 저장소는 유지되어 여전히 resume할 수 있습니다 |
 
+<a id="ios-同法"></a>
+
 ## iOS도 같은 방법
 
 iOS는 SwiftPM으로 공개 바이너리 패키지 `tansr-ios-spm`(현재 `0.4.0`, 2026-10-09 공개)을 추가합니다. 세 모듈이 Android 세 모듈과 하나씩 대응합니다: `TansrCore`(순수 Swift 프로토콜 층), `TansrClient`(URLSession 전송 + `TansrAgent` 팩토리), `TansrUI`(SwiftUI 바인딩과 기본 컴포넌트). `Package.swift`에 아래처럼 선언하거나, Xcode의 "Add Package Dependencies"에 같은 저장소 주소를 입력합니다:

@@ -112,6 +112,8 @@ With `@tansr/serve`, the same platform codes reach mobile clients after server-s
 
 The above describes the error body `{ error: { code, message, detail? } }` of the `/v2` direct surface, whose bytes are unchanged from `@tansr/serve` 0.13.0 through 0.15.1; since 0.15.0 legacy-prefix responses only gain the two response headers `Deprecation` / `Link` (ignored by `@tansr/api-client` 0.3.x / 0.4.0), with body and status code unchanged.
 
+<a id="经-api-时的统一错误信封"></a>
+
 ## The unified error envelope on `/api`
 
 Since `@tansr/serve` 0.13.0 (released 2026-10-02) new integrations use the unified call surface `/api`, where every JSON error ≥ 400 no longer takes a per-family shape but one unified envelope:

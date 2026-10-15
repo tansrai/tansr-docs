@@ -138,6 +138,8 @@ Most of the money in a long session goes to **re-sending the prefix**. Three rul
 2. **Keep the declared bytes stable.** Tool names / descriptions / parameter schemas / the `builtin` selection / the system segment all enter the model request prefix; swapping the order or changing one character of a description misses the entire prefix on the next turn. Keep tools and the host business segment stable; a platform prompt change updates the prefix on later turns, so evaluate cache hits and call cost together.
 3. **Close when idle, never abandon.** `close()` initiates logical close and abort; before the host exits, use `closeAsync()` to check the receipt of real resources and required storage flushes — see [Lifecycle and resource cleanup](/en/sdk/lifecycle/). Platform session archiving is a separate boundary: the store content remains and can be `resume`d at any time.
 
+<a id="018x-的加法"></a>
+
 ## Additions in 0.18.x
 
 Relative to 0.17.0, the changes in `@tansr/sdk` 0.18.0 (2026-10-02, the "2026.10 unified API release train") and 0.18.1 (2026-10-04, the "0.14.0 batch") that concern this page are all **optional additions** — omit them and nothing changes:
@@ -147,6 +149,8 @@ Relative to 0.17.0, the changes in `@tansr/sdk` 0.18.0 (2026-10-02, the "2026.10
 - **`AppBundleModel.adapterDiagnostics?`**: a read-only projection describing whether the platform catalogue evidence suffices to select the request / billing adapters (`status ∈ 'ready' | 'review' | 'unresolved'`), for display in the UI; it carries no provider credentials or raw prices, and is `undefined` when the platform does not send it.
 - **`CLIENT_FEATURES` gains `'bound-device-v1'`**: the default declaration string of the outgoing header `x-tansr-client-features` changes accordingly, so the first assembly after upgrading pulls the bundle once more under the new fingerprint (old cache entries expire naturally, nothing to clean by hand); code doing an exhaustive `switch` over `ClientFeature` adds one branch. The in-process SDK does not consume the bundle's `execution` section; device tool authorization only takes effect in the session service's SDK2 execution profile — see [Platform assembly and the bundle](/en/sdk/platform-bundle/).
 - **The optional `SessionStore` capability flag `attachmentCheckpoints`**: implemented by the built-in `createFileSessionStore`; `resume` now cold-restores the attachment admission state together with the history. A custom five-method Store that does not declare it keeps the 0.17 behaviour — see [Checkpoints and resume](/en/sdk/checkpoints/).
+
+<a id="0190-的加法"></a>
 
 ## Additions in 0.19.0
 
