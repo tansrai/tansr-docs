@@ -28,7 +28,7 @@ sources:
   - tansr-cli:doc/release/REL-SEA-SEA渠道首发-回执-2026-10-05.md
   - tansr-cli:doc/report/PERF-01-正式测量-2026-10-04.md
   - tansr-cli:doc/report/SDK2-09-性能门时间盒-2026-10-01.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 SDK 2.0 的目标是**统一核心与薄终端**：智能体循环、会话、上下文、记忆、权限、裁决、工具算法与用量仍由原 serve / kernel 提供；TypeScript、Kotlin、Swift、ArkTS 客户端只消费同一套会话与执行合同；平台只描述客户端事实。Electron 继续用原 `@tansr/sdk` 进程内集成，依赖、主进程与调用生态不变。本页只写**已随 npm 版本发布**的部分；页名沿用历史 slug `sdk2-preview`，内容已不是预览。
@@ -42,7 +42,7 @@ SDK 2.0 的目标是**统一核心与薄终端**：智能体循环、会话、�
 | `@tansr/api-client` | 0.3.0 → **0.4.0**（`latest`；`next` 同指 0.4.0） | rc.1 2026-10-02 → GA 2026-10-04 / 2026-10-06 | 0.3.0 新增 `./api`（`unified-v1` 客户端）；首次随包 `./sdk2`、`./sdk2/node`、`./terminal`、`./terminal/node`（冻结不删）。0.4.0 只改两冻结入口的**缺省路由表**为 `/api` 门面并还原经门面的各族错误体；`./api` 与根入口零变化，导出集 +0 / −0 / ~0 |
 | `@tansr/protocol` | **0.2.0**（首个公开版本） | 2026-10-02 | 子入口 `./canonical`：控制 DTO 的 canonical 编解码单模块 |
 | `tansr` 命令行 | 0.10.0 → 0.10.1 → 0.10.2 → **0.10.3** | 2026-10-02 / 2026-10-04 / 2026-10-06 / 2026-10-10 | `tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>` 装配可信宿主模块；`--legacy-v1` 已标废弃。0.10.2 / 0.10.3 的 `packages/cli/src` 零改动，只是内嵌 `@tansr/serve` 升至 0.15.0 / 0.15.1（随之可用环境变量 `TANSR_SERVE_LEGACY_PREFIX` / `TANSR_SERVE_LEGACY_SUNSET`），无新命令或旗标 |
-| Android / iOS / 鸿蒙 SDK | Maven Central 0.4.0 / 公开二进制 SPM 0.3.0 / HAR 0.1.0 | — | 已发布版本仍是 `/v2` 薄客户端；三仓主线对 manifest r7 / 统一码异常模型的对齐**尚未随版本发布**，见各端接入指南 |
+| Android / iOS / 鸿蒙 SDK | Maven Central **0.5.0** / 公开二进制 SPM **0.4.0** / HAR **0.2.0** | 2026-10-07 / 2026-10-09 / 2026-10-10 | 这三版只走 `/api`（manifest r7、统一码为主）；Android 0.4.0、iOS 0.3.0、HAR 0.1.0 仍走 `/v2`。见各端接入指南 |
 
 SEA 单文件可执行自 2026-10-05 起经 OSS 渠道 `https://bash.tansr.com`（`stable` 通道，ed25519 签名清单）发布，首发为 0.10.1，现行清单为 **0.10.3**（2026-10-10），只含 `linux-x64` / `linux-arm64` 两件；Windows / macOS 单文件未上架，这两平台的命令行请经 npm 安装。随 SEA 发行的 git tag `v0.10.1` / `v0.10.3` 已推送远端，`v0.10.0` / `v0.10.2` 仍只本地留档。
 

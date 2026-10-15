@@ -28,7 +28,7 @@ sources:
   - tansr-cli:doc/release/REL-SEA-SEA渠道首发-回执-2026-10-05.md
   - tansr-cli:doc/report/PERF-01-正式测量-2026-10-04.md
   - tansr-cli:doc/report/SDK2-09-性能门时间盒-2026-10-01.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-10-15'
 ---
 
 SDK 2.0 aims at a **unified core with thin terminals**: the agent loop, sessions, context, memory, permissions, adjudication, tool algorithms and usage accounting are still provided by the existing serve / kernel; the TypeScript, Kotlin, Swift and ArkTS clients consume one and the same session and execution contract; the platform only describes client facts. Electron keeps the existing in-process `@tansr/sdk` integration — dependencies, main process and call ecosystem unchanged. This page describes only what **has shipped in an npm release**; the page keeps its historical slug `sdk2-preview`, but the content is no longer a preview.
@@ -42,7 +42,7 @@ SDK 2.0 aims at a **unified core with thin terminals**: the agent loop, sessions
 | `@tansr/api-client` | 0.3.0 → **0.4.0** (`latest`; `next` points to the same 0.4.0) | rc.1 2026-10-02 → GA 2026-10-04 / 2026-10-06 | 0.3.0 added `./api` (`unified-v1` client) and was the first release to ship `./sdk2`, `./sdk2/node`, `./terminal`, `./terminal/node` (frozen, not removed). 0.4.0 only changes the **default route table** of the two frozen entries to the `/api` facade and restores per-family error bodies received through the facade; `./api` and the root entry are unchanged, export set +0 / −0 / ~0 |
 | `@tansr/protocol` | **0.2.0** (first public version) | 2026-10-02 | Sub-entry `./canonical`: the single canonical codec module for control DTOs |
 | `tansr` CLI | 0.10.0 → 0.10.1 → 0.10.2 → **0.10.3** | 2026-10-02 / 2026-10-04 / 2026-10-06 / 2026-10-10 | `tansr serve --v2 --host-module <absolute.cjs> --host-module-sha256 <sha256>` assembles a trusted host module; `--legacy-v1` is deprecated. 0.10.2 / 0.10.3 have zero changes in `packages/cli/src`; they only bump the embedded `@tansr/serve` to 0.15.0 / 0.15.1 (which makes the environment variables `TANSR_SERVE_LEGACY_PREFIX` / `TANSR_SERVE_LEGACY_SUNSET` available), with no new commands or flags |
-| Android / iOS / HarmonyOS SDKs | Maven Central 0.4.0 / public binary SPM 0.3.0 / HAR 0.1.0 | — | The released versions remain `/v2` thin clients; the alignment to manifest r7 / the unified-code exception model on the three repositories' main branches **has not shipped in any release** — see each client's integration guide |
+| Android / iOS / HarmonyOS SDKs | Maven Central **0.5.0** / public binary SPM **0.4.0** / HAR **0.2.0** | 2026-10-07 / 2026-10-09 / 2026-10-10 | These three releases talk only to `/api` (manifest r7, unified codes in the primary position); Android 0.4.0, iOS 0.3.0 and HAR 0.1.0 still use `/v2`. See each client's integration guide |
 
 The SEA single-file executable has been distributed since 2026-10-05 through the OSS channel `https://bash.tansr.com` (`stable` channel, ed25519-signed manifest). The first release was 0.10.1; the current manifest is **0.10.3** (2026-10-10) and contains only the `linux-x64` / `linux-arm64` files. No Windows / macOS single-file build is published — install the CLI from npm on those platforms. The git tags `v0.10.1` / `v0.10.3` that accompanied the SEA releases are pushed to the remote; `v0.10.0` / `v0.10.2` still exist locally only.
 
