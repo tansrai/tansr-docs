@@ -15,31 +15,31 @@ sources:
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
   - tansr-cli:examples/serve-demo/README.md
-lastVerified: '2026-10-05'
+lastVerified: '2026-10-13'
 ---
 
-`@tansr/harmony` 是会话服务 `/v2` 的**原生 ArkTS 薄客户端**（HAR）：发送输入、归约事件流、执行你显式注册的本地工具、应答权限与提问。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve`；手机上没有任何平台凭据。视图归约与 Android / iOS 共用同一份金样。HAR **不包含 ArkUI 页面**，录音 / 播放 / 列表虚拟化由宿主自己接。
+`@tansr/harmony` 是会话服务的**原生 ArkTS 薄客户端**（HAR）：发送输入、归约事件流、执行你显式注册的本地工具、应答权限与提问。智能体内核、权限引擎、上下文治理全部跑在你部署的 `@tansr/serve`；手机上没有任何平台凭据。视图归约与 Android / iOS 共用同一份金样。HAR **不包含 ArkUI 页面**，录音 / 播放 / 列表虚拟化由宿主自己接。
 
-兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前最低 HarmonyOS 6.0 / API 20（Stage 模型）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR（0.1.0），尚未上架公共 OHPM，不会从公共渠道自动取最新版（2026-10-05 核对，仍为 0.1.0）。服务端按 `@tansr/serve` 0.14.0 核对：0.13.0 起新增的统一调用面 `/api` 对 0.1.0 HAR 透明，HAR 继续直连 `/v2`；仓库主线对 `/api` 的对齐与 RDB 接收器 / HUKS 加密等能力都属本地候选，**未随任何版本发布**，本文不作描述。
+兼容 Android 的旧鸿蒙设备继续用 [Android SDK](/getting-started/android/)。当前声明最低 HarmonyOS 6.0 / API 20（Stage 模型；以 API 22 工具链构建）；HarmonyOS 5.x 原生兼容后续补齐，本文不宣称可用。当前交付是独立发布的版本化 release 字节码 HAR（0.2.0，2026-10-10），随 `harmony-sdk.zip` 分发，尚未上架公共 OHPM，不会从公共渠道自动取最新版（2026-10-13 核对）。服务端按 `@tansr/serve` 0.15.1 核对：0.2.0 HAR 的全部请求只走服务端 0.13.0 起提供的统一调用面 `/api`（manifest revision 7；错误以统一码为主，响应头缺失时显式失败、不回退），SDK 2.0 的 RDB 档案接收器 / 执行日志 / 终端服务客户端也已随包提供；0.1.0 HAR 仍直连 `/v2`，而服务端 `/v2` 自 0.13.0 起只是内部适配入口、1.0.0 移除外部入口，请升级。2026-10-10 之后进入主线的加密记忆发布、加密增量 RDB 档位与只读副本等能力**未随任何版本发布**，本文不作描述。
 
 ## 手机端发送用户消息，服务端配置系统提示词
 
-`createSession` 与 `session.send(...)` 都发送普通用户消息；鸿蒙 SDK 不经 `/v2` 传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
+`createSession` 与 `session.send(...)` 都发送普通用户消息；鸿蒙 SDK 不经 `/api` 的会话请求传入 `system`。共享角色由平台应用配置管理，代码定制角色由 serve 的 `platform.system` 提供，宿主说明用 `platform.systemAppend`。
 
 提示词与策略功能自 `@tansr/serve` 0.8.0 起提供，平台侧已于 2026-09-14 上线；默认 `fallback` 下 SDK 显式 `system`（包括空数组）替代平台段，`prepend` 下保留平台段在前。平台提示词与策略在后续新一轮前刷新，当前执行轮固定；前后台重连、SSE 恢复和 attach 可以保留原会话与历史，无需重开来取得更新。请由应用管理员消除业务段冲突，权限仍走独立机制。详见[应用系统提示词](/sdk/system-prompts/)。
 
 ## 前提
 
-- 一个可达的 `@tansr/serve` 服务（见[会话服务 5 分钟跑通](/getting-started/serve/)）。本地可先起仓内 `examples/serve-demo`（缺省 `127.0.0.1:8788`）。
-- DevEco Studio 6.0+、HarmonyOS SDK API 20+；宿主 HAP 声明 `ohos.permission.INTERNET`。录音等权限由实际使用该能力的宿主声明和申请。
+- 一个可达的 `@tansr/serve` 服务（见[会话服务 5 分钟跑通](/getting-started/serve/)），且已装配统一调用面 `/api`（0.13.0 起）。本地可先起仓内 `examples/serve-demo`：以 `DEMO_SERVE_ONLY=1`、`DEMO_PORT=8788` 常驻起服（源码缺省端口 8799），独立开发者登录服务 `pnpm login` 缺省 `127.0.0.1:8787`。
+- DevEco Studio 6.0+、HarmonyOS SDK API 20+（SDK 本身以 DevEco Studio 6.0.2 / API 22 工具链构建）；宿主 HAP 声明 `ohos.permission.INTERNET`。录音等权限由实际使用该能力的宿主声明和申请。
 - 你自己的登录体系：SDK 每次请求经 `AuthProvider` 取短期认证头（通常是 `Authorization: Bearer <你的登录 token>`），服务端的 `authenticate` 缝据此解出 `endUserId`。不要在客户端持有平台 AppKey、上游模型密钥或服务端签名私钥。
 
 ## 安装
 
-从你收到的独立 SDK 包取出 `libs/tansr-harmony-0.1.0.har`，先核对同目录 `SHA256SUMS`。HAR 含官方 ABC 与类型声明，不含 SDK 实现 ETS；字节码不构成绝对保密承诺。复制到业务模块后：
+解压独立 SDK 包 `harmony-sdk.zip` 得到固定目录 `harmony-sdk/`，从中取出 `libs/tansr-harmony-0.2.0.har`，先核对 `libs/SHA256SUMS`。HAR 含官方 ABC 与类型声明，不含 SDK 实现 ETS；字节码不构成绝对保密承诺。复制到业务模块后：
 
 ```json
-{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.1.0.har" } }
+{ "dependencies": { "@tansr/harmony": "file:./libs/tansr-harmony-0.2.0.har" } }
 ```
 
 在应用 `app.products[].buildOption.strictMode` 设置 `useNormalizedOHMUrl: true`，再执行 `ohpm install`。升级时替换整套版本包并重新核对摘要，不要只替换 HAR 或改摘要跳过校验。SDK 没有外部运行依赖，不包含 Node.js、React Native、WebView 或 Android 兼容运行时。收到独立包即可接入，不必编译 SDK 源码，也不必把 Demo HAP 嵌进你的应用。
@@ -127,9 +127,10 @@ session.bridges.registerTool(declaration, {
 | 现象 | 处置 |
 |---|---|
 | 一连就 401 | `AuthProvider` 返回的头不被服务端 `authenticate` 认可。修好登录态后再 `start()` |
+| 一连就 `contract_unavailable` | `baseUrl` 没有指向 `/api` 门面（服务端早于 0.13.0，或代理 / 门户页改写了响应头）。SDK 不回退旧前缀；修好部署后再 `start()` |
 | 模拟器 / 真机连不上 | 回环仅本地调试；连开发机私网须 `allowPrivateNetworkHttp`。生产恒上 TLS |
-| 建会话 400 | `clientTools.parameters` 误写成了整份 JSON Schema；须为参数名字典 |
-| 新会话 429 | 每个终端用户缺省最多 8 个活跃会话；不用的会话请 `close()` |
+| 建会话 400 | `invalid_request`：`clientTools.parameters` 误写成了整份 JSON Schema；须为参数名字典 |
+| 新会话 429 | `capacity_exceeded`（`domainCode = session_limit_exceeded`）：每个终端用户缺省最多 8 个活跃会话；不用的会话请 `close()` |
 
 ## 下一步
 
