@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
 SDK は決して `process.exit` しません。エラーは 3 つの出口からしか出てきません。アセンブリ時 / オプション時には `TansrSdkError` として throw され、実行時のモデルとツールのエラーは常にイベントストリームで表現され（`turn.error` / `tool.failed` / `turn.aborted`）、プラットフォームゲートウェイのエラーコードはこの 2 つのペイロードの中に含まれます。まずどの種類かを見極めてから、再試行するかどうかを決めてください。
@@ -75,7 +75,7 @@ try {
 
 | コード | HTTP | 対処 |
 |---|---|---|
-| [`rate_limited`](/errors/codes#rate_limited) | 429 | プラットフォームのレート制限。常に `Retry-After`（整数秒）を伴う。その値だけ待ってから再試行し、より密に再送しない |
+| [`rate_limited`](/errors/codes#rate_limited) | 429 / 503 | プラットフォームのレート制限。常に `Retry-After`（整数秒）を伴う。その値だけ待ってから再試行し、より密に再送しない。共有のプロバイダー受け入れ制御が一時的に使えないときは同じコードが 503 で返り、同じく `Retry-After` を伴う。対処は同じ |
 | [`upstream_error`](/errors/codes#upstream_error) / [`upstream_disconnected`](/errors/codes#upstream_disconnected) | 502 | 上流モデル側の障害。指数バックオフ + ジッターの後に再試行 |
 | [`upstream_timeout`](/errors/codes#upstream_timeout) および `upstream_connect_timeout` / `upstream_ttfb_timeout` / `upstream_idle_timeout` / `upstream_total_timeout` | 504 | 上流のタイムアウト。同上のバックオフ |
 | [`plan_gate_unavailable`](/errors/codes#plan_gate_unavailable) | 503 | プラットフォームのゲートの依存先が一時的に利用不可、`Retry-After: 5`。既存のセッションには影響しない |
@@ -101,6 +101,22 @@ try {
 | [`validation_failed`](/errors/codes#validation_failed) / [`bad_request`](/errors/codes#bad_request) | 400 | ペイロードの形が不正。メッセージを読んでリクエストを直す |
 | [`session_archived`](/errors/codes#session_archived) | 410 | プラットフォームのセッションがアーカイブ済み（30 日の非アクティブリースの満了後）。このセッションはもう続けられず、`resume` は失敗するので、新しいセッションを作る |
 | [`context_window_exceeded`](/errors/codes#context_window_exceeded) | 400 | リクエストがモデルのコンテキストウィンドウを超えた。まず `compact()` するか、より大きなウィンドウのモデルに切り替える |
+
+### 非チャットタスクの `errorCode`
+
+`createPlatformNonchatClient` のエラーは 2 か所に現れます。投入や照会のリクエスト自体が拒否されたときは `PlatformNonchatError` が throw され、プラットフォームが返したコードは `platformCode` に入ります。値はエラーコード表を参照してください（たとえば [`operation_input_invalid`](/errors/codes#operation_input_invalid)、[`operation_not_configured`](/errors/codes#operation_not_configured)、[`upstream_timeout`](/errors/codes#upstream_timeout)）。リクエストが受理され、タスク自体が失敗したときは throw されず、結果はタスク本体の `status` と省略可能な `errorCode` に入ります。
+
+タスク本体の `errorCode` は診断用の文字列で、**エラーコード表には載っておらず、安定した列挙でもありません**。値は操作や上流の実装によって異なり、今後のバージョンで追加・削除・改名されることがあります。特定の値で分岐を書かず、`status` と `billing.state` に従って対処し、`errorCode` を `taskId`・`requestId` と一緒にログへ記録して、サポートに連絡するときに添えてください：
+
+| フィールド | 値 | 対処 |
+|---|---|---|
+| `status` | `preparing` / `accepted` / `running` | 進行中。`pollIntervalMs` に従って `getTask()` で照会を続ける |
+| `status` | `succeeded` / `failed` | 終端状態。`failed` はタスクが完了しなかったことをプラットフォームが確認したという意味。入力を直したうえで新しい冪等キーで再投入できるが、その前に `billing.state` で課金済みかどうかを確かめる |
+| `status` | `unknown` | 終端状態：上流が実行したかどうかをプラットフォームが確認できず、照会を続けても成功や失敗には変わらない。**冪等キーを変えて再投入しない**——重複実行と二重課金のおそれがある。`taskId` を添えてサポートに連絡する |
+| `billing.state` | `settled` / `refunded` / `unreserved` | `settled` は課金済み（`cost` が金額）。`refunded` は予約が解放され、課金されていない。`unreserved` は予約が作られておらず、課金されていない |
+| `billing.state` | `reserved` / `unknown` | 精算が終わっていないか、まだ確かめられない。このフィールドは照会のたびに台帳から読み取られ、タスクが終端状態になった後も変わりうるので、時間をおいて照会し直す |
+
+リアルタイムセッションの状態本体 `RealtimeSessionState` も省略可能な `errorCode` を伴いますが、同じく診断専用なので、これで分岐しないでください。その `status` はセッションリソースの状態（`creating` / `ready` / `deleting` / `deleted` / `expired` / `failed` / `unknown`）で、タスクの状態とは異なります。`billing.state` の意味は上の表と同じです。
 
 ## カーネルがすでに代わりに行っている再試行
 

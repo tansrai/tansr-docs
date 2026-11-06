@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
 SDK는 결코 `process.exit`하지 않습니다. 오류는 세 출구에서만 나옵니다. 어셈블리 시점 / 옵션 시점에는 `TansrSdkError`로 throw되고, 실행 시점의 모델과 도구 오류는 항상 이벤트 스트림으로 표현되며(`turn.error` / `tool.failed` / `turn.aborted`), 플랫폼 게이트웨이의 오류 코드는 이 둘의 페이로드 안에 들어 있습니다. 먼저 어느 종류인지 가린 뒤 재시도 여부를 정하세요.
@@ -75,7 +75,7 @@ try {
 
 | 코드 | HTTP | 대처 |
 |---|---|---|
-| [`rate_limited`](/errors/codes#rate_limited) | 429 | 플랫폼 속도 제한. 항상 `Retry-After`(정수 초)를 동반. 그 값만큼 기다린 뒤 재시도하고 더 촘촘히 재전송하지 말 것 |
+| [`rate_limited`](/errors/codes#rate_limited) | 429 / 503 | 플랫폼 속도 제한. 항상 `Retry-After`(정수 초)를 동반. 그 값만큼 기다린 뒤 재시도하고 더 촘촘히 재전송하지 말 것. 공유 공급자 수용 제어를 일시적으로 쓸 수 없을 때는 같은 코드가 503으로 반환되며 마찬가지로 `Retry-After`를 동반. 대처는 같음 |
 | [`upstream_error`](/errors/codes#upstream_error) / [`upstream_disconnected`](/errors/codes#upstream_disconnected) | 502 | 상류 모델 쪽 장애. 지수 백오프 + 지터 후 재시도 |
 | [`upstream_timeout`](/errors/codes#upstream_timeout) 및 `upstream_connect_timeout` / `upstream_ttfb_timeout` / `upstream_idle_timeout` / `upstream_total_timeout` | 504 | 상류 시간 초과. 위와 같은 백오프 |
 | [`plan_gate_unavailable`](/errors/codes#plan_gate_unavailable) | 503 | 플랫폼 게이트의 의존 대상이 일시적으로 사용 불가, `Retry-After: 5`. 기존 세션은 영향받지 않음 |
@@ -101,6 +101,22 @@ try {
 | [`validation_failed`](/errors/codes#validation_failed) / [`bad_request`](/errors/codes#bad_request) | 400 | 페이로드 형태가 잘못됨. 메시지를 읽고 요청을 고칠 것 |
 | [`session_archived`](/errors/codes#session_archived) | 410 | 플랫폼 세션이 아카이브됨(30일 비활성 임대 만료 후). 이 세션은 더 이어 갈 수 없고 `resume`은 실패하므로 새 세션을 만들 것 |
 | [`context_window_exceeded`](/errors/codes#context_window_exceeded) | 400 | 요청이 모델의 컨텍스트 창을 초과. 먼저 `compact()`하거나 더 큰 창의 모델로 바꿀 것 |
+
+### 비채팅 작업의 `errorCode`
+
+`createPlatformNonchatClient`의 오류는 두 곳에서 나타납니다. 제출이나 조회 요청 자체가 거부되면 `PlatformNonchatError`를 throw하며, 플랫폼이 반환한 코드는 `platformCode`에 들어 있습니다. 값은 오류 코드 표를 참고하세요(예: [`operation_input_invalid`](/errors/codes#operation_input_invalid), [`operation_not_configured`](/errors/codes#operation_not_configured), [`upstream_timeout`](/errors/codes#upstream_timeout)). 요청이 접수된 뒤 작업 자체가 실패하면 throw하지 않으며, 결과는 작업 본문의 `status`와 선택적인 `errorCode`에 들어 있습니다.
+
+작업 본문의 `errorCode`는 진단용 문자열이며, **오류 코드 표에 없고 안정된 열거형도 아닙니다**. 값은 작업과 상류 구현에 따라 다르고, 이후 버전에서 추가, 삭제되거나 이름이 바뀔 수 있습니다. 특정 값으로 분기하지 말고 `status`와 `billing.state`에 따라 대처하며, `errorCode`를 `taskId`, `requestId`와 함께 로그에 남겨 지원팀에 문의할 때 함께 전달하세요:
+
+| 필드 | 값 | 대처 |
+|---|---|---|
+| `status` | `preparing` / `accepted` / `running` | 진행 중. `pollIntervalMs`에 맞춰 `getTask()`로 계속 조회 |
+| `status` | `succeeded` / `failed` | 종단 상태. `failed`는 작업이 완료되지 않았음을 플랫폼이 확인했다는 뜻. 입력을 고친 뒤 새 멱등 키로 다시 제출할 수 있으나, 그 전에 `billing.state`로 과금 여부를 확인할 것 |
+| `status` | `unknown` | 종단 상태: 상류가 작업을 실행했는지 플랫폼이 확인할 수 없으며, 계속 조회해도 성공이나 실패로 바뀌지 않음. **멱등 키를 바꿔 다시 제출하지 말 것**——중복 실행과 이중 과금 위험이 있음. `taskId`를 첨부해 지원팀에 문의 |
+| `billing.state` | `settled` / `refunded` / `unreserved` | `settled`는 과금됨(`cost`가 금액). `refunded`는 예약이 해제되어 과금되지 않음. `unreserved`는 예약이 생기지 않아 과금되지 않음 |
+| `billing.state` | `reserved` / `unknown` | 정산이 끝나지 않았거나 아직 확인할 수 없음. 이 필드는 조회할 때마다 원장에서 읽으므로 작업이 종단 상태에 들어간 뒤에도 바뀔 수 있음. 나중에 다시 조회 |
+
+실시간 세션 상태 본문 `RealtimeSessionState`도 선택적인 `errorCode`를 동반하지만, 마찬가지로 진단용일 뿐이므로 이것으로 분기하지 마세요. 그 `status`는 세션 리소스의 상태(`creating` / `ready` / `deleting` / `deleted` / `expired` / `failed` / `unknown`)로 작업 상태와 다르며, `billing.state`의 의미는 위 표와 같습니다.
 
 ## 커널이 이미 대신해 주는 재시도
 

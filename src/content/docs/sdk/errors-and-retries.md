@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
 SDK 永不 `process.exit`。错误只从三个口子出来：装配期 / 选项期以 `TansrSdkError` 抛出；运行期的模型与工具错误恒经事件流表达（`turn.error` / `tool.failed` / `turn.aborted`）；平台网关的错误码则藏在这两者的载荷里。先判清是哪一类，再决定重不重试。
@@ -75,7 +75,7 @@ try {
 
 | 码 | HTTP | 处置 |
 |---|---|---|
-| [`rate_limited`](/errors/codes#rate_limited) | 429 | 平台限流，恒携 `Retry-After`（整秒）。按其值等待后重试；不要更密地重发 |
+| [`rate_limited`](/errors/codes#rate_limited) | 429 / 503 | 平台限流，恒携 `Retry-After`（整秒）。按其值等待后重试；不要更密地重发。共享供应商准入暂不可用时同码以 503 返回，同样携 `Retry-After`，处置相同 |
 | [`upstream_error`](/errors/codes#upstream_error) / [`upstream_disconnected`](/errors/codes#upstream_disconnected) | 502 | 上游模型侧故障；指数退避 + 抖动后重试 |
 | [`upstream_timeout`](/errors/codes#upstream_timeout) 及 `upstream_connect_timeout` / `upstream_ttfb_timeout` / `upstream_idle_timeout` / `upstream_total_timeout` | 504 | 上游超时；同上退避 |
 | [`plan_gate_unavailable`](/errors/codes#plan_gate_unavailable) | 503 | 平台守门依赖瞬态不可用，`Retry-After: 5`；既有会话不受影响 |
@@ -101,6 +101,22 @@ try {
 | [`validation_failed`](/errors/codes#validation_failed) / [`bad_request`](/errors/codes#bad_request) | 400 | 载荷形状非法；读消息改请求 |
 | [`session_archived`](/errors/codes#session_archived) | 410 | 平台会话已归档（30 天不活跃租约到期后）；这条会话不再能续，`resume` 会失败，请新建会话 |
 | [`context_window_exceeded`](/errors/codes#context_window_exceeded) | 400 | 请求超出模型上下文窗口；先 `compact()` 或换更大窗口的模型 |
+
+### 非聊天任务里的 `errorCode`
+
+`createPlatformNonchatClient` 的错误出在两处：提交或查询请求本身被拒时抛 `PlatformNonchatError`，平台返回的码在 `platformCode`，取值见错误码表（如 [`operation_input_invalid`](/errors/codes#operation_input_invalid)、[`operation_not_configured`](/errors/codes#operation_not_configured)、[`upstream_timeout`](/errors/codes#upstream_timeout)）；请求已受理、任务自身失败时不抛错，结果在任务体的 `status` 与可选的 `errorCode` 里。
+
+任务体里的 `errorCode` 是诊断串，**不在错误码表内，也不是稳定枚举**：取值随操作和上游实现而异，后续版本可能增删或改名。不要按具体取值写分支，按 `status` 与 `billing.state` 处置，并把 `errorCode` 连同 `taskId`、`requestId` 写进日志，联系支持时一并提供：
+
+| 字段 | 取值 | 处置 |
+|---|---|---|
+| `status` | `preparing` / `accepted` / `running` | 进行中；按 `pollIntervalMs` 继续用 `getTask()` 查询 |
+| `status` | `succeeded` / `failed` | 终态；`failed` 表示平台确认任务未完成，修正输入后可用新的幂等键重提，重提前先看 `billing.state` 是否已扣费 |
+| `status` | `unknown` | 终态：平台无法确认上游是否执行，继续查询也不会再变成成功或失败。**不要换幂等键重提**，以免重复执行和重复计费；带 `taskId` 联系支持 |
+| `billing.state` | `settled` / `refunded` / `unreserved` | `settled` 已扣费（`cost` 为金额）；`refunded` 预留已释放，未扣费；`unreserved` 未产生预留，未扣费 |
+| `billing.state` | `reserved` / `unknown` | 结算尚未完成或暂不可确认。该字段每次查询都从账本现取，任务进入终态后仍可能变化，稍后再查 |
+
+实时会话的状态体 `RealtimeSessionState` 同样携可选的 `errorCode`，同样只作诊断、不据此分支；它的 `status` 是会话资源的状态（`creating` / `ready` / `deleting` / `deleted` / `expired` / `failed` / `unknown`），不同于任务状态，`billing.state` 的含义同上表。
 
 ## 内核已经帮你做的重试
 

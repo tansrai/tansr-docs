@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,6 +36,20 @@ function makeFixtureRoot() {
   }
   writeFileSync(join(contract, 'vendored.json'), jsonText(vendored), 'utf8');
   return dir;
+}
+
+/** 只含 openapi/openapi.json 的一次提交的临时 api 仓(仓级关 autocrlf / 签名,不受本机全局配置影响)。 */
+function makeApiRepo(openapiText) {
+  const dir = mkdtempSync(join(tmpdir(), 'tansr-docs-vendor-api-'));
+  const git = (...args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8' }).trim();
+  git('init', '-q');
+  git('config', 'core.autocrlf', 'false');
+  git('config', 'commit.gpgsign', 'false');
+  mkdirSync(join(dir, 'openapi'));
+  writeFileSync(join(dir, 'openapi', 'openapi.json'), openapiText, 'utf8');
+  git('add', '-A');
+  git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', 'init');
+  return { dir, sha: git('rev-parse', '--short=12', 'HEAD') };
 }
 
 test('parseSubcommands:从顶层 help 的 Modes 块解析命令名与 also: 追加', () => {
@@ -100,6 +114,44 @@ test('vendor --check:登记文件缺席 / 未登记文件 → 红', () => {
     assert.equal(r.ok, false);
     assert.ok(r.problems.some((p) => p.startsWith('MISSING') && p.includes('changelog/cli.md')));
     assert.ok(r.problems.some((p) => p.startsWith('UNLISTED') && p.includes('stray.txt')));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('vendor --only openapi.json:只更新选中项,未选中登记原样保留,无需 cli 仓,同一输入幂等', () => {
+  const dir = makeFixtureRoot();
+  const text = '{"openapi":"3.1.0","info":{"title":"t"}}\n';
+  const api = makeApiRepo(text);
+  try {
+    const vendoredPath = join(dir, 'contract', 'vendored.json');
+    const before = JSON.parse(readFileSync(vendoredPath, 'utf8'));
+    const run = () => spawnSync(process.execPath, [script, '--only', 'openapi.json', '--api', api.dir, '--root', dir], { encoding: 'utf8' });
+    const r = run();
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(readFileSync(join(dir, 'contract', 'openapi.json'), 'utf8'), text);
+    const after = JSON.parse(readFileSync(vendoredPath, 'utf8'));
+    assert.deepEqual(Object.keys(after), Object.keys(before));
+    assert.equal(after['openapi.json'].source, `tansr-api@${api.sha}:openapi/openapi.json`);
+    assert.equal(after['openapi.json'].revision, before['openapi.json'].revision + 1);
+    assert.deepEqual(after['changelog/cli.md'], before['changelog/cli.md']);
+    assert.equal(runCheck(dir).status, 0);
+    const again = run();
+    assert.equal(again.status, 0, again.stdout + again.stderr);
+    assert.deepEqual(JSON.parse(readFileSync(vendoredPath, 'utf8')), after);
+  } finally {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+    rmSync(api.dir, { recursive: true, force: true, maxRetries: 3 });
+  }
+});
+
+test('vendor --only:登记表外的文件名 → exit 2,列出可选文件名', () => {
+  const dir = makeFixtureRoot();
+  try {
+    const r = spawnSync(process.execPath, [script, '--only', 'nope.json', '--root', dir], { encoding: 'utf8' });
+    assert.equal(r.status, 2, r.stdout + r.stderr);
+    assert.match(r.stderr, /--only 须为登记表内的文件名/);
+    assert.match(r.stderr, /openapi\.json/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

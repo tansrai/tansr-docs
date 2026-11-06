@@ -14,6 +14,10 @@
  *     构建物(dist/tansr.mjs · packages/sdk/dist/index.d.ts)缺省每次在 cli 仓就地重建(它们被 cli 仓 gitignore,
  *     不算改仓;`--no-build` 跳过)。两仓工作区须干净(tracked 文件零改动),source 才能指向真实提交。
  *
+ *   node scripts/vendor/index.mjs --only <文件名[,文件名…]> [--api <apiRepo>] [--cli <cliRepo>] [--no-build]
+ *     只更新登记表里选中的文件,未选中的登记项与副本原样保留;只校验 / 构建选中项所需的兄弟仓。
+ *     例:`--only openapi.json --api ../tansr-api` 只同步平台契约,不碰 cli 侧副本。
+ *
  *   node scripts/vendor/index.mjs --check
  *     逐文件 sha256 对 `contract/vendored.json`;任一缺席 / 不符 / 未登记即 exit 1。
  *
@@ -101,12 +105,25 @@ function listContractFiles(contractDir) {
   return out.sort();
 }
 
+/** `--only` 取值 → 登记表子集;缺省全表。 */
+export function selectRows(only) {
+  if (only === undefined) return VENDOR_TABLE;
+  const names = typeof only === 'string' ? only.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const unknown = names.filter((n) => !VENDOR_TABLE.some((row) => row.name === n));
+  if (names.length === 0 || unknown.length > 0) {
+    throw new Error(`--only 须为登记表内的文件名(逗号分隔),got ${JSON.stringify(only)};可选:${VENDOR_TABLE.map((row) => row.name).join(' / ')}`);
+  }
+  return VENDOR_TABLE.filter((row) => names.includes(row.name));
+}
+
 /**
  * 拷入。返回 { wrote: string[], unchanged: string[], vendored }。
  */
-export function vendor({ root, apiRepo, cliRepo, build = true, log = console.log }) {
-  const shas = { api: assertRepo('api', apiRepo), cli: assertRepo('cli', cliRepo) };
+export function vendor({ root, apiRepo, cliRepo, build = true, only, log = console.log }) {
+  const rows = selectRows(only);
   const repos = { api: apiRepo, cli: cliRepo };
+  const shas = {};
+  for (const repo of new Set(rows.map((row) => row.repo))) shas[repo] = assertRepo(repo, repos[repo]);
   const contractDir = join(root, 'contract');
   const vendoredPath = join(contractDir, VENDORED_FILE);
   const prevText = readTextIfExists(vendoredPath);
@@ -114,8 +131,8 @@ export function vendor({ root, apiRepo, cliRepo, build = true, log = console.log
   if ('source' in prev && typeof prev.source === 'string') throw new Error('vendored.json 为单记录旧形,须多文件 map 形');
 
   if (build) {
-    runBuild(cliRepo, 'cli', log);
-    runBuild(cliRepo, 'sdk', log);
+    if (rows.some((row) => row.collect === 'cli-help')) runBuild(cliRepo, 'cli', log);
+    if (rows.some((row) => row.build === 'sdk')) runBuild(cliRepo, 'sdk', log);
   }
 
   const next = {};
@@ -124,6 +141,10 @@ export function vendor({ root, apiRepo, cliRepo, build = true, log = console.log
   const repaired = [];
   const date = today();
   for (const row of VENDOR_TABLE) {
+    if (!rows.includes(row)) {
+      if (prev[row.name]) next[row.name] = prev[row.name];
+      continue;
+    }
     const repoDir = repos[row.repo];
     let text;
     if (row.collect === 'cli-help') {
@@ -204,7 +225,11 @@ export function check({ root, log = console.log }) {
 }
 
 function usage() {
-  console.error('用法:node scripts/vendor/index.mjs --api <apiRepo> --cli <cliRepo> [--no-build] | --check   [--root <docsRepo>]');
+  console.error(
+    '用法:node scripts/vendor/index.mjs --api <apiRepo> --cli <cliRepo> [--no-build]\n' +
+      '    | --only <文件名[,文件名…]> [--api <apiRepo>] [--cli <cliRepo>] [--no-build]\n' +
+      '    | --check   [--root <docsRepo>]',
+  );
 }
 
 if (isMainModule(import.meta.url)) {
@@ -218,8 +243,9 @@ if (isMainModule(import.meta.url)) {
         process.exit(1);
       }
       console.log('[vendor:check] ok(全部 sha256 对表一致)');
-    } else if (typeof args.api === 'string' && typeof args.cli === 'string') {
-      const r = vendor({ root, apiRepo: args.api, cliRepo: args.cli, build: args['no-build'] !== true });
+    } else if (args.only !== undefined || (typeof args.api === 'string' && typeof args.cli === 'string')) {
+      const repo = (v) => (typeof v === 'string' ? v : undefined);
+      const r = vendor({ root, apiRepo: repo(args.api), cliRepo: repo(args.cli), build: args['no-build'] !== true, only: args.only });
       console.log(`[vendor] done  wrote=${r.wrote.length}  unchanged=${r.unchanged.length}`);
     } else {
       usage();

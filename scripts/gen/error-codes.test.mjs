@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRootFrom } from '../lib/text.mjs';
 import { slug } from './lib.mjs';
-import { generate, loadNotes, OUT_REL, retryable } from './error-codes.mjs';
+import { generate, loadNotes, OUT_REL, retryable, retryableCell } from './error-codes.mjs';
 
 const root = repoRootFrom(import.meta.url);
 const script = fileURLToPath(new URL('./error-codes.mjs', import.meta.url));
@@ -17,6 +17,13 @@ const vendored = JSON.parse(readFileSync(join(root, 'contract', 'vendored.json')
 function headings(md, level) {
   const re = new RegExp(`^${'#'.repeat(level)} (.+)$`, 'gm');
   return [...md.matchAll(re)].map((m) => m[1]);
+}
+
+function blockOf(md, code) {
+  const i = md.indexOf(`### ${code}\n`);
+  assert.ok(i !== -1, code);
+  const j = md.indexOf('\n### ', i + 1);
+  return md.slice(i, j === -1 ? undefined : j);
 }
 
 test('error-codes:码数 = vendored 契约条数,锚点 = 码名且唯一', () => {
@@ -54,15 +61,46 @@ test('error-codes:frontmatter 契约 3 字段齐、第二行生成头(契约 4)'
 test('error-codes:每码一张表,HTTP 状态与契约一致;可重试按状态律', () => {
   const [{ content }] = generate(root);
   for (const e of catalog) {
-    const i = content.indexOf(`### ${e.code}\n`);
-    assert.ok(i !== -1, e.code);
-    const block = content.slice(i, content.indexOf('\n### ', i + 1) === -1 ? undefined : content.indexOf('\n### ', i + 1));
-    assert.match(block, new RegExp(`\\| ${e.status} \\| `), `${e.code} 状态 ${e.status}`);
+    const statuses = [e.status, ...(e['x-tansr-alt-statuses'] ?? [])].join(' / ');
+    assert.match(blockOf(content, e.code), new RegExp(`\\| ${statuses} \\| `), `${e.code} 状态 ${statuses}`);
   }
   assert.equal(retryable({ code: 'rate_limited', status: 429 }), '是(按 Retry-After 退避)');
   assert.equal(retryable({ code: 'upstream_error', status: 502 }), '是(退避后重试)');
   assert.equal(retryable({ code: 'payload_too_large', status: 413 }), '否');
   assert.equal(retryable({ code: 'device_code_pending', status: 400 }), '是(继续轮询)');
+});
+
+test('error-codes:一码多状态 → 状态栏列全,说明附改用情形,可重试按状态分述', () => {
+  const [{ content }] = generate(root);
+  const notes = loadNotes(root);
+  const alts = catalog.filter((e) => (e['x-tansr-alt-statuses'] ?? []).length > 0);
+  // tansr-api 起登记 x-tansr-alt-statuses:三码在特定情形下另以 503 返回;契约变了请同步 notes 的 alt
+  assert.deepEqual(alts.map((e) => e.code).sort(), ['currency_not_supported', 'pricing_guard_tripped', 'rate_limited']);
+  for (const e of alts) {
+    const block = blockOf(content, e.code);
+    assert.ok(block.includes(`| ${[e.status, ...e['x-tansr-alt-statuses']].join(' / ')} | `), e.code);
+    assert.ok(notes[e.code]?.alt, `${e.code} 须在 notes 写明 alt`);
+    assert.ok(block.includes(notes[e.code].alt), e.code);
+  }
+  assert.equal(retryableCell({ code: 'rate_limited', status: 429, 'x-tansr-alt-statuses': [503] }), '是(按 Retry-After 退避)');
+  assert.equal(retryableCell({ code: 'pricing_guard_tripped', status: 400, 'x-tansr-alt-statuses': [503] }), '否;以 503 返回时是(退避后重试)');
+  assert.equal(retryableCell({ code: 'bad_request', status: 400 }), '否');
+});
+
+test('error-codes:保留码单列「保留码」组(末组),注明当前版本不返回', () => {
+  const [{ content }] = generate(root);
+  const reserved = catalog.filter((e) => e['x-tansr-reserved'] === true).map((e) => e.code).sort();
+  assert.deepEqual(reserved, ['adjudicator_not_authorized', 'payment_required', 'upstream_outcome_unknown']);
+  const start = content.indexOf('\n## 保留码\n');
+  assert.ok(start !== -1, '缺「保留码」组');
+  assert.deepEqual(headings(content.slice(start), 3).sort(), reserved);
+  for (const c of reserved) assert.match(blockOf(content, c), /当前版本不返回此码/);
+});
+
+test('error-codes:tag nonchat 归「非聊天操作面」,不以 tag 名作组名', () => {
+  const [{ content }] = generate(root);
+  assert.ok(content.includes('\n## 非聊天操作面\n'));
+  assert.doesNotMatch(content, /^## nonchat$/m);
 });
 
 test('error-codes:令牌失效码带端侧提示与 detail.reason 取值', () => {

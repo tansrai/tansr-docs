@@ -181,6 +181,26 @@
               }
             }
           },
+          "403": {
+            "description": "endpoint_disabled(模型绑定直连端点,不经网关路由)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "model_not_found(目录中无此模型)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "409": {
             "description": "idempotency_conflict(T-A23:同幂等键异载荷;或已完成结果不可重放(SSE/超限,detail.replayable=false);或 requestId 已达计费层不再重飞)",
             "content": {
@@ -201,8 +221,28 @@
               }
             }
           },
+          "500": {
+            "description": "internal_error(未预期的服务端错误)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
-            "description": "pricing_guard_tripped(计费模型价格缺失/非法/越界,fail-closed)",
+            "description": "pricing_guard_tripped(计费模型价格缺失/非法/越界,fail-closed)/ currency_not_supported(白名单外币种价目,请求期 fail-closed)/ rate_limited(共享供应商准入不可用;常规限流仍为 429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "upstream_timeout(上游超时)",
             "content": {
               "application/json": {
                 "schema": {
@@ -290,6 +330,26 @@
               }
             }
           },
+          "403": {
+            "description": "endpoint_disabled(模型绑定直连端点,不经网关路由)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "model_not_found(目录中无此模型)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "409": {
             "description": "idempotency_conflict(T-A23:异载荷/不可重放/计费层兜底)",
             "content": {
@@ -310,8 +370,28 @@
               }
             }
           },
+          "500": {
+            "description": "internal_error(未预期的服务端错误)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
-            "description": "pricing_guard_tripped",
+            "description": "pricing_guard_tripped / currency_not_supported(请求期 fail-closed)/ rate_limited(共享供应商准入不可用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "upstream_timeout(上游超时)",
             "content": {
               "application/json": {
                 "schema": {
@@ -399,6 +479,26 @@
               }
             }
           },
+          "403": {
+            "description": "endpoint_disabled(模型绑定直连端点,不经网关路由)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "model_not_found(目录中无此模型)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "409": {
             "description": "idempotency_conflict(T-A23:异载荷/不可重放/计费层兜底)",
             "content": {
@@ -419,8 +519,28 @@
               }
             }
           },
+          "500": {
+            "description": "internal_error(未预期的服务端错误)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "503": {
-            "description": "pricing_guard_tripped",
+            "description": "pricing_guard_tripped / currency_not_supported(请求期 fail-closed)/ rate_limited(共享供应商准入不可用)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "upstream_timeout(上游超时)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1618,6 +1738,16 @@
               }
             }
           },
+          "400": {
+            "description": "plan_members_exceeded(组织成员数达套餐上限;升档后可再邀请)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "403": {
             "description": "forbidden(member/billing 不可邀请)",
             "content": {
@@ -2150,7 +2280,7 @@
             }
           },
           "400": {
-            "description": "bad_request(码无效/已用/过期)",
+            "description": "bad_request(码无效/已用/过期)/ plan_members_exceeded(接受时重验成员上限;超限时邀请码保持 pending,升档后可再接受)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2578,6 +2708,16 @@
           },
           "304": {
             "description": "未变"
+          },
+          "503": {
+            "description": "operation_not_configured(所选上下文配置不可用:偏好或其授权已失效,detail.reason=context_configuration_unavailable;不回落内核缺省)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -2864,7 +3004,7 @@
             }
           },
           "400": {
-            "description": "limit_exceeded(每 owner 应用存量上限,active 档计数;T-A28)",
+            "description": "limit_exceeded(每 owner 应用存量上限,active 档计数;T-A28)/ plan_apps_exceeded(应用数达套餐上限;存量应用照常,升档后可再建)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2874,7 +3014,7 @@
             }
           },
           "403": {
-            "description": "forbidden(org 角色不够 / PAT 缺 control scope)",
+            "description": "forbidden(org 角色不够 / PAT 缺 control scope)/ plan_required(免费应用名额用尽,须购买套餐)/ plan_tier_insufficient(超过 5 个应用须个人开发者档或更高)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2885,6 +3025,16 @@
           },
           "429": {
             "description": "rate_limited(每 IP 认证严档,T-A28)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "pricing_guard_tripped(套餐目录不可读,fail-closed)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2985,7 +3135,17 @@
             }
           },
           "400": {
-            "description": "validation_failed(CIDR 不可解析/超 32 条)",
+            "description": "validation_failed(CIDR 不可解析/超 32 条)/ plan_apps_exceeded(status 由非 active 改回 active 时按创建规则核应用数上限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "plan_required / plan_tier_insufficient(status 改回 active 时同创建规则)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2996,6 +3156,16 @@
           },
           "404": {
             "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "pricing_guard_tripped(套餐目录不可读,fail-closed)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3107,8 +3277,38 @@
               }
             }
           },
+          "400": {
+            "description": "plan_apps_exceeded(恢复待轮换的非 active 应用时按创建规则核应用数上限)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "plan_required / plan_tier_insufficient(恢复非 active 应用时同创建规则)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
           "404": {
             "description": "not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "pricing_guard_tripped(套餐目录不可读,fail-closed)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3295,7 +3495,7 @@
             }
           },
           "403": {
-            "description": "forbidden(org 角色不够 / PAT 缺 control scope)",
+            "description": "forbidden(org 角色不够 / PAT 缺 control scope)/ plan_tier_insufficient(非空登记须套餐含网关档;清空登记恒放行)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3744,7 +3944,7 @@
             }
           },
           "403": {
-            "description": "forbidden(成员但角色不够 owner/admin)",
+            "description": "forbidden(成员但角色不够 owner/admin)/ fence_denied(包内钉住的裁决人档或上下文来源不在平台对本 org 的可见围栏内)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6088,6 +6288,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "operation_not_configured(所选上下文配置不可用:偏好或其授权已失效,detail.reason=context_configuration_unavailable;不回落内核缺省)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -6169,7 +6379,7 @@
             }
           },
           "400": {
-            "description": "content_blocked(T-A15 安全审查:入向 deny 恒在余额预扣之前拦截零计费;非流出向 deny 内容不下发、消耗如实;detail.reason 携理由;流式为异步抽检不阻流)/ egress_blocked(T-A24 出网零信任:org BYOK 上游目标命中私网/元数据/回环或非 HTTPS)/ context_window_exceeded(T-A42 贴窗防御:params.promptTokensEstimate 在场且模型有 contextWindow 时,估算入 + 消毒后 maxTokens > contextWindow 恒拒——幂等占位/预留/预扣之前拦截零计费,detail.promptTokensEstimate/maxTokens/contextWindow;字段缺席 = 仅既有输出钳制零变化)",
+            "description": "content_blocked(T-A15 安全审查:入向 deny 恒在余额预扣之前拦截零计费;非流出向 deny 内容不下发、消耗如实;detail.reason 携理由;流式出向采样命中的窗口缓冲至完整审核放行后才下发,deny 立即断流)/ image_not_supported(模型能力位未声明图片输入而 thread 含图片;审查与预扣之前拦截零计费)/ egress_blocked(T-A24 出网零信任:org BYOK 上游目标命中私网/元数据/回环或非 HTTPS)/ context_window_exceeded(T-A42 贴窗防御:params.promptTokensEstimate 在场且模型有 contextWindow 时,估算入 + 消毒后 maxTokens > contextWindow 恒拒——幂等占位/预留/预扣之前拦截零计费,detail.promptTokensEstimate/maxTokens/contextWindow;字段缺席 = 仅既有输出钳制零变化)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6220,6 +6430,16 @@
           },
           "429": {
             "description": "rate_limited(key 级 60s 窗,携 Retry-After;App 总闸 quota.rpm 触顶 detail.scope:\"app\";SC-34 登记出口的 app_user 令牌径按每终端用户桶计,同一 perMinute 上限,触顶 detail.scope:\"endUser\";既有 k 径信封不变)/ quota_exceeded(T-A17 策略包日 token 上限,UTC+8 日界,detail.limit/used/resetAt;T-A23 起计数在占位阶段原子预留(含在途),结算按实结差额校正)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal_error(未预期的服务端错误)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6601,6 +6821,26 @@
           },
           "502": {
             "description": "upstream_error(上游拒绝/形状非法;方言正文不透传,仅 detail.upstreamCode 机器码 + upstreamStatus)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "rate_limited(共享供应商准入不可用,无法判断目标是否受管;常规限流仍为 429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "upstream_timeout(搜索商未在时间预算内完成)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15037,6 +15277,9 @@
           },
           "413": {
             "description": "File or temporary storage limit exceeded"
+          },
+          "503": {
+            "description": "operation_not_configured: the operation service is draining"
           }
         }
       }
@@ -15135,7 +15378,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15144,7 +15387,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15210,7 +15456,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15219,7 +15465,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15285,7 +15534,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15294,7 +15543,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15360,7 +15612,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15369,7 +15621,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15435,7 +15690,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15444,7 +15699,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15510,7 +15768,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15519,7 +15777,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15585,7 +15846,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15594,7 +15855,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15660,7 +15924,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15669,7 +15933,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15735,7 +16002,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15744,7 +16011,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15810,7 +16080,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15819,7 +16089,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15885,7 +16158,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15894,7 +16167,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -15960,7 +16236,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -15969,7 +16245,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -16035,7 +16314,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -16044,7 +16323,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -16110,7 +16392,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -16119,7 +16401,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -16185,7 +16470,7 @@
             }
           },
           "400": {
-            "description": "Invalid operation input"
+            "description": "operation_input_invalid: the input does not match the operation contract"
           },
           "403": {
             "description": "Capability or model not authorized"
@@ -16194,7 +16479,10 @@
             "description": "Idempotency key conflict"
           },
           "503": {
-            "description": "Selected binding is not configured for this operation"
+            "description": "operation_not_configured: no configured implementation for this operation, or the operation service is draining"
+          },
+          "504": {
+            "description": "upstream_timeout: the admission or operation deadline expired, including document download by URL"
           }
         }
       }
@@ -16558,7 +16846,7 @@
             }
           },
           "503": {
-            "description": "No verified bounded realtime binding configured"
+            "description": "operation_not_configured: no verified bounded realtime binding configured; rate_limited: shared supplier admission is unavailable"
           }
         }
       }
@@ -42593,6 +42881,13 @@
       "status": 400
     },
     {
+      "code": "currency_not_supported",
+      "status": 400,
+      "x-tansr-alt-statuses": [
+        503
+      ]
+    },
+    {
       "code": "device_code_denied",
       "status": 403
     },
@@ -42613,8 +42908,16 @@
       "status": 400
     },
     {
+      "code": "endpoint_disabled",
+      "status": 403
+    },
+    {
       "code": "envelope_key_undelivered",
       "status": 503
+    },
+    {
+      "code": "fence_denied",
+      "status": 403
     },
     {
       "code": "forbidden",
@@ -42629,6 +42932,10 @@
       "status": 403
     },
     {
+      "code": "image_not_supported",
+      "status": 400
+    },
+    {
       "code": "imagegen_not_configured",
       "status": 400
     },
@@ -42639,6 +42946,10 @@
     {
       "code": "insufficient_balance",
       "status": 402
+    },
+    {
+      "code": "internal_error",
+      "status": 500
     },
     {
       "code": "invalid_api_key",
@@ -42657,12 +42968,24 @@
       "status": 403
     },
     {
+      "code": "model_not_found",
+      "status": 404
+    },
+    {
       "code": "nonce_replayed",
       "status": 401
     },
     {
       "code": "not_found",
       "status": 404
+    },
+    {
+      "code": "operation_input_invalid",
+      "status": 400
+    },
+    {
+      "code": "operation_not_configured",
+      "status": 503
     },
     {
       "code": "org_byok_not_available",
@@ -42689,6 +43012,10 @@
       "status": 413
     },
     {
+      "code": "plan_apps_exceeded",
+      "status": 400
+    },
+    {
       "code": "plan_concurrency_exceeded",
       "status": 429
     },
@@ -42699,6 +43026,18 @@
     {
       "code": "plan_gate_unavailable",
       "status": 503
+    },
+    {
+      "code": "plan_members_exceeded",
+      "status": 400
+    },
+    {
+      "code": "plan_required",
+      "status": 403
+    },
+    {
+      "code": "plan_tier_insufficient",
+      "status": 403
     },
     {
       "code": "policy_locked",
@@ -42714,7 +43053,10 @@
     },
     {
       "code": "pricing_guard_tripped",
-      "status": 400
+      "status": 400,
+      "x-tansr-alt-statuses": [
+        503
+      ]
     },
     {
       "code": "principal_required",
@@ -42730,7 +43072,10 @@
     },
     {
       "code": "rate_limited",
-      "status": 429
+      "status": 429,
+      "x-tansr-alt-statuses": [
+        503
+      ]
     },
     {
       "code": "section_not_deliverable",
@@ -42792,6 +43137,10 @@
     },
     {
       "code": "upstream_idle_timeout",
+      "status": 504
+    },
+    {
+      "code": "upstream_timeout",
       "status": 504
     },
     {

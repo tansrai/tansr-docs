@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/server/CHANGELOG.md
   - tansr-cli:packages/api-client/CHANGELOG.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
 The SDK never calls `process.exit`. Errors come out of exactly three openings: at assembly / option time they are thrown as `TansrSdkError`; runtime model and tool errors are always expressed through the event stream (`turn.error` / `tool.failed` / `turn.aborted`); platform gateway error codes hide inside the payloads of those two. Decide which kind it is first, then decide whether to retry.
@@ -75,7 +75,7 @@ On the token tier, platform error codes appear in the first segment of the `turn
 
 | Code | HTTP | Handling |
 |---|---|---|
-| [`rate_limited`](/errors/codes#rate_limited) | 429 | Platform rate limiting, always with `Retry-After` (whole seconds). Wait for that value and retry; do not resend more densely |
+| [`rate_limited`](/errors/codes#rate_limited) | 429 / 503 | Platform rate limiting, always with `Retry-After` (whole seconds). Wait for that value and retry; do not resend more densely. When shared provider admission is temporarily unavailable, the same code comes back with 503, also with `Retry-After`; handle it the same way |
 | [`upstream_error`](/errors/codes#upstream_error) / [`upstream_disconnected`](/errors/codes#upstream_disconnected) | 502 | A failure on the upstream model side; retry after exponential backoff with jitter |
 | [`upstream_timeout`](/errors/codes#upstream_timeout) and `upstream_connect_timeout` / `upstream_ttfb_timeout` / `upstream_idle_timeout` / `upstream_total_timeout` | 504 | Upstream timeout; same backoff as above |
 | [`plan_gate_unavailable`](/errors/codes#plan_gate_unavailable) | 503 | A transient outage of a platform gatekeeping dependency, `Retry-After: 5`; existing sessions are unaffected |
@@ -101,6 +101,22 @@ On the token tier, platform error codes appear in the first segment of the `turn
 | [`validation_failed`](/errors/codes#validation_failed) / [`bad_request`](/errors/codes#bad_request) | 400 | The payload shape is illegal; read the message and fix the request |
 | [`session_archived`](/errors/codes#session_archived) | 410 | The platform session has been archived (after the 30-day inactivity lease expired); this session can no longer be renewed, `resume` will fail, create a new session |
 | [`context_window_exceeded`](/errors/codes#context_window_exceeded) | 400 | The request exceeds the model's context window; `compact()` first or switch to a model with a larger window |
+
+### `errorCode` in non-chat tasks
+
+Errors from `createPlatformNonchatClient` come from two places. When the submit or query request itself is rejected, it throws `PlatformNonchatError`, and the code returned by the platform is in `platformCode`; its values are in the error code reference (for example [`operation_input_invalid`](/errors/codes#operation_input_invalid), [`operation_not_configured`](/errors/codes#operation_not_configured), [`upstream_timeout`](/errors/codes#upstream_timeout)). When the request was accepted and the task itself fails, nothing is thrown; the outcome is in the task body's `status` and optional `errorCode`.
+
+The `errorCode` in the task body is a diagnostic string. **It is not in the error code reference and it is not a stable enum**: its values vary with the operation and the upstream implementation, and later versions may add, remove or rename them. Do not branch on specific values. Act on `status` and `billing.state`, and log `errorCode` together with `taskId` and `requestId` so you can hand them over when you contact support:
+
+| Field | Values | Handling |
+|---|---|---|
+| `status` | `preparing` / `accepted` / `running` | In progress; keep querying with `getTask()` at `pollIntervalMs` |
+| `status` | `succeeded` / `failed` | Terminal; `failed` means the platform confirmed the task did not complete. After fixing the input you can resubmit under a new idempotency key; check `billing.state` first to see whether you were charged |
+| `status` | `unknown` | Terminal: the platform cannot confirm whether the upstream ran the task, and further queries will not turn it into success or failure. **Do not resubmit under a new idempotency key**, or the task may run and be billed twice; contact support with the `taskId` |
+| `billing.state` | `settled` / `refunded` / `unreserved` | `settled` means charged (`cost` is the amount); `refunded` means the reservation was released and nothing was charged; `unreserved` means no reservation was made and nothing was charged |
+| `billing.state` | `reserved` / `unknown` | Settlement has not finished or cannot be confirmed yet. The field is read from the ledger on every query and can still change after the task reaches a terminal state; query again later |
+
+The realtime session state body `RealtimeSessionState` also carries an optional `errorCode`; it is likewise diagnostic only, so do not branch on it. Its `status` is the state of the session resource (`creating` / `ready` / `deleting` / `deleted` / `expired` / `failed` / `unknown`), which differs from task status; `billing.state` means the same as in the table above.
 
 ## Retries the kernel already does for you
 

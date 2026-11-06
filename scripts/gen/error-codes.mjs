@@ -3,12 +3,15 @@
  * 错误码参考页生成器(资料站 DS-07)。
  *   contract/openapi.json `x-tansr-error-codes[]` → src/content/docs/errors/codes.md
  *
- * 契约里每码只有 `{ code, status }`(令牌径失效码另携 `x-invalidates-token` / `x-tansr-token-reasons`),没有
- * 「面」「可重试」「说明」字段,故三者按下述**可复现规则**派生(规则本身即页面口径,写进页首):
+ * 契约里每码只有 `{ code, status }`(令牌径失效码另携 `x-invalidates-token` / `x-tansr-token-reasons`;特定情形改用
+ * 的状态另携 `x-tansr-alt-statuses`;已登记但当前不返回的码另携 `x-tansr-reserved: true`),没有「面」「可重试」
+ * 「说明」字段,故三者按下述**可复现规则**派生(规则本身即页面口径,写进页首):
  *   - 面:扫 openapi 全部操作的 summary / 参数说明 / 响应说明,整词出现该码的操作其 tag 归到的面;
- *         恰一个面 → 该面分组;多个面 → 「通用」;一个都没有 → 「其他」。
+ *         恰一个面 → 该面分组;多个面 → 「通用」;一个都没有 → 「其他」;保留码不论出现与否恒归「保留码」。
  *   - 可重试:HTTP 429 / 502 / 503 / 504 → 是;其余否;例外 device_code_pending(400,轮询语义)→ 是。
+ *         备选状态与登记状态可重试性不同时,追加「以 <状态> 返回时…」。
  *   - 说明 / 端侧提示:scripts/gen/error-codes.notes.json 的用户口吻文案(缺则按状态给通用一句);
+ *         备选状态追加 notes 的 `alt` 情形说明(缺则给通用一句);
  *         `x-invalidates-token` 码追加「清除令牌并重新登录」提示与 detail.reason 取值。
  * 结构:`## <面>` 分组 → `### <code>`(锚点 `#<code>`)+ 单行表(HTTP 状态 · 可重试 · 说明 · 端侧呈现提示)。
  *
@@ -29,6 +32,7 @@ const METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'optio
 export const FACES = [
   { id: 'gateway', label: '数据面', tags: ['gateway'], note: 'OpenAI 与 Anthropic 兼容接口' },
   { id: 'twp', label: 'twp 协议面', tags: ['twp'], note: 'tansr 自有协议 twp 的接口' },
+  { id: 'nonchat', label: '非聊天操作面', tags: ['nonchat'], note: '嵌入、重排、文档、音乐、音效、音色与实时会话等非聊天操作接口' },
   { id: 'control', label: '控制面', tags: ['auth', 'orgs', 'control', 'apps', 'org-governance'], note: '认证、组织、应用、配置等接口' },
   { id: 'webhooks', label: '支付回调面', tags: ['webhooks'], note: '支付渠道回调' },
   { id: 'admin', label: '管理面', tags: ['admin'], note: '门户管理后台专用接口' },
@@ -36,6 +40,7 @@ export const FACES = [
 ];
 const COMMON = { id: 'common', label: '通用', note: '在多个面的接口说明中都会出现' };
 const OTHER = { id: 'other', label: '其他', note: '仅在错误码目录登记,未出现在任一接口说明中' };
+const RESERVED = { id: 'reserved', label: '保留码', note: '已登记但当前版本不会返回,保留以兼容按码分支的旧客户端' };
 
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 /** 状态之外的可重试例外(语义显然、契约未标) */
@@ -99,6 +104,31 @@ export function retryable(entry) {
   return entry.status === 429 ? '是(按 Retry-After 退避)' : '是(退避后重试)';
 }
 
+function altStatuses(entry) {
+  return entry['x-tansr-alt-statuses'] ?? [];
+}
+
+/** 可重试一栏:登记状态的判定,备选状态可重试性不同时追加「以 <状态> 返回时…」。 */
+export function retryableCell(entry) {
+  const base = retryable(entry);
+  const differing = altStatuses(entry)
+    .map((status) => ({ status, text: retryable({ ...entry, status }) }))
+    .filter((alt) => alt.text.startsWith('是') !== base.startsWith('是'));
+  return [base, ...differing.map((alt) => `以 ${alt.status} 返回时${alt.text}`)].join(';');
+}
+
+function statusCell(entry) {
+  return [entry.status, ...altStatuses(entry)].join(' / ');
+}
+
+function explanation(entry, note) {
+  const text = note?.text ?? STATUS_FALLBACK[entry.status] ?? '(契约未附说明)';
+  const alts = altStatuses(entry);
+  if (alts.length === 0) return text;
+  const sep = /[。；！？]$/.test(text) ? '' : ' ';
+  return `${text}${sep}${note?.alt ?? `特定情形下改以 HTTP ${alts.join(' / ')} 返回。`}`;
+}
+
 function clientHint(entry, note) {
   const parts = [];
   if (note?.hint) parts.push(note.hint);
@@ -127,20 +157,29 @@ export function render({ openapi, notes, lastVerified }) {
   const entries = openapi['x-tansr-error-codes'];
   const faces = facesByCode(openapi);
   const groups = new Map();
-  const groupOf = (code) => {
-    const f = faces.get(code);
+  const groupOf = (entry) => {
+    if (entry['x-tansr-reserved'] === true) return RESERVED.id;
+    const f = faces.get(entry.code);
     if (f.length === 0) return OTHER.id;
     if (f.length === 1) return f[0];
     return COMMON.id;
   };
   for (const e of entries) {
-    const g = groupOf(e.code);
+    const g = groupOf(e);
     if (!groups.has(g)) groups.set(g, []);
     groups.get(g).push(e);
   }
-  const groupOrder = [COMMON.id, ...FACES.map((f) => f.id), ...[...groups.keys()].filter((g) => g !== COMMON.id && g !== OTHER.id && !FACES.some((f) => f.id === g)).sort(), OTHER.id];
-  const labelOf = (g) => (g === COMMON.id ? COMMON.label : g === OTHER.id ? OTHER.label : faceLabel(g));
-  const noteOf = (g) => (g === COMMON.id ? COMMON.note : g === OTHER.id ? OTHER.note : FACES.find((f) => f.id === g)?.note ?? `tag \`${g}\` 的接口`);
+  const special = [COMMON, OTHER, RESERVED];
+  const specialOf = (g) => special.find((s) => s.id === g);
+  const groupOrder = [
+    COMMON.id,
+    ...FACES.map((f) => f.id),
+    ...[...groups.keys()].filter((g) => !specialOf(g) && !FACES.some((f) => f.id === g)).sort(),
+    OTHER.id,
+    RESERVED.id,
+  ];
+  const labelOf = (g) => specialOf(g)?.label ?? faceLabel(g);
+  const noteOf = (g) => specialOf(g)?.note ?? FACES.find((f) => f.id === g)?.note ?? `tag \`${g}\` 的接口`;
 
   const out = [];
   out.push(
@@ -163,7 +202,8 @@ export function render({ openapi, notes, lastVerified }) {
   out.push('```');
   out.push('');
   out.push(`- \`code\` 取值见下表(共 ${entries.length} 个),每个码有固定的 HTTP 状态;\`message\` 是给人看的文字,不要用它做判断;\`requestId\` 用于联系支持时定位;\`detail\` 可选,按码给出结构化补充。`);
-  out.push('- 分组按「面」:一个码只在某一面的接口说明里出现,就归该面;在多个面出现的归「通用」;接口说明里没有出现的归「其他」。');
+  out.push('- 分组按「面」:一个码只在某一面的接口说明里出现,就归该面;在多个面出现的归「通用」;接口说明里没有出现的归「其他」;已登记但当前版本不会返回的码单列「保留码」。');
+  out.push('- 个别码在特定情形下改用另一个 HTTP 状态,表中写作「429 / 503」,说明栏给出改用的情形。');
   out.push('- 「可重试」按 HTTP 状态判定:429 / 502 / 503 / 504 为可重试(429 请按 `Retry-After` 头退避);其余状态不要用同一请求原样重试。');
   out.push(`- 深链锚点为码名本身,例如 \`#rate_limited\`。`);
   out.push('');
@@ -180,17 +220,17 @@ export function render({ openapi, notes, lastVerified }) {
     out.push('');
     for (const e of groups.get(g).sort((a, b) => a.code.localeCompare(b.code))) {
       const note = notes[e.code];
-      const text = note?.text ?? STATUS_FALLBACK[e.status] ?? '(契约未附说明)';
       const shown = faces.get(e.code);
       out.push(`### ${e.code}`);
       out.push('');
       if (g === COMMON.id) out.push(`出现于:${shown.map(faceLabel).join('、')}。`);
       else if (g === OTHER.id) out.push('未在任一接口说明中出现;以错误码目录为准。');
+      else if (g === RESERVED.id) out.push('当前版本不返回此码;保留登记,以兼容按码分支的旧客户端。');
       else out.push(`出现于:${faceLabel(g)}。`);
       out.push('');
       out.push('| HTTP 状态 | 可重试 | 说明 | 端侧呈现提示 |');
       out.push('|---|---|---|---|');
-      out.push(`| ${e.status} | ${cell(retryable(e))} | ${cell(text)} | ${cell(clientHint(e, note))} |`);
+      out.push(`| ${statusCell(e)} | ${cell(retryableCell(e))} | ${cell(explanation(e, note))} | ${cell(clientHint(e, note))} |`);
       out.push('');
     }
   }
@@ -202,6 +242,10 @@ export function generate(root) {
   const notes = loadNotes(root);
   const stale = Object.keys(notes).filter((k) => !openapi['x-tansr-error-codes'].some((e) => e.code === k));
   if (stale.length) throw new Error(`error-codes.notes.json 有契约里不存在的码:${stale.join(', ')}`);
+  const staleAlt = Object.keys(notes).filter(
+    (k) => notes[k].alt !== undefined && altStatuses(openapi['x-tansr-error-codes'].find((e) => e.code === k)).length === 0,
+  );
+  if (staleAlt.length) throw new Error(`error-codes.notes.json 的 alt 写在了契约无备选状态的码上:${staleAlt.join(', ')}`);
   const content = render({ openapi, notes, lastVerified: lastVerifiedFor(root, SOURCE) });
   return [{ rel: OUT_REL, content }];
 }
