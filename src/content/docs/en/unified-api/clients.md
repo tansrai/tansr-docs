@@ -34,10 +34,10 @@ sources:
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
-Nine clients implement `unified-v1` against the same contract, but their **release cadence differs**. The table is current as of 2026-10-13. Version numbers and dates are taken from the registry records read that day (npm, NuGet, Maven Central, the GitHub Releases of `tansrai/tansr-ios-spm`, the Go module proxy, crates.io, PyPI and the GitHub Releases of `tansrai/tansr-cpp`), and each date is the UTC date of the registry record; HarmonyOS has no public package registry, so it is listed by the HAR shipped with the official download page. Each row ends with the last version on the public channel that still uses the old prefixes: an app installed at that version or earlier works as this chapter describes only after upgrading.
+Nine clients implement `unified-v1` against the same contract, but their **release cadence differs**. The table is current as of 2026-11-06. Version numbers and dates are taken from the registry records read that day (npm, NuGet, Maven Central, the GitHub Releases of `tansrai/tansr-ios-spm`, the Go module proxy, crates.io, PyPI and the GitHub Releases of `tansrai/tansr-cpp`), and each date is the UTC date of the registry record; HarmonyOS has no public package registry, so it is listed by the HAR shipped with the official download page. Each row ends with the last version on the public channel that still uses the old prefixes: an app installed at that version or earlier works as this chapter describes only after upgrading.
 
 | Client | Public release | `/api` (unified-v1) support |
 |---|---|---|

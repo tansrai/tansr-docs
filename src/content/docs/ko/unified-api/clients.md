@@ -34,10 +34,10 @@ sources:
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
-아홉 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 주기는 다릅니다**. 아래 표는 2026-10-13 기준입니다. 버전 번호와 날짜는 그날 읽은 레지스트리 기록(npm, NuGet, Maven Central, `tansrai/tansr-ios-spm`의 GitHub Release, Go 모듈 프록시, crates.io, PyPI, `tansrai/tansr-cpp`의 GitHub Release)대로 적었고, 날짜는 레지스트리 기록의 UTC 날짜입니다. HarmonyOS는 공개 패키지 레지스트리가 없으므로 공식 다운로드 페이지와 함께 배포되는 HAR로 적습니다. 각 행 끝에는 공개 채널에서 이전 접두사를 쓰는 마지막 버전을 적었습니다. 그 버전 이하를 설치한 앱은 업그레이드한 뒤에야 이 장의 설명대로 동작합니다.
+아홉 클라이언트는 모두 같은 계약에 따라 `unified-v1`을 구현하지만 **릴리스 주기는 다릅니다**. 아래 표는 2026-11-06 기준입니다. 버전 번호와 날짜는 그날 읽은 레지스트리 기록(npm, NuGet, Maven Central, `tansrai/tansr-ios-spm`의 GitHub Release, Go 모듈 프록시, crates.io, PyPI, `tansrai/tansr-cpp`의 GitHub Release)대로 적었고, 날짜는 레지스트리 기록의 UTC 날짜입니다. HarmonyOS는 공개 패키지 레지스트리가 없으므로 공식 다운로드 페이지와 함께 배포되는 HAR로 적습니다. 각 행 끝에는 공개 채널에서 이전 접두사를 쓰는 마지막 버전을 적었습니다. 그 버전 이하를 설치한 앱은 업그레이드한 뒤에야 이 장의 설명대로 동작합니다.
 
 | 클라이언트 | 공개 릴리스물 | `/api`(unified-v1) 지원 |
 |---|---|---|

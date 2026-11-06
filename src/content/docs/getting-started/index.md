@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-15'
+lastVerified: '2026-11-06'
 ---
 
 tansr 是一套智能体运行时：同一个内核（查询环、工具调度、权限引擎、上下文压缩）以几种不同的形态对外提供。你不需要全部了解，只要按「我要把智能体放在哪里跑」选一条路即可。中立桥梁、Harness、Skill 与运行时的分工、当前两步，以及尚未提供的规划，写在[技术立场](/getting-started/principles/)；给编程助手采集的同一份条文在 [`/llms.txt`](/llms.txt)。首页只在页尾放折叠入口。
@@ -27,8 +27,8 @@ tansr 是一套智能体运行时：同一个内核（查询环、工具调度�
 | 我想在终端里直接和智能体对话、改代码、跑脚本 | `tansr` 命令行 | [命令行 5 分钟跑通](/getting-started/cli/) |
 | 我在写 Node.js / Electron 程序，想把智能体嵌进自己的进程 | `@tansr/sdk` | [Node SDK 5 分钟跑通](/getting-started/sdk/) |
 | 我要给自己的移动端或 Web 用户提供智能体，需要一个多用户的后端服务 | `@tansr/serve` 自托管会话服务 | [会话服务 5 分钟跑通](/getting-started/serve/) |
-| 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk`（0.4.0） | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
-| 我在写 iOS / macOS App，后端同上 | Swift 二进制包 `tansr-ios-spm`（0.3.0） | 同上一篇的「iOS 同法」一节 |
+| 我在写 Android App，后端已经（或准备）用 `@tansr/serve` | Kotlin SDK `com.tansr.sdk`（0.5.0） | [Android 与 iOS 5 分钟跑通](/getting-started/android/) |
+| 我在写 iOS / macOS App，后端同上 | Swift 二进制包 `tansr-ios-spm`（0.4.0） | 同上一篇的「iOS 同法」一节 |
 | 我在写原生 HarmonyOS App，后端同上 | ArkTS HAR `@tansr/harmony` | [鸿蒙 SDK 5 分钟跑通](/getting-started/harmony/) |
 
 两条经验法则：

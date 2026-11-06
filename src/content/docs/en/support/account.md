@@ -13,7 +13,7 @@ sources:
   - tansr-cli:doc/11-用户手册.md
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-api:openapi/openapi.json
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
 This page answers the most common account-side questions. Anything that requires an "action" is done in the console; the CLI only signs this machine in and shows status.
@@ -54,7 +54,7 @@ This page answers the most common account-side questions. Anything that requires
 
 ## Plans and concurrency
 
-**Are capabilities tiered?** No. Adjudicator, memory, context schemes, media, MCP and organization governance are the same product across all tiers; tiers differ only in concurrency, number of apps, number of members, model pricing and service. What you build during the Trial tier needs zero changes when you upgrade.
+**Are capabilities tiered?** No. Adjudicator, memory, context resources, media, MCP and organization governance are the same product across all tiers; tiers differ only in concurrency, number of apps, number of members, model pricing and service. What you build during the Trial tier needs zero changes when you upgrade.
 
 | Tier | Who it is for | Concurrency cap | Apps | Model pricing |
 |---|---|---|---|---|

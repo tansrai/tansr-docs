@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-15'
+lastVerified: '2026-11-06'
 ---
 
 tansr is an agent runtime: one kernel (query loop, tool scheduling, permission engine, context compaction) offered in several different forms. You do not need to learn all of them. Pick one path based on "where do I want the agent to run". The neutral bridge, the Harness, how Skill differs from the runtime, the current two steps, and the roadmap that is not offered yet are on [Technical stance](/en/getting-started/principles/). The same statements, for a coding assistant to collect, are in [`/llms.txt`](/llms.txt). The homepage keeps only a collapsed entry at the bottom.
@@ -27,8 +27,8 @@ tansr is an agent runtime: one kernel (query loop, tool scheduling, permission e
 | I want to talk to an agent in my terminal, edit code, run scripts | the `tansr` CLI | [CLI in 5 minutes](/en/getting-started/cli/) |
 | I am writing a Node.js / Electron program and want to embed the agent in my own process | `@tansr/sdk` | [Node SDK in 5 minutes](/en/getting-started/sdk/) |
 | I want to offer an agent to my own mobile or web users and need a multi-user backend | the `@tansr/serve` self-hosted session service | [Session service in 5 minutes](/en/getting-started/serve/) |
-| I am writing an Android app and the backend uses (or will use) `@tansr/serve` | Kotlin SDK `com.tansr.sdk` (0.4.0) | [Android and iOS in 5 minutes](/en/getting-started/android/) |
-| I am writing an iOS / macOS app, backend as above | Swift binary package `tansr-ios-spm` (0.3.0) | the "Same on iOS" section of the same article |
+| I am writing an Android app and the backend uses (or will use) `@tansr/serve` | Kotlin SDK `com.tansr.sdk` (0.5.0) | [Android and iOS in 5 minutes](/en/getting-started/android/) |
+| I am writing an iOS / macOS app, backend as above | Swift binary package `tansr-ios-spm` (0.4.0) | the "Same on iOS" section of the same article |
 | I am writing a native HarmonyOS app, backend as above | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK in 5 minutes](/en/getting-started/harmony/) |
 
 Two rules of thumb:

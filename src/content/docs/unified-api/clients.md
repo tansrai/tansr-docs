@@ -34,10 +34,10 @@ sources:
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
-九个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布节奏不同**。下表截至 2026-10-13，版本号与日期按当天查到的注册表记录填写（npm、NuGet、Maven Central、`tansrai/tansr-ios-spm` 的 GitHub Release、Go 模块代理、crates.io、PyPI、`tansrai/tansr-cpp` 的 GitHub Release），日期取注册表记录的 UTC 日期；鸿蒙没有公开包仓库，按随官网下载页分发的 HAR 登记。每行末尾写明公开渠道上最后一个仍走旧前缀的版本：装到它或更早版本的应用，升级后才按本章描述工作。
+九个客户端对 `unified-v1` 的实现都遵守同一份合同，但**发布节奏不同**。下表截至 2026-11-06，版本号与日期按当天查到的注册表记录填写（npm、NuGet、Maven Central、`tansrai/tansr-ios-spm` 的 GitHub Release、Go 模块代理、crates.io、PyPI、`tansrai/tansr-cpp` 的 GitHub Release），日期取注册表记录的 UTC 日期；鸿蒙没有公开包仓库，按随官网下载页分发的 HAR 登记。每行末尾写明公开渠道上最后一个仍走旧前缀的版本：装到它或更早版本的应用，升级后才按本章描述工作。
 
 | 客户端 | 公开发布物 | `/api`（unified-v1）支持 |
 |---|---|---|

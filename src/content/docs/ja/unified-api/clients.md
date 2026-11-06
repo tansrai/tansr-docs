@@ -34,10 +34,10 @@ sources:
   - tansr-harmony:README.md
   - tansr-harmony:CHANGELOG.md
   - tansr-harmony:doc/HM-01-SDK接入手册.md
-lastVerified: '2026-10-13'
+lastVerified: '2026-11-06'
 ---
 
-9 つのクライアントはどれも同じ契約に従って `unified-v1` を実装していますが、**リリースの歩調は異なります**。下の表は 2026-10-13 時点です。バージョン番号と日付は当日に読んだレジストリの記録（npm、NuGet、Maven Central、`tansrai/tansr-ios-spm` の GitHub Release、Go モジュールプロキシ、crates.io、PyPI、`tansrai/tansr-cpp` の GitHub Release）どおりに記入し、日付はレジストリ記録の UTC 日付を採ります。HarmonyOS には公開パッケージレジストリがないため、公式ダウンロードページとともに配布される HAR で登録します。各行の末尾には、公開チャネル上で旧プレフィックスを使う最後のバージョンを書いています。そのバージョン以前をインストールしているアプリは、アップグレードして初めてこの章の説明どおりに動きます。
+9 つのクライアントはどれも同じ契約に従って `unified-v1` を実装していますが、**リリースの歩調は異なります**。下の表は 2026-11-06 時点です。バージョン番号と日付は当日に読んだレジストリの記録（npm、NuGet、Maven Central、`tansrai/tansr-ios-spm` の GitHub Release、Go モジュールプロキシ、crates.io、PyPI、`tansrai/tansr-cpp` の GitHub Release）どおりに記入し、日付はレジストリ記録の UTC 日付を採ります。HarmonyOS には公開パッケージレジストリがないため、公式ダウンロードページとともに配布される HAR で登録します。各行の末尾には、公開チャネル上で旧プレフィックスを使う最後のバージョンを書いています。そのバージョン以前をインストールしているアプリは、アップグレードして初めてこの章の説明どおりに動きます。
 
 | クライアント | 公開リリース物 | `/api`（unified-v1）対応 |
 |---|---|---|

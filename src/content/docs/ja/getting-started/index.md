@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-15'
+lastVerified: '2026-11-06'
 ---
 
 tansr はエージェントランタイムです。同じ 1 つのカーネル（クエリループ、ツールスケジューリング、権限エンジン、コンテキスト圧縮）を、いくつかの異なる形態で提供します。すべてを理解する必要はありません。「エージェントをどこで動かしたいか」に合わせて道を 1 つ選ぶだけです。中立な橋、Harness、Skill とランタイムの分担、今の 2 ステップ、そしてまだ提供していない計画は[技術上の立場](/ja/getting-started/principles/)にあります。プログラミング助手が収集する同じ条文は [`/llms.txt`](/llms.txt) にあります。資料サイトの最初の画面には出さず、ページ末尾の折りたたみに置きます。
@@ -27,8 +27,8 @@ tansr はエージェントランタイムです。同じ 1 つのカーネル�
 | ターミナルで直接エージェントと対話し、コードを直し、スクリプトを実行したい | `tansr` CLI | [CLI を 5 分で動かす](/ja/getting-started/cli/) |
 | Node.js / Electron プログラムを書いていて、エージェントを自分のプロセスに組み込みたい | `@tansr/sdk` | [Node SDK を 5 分で動かす](/ja/getting-started/sdk/) |
 | 自分のモバイル / Web ユーザーにエージェントを提供したい。マルチユーザーのバックエンドが必要 | `@tansr/serve` セルフホストのセッションサービス | [セッションサービスを 5 分で動かす](/ja/getting-started/serve/) |
-| Android アプリを書いていて、バックエンドは `@tansr/serve` を使う（予定） | Kotlin SDK `com.tansr.sdk`（0.4.0） | [Android と iOS を 5 分で動かす](/ja/getting-started/android/) |
-| iOS / macOS アプリを書いていて、バックエンドは上と同じ | Swift バイナリパッケージ `tansr-ios-spm`（0.3.0） | 同じ記事の「iOS でも同じ手順」節 |
+| Android アプリを書いていて、バックエンドは `@tansr/serve` を使う（予定） | Kotlin SDK `com.tansr.sdk`（0.5.0） | [Android と iOS を 5 分で動かす](/ja/getting-started/android/) |
+| iOS / macOS アプリを書いていて、バックエンドは上と同じ | Swift バイナリパッケージ `tansr-ios-spm`（0.4.0） | 同じ記事の「iOS でも同じ手順」節 |
 | ネイティブ HarmonyOS アプリを書いていて、バックエンドは上と同じ | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK を 5 分で動かす](/ja/getting-started/harmony/) |
 
 経験則は 2 つです。

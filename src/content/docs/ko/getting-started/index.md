@@ -15,7 +15,7 @@ sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:packages/server/README.md
   - tansr-cli:doc/90-SDK技术手册.md
-lastVerified: '2026-10-15'
+lastVerified: '2026-11-06'
 ---
 
 tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구 스케줄링, 권한 엔진, 컨텍스트 압축)을 여러 가지 형태로 제공합니다. 전부 이해할 필요는 없습니다. "에이전트를 어디에서 실행할 것인가"에 따라 길 하나만 고르면 됩니다. 중립 다리, Harness, Skill과 런타임의 역할 나눔, 현재의 두 단계, 그리고 아직 제공하지 않은 계획은 [기술 입장](/ko/getting-started/principles/)에 있습니다. 코딩 도우미가 수집하는 같은 문장은 [`/llms.txt`](/llms.txt)에 있습니다. 문서 첫 화면에는 두지 않고 페이지 끝의 접힌 항목에 둡니다.
@@ -27,8 +27,8 @@ tansr는 에이전트 런타임입니다. 하나의 커널(쿼리 루프, 도구
 | 터미널에서 직접 에이전트와 대화하고, 코드를 고치고, 스크립트를 실행하고 싶다 | `tansr` CLI | [CLI 5분 안에 실행하기](/ko/getting-started/cli/) |
 | Node.js / Electron 프로그램을 작성 중이며, 에이전트를 내 프로세스에 내장하고 싶다 | `@tansr/sdk` | [Node SDK 5분 안에 실행하기](/ko/getting-started/sdk/) |
 | 내 모바일 / 웹 사용자에게 에이전트를 제공하고 싶고, 다중 사용자 백엔드가 필요하다 | `@tansr/serve` 자체 호스팅 세션 서비스 | [세션 서비스 5분 안에 실행하기](/ko/getting-started/serve/) |
-| Android 앱을 작성 중이며, 백엔드는 `@tansr/serve`를 사용한다(사용할 예정이다) | Kotlin SDK `com.tansr.sdk`(0.4.0) | [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
-| iOS / macOS 앱을 작성 중이며, 백엔드는 위와 같다 | Swift 바이너리 패키지 `tansr-ios-spm`(0.3.0) | 같은 문서의 "iOS도 같은 방법" 절 |
+| Android 앱을 작성 중이며, 백엔드는 `@tansr/serve`를 사용한다(사용할 예정이다) | Kotlin SDK `com.tansr.sdk`(0.5.0) | [Android와 iOS 5분 안에 실행하기](/ko/getting-started/android/) |
+| iOS / macOS 앱을 작성 중이며, 백엔드는 위와 같다 | Swift 바이너리 패키지 `tansr-ios-spm`(0.4.0) | 같은 문서의 "iOS도 같은 방법" 절 |
 | 네이티브 HarmonyOS 앱을 작성 중이며, 백엔드는 위와 같다 | ArkTS HAR `@tansr/harmony` | [HarmonyOS SDK 5분 안에 실행하기](/ko/getting-started/harmony/) |
 
 경험 법칙은 두 가지입니다.
