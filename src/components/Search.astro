@@ -54,6 +54,11 @@ if (project.trailingSlash === 'never') dataAttributes['data-strip-trailing-slash
       button.addEventListener('click', () => this.querySelector('input')?.focus());
 
       const focusSearch = () => {
+        const hero = document.querySelector<HTMLInputElement>('[data-hero-search-input]');
+        if (hero) {
+          hero.focus();
+          return;
+        }
         const input = this.querySelector('input');
         if (input instanceof HTMLInputElement) input.focus();
         else button.focus();

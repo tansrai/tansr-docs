@@ -1,9 +1,10 @@
 ---
 /**
- * 首页 hero 里的大搜索入口:点击把焦点交给顶栏里的搜索框,就地输入(同一索引)。
- * 搜索框尚未就绪时,退而把焦点交给顶栏按钮。
+ * 首页 / 帮助中心中部的大搜索框:在这个框里输入,结果挂在框下(与顶栏同一索引)。
+ * 可见的是本框自己的输入;Pagefind 的输入只作同步,不显示。
  */
 import { Icon } from '@astrojs/starlight/components';
+import project from 'virtual:starlight/project-context';
 import { uiLocale } from '../lib/categories.mjs';
 
 interface Props {
@@ -16,24 +17,180 @@ const PLACEHOLDER = {
   ko: '문서와 도움말 센터 검색…',
 } as const;
 const placeholder = Astro.props.placeholder ?? PLACEHOLDER[uiLocale(Astro.locals.starlightRoute.locale)];
+const pagefindTranslations = {
+  ...Object.fromEntries(
+    Object.entries(Astro.locals.t.all())
+      .filter(([key]) => key.startsWith('pagefind.'))
+      .map(([key, value]) => [key.replace('pagefind.', ''), value]),
+  ),
+  placeholder,
+};
+const dataAttributes: DOMStringMap = { 'data-translations': JSON.stringify(pagefindTranslations) };
+if (project.trailingSlash === 'never') dataAttributes['data-strip-trailing-slash'] = '';
 ---
 
-{/* 可访问名 = 可见文字(placeholder);不另设 aria-label,否则 Lighthouse label-content-name-mismatch 红(DS-21) */}
-<button type="button" class="hero-search" data-hero-search>
-  <Icon name="magnifier" size="1.25rem" />
-  <span class="hero-search-text">{placeholder}</span>
-  <kbd class="sl-hidden md:sl-flex" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></kbd>
-</button>
+<div class="hero-search-anchor" {...dataAttributes}>
+  <div class="hero-search">
+    <Icon name="magnifier" size="1.25rem" />
+    <input type="search" class="hero-search-input" placeholder={placeholder} data-hero-search-input autocomplete="off" enterkeyhint="search" />
+    <kbd class="sl-hidden md:sl-flex" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></kbd>
+  </div>
+  <div id="tansr-hero-search"></div>
+</div>
 
 <script>
-  document.querySelectorAll<HTMLButtonElement>('[data-hero-search]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const input = document.querySelector<HTMLInputElement>('site-search input');
-      if (input) {
-        input.focus();
-        return;
-      }
-      document.querySelector<HTMLButtonElement>('site-search button[data-open-modal]')?.focus();
+  import { pagefindUserConfig } from 'virtual:starlight/pagefind-config';
+
+  const anchor = document.querySelector<HTMLElement>('.hero-search-anchor');
+  const heroInput = anchor?.querySelector<HTMLInputElement>('[data-hero-search-input]');
+  if (anchor && heroInput) {
+    const shouldStrip = anchor.dataset.stripTrailingSlash !== undefined;
+    const stripTrailingSlash = (path: string) => path.replace(/(.)\/(#.*)?$/, '$1$2');
+    const formatURL = shouldStrip ? stripTrailingSlash : (path: string) => path;
+    let translations = {};
+    try {
+      translations = JSON.parse(anchor.dataset.translations || '{}');
+    } catch {}
+
+    const sync = () => {
+      const pfInput = anchor.querySelector<HTMLInputElement>('#tansr-hero-search input');
+      if (!pfInput) return;
+      pfInput.value = heroInput.value;
+      pfInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    heroInput.addEventListener('input', sync);
+    heroInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      heroInput.value = '';
+      sync();
+      heroInput.blur();
     });
-  });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (import.meta.env.DEV) return;
+      const onIdle = window.requestIdleCallback || ((cb: () => void) => setTimeout(cb, 1));
+      onIdle(async () => {
+        // @ts-expect-error — Missing types for @pagefind/default-ui package.
+        const { PagefindUI } = await import('@pagefind/default-ui');
+        new PagefindUI({
+          ...pagefindUserConfig,
+          element: '#tansr-hero-search',
+          baseUrl: import.meta.env.BASE_URL,
+          bundlePath: import.meta.env.BASE_URL.replace(/\/$/, '') + '/pagefind/',
+          showImages: false,
+          translations,
+          showSubResults: true,
+          processResult: (result: { url: string; meta?: Record<string, string>; sub_results: Array<{ url: string }> }) => {
+            result.url = formatURL(result.url);
+            result.sub_results = result.sub_results.map((sub) => {
+              sub.url = formatURL(sub.url);
+              return sub;
+            });
+            if (result.meta && 'keys' in result.meta) {
+              const { keys: _keys, ...rest } = result.meta;
+              result.meta = rest;
+            }
+            return result;
+          },
+        });
+        const form = anchor.querySelector<HTMLElement>('#tansr-hero-search form');
+        form?.setAttribute('aria-hidden', 'true');
+        form?.querySelector('input')?.setAttribute('tabindex', '-1');
+        if (heroInput.value) sync();
+      });
+    });
+  }
 </script>
+
+<style>
+  .hero-search-anchor {
+    position: relative;
+    width: 100%;
+    max-width: 44rem;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-search-anchor > .hero-search {
+    margin: 0;
+  }
+  .hero-search-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    outline: none;
+  }
+  .hero-search-input::-webkit-search-cancel-button {
+    appearance: none;
+  }
+  .hero-search:focus-within {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-white);
+  }
+  .hero-search:focus-within > kbd {
+    visibility: hidden;
+  }
+</style>
+
+<style is:global>
+  body:has([data-hero-search-input]) site-search .search-kbd {
+    display: none;
+  }
+  #tansr-hero-search,
+  #tansr-hero-search .pagefind-ui {
+    width: 100%;
+  }
+  #tansr-hero-search .pagefind-ui__form {
+    position: relative;
+    width: 100%;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+  }
+  #tansr-hero-search .pagefind-ui__search-input,
+  #tansr-hero-search .pagefind-ui__search-clear,
+  #tansr-hero-search .pagefind-ui__form::before {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    border: 0 !important;
+  }
+  #tansr-hero-search .pagefind-ui__drawer:not(.pagefind-ui__hidden) {
+    position: absolute;
+    z-index: 20;
+    inset-inline-start: 0;
+    top: 0.4rem;
+    flex-direction: column;
+    width: 100%;
+    max-height: min(32rem, 70vh);
+    overflow: auto;
+    margin: 0;
+    padding: 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-gray-6);
+    box-shadow: var(--sl-shadow-lg);
+  }
+  #tansr-hero-search .pagefind-ui__result-tag[data-pagefind-ui-meta='keys'] {
+    display: none;
+  }
+  #tansr-hero-search .pagefind-ui__result-title,
+  #tansr-hero-search .pagefind-ui__result-nested {
+    position: relative;
+  }
+  #tansr-hero-search .pagefind-ui__result-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+</style>
