@@ -2,7 +2,8 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightOpenAPI, { openAPISidebarGroups } from 'starlight-openapi';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CATEGORIES, EXTRA_LOCALES, OPENAPI_PUBLIC, ROOT_LOCALE, hasOpenApi } from './src/lib/categories.mjs';
 import { META_WEIGHTS } from './src/lib/search-weights.mjs';
@@ -12,6 +13,16 @@ import { META_WEIGHTS } from './src/lib/search-weights.mjs';
  * 文件由 `pnpm vendor` + `pnpm gen` 产出;缺席时不挂插件、不加侧栏组,构建照常通过。
  */
 const openApiPresent = hasOpenApi(import.meta.url);
+
+/**
+ * Pagefind 的界面包是 Starlight 的依赖,本仓 package.json 不另加依赖(有卷锁着依赖清单)。
+ * 搜索框覆写要直接引它的样式和运行时,从 Starlight 的安装目录解析。
+ */
+const pagefindUiDir = join(
+  dirname(dirname(realpathSync(fileURLToPath(new URL('./node_modules/@astrojs/starlight', import.meta.url))))),
+  '@pagefind',
+  'default-ui',
+).replaceAll('\\', '/');
 
 /**
  * 「TS / Node SDK」组:手写指南(与 autogenerate 同序——无 sidebar.order 时按文件名字母序)+「API 参考」一条(总览)。
@@ -51,6 +62,11 @@ const sidebar = CATEGORIES.flatMap((c) => {
 export default defineConfig({
   site: 'https://docs.tansr.com',
   trailingSlash: 'always',
+  vite: {
+    resolve: {
+      alias: [{ find: /^@pagefind\/default-ui(.*)/, replacement: `${pagefindUiDir}$1` }],
+    },
+  },
   integrations: [
     starlight({
       title: 'tansr 资料站',
@@ -69,6 +85,7 @@ export default defineConfig({
       components: {
         Head: './src/components/Head.astro',
         Header: './src/components/Header.astro',
+        Search: './src/components/Search.astro',
         MobileMenuFooter: './src/components/MobileMenuFooter.astro',
         Footer: './src/components/Footer.astro',
         MarkdownContent: './src/components/MarkdownContent.astro',
