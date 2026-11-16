@@ -6,39 +6,39 @@
     "vendoredAt": "2026-11-06"
   },
   "serve.env.example": {
-    "source": "tansr-cli@cbad5f9edb39:packages/server/.env.example",
-    "revision": 3,
-    "sha256": "c50dbb2bfe84b7a8e3493f7ce29ad091932721c59f36492115aca94924c4c263",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:packages/server/.env.example",
+    "revision": 4,
+    "sha256": "e34f3d136beb8b6e16cab52a4a83ee6d009e780877fcf7fe7ac8ba2481a48df0",
+    "vendoredAt": "2026-11-16"
   },
   "changelog/cli.md": {
-    "source": "tansr-cli@cbad5f9edb39:CHANGELOG.md",
-    "revision": 6,
-    "sha256": "f773a0f85f6a966f332058df76fe77f6d061c5bca099e7344ad9a0f3d1e6c0d8",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:CHANGELOG.md",
+    "revision": 7,
+    "sha256": "b8e5b17ff93a09e2708a6fd8b218795553ec135baf0516c4ca778246ab174648",
+    "vendoredAt": "2026-11-16"
   },
   "changelog/sdk.md": {
-    "source": "tansr-cli@cbad5f9edb39:packages/sdk/CHANGELOG.md",
-    "revision": 10,
-    "sha256": "7876e2813346022ea78df336e9de79cdd52b85fea3593c24a69fa35a1789bc29",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:packages/sdk/CHANGELOG.md",
+    "revision": 11,
+    "sha256": "cd8e3599b985d0c341e5afd8df98c6c7308a3e320c92df664c39dd0017335b18",
+    "vendoredAt": "2026-11-16"
   },
   "changelog/serve.md": {
-    "source": "tansr-cli@cbad5f9edb39:packages/server/CHANGELOG.md",
-    "revision": 9,
-    "sha256": "45eb94db7e9c344e8a3fb04354884a8aca950dd7782d2c086f7acb081900b0c5",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:packages/server/CHANGELOG.md",
+    "revision": 10,
+    "sha256": "58eadd90e37cbd5dd535d9dea15f4d057d72fd8f170b84c4674bb3478515cf54",
+    "vendoredAt": "2026-11-16"
   },
   "cli-help.json": {
-    "source": "tansr-cli@cbad5f9edb39:dist/tansr.mjs",
-    "revision": 6,
-    "sha256": "2425ca11a00015acdea99bbe65dd943e33696d729c23a6c783dfcf22270ab319",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:dist/tansr.mjs",
+    "revision": 7,
+    "sha256": "ca7382865bbc79340b5c7930ef6bcd1975ce24bd64b5c64a521af11e0794d0da",
+    "vendoredAt": "2026-11-16"
   },
   "sdk-index.d.ts": {
-    "source": "tansr-cli@cbad5f9edb39:packages/sdk/dist/index.d.ts",
-    "revision": 11,
-    "sha256": "8207af12ecd32001c72c86636676ea42fd3f08386e29d642c8b753a7cae913b3",
-    "vendoredAt": "2026-10-13"
+    "source": "tansr-cli@b0ffc9e6c370:packages/sdk/dist/index.d.ts",
+    "revision": 12,
+    "sha256": "40524dd99b68580e857a58d7bcfc673e90b3ee010b1834094a14fa9d95872040",
+    "vendoredAt": "2026-11-16"
   }
 }

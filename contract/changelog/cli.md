@@ -10,6 +10,15 @@
 迁移方式」并括注卡号(FX-X-nn)与波次(W1–W4);事实源 = 各波收编回执 `doc/report/十王修案-W{1,2,3,4}-收编回执-*.md` §一与泳道终报。
 0.2.0 之前的历史见 git(`git log -- packages/cli`)。
 
+## 0.11.0 — 2026-11-16
+
+已发布（源码 `f977e64a`，npm `@tansr/cli@0.11.0` dist-tag `latest`；正式回执见 [`doc/release/cli-0.11.0.md`](doc/release/cli-0.11.0.md)；git tag `v0.11.0` 按 D24 本地留档不推）。自 0.10.3（`2ecc2ef0`）以来汇集 PST-SERVE 无盘宿主收口、STO-01 / INIT-01 本地会话存储新布局、MODEL-ROLE 双槽裁决、ARB 工具许可、CMO 分支摘要与 CONC-01 并发过载治理；因 `tansr serve` 启动形态存在破坏性收紧，按 0.x 规则推进 minor 至 0.11.0。
+
+- **BREAKING：`tansr serve` 仅支持显式受信宿主模块启动（PST-SERVE-01，`0a0b1b57`）**：`tansr serve` 退役本机目录会话存储与裸起形态，必须同时提供 `--v2 --host-module <绝对路径.cjs> --host-module-sha256 <sha256>`（入口不再装配本机文件 Store、CLI 登录凭据或测试假 provider，也不再向标准输出打印旧式监听横幅，仅保留 `TANSR_READY` 就绪帧与错误/停机输出）。**对你意味着**：此前不带 `--host-module` 直接运行 `tansr serve` 或 `tansr serve --v2` 的命令将以用法错误（退出码 5）拒绝启动；`tansrd` 池编排同样须在池实例命令中传入受信宿主模块与摘要。**迁移**：按 `examples/serve-demo/TRUSTED-HOST.md` 编写本机 `.cjs` 宿主模块，显式装配端侧或云端持久源后以 `--v2 --host-module … --host-module-sha256 …` 启动。
+- **内嵌 `@tansr/serve` 升级至 0.16.0（CONC-01 / STO-01 / AOR）**：运行时环境变量表扩展至 47 键（新增 `TANSR_SERVE_OVERLOAD_WIRE=compat|full` 及自适应容量/上游连接池治理旋钮，详见 `packages/server/CHANGELOG.md` 0.16.0 段）；多用户并发容量、503/429 过载错误合同、SSE 100 ms 写批复核限频、归档提交容量退避重放与热槽位回收全部随包生效。**对你意味着**：已通过 `--host-module` 运行的部署升级即获并发容量与过载保护，缺省 `overloadWire=compat` 保持客户端兼容。**迁移**：无。
+- **本地会话存储默认切换为 `session-log-v1` 段日志与格式 5 冷材料（STO-01 / INIT-01，`e68ffb39` / `be24f29a`）**：TUI、headless 与 `acp` 新建本地会话默认采用 `session-log-v1` 布局（单步提交合并、绑定本进程身份的会话锁、按需读取冷归档检查点/附件/spill 材料，并在会话删除退休与异常认领清理时同步发布冷层 `retired` 清单与释放 custody 锁）；旧 `legacy` 单文件 `journal.jsonl` 会话保持原样只读与 `--resume` 恢复兼容。**对你意味着**：本地长会话写入与恢复开销降低，无需手工转换既有历史目录。**迁移**：升级后请勿再用 0.10.x 旧二进制写同一新会话目录。
+- **模型角色双槽裁决、逐函数许可与上下文分支摘要（MODEL-ROLE / ARB / CMO / AOR）**：同步消费平台 `main` / `fast` / `adjudicator` 三角色主备与独立裁决槽策略，配置刷新时保留累计已用预算；统一唯一上下文规则与主子代理共享治理，保留压缩时工具调用头尾并支持 Pi 式分支探索摘要恢复；收束子代理与后台编排结算边界。**对你意味着**：TUI / headless / `acp` 与平台新模型角色及上下文配置自动对齐。**迁移**：无。
+
 ## 0.10.3 — 2026-10-10
 
 - 内置 Serve 更新至本次主线修复集合：首次设备绑定、业务工具受控输出及原超时、统一错误语义、材料结算后的检查点恢复。通过 tansr serve 消费同一修复；无新增 CLI 命令、旗标或 ACP 协议。

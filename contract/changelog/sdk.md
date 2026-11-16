@@ -9,20 +9,26 @@
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.11.0 之前的历史见 git(`git log -- packages/sdk`)。
 `tansr` 命令行 / `serve` 宿主面分别见仓根 `CHANGELOG.md` 与 `packages/server/CHANGELOG.md`(三包同律,`doc/release/README.md`)。
 
-## 0.20.0 — 候选(待发布;MODEL-ROLE-04)
+## 0.20.1 — 2026-11-16
 
-MODEL-ROLE 发行准备：本段描述候选源码，尚未发布到 npm。公开 `@tansr/sdk@0.19.0` 于2026-10-10发行，不含后续合入的模型角色与主备独立策略；历史同版本本地候选不能当作公开发行物。
+已发布（源码 `f977e64a`，npm `@tansr/sdk@0.20.1` dist-tag `latest`；正式回执见 [`doc/release/sdk-0.20.1.md`](../../doc/release/sdk-0.20.1.md)；相对 `0.20.0` 导出集 0 增删改，本版 674 个导出）：
+
+- 修复 `createFileSessionStore({ dir, cold })` 与 `openSessionStorageStore({ ..., cold })`（默认 `session-log-v1` / format 5 冷层）在调用 `delete(sessionId)` 退休会话时未向冷层发布 `retired` 清单且未释放远端 custody 锁的问题；同时修复在冷层对缺失、已退休或创建意图冲突会话打开/创建失败时未释放新获取 custody 锁的问题。使用 `0.20.0` 挂载对象存储冷层并调用 `SessionStore.delete` 的接入方应升级至 `0.20.1`，无需修改业务代码。
+
+## 0.20.0 — 2026-11-16
+
+已发布（源码 `f2ac2412`，npm `@tansr/sdk@0.20.0` dist-tag `latest`；正式回执见 [`doc/release/sdk-0.20.0.md`](../../doc/release/sdk-0.20.0.md)）。相对 `@tansr/sdk@0.19.0` 导出集实测 **+52 / −0 / ~33**（本版 674 个导出），汇集 MODEL-ROLE 模型角色与主备独立策略、ARB 工具许可、CMO 分支摘要与回忆生命周期、STO-01 新布局会话存储与迁移、INIT-01 有界恢复等主线合入能力。
 
 - 新增 `AppBundleModelRoles` 等角色类型、`AppBundleAdjudicatorPolicies` 和 `PlatformRoleModel`，并声明 `adjudicator-policy-slots-v1`：按 App 的有效 main／fast／adjudicator 主备和实际槽策略运行。模型许可、档位、预算与超限处置采用同一实际槽，否决、预算尽、受理未知或已输出不借备用绕过；平台默认不是用户档位上限。接入方须升级真实 SDK 安装物，管理端保存成功不代表旧包已具备配对消费。
 - 修复已协商裁决双槽、但首次装配没有可用裁决人的会话：合法配置修复后，同一会话可恢复裁决，继续使用原权限引擎及累计预算；显式 `adjudication: { enabled: false }` 不因配置刷新重新启用。接入方无需为这类合法恢复重建会话，原许可与宿主权限边界保持。
 - 配置刷新继续沿原身份隔离、失效与合法恢复边界；同一引擎的预算不因刷新重置。SDK token 档原默认裁决及显式关闭语义保持，CLI 的启用开关和权限模式不在本发行中改动。Electron 仍在主进程使用完整 SDK／kernel 与 IPC，不改为远端客户端。
-- 相对正式 `@tansr/sdk@0.19.0` 的已提交根／子入口快照有6项新增、13项签名变化，原0.x导出门要求minor；最终差集以本候选冻结后原构建和exports门为准。使用 bundle 公共类型、自定义工具或装配扩展的调用方须重新类型检查；未变的SDK2／UAPI冻结合同不随此版本重定义。
+- 新增 `./extensions` 的 `restoreWithBranchSummary`、内容寻址 spill 存储、文件记忆提取／固化宿主、文件会话迁移 `createFileSessionMigration`、`openSessionStorageStore` 等持久化与上下文治理接口；使用 bundle 公共类型、自定义工具或装配扩展的调用方须重新类型检查；未变的 SDK2／UAPI 冻结合同不随此版本重定义。
 
 ### 工具许可（ARB，2026-10-11）
 
 - 每个 `defineTool` 新增可选 `permission: inherit | allow | ask`：默认沿原链，显式豁免或用户许可跳过模型裁决；拒绝规则、硬安全与应用能力边界仍优先。
 - `query` / `createSession` 的 Task 子、孙代理复用宿主 `permission.askUser`，显式 `ask` 每次重新询问；无通道则拒绝。Electron 完整集成方式不变。
-- 本段随0.20.0候选登记，尚未发行；远端SDK2/UAPI声明未增加该字段。新增公共选项按原0.x导出签名门推进minor，不沿用已发布版本号冒称上线。
+- 远端 SDK2/UAPI 声明未增加该字段；新增公共选项随本版 0.20.0 minor 一并发布。
 
 ## 0.19.0 — 2026-10-10
 

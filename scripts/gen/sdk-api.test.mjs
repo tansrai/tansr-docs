@@ -30,10 +30,13 @@ const dts = readFileSync(join(root, 'contract', SOURCE), 'utf8');
  *   - 未发布(0.20.0 候选,平台模型角色与主备裁决策略)6 类型:AppBundleModelRole / AppBundleModelRoles / AppBundleModelRoleSelection /
  *     AppBundleModelRoleRevision / AppBundleAdjudicatorPolicies / PlatformRoleModel;另有 14 项签名变化(如 DefineToolOptions.permission、
  *     AppBundle.modelRoles / adjudicatorPolicies、PlatformNonchatClient.getVoiceByTask),均在 0.19.0 发布之后合入。
- *     资料站按事实源法照常生成这些页;发行说明不把它们记作 0.19.0 已发特性。
+ *     资料站按事实源法照常生成这些页;发行说明不把它们记作 0.19.0 已发特性;
+ * tansr-cli@b0ffc9e6 再 vendor(2026-11-16;sdk 0.20.0 / 0.20.1 已发)新增 11 值 + 32 类型 = 630,零删除:
+ *   - 原 0.20.0 候选 6 项模型角色类型已随 0.20.0 正式发布,并新增 spill / 记忆召回生命周期 / 请求测量观察 / 文件会话存储与迁移导出;
+ *   - 页数超过 600 后按 DS-16 派单改合页形:Variable(85 项)与 Reference(1 项)合入 sdk/api/index.md,独立成员页 544 + 总览 1 = 545 页(<= 600 阈值不动)。
  */
-export const EXPECTED_EXPORTS = 587;
-export const EXPECTED_EXPORT_SPLIT = { values: 212, types: 375 };
+export const EXPECTED_EXPORTS = 630;
+export const EXPECTED_EXPORT_SPLIT = { values: 223, types: 407 };
 /** 0.20.0 候选(未发布)新增的 6 个类型导出;与上游 exports.snapshot.json v0.10.3 → HEAD 的 +6 逐名对表 */
 export const UNRELEASED_MODEL_ROLE_TYPES = Object.freeze([
   'AppBundleAdjudicatorPolicies', 'AppBundleModelRole', 'AppBundleModelRoleRevision', 'AppBundleModelRoleSelection', 'AppBundleModelRoles', 'PlatformRoleModel',
@@ -46,7 +49,7 @@ function fm(content) {
   return { fields: lines.slice(1, end), afterLine: lines[end + 1], body: lines.slice(end + 2).join('\n') };
 }
 
-test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 587(值212 · 类型375)', () => {
+test('sdk-api:countExports 数 export { } / export type { } 两行的名字数 = 630(值223 · 类型407)', () => {
   const c = countExports(dts);
   assert.deepEqual(c, { ...EXPECTED_EXPORT_SPLIT, total: EXPECTED_EXPORTS });
   const valueExports = dts.match(/^export \{ ([^}]+) \};$/m)?.[1].split(',').map((name) => name.trim());
@@ -99,7 +102,7 @@ test('sdk-api:generate → 每导出一页 + 总览;页数 = 有独立页导出 
   const byDirSum = Object.values(index.stats.byDir).reduce((a, b) => a + b, 0);
   assert.equal(memberPages.length, byDirSum);
   assert.equal(outputs.length, byDirSum + 1);
-  assert.equal(index.stats.reflections.Reference ?? 0, EXPECTED_EXPORTS - byDirSum, '不单独成页的只能是再导出别名(Reference)');
+  assert.equal((index.stats.reflections.Reference ?? 0) + (index.stats.reflections.Variable ?? 0), EXPECTED_EXPORTS - byDirSum, '不单独成页的只能是合入总览的变量(Variable)与再导出别名(Reference)');
   assert.ok(outputs.length <= 600, `页数 ${outputs.length} 超 600,须改合页形(派单 DS-16 页数控制)`);
   for (const k of Object.keys(index.stats.byDir)) assert.ok(KINDS.some((x) => x.dir === k), `分类目录 ${k} 须在 KINDS 表`);
   const rels = outputs.map((o) => o.rel);

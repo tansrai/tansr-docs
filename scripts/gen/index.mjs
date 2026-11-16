@@ -9,7 +9,7 @@
  * 生成器顺序 = 依赖顺序;coverage 同时读取本轮内存产物,首次新增页面也可一次收敛。
  * 生成器的 `generate(root)` 同步或返回 Promise 皆可(sdk-api 经 typedoc,异步);本入口统一 await。
  */
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isMainModule, parseArgs, readTextIfExists, repoRootFrom, toLf, writeLf } from '../lib/text.mjs';
@@ -35,6 +35,22 @@ export async function generateAll(root) {
 }
 
 export async function writeAll(root, log = console.log) {
+  // 先清理 sdk/api 下旧生成页(例如改为合页形或删除导出后的陈旧文件),使末位 i18nCoverage 扫描磁盘与新产物一致
+  const sdkApiRoot = join(root, sdkApi.OUT_DIR);
+  if (existsSync(sdkApiRoot)) {
+    const prune = (dir) => {
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) {
+          prune(full);
+          if (readdirSync(full).length === 0) rmSync(full, { recursive: true, force: true });
+        } else if (name.endsWith('.md')) {
+          unlinkSync(full);
+        }
+      }
+    };
+    prune(sdkApiRoot);
+  }
   const outputs = await generateAll(root);
   let quiet = 0;
   for (const o of outputs) {

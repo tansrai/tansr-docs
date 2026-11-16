@@ -90,8 +90,9 @@ export function typedocOptions({ entry, tsconfig, out }) {
     githubPages: false,
     includeVersion: false,
     excludeExternals: true,
-    // typedoc-plugin-markdown
+    // typedoc-plugin-markdown:DS-16 页数控制(<=600),常量与 Schema 变量合入总览页,类 / 函数 / 接口 / 类型别名 / 枚举保持每导出一页
     outputFileStrategy: 'members',
+    membersWithOwnFile: ['Class', 'Function', 'Interface', 'TypeAlias', 'Enum'],
     entryFileName: 'index',
     hidePageHeader: true,
     hideBreadcrumbs: true,
@@ -272,9 +273,10 @@ export function transformPage({ rel, markdown, lastVerified, stats }) {
       `本参考由 \`${PACKAGE_NAME}\` 发布包内的类型声明(\`index.d.ts\`)自动生成,逐项列出全部 **${stats.total}** 个公共导出(值 ${stats.values} · 类型 ${stats.types}):`,
     );
     out.push(...KINDS.filter((k) => stats.byDir[k.dir]).map((k) => `- ${k.label}:${stats.byDir[k.dir]} 页`));
+    if (stats.reflections?.Variable) out.push(`- 变量:${stats.reflections.Variable} 项(合入本总览页)`);
     out.push('');
     out.push(
-      '每个导出一页,签名与说明取自源码注释;概念与用法请先读手写指南 [会话与事件流](../sessions-and-events/)、[错误处理与重试](../errors-and-retries/) 与 [快速开始 · SDK](../../getting-started/sdk/)。',
+      '类、接口、函数与类型别名每导出一页,常量与 Schema 变量合入本总览页,签名与说明取自源码注释;概念与用法请先读手写指南 [会话与事件流](../sessions-and-events/)、[错误处理与重试](../errors-and-retries/) 与 [快速开始 · SDK](../../getting-started/sdk/)。',
     );
     out.push('');
     out.push(body);

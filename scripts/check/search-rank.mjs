@@ -44,11 +44,24 @@ function parseArgs(argv) {
   return opts;
 }
 
-/** 从 dist/_astro/Search.astro_*.js 抠 Starlight 内联的 `{ranking:{…}}`(与浏览器同一份);抠不到即抛。 */
+/** 从 dist/_astro/Search.astro_*.js(或其静态共享 chunk)抠 Starlight 内联的 `{ranking:{…}}`(与浏览器同一份);抠不到即抛。 */
 export function readInlinedPagefindOptions(dist) {
   const astro = join(dist, '_astro');
-  const files = existsSync(astro) ? readdirSync(astro).filter((f) => /^Search\.astro.*\.js$/.test(f)) : [];
-  for (const f of files) {
+  const entryFiles = existsSync(astro) ? readdirSync(astro).filter((f) => /^Search\.astro.*\.js$/.test(f)) : [];
+  const candidates = [];
+  const seen = new Set();
+  for (const f of entryFiles) {
+    if (!seen.has(f)) { seen.add(f); candidates.push(f); }
+    const src = readFileSync(join(astro, f), 'utf8');
+    for (const m of src.matchAll(/from\s*["']\.\/([^"']+\.js)["']/g)) {
+      const imported = m[1];
+      if (!seen.has(imported) && existsSync(join(astro, imported))) {
+        seen.add(imported);
+        candidates.push(imported);
+      }
+    }
+  }
+  for (const f of candidates) {
     const src = readFileSync(join(astro, f), 'utf8');
     const at = src.indexOf('{ranking:{');
     if (at < 0) continue;

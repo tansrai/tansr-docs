@@ -10,15 +10,48 @@
 (sdk 面见 `packages/sdk/CHANGELOG.md`)。版本号 = `packages/server/package.json`(包目录 `server`,发布名 `@tansr/serve`);
 每条写「变了什么 · 对你意味着什么 · 迁移方式」。0.6.0 之前的历史见 git(`git log -- packages/server`)。
 
-## 0.16.0 — 候选(待发布;MODEL-ROLE-04)
+## 0.16.0 — 2026-11-16
 
-MODEL-ROLE 发行准备：本段描述候选源码，尚未发布到 npm。公开 `@tansr/serve@0.15.1` 于2026-10-10发行，不含后续模型角色和主备独立策略；升级平台管理配置不能替代升级实际 Serve 运行物。
+已发布（源码 `f2ac2412`，npm `@tansr/serve@0.16.0` dist-tag `latest`；正式回执见 [`doc/release/serve-0.16.0.md`](../../doc/release/serve-0.16.0.md)）。相对 `@tansr/serve@0.15.1` 导出集实测 **+303 / −4 / ~59**（本版 837 个导出，会话合同 MANIFEST revision 14、统一 API manifest revision 21），汇集 MODEL-ROLE 模型角色与双槽裁决、PST-SERVE 无盘双模式托管交接、STO-01 新布局会话持久化、AOR 自适应容量控制与 CONC-01 多用户并发过载治理。
+
+### 并发容量与过载错误合同（CONC-01，RFC-CONC-1 P2a 及增笔一～五）
+
+本小节登记 RFC-CONC-1（2026-11-07 用户会签）服务端 P2a 的对外变更，以及增笔一～五（CONC-01 K16 / K17 / K19 / K20 / K22 / K23 / K25 / K26 / K28 / K29 / K32 / K33 / K34）。导出集新增类型 `OverloadWire`、`StartServerOptions` 新增可选字段 `overloadWire`，`V2_ERROR_CODE`、`SERVER_MESSAGE_KEY` 等导出常量同步增键。
+
+- **`/v2` 容量错误改为 503 加登记原因：** 建会、发消息、读面、压缩与快照撞池满、锁等待超时、死锁或 SQL 断连时，由原 400 `create_failed`、500 `internal_error` 或冒充的 404 改为 `503 overloaded`，携 `Retry-After` 与白名单 `error.detail{scope, reason}`（doc/98 §七-2）；准入帽、认证排队满、铸令牌闸满、预算忙同样带登记原因。对你意味着：按 `Retry-After` 退避重试，不再把容量故障当作请求错误。提交结果未知仍沿原映射，不会变成 503。
+- **主体上限改为 429：** 每终端用户 SSE 帽由 503 改为 `429 rate_limited {sse, max_sse_connections_per_end_user}`；`/v2` 入口上执行授权的每用户上限由 429 `capacity_exceeded` 改为 `429 rate_limited {execution, end_user_authorizations}`，进程上限改为 `503 overloaded {execution, authorization_saturated}`（执行扩展的 sdk2-ext 信封仍为 `capacity_exceeded`，进程上限在 `full` 下回 503）；终端用户层预算耗尽为 `429 session_limit_exceeded {archive, budget_exhausted}`，应用、宿主或记录数层耗尽为 `503 overloaded`。同一判定先判主体帽再判全局帽。
+- **可见性三态与 SSE `retry:`：** 会话可见性无法判定时回 `503 overloaded {visibility, unknown}`，不再当作不可见回 404；列表页任一行无法判定整页 503。SSE 因容量或瞬时故障收流前先写一帧 `retry:`；确定失权仍静默关闭。
+- **`Retry-After` 统一取整秒并夹到 [1, 30]：** 适用于 `overloaded`、`503 capacity_exceeded` 与各 429（含 `/v3/sdk2/archive-sync` 此前缺失的头）；`draining` 不变。
+- **新增兼容开关 `overloadWire` / `TANSR_SERVE_OVERLOAD_WIRE`（`compat` | `full`，缺省 `compat`）：** `compat` 下 `/api` 统一信封只复制冻结基线的 17 个 `reason`，`/v3` 本机过载维持原状态码；`full` 下复制域细因，`/v3` 本机过载改为 `503 capacity_exceeded`。迁移方式：先升级 Android、iOS、鸿蒙与 SDK 客户端，确认其容忍新码后再开 `full`；`/v2` 直连的修正不受开关约束。
+- **归档原提交撞存储容量拒绝后不再卡死（K17，增笔一）：** 原历史提交撞上确定未执行的存储容量拒绝时，服务端按原提交键退避重放，不重跑模型（至多 5 次尝试，合计约 3.75 秒）。重放期间 `POST /v2/sessions/:id/messages` 的 prompt、blocks、requestId 三个入口回 `503 overloaded`，带原拒绝的 `detail` 与 `Retry-After`；重放用尽或提交结果未知时回新码 `409 reconciliation_required`，不带 `Retry-After`，会话须经续办或冷恢复对账后才再受理。此前这类会话回 202 后输入永不执行。经 `/api` 时新码归 `conflict`（409，`retryAction: none`）。对你意味着：`/v2` 错误码由 46 个增为 47 个；对 code 做封闭枚举的客户端须容忍新码，按通用 409 处理即可。
+- **失败轮的流内错误帧改为如实（K17，增笔一）：** 归档原提交最终失败时，事件流只发一帧 `turn.error{ scope: 'server.persistence', errorKind: 'reconciliation_required', recoverable: false }`，不再发两条声称“下一轮整段重写、对话继续”的 `store_commit_failed`，也不再补发 `internal_error`。已确认耐久的缓冲输入留待对账；非耐久的缓冲输入随该帧收口丢弃。
+- **冷恢复身份不符改为 409（K16，增笔一）：** 恢复时原 Store 附件检查点的应用、终端用户或会话与本会话不符，由 400 `create_failed` 改为 `409 session_mismatch`，不可重试；内置平台形确定失败后归还热位，重复恢复仍报首因。自定义内层工厂已开始装配时仍保守留位，重复恢复报 400 `create_failed`。迁移方式：按 400 判别此情形的客户端改判 409。
+- **SSE 写批复核限频（CONC-01 泳道 J，增笔二）：** 带写前认证与可见性复核的事件流，同一连接两次复核至少相隔 100 ms，流式帧最多攒 100 ms 成批到达（帧间隔 p99 约 110–157 ms）；同会话多条连接共用一笔在途的可见性判定，单次复核只判可见与否。帧序、帧型、`seq`、重放、`retry:` 与收流语义不变，客户端无需改动；流式期间服务端 CPU 降 42%–84%。若同一等待窗内收到超过积压上界（缺省 2 MiB）的帧，连接按 `authorization_backlog` 收流，客户端重连经回放补齐。
+- **平台归档宿主装配期核对平台应用身份（K16 第三条，增笔三）：** `createPlatformServeArchiveHost` 带 `agent.platform` 且不带缓存宿主时，`platform.appId` 须等于 `applicationScopeId`，不等即抛 `ServeArchiveHostError`（`identity_mismatch`），与 `transactionalExecution` 作用域不符同形；`tansr serve --host-module` 随之以 `serve_host_module_start_failed` 启动失败。带缓存宿主时仍由缓存装配以 `identity_conflict` 拒绝；不带平台配置不受影响。对你意味着：此前两值不等的部署能启动，但落了运行检查点的会话冷恢复回 409 `session_mismatch`；现在启动即失败。迁移方式：把两值配成同一应用身份（平台换钥只换 `appKey`），无需迁移数据。
+- **运行时恢复下带 requestId 的耐久输入轮不再误报失败（CONC-01 K19）：** Store 开启 `ownership.runtimeRecovery` 时，带 `requestId` 的耐久输入轮此前无任何故障也以 `turn.error{errorKind:'internal_error'}`（“Internal error in the query loop (Archive spool: invalid_input)”）加 `turn.aborted{reason:'internal_error'}` 终止；现在照常完成。无需迁移。
+- **轮末 owner 检查点失败的流内帧改为如实，被取代的旧轮不再误关会话（CONC-01 K22，增笔一补记）：** 轮末 owner 检查点失败后，服务端在后续心跳上有界重试，至多 3 次。重试期间不再向客户端推 `turn.error{ errorKind: 'store_commit_failed', recoverable: true }`，失败照旧计入 `tansr_serve_store_commit_errors_total` 并经 `onStoreError` 通报。重试成功，客户端不收任何失败帧；重试用尽，或会话所有权已失（被接管、释放、删除，或所有权记录损坏），会话关闭，事件流在 `session.ended` 之前只收一帧 `turn.error{ scope: 'server.persistence', errorKind: 'reconciliation_required', recoverable: false }`，与归档原提交最终失败同一帧，同会话已发过即不重发。某轮的检查点失败若发生在下一轮已开始之后，不再重试、不计入用尽，由新一轮的检查点接替。此前，客户端在 `turn.completed` 后立即发下一轮时，旧轮的重试可能连撞三次、关掉正在进行的新轮；重试成功也会收到一帧、用尽会收到四帧声称“对话继续”的 `store_commit_failed`，所有权已失时同样收到这样一帧。对你意味着：已按增笔一处理 `reconciliation_required` 的客户端无需改动；轮末检查点路径不再出现 `store_commit_failed`，其余路径的该帧不变。
+- **attach 回放不再逐批等复核间隔（CONC-01 K23，增笔二补记）：** 断线重连按 `Last-Event-ID` 回放、终端 attach 初始回放时，回放段写尽之前的各写批不再等满 100 ms 复核间隔；每批写出前仍复核一次，失权即收流。回放写尽后的直播帧照旧按 100 ms 成批。1024 帧回放由约 350 ms 回到约 70 ms。帧序、帧型、`seq`、`retry:` 与收流语义不变，客户端无需改动。
+- **可见性判定不再因归档推进误判（CONC-01 K20）：** 原生 indexed 布局、做过记录删除（保留修订不为 `'0'`）的会话，可见性判定此前在几次读之间撞上归档推进时判不可见：GET 误回 404，SSE 误收流，实时流式中几乎必现。现在判定只读两次，第二次读在同一读点重算保留状态，归档追加不再触发重读；只有删除意图、删除修订或已确认历史摘要在两次读之间变化时才从头重读，至多 3 次，用尽仍判不可见；容量错误照旧 503。对你意味着：空闲、偶发交叠与实时流式中，由可见性判定引起的误 404、误收流都消失，客户端无需改动。此前在本条登记的已知问题（属主正在写入时非属主实例读面回 500 或 404、历史回 200 而 `lastSeq` 为 0、属主实例的 `/persistence` 回 500、分叉被误拒）已由下面 K26、K28、K29、K25 的条目修复。
+- **多实例部署下属主写入期间的读面、持久保管面与分叉不再误报（CONC-01 K26、K28、K29、K25，增笔四）：** 原生 indexed 布局、多个宿主实例共用一库时，属主实例出轮期间，非属主实例读元数据、历史与历史分页，与属主写入重叠的请求此前过半回 500 `store_corrupted` 或 404，历史还可能回 200 而 `lastSeq` 为 0；`GET /v2/sessions/:id/persistence` 与 `input-requests` 回 500 `internal_error`（属主实例上同样）；分叉与恢复预检回 400 `create_failed`；分叉回 409 `resume_unavailable`。现在这些请求照常成功：读面只认可见性判定所确认的事实；历史正文须为前或后一次判定所确认的快照，否则有界重读（至多 2 次，用尽仍 404）；水位取自同一次读；分叉只在源身份或保留修订真变、检查点已删或已变时拒绝，分叉内容恰为检查点内容。每次读的读事务也减少：元数据 10 → 7，历史 19 → 8。对你意味着：客户端无需改动。
+- **`/persistence` 与 `input-requests` 的读失败改与元数据接口同口径（CONC-01，增笔四）：** 容量与瞬时错误由 500 `internal_error` 改为 `503 overloaded` 带 `Retry-After`（卸载族存储瞬断为 `503 source_unavailable`），其余读失败由 500 `internal_error` 改为 500 `store_corrupted`。迁移方式：按 `internal_error` 判别这两条路由读失败的客户端改判 `store_corrupted` 或 503。
+- **跨读点冲突改回可重试的 503（CONC-01 兜底，增笔四）：** 读到一半会话状态变了、重读即有确定答案的情形（读面判定重读用尽、分叉与恢复预检、恢复装配、sdk2 有效史来源读，以及休眠读路由原读确认读重读用尽），由 500 `store_corrupted`、500 `internal_error` 或 400 `create_failed` 改为 `503 overloaded {visibility, unknown}`，`Retry-After` 2 s。对你意味着：按 `Retry-After` 退避重试即可。恢复装配上的这类 503 之后，在同一实例上再恢复该会话，失败占位撤销之前回的也是可重试的 503（见下文 K33 保留期一条），换实例或过后重试即成。
+- **平台归档宿主的热槽位不再只进不出（CONC-01 K32、K33）：** 此前两类情形会让 `archive.maxSessions` 的热槽位永久被占、直到进程重启。其一，定时清扫被单个结清失败或迟迟不返回的已结束会话卡住，其后的会话都不再回收。其二，建会话或恢复中途失败（取连接失败、连接池排队满、提交回执丢失，以及恢复请求体校验不过）后，失败占位永久留在热工作集里；槽位占满后新建与恢复一律回 `503 overloaded {archive, capacity_exceeded}`，恢复失败的那个会话在这台实例上此后恢复一律回 400 `create_failed`。现在清扫逐条独立，结清失败的条目按退避重试，被另一实例取代的旧条目按失权证明卸载；失败装配的本地资源一经证明结清，占位过一个 `archive.hotTtlMs` 即由清扫撤销。对你意味着：故障或池满过去后宿主自行恢复容量，无需重启。占位保留期是一个 `hotTtlMs` 加至多一个清扫间隔（清扫间隔不超过 60 秒），其间同一会话在这台实例上恢复的对外表现见下文 K33 保留期一条。已知问题：自定义内层工厂在交出驱动之前抛出的失败照旧保守留位，直到进程重启。错误码与帧不变，无需迁移。
+- **新建会话遇连接池排队满的一处 400 改为 503（CONC-01 K34，增笔四）：** 新建会话在归档绑定确认当前历史时遇连接池排队满等容量或瞬时拒绝，此前回 400 `create_failed`，现在与建会话其它位置一致回 `503 overloaded`，带 `Retry-After` 与登记的 `detail`（如 `{sql, pool_saturated}`）；提交结果未知与非容量失败照旧 400。对你意味着：按 `Retry-After` 重试即可。属 RFC-CONC-1 §2.2 既定口径的补齐，不新增错误码与词表。
+- **建会话或恢复失败后的保留期内，同一会话再恢复由 400 改为可重试的 503（CONC-01 K33，增笔五）：** 建会话或恢复中途失败后，宿主把失败占位保留一个 `archive.hotTtlMs`（加至多一个清扫间隔）才撤销。其间同一会话在这台实例上再恢复，此前回 400 `create_failed`；现在回 `503 overloaded {archive, capacity_exceeded}`，带 `Retry-After`（距撤销的上界，至多 30 秒），占位撤销后重试即成。只对本地资源已证明结清的占位如此；自定义内层工厂在交出驱动之前抛出等去向不明的占位照旧回 400。服务端 `session.rejected` 日志的 `overloadReason` 为 `failed_assembly_retained`，与热工作集已满区分。迁移方式：按 400 `create_failed` 判别这一情形的客户端改按 503 与 `Retry-After` 退避重试，并设总等待上限。
+
+### 会话持久化结构重构与无盘托管（STO-01 / PST-SERVE）
+
+- **新增新布局会话持久化入口：** `./extensions` 新增 `createMysqlSessionStorageV2`（类型 `MysqlSessionStorageV2`、`MysqlSessionStorageV2Options`）与 `createSessionLogV2TransactionalStore`（类型 `SessionLogV2TransactionalStoreOptions`），以及 `identity` 选项所需的 `SessionStorageIdentity`。对你意味着：新部署用这一组装配 MySQL `session-log-v2` 布局，每个会话一行头加一张事实表，按业务步骤条件提交；只接受 `eventStrategy: 'boundary-v1'`。部署要求：MySQL 的 `binlog_format` 须为 ROW 或 MIXED；不得以 `--sysdate-is-now` 启动，否则 `initialize()` 拒绝启动。迁移方式：新部署直接采用；不读取 INIT 布局。
+- **INIT 布局入口永久弃用：** `createMysqlAgentSessionTransactionBackend` 及类型 `AgentSessionMysqlBackend`、`AgentSessionMysqlBackendOptions` 标注弃用，行为不变、继续可用，删除时机另定。对你意味着：已有部署无需改动。迁移方式：Serve 不提供 INIT 布局到新布局的迁移；已有部署继续用原入口，或在新布局上从零开始。同一应用作用域只能选一种入口，两种入口不得同时服务同一批会话。
+- **无盘 Serve 托管交接与记忆出版 MySQL 租约：** 纳入无盘持久化交接合同 `PersistenceCustody*`、平台归档宿主 `createPlatformServeArchiveHost`、MySQL 记忆出版租约权威 `createMysqlMemoryLeaseAuthority`、分支摘要宿主与冷归档索引维护接口；退役旧的本地 SQLite spool 再出口（`openSqliteArchiveSpool` / `createSqliteMemoryPublicationStore` 共 4 项从 `./extensions` 移除，无盘 Serve 统一走显式持久源）。
+- **`ServeTurnEndInfo.history` 的消息元素改为深冻结（CONC-01）：** 轮末回调 `onTurnEnd` 收到的 `history` 数组此前已 `Object.freeze`，元素与驱动历史同引用，文档已禁止改写；现在驱动在轮末及压缩、恢复等历史收口点把每条纯数据消息深冻结封存，内置句柄 `historySnapshot().messages` 返回的同一批元素亦然。对你意味着：改写这些元素（含嵌套的块与字段）在严格模式代码中抛 `TypeError`，非严格模式下静默不生效，不再能悄悄改动驱动历史；只读消费方不受影响。迁移方式：需要可改副本时先 `structuredClone` 再改。
+
+### 模型角色、双槽裁决与兼容策略（MODEL-ROLE）
 
 - 平台会话装配协商 `adjudicator-policy-slots-v1`，复用共同 SDK／kernel 消费 App 有效主备模型与每槽档位、预算、升级处置。仅原可信零出站故障可切合法备用；否决、预算尽、未知受理和已输出不换备。保留宿主询问姿态、权限硬边界与同引擎累计预算。
 - 复用已协商双槽会话的合法配置恢复，保留原权限引擎预算，显式关闭不复活；Task 在裁决关闭或没有可用裁决配置时不再借父主模型继续机器裁决，原人工询问通道仍保留。撤权后结算已发生用量时，按实际请求模型归属，避免记到配置刷新后的另一模型。
-- 纳入已合主线的持久化公开加法：会话事件日志快照、冷材料耐久覆盖，以及 `./extensions` 中的共享归档、MySQL预算／命令存储、冷存储索引与维护。自定义 Store／后端实现须对照随包声明重新类型检查；这些显式宿主能力不因更新包自动启用，也不改变冻结远端执行合同。
-- 相对正式0.15.1的已提交根／子入口快照有79项新增、17项签名变化，原0.x导出门要求minor；最终差集由冻结候选的原构建及exports门确认。原生各语言客户端仍经HTTP连接Serve；本次不要求它们复制本地TS裁决实现，实际能力由所连Serve运行物决定。
-- **旧前缀行为保持：** 本版默认 `legacyPrefixes` 仍为 `readwrite`。0.15.0历史发行说明曾计划0.16.0改为`readonly`，本次模型角色与消费修复不执行该协议迁移；显式`readonly`／`off`选项沿原合同。后续退役动作须单独按原兼容与授权边界实施。
+- 纳入会话事件日志快照、冷材料耐久覆盖，以及 `./extensions` 中的共享归档、MySQL 预算／命令存储、冷存储索引与维护。自定义 Store／后端实现须对照随包声明重新类型检查；这些显式宿主能力不因更新包自动启用，也不改变冻结远端执行合同。原生各语言客户端仍经 HTTP 连接 Serve，实际能力由所连 Serve 运行物决定。
+- **旧前缀行为保持：** 本版默认 `legacyPrefixes` 仍为 `readwrite`。0.15.0 历史发行说明曾计划 0.16.0 改为 `readonly`，本次发行不执行该协议迁移；显式 `readonly`／`off` 选项沿原合同。后续退役动作须单独按原兼容与授权边界实施。
 
 ## 0.15.1 — 2026-10-10
 
