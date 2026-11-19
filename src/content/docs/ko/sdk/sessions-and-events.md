@@ -10,6 +10,7 @@ related:
   - sdk/checkpoints
   - sdk/platform-bundle
   - sdk/errors-and-retries
+  - sdk/mainline-context
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
@@ -157,7 +158,7 @@ UI를 만들 때 `msg.text.delta`에서 직접 문자열을 이어 붙이지 마
 - **`SpeakInput.voiceRef?`**: 토큰 방식에서 직접 호출하는 `session.platform.speak()`에서 앱 전용 음성 리소스를 지정할 수 있습니다. 시스템 `voice`와는 배타적입니다.
 - **`AppQuotaSchema` / `AppQuota`, 실시간 연결과 문서 임시 업로드의 계약 타입**: 타입과 zod 형태의 export일 뿐이며 프로세스 내 세션은 이를 소비하지 않습니다.
 
-0.19.0 이후에도 메인라인은 계속 나아가고 있지만(예: 모델 역할의 주 / 대기 판정 정책, 도구의 함수 수준 허용, 전용 음성을 작업으로 되찾기, 토큰 갱신의 동일 신원 격리), 이들은 **아직 어떤 npm 버전에도 포함되지 않았으며** 이 페이지에서는 다루지 않습니다.
+0.19.0 이후에도 메인라인은 계속 나아가고 있지만(예: 모델 역할의 주 / 대기 판정 정책, 도구의 함수 수준 허용, 전용 음성을 작업으로 되찾기, 토큰 갱신의 동일 신원 격리), 이들은 **아직 어떤 npm 버전에도 포함되지 않았으며** 이 페이지에서는 다루지 않습니다. 메인라인에 이미 있고 마찬가지로 CHANGELOG 버전 번호가 아직 없는 컨텍스트와 서브에이전트 동작은 [메인라인의 컨텍스트와 서브에이전트](/ko/sdk/mainline-context/)를 참고하세요. 공개된 `@tansr/sdk` 0.20.1과 CLI 0.11.0에는 없습니다.
 
 ## 관련
 

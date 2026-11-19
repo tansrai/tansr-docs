@@ -8,6 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
+  - sdk/mainline-context
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -138,6 +139,8 @@ Key points:
 - **Restore**: first reconciles the `sessionId` (a snapshot from another session is rejected with `session_mismatch`), then replaces the history as a whole and emits `session.restored`; the store performs a whole-volume rotation. Restoring the same snapshot twice in a row rotates the volume the second time too. When the snapshot `cwd` differs from the session `cwd`, the cwd is left unchanged and a `cwd_mismatch_on_restore` notice is pushed.
 - **Retention**: unlimited by default; when `checkpoints.max` is reached the oldest are evicted in time order regardless of trigger. Snapshot files are always written durably (temp + fsync + rename).
 - **Event order**: `session.checkpointed → session.compacted`; `session.checkpointed(pre_restore) → session.restored`.
+
+The main line also has compaction and fork behavior that has not shipped in a package yet (splitting the summary of an in-progress turn, optional background pre-compaction, forking from a committed node, and session handoff). The published 0.20.1 does not include it — see [Context and subagents on the main line](/en/sdk/mainline-context/).
 
 ## History paging
 

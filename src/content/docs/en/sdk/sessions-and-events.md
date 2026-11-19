@@ -10,6 +10,7 @@ related:
   - sdk/checkpoints
   - sdk/platform-bundle
   - sdk/errors-and-retries
+  - sdk/mainline-context
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
@@ -161,7 +162,7 @@ Relative to 0.18.1, the `src` changes of `@tansr/sdk` 0.19.0 (2026-10-10, shippe
 - **`SpeakInput.voiceRef?`**: the token tier's direct `session.platform.speak()` can name an application-private voice resource, mutually exclusive with the system `voice`.
 - **`AppQuotaSchema` / `AppQuota` and the contract types for realtime connections and temporary document uploads**: exports of types and zod shapes only; in-process sessions do not consume them.
 
-The main line keeps moving after 0.19.0 (for example primary / standby adjudication policies for model roles, function-level tool permissions, finding private voices by task and same-identity isolation of token renewal); none of it **has shipped in any npm release**, and this page does not describe it.
+The main line keeps moving after 0.19.0 (for example primary / standby adjudication policies for model roles, function-level tool permissions, finding private voices by task and same-identity isolation of token renewal); none of it **has shipped in any npm release**, and this page does not describe it. A separate set that is already implemented on the main line, and likewise has no CHANGELOG version yet, is covered in [Context and subagents on the main line](/en/sdk/mainline-context/). The published `@tansr/sdk` 0.20.1 and CLI 0.11.0 do not include it.
 
 ## Related
 

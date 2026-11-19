@@ -8,6 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
+  - sdk/mainline-context
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -138,6 +139,8 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **復旧**：まず `sessionId` の照合を行い（別のセッションのスナップショットは `session_mismatch` で拒否）、次に履歴全体を置き換えて `session.restored` を発行し、store はボリューム全体の入れ替えを行います。同じスナップショットを続けて 2 回復旧しても 2 回目もボリュームを入れ替えます。スナップショットの `cwd` ≠ セッションの `cwd` のときは cwd を変えず、`cwd_mismatch_on_restore` の通知を出します。
 - **保持**：デフォルトは無制限。`checkpoints.max` に達すると時間順に最も古いものから淘汰し、trigger は区別しません。スナップショットファイルは常に durable に書かれます（temp + fsync + rename）。
 - **イベントの順序**：`session.checkpointed → session.compacted`。`session.checkpointed(pre_restore) → session.restored`。
+
+メインラインには、パッケージにはまだ入っていないコンパクションと分岐の挙動もあります（進行中ターンの要約の分離、任意のバックグラウンド事前コンパクション、コミット済みノードからの分岐、セッションのハンドオフ）。公開済みの 0.20.1 にはありません。[メインラインのコンテキストとサブエージェント](/ja/sdk/mainline-context/)を参照してください。
 
 ## 履歴のページング
 

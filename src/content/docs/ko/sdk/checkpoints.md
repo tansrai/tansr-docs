@@ -8,6 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
+  - sdk/mainline-context
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -138,6 +139,8 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **복구**: 먼저 `sessionId` 대조를 하고(다른 세션의 스냅숏은 `session_mismatch`로 거부), 그다음 기록 전체를 교체하고 `session.restored`를 발행하며 store는 볼륨 전체 교체를 수행합니다. 같은 스냅숏을 연속으로 두 번 복구해도 두 번째 역시 볼륨을 교체합니다. 스냅숏의 `cwd` ≠ 세션의 `cwd`일 때는 cwd를 바꾸지 않고 `cwd_mismatch_on_restore` 알림을 보냅니다.
 - **보존**: 기본값은 무제한. `checkpoints.max`에 이르면 시간순으로 가장 오래된 것부터 제거하며 trigger는 구분하지 않습니다. 스냅숏 파일은 항상 durable하게 씁니다(temp + fsync + rename).
 - **이벤트 순서**: `session.checkpointed → session.compacted`. `session.checkpointed(pre_restore) → session.restored`.
+
+메인라인에는 패키지에 아직 없는 컴팩션과 분기 동작도 있습니다(진행 중인 턴의 요약 분리, 선택적 백그라운드 사전 컴팩션, 커밋된 노드에서의 분기, 세션 핸드오프). 공개된 0.20.1에는 없습니다. [메인라인의 컨텍스트와 서브에이전트](/ko/sdk/mainline-context/)를 참고하세요.
 
 ## 기록 페이징
 

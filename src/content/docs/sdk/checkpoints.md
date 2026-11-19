@@ -8,6 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
+  - sdk/mainline-context
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -138,6 +139,8 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **恢复**：先做 `sessionId` 对账（别的会话的快照拒 `session_mismatch`），再整体替换历史并签发 `session.restored`,store 走整卷轮换。同一快照连续恢复两次，第二次仍换卷。快照 `cwd` ≠ 会话 `cwd` 时不改 cwd，推 `cwd_mismatch_on_restore` 提示。
 - **保留**：缺省不限；`checkpoints.max` 到顶按时间序淘汰最旧，不分 trigger。快照文件恒 durable 写（temp + fsync + rename）。
 - **事件顺序**：`session.checkpointed → session.compacted`;`session.checkpointed(pre_restore) → session.restored`。
+
+主线上还有尚未随包发布的压缩与分叉行为（进行中的轮次分开摘要、可选的后台预压缩、从已提交节点分叉、会话交接）。已发布的 0.20.1 不包含它们，见[主线上的上下文与子代理](/sdk/mainline-context/)。
 
 ## 历史分页
 
