@@ -10,7 +10,7 @@ related:
   - sdk/checkpoints
   - sdk/platform-bundle
   - sdk/errors-and-retries
-  - sdk/mainline-context
+  - sdk/handoff-and-subagents
 sources:
   - tansr-cli:packages/sdk/README.md
   - tansr-cli:doc/90-SDK技术手册.md
@@ -158,7 +158,7 @@ await pump;
 - **`SpeakInput.voiceRef?`**：令牌档直连 `session.platform.speak()` 可指定应用私有音色资源，与系统 `voice` 互斥。
 - **`AppQuotaSchema` / `AppQuota`、实时连接与文档临时上传的合同类型**：只是类型与 zod 形的导出，进程内会话不消费它们。
 
-0.19.0 之后主线仍在推进（例如模型角色主备裁决策略、工具函数级许可、私有音色按任务找回与令牌续期的同身份隔离），这些改动**尚未随任何 npm 版本发布**，本页不作描述。另一组已经在主线实现、同样还没有 CHANGELOG 版本号的上下文与子代理行为，见[主线上的上下文与子代理](/sdk/mainline-context/)。已发布的 `@tansr/sdk` 0.20.1 与命令行 0.11.0 不包含它们。
+0.19.0 之后还有一些改动没有随任何 npm 版本发布（例如模型角色的主备裁决、工具函数级许可、私有音色按任务找回、令牌续期的同身份隔离），本页不写。对话太长、目标变了、或者要把活分给子代理时，见[长对话、交接与子代理](/sdk/handoff-and-subagents/)。你现在安装的 `@tansr/sdk` 0.20.1 和命令行 0.11.0 还没有那一篇里的调用。
 
 ## 相关
 

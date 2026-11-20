@@ -8,7 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
-  - sdk/mainline-context
+  - sdk/handoff-and-subagents
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -140,7 +140,7 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **保留**：缺省不限；`checkpoints.max` 到顶按时间序淘汰最旧，不分 trigger。快照文件恒 durable 写（temp + fsync + rename）。
 - **事件顺序**：`session.checkpointed → session.compacted`;`session.checkpointed(pre_restore) → session.restored`。
 
-主线上还有尚未随包发布的压缩与分叉行为（进行中的轮次分开摘要、可选的后台预压缩、从已提交节点分叉、会话交接）。已发布的 0.20.1 不包含它们，见[主线上的上下文与子代理](/sdk/mainline-context/)。
+一轮还没结束就压缩、可选的提前压缩、从已经提交的节点另开一条、以及把会话交给新目标，见[长对话、交接与子代理](/sdk/handoff-and-subagents/)。你现在安装的 `@tansr/sdk` 0.20.1 还没有这些调用。
 
 ## 历史分页
 

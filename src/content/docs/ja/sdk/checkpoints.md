@@ -8,7 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
-  - sdk/mainline-context
+  - sdk/handoff-and-subagents
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -140,7 +140,7 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **保持**：デフォルトは無制限。`checkpoints.max` に達すると時間順に最も古いものから淘汰し、trigger は区別しません。スナップショットファイルは常に durable に書かれます（temp + fsync + rename）。
 - **イベントの順序**：`session.checkpointed → session.compacted`。`session.checkpointed(pre_restore) → session.restored`。
 
-メインラインには、パッケージにはまだ入っていないコンパクションと分岐の挙動もあります（進行中ターンの要約の分離、任意のバックグラウンド事前コンパクション、コミット済みノードからの分岐、セッションのハンドオフ）。公開済みの 0.20.1 にはありません。[メインラインのコンテキストとサブエージェント](/ja/sdk/mainline-context/)を参照してください。
+ターンの途中でのコンパクション、任意の早めの水位、すでに確定した地点からの分岐、セッションを新しい目標へ渡すことは、[長いセッション、ハンドオフ、サブエージェント](/ja/sdk/handoff-and-subagents/)に書いてあります。今インストールできる `@tansr/sdk` 0.20.1 には、これらの呼び出しはまだありません。
 
 ## 履歴のページング
 

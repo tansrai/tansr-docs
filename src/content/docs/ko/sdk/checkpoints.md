@@ -8,7 +8,7 @@ related:
   - sdk/errors-and-retries
   - serve/retention-and-governance
   - security
-  - sdk/mainline-context
+  - sdk/handoff-and-subagents
 sources:
   - tansr-cli:doc/90-SDK技术手册.md
   - tansr-cli:packages/sdk/README.md
@@ -140,7 +140,7 @@ deleteCheckpoint(checkpointId: string): Promise<void>;
 - **보존**: 기본값은 무제한. `checkpoints.max`에 이르면 시간순으로 가장 오래된 것부터 제거하며 trigger는 구분하지 않습니다. 스냅숏 파일은 항상 durable하게 씁니다(temp + fsync + rename).
 - **이벤트 순서**: `session.checkpointed → session.compacted`. `session.checkpointed(pre_restore) → session.restored`.
 
-메인라인에는 패키지에 아직 없는 컴팩션과 분기 동작도 있습니다(진행 중인 턴의 요약 분리, 선택적 백그라운드 사전 컴팩션, 커밋된 노드에서의 분기, 세션 핸드오프). 공개된 0.20.1에는 없습니다. [메인라인의 컨텍스트와 서브에이전트](/ko/sdk/mainline-context/)를 참고하세요.
+턴 도중의 컴팩션, 선택적인 이른 수위, 이미 확정한 지점에서의 분기, 세션을 새 목표로 넘기는 일은 [긴 세션, 핸드오프, 서브에이전트](/ko/sdk/handoff-and-subagents/)에 있습니다. 지금 설치하는 `@tansr/sdk` 0.20.1에는 이 호출이 아직 없습니다.
 
 ## 기록 페이징
 

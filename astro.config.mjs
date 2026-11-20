@@ -62,6 +62,12 @@ const sidebar = CATEGORIES.flatMap((c) => {
 export default defineConfig({
   site: 'https://docs.tansr.com',
   trailingSlash: 'always',
+  redirects: {
+    '/sdk/mainline-context/': '/sdk/handoff-and-subagents/',
+    '/en/sdk/mainline-context/': '/en/sdk/handoff-and-subagents/',
+    '/ja/sdk/mainline-context/': '/ja/sdk/handoff-and-subagents/',
+    '/ko/sdk/mainline-context/': '/ko/sdk/handoff-and-subagents/',
+  },
   vite: {
     resolve: {
       alias: [{ find: /^@pagefind\/default-ui(.*)/, replacement: `${pagefindUiDir}$1` }],

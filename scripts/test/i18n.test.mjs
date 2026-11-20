@@ -22,7 +22,7 @@ import { DOCS_DIR } from '../gen/lib.mjs';
 const root = repoRootFrom(import.meta.url);
 const docs = join(root, DOCS_DIR);
 
-/** 首批 22 篇 + 移动三端指南 3 篇 + SDK 指南 5 篇(2026-11-20 补主线上下文页)= 30 篇(en / ja / ko 同集) */
+/** 首批 22 篇 + 移动三端指南 3 篇 + SDK 指南 5 篇(2026-11-20 补长对话与交接)= 30 篇(en / ja / ko 同集) */
 export const FIRST_BATCH = Object.freeze([
   'getting-started/index.md',
   'getting-started/sdk.md',
@@ -38,7 +38,7 @@ export const FIRST_BATCH = Object.freeze([
   'sdk/midturn-input.md',
   'sdk/system-prompts.md',
   'sdk/checkpoints.md',
-  'sdk/mainline-context.md',
+  'sdk/handoff-and-subagents.md',
   'sdk/errors-and-retries.md',
   'sdk/platform-bundle.md',
   'sdk/sessions-and-events.md',

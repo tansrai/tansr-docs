@@ -40,8 +40,8 @@ generated: true
 | [iOS 接入指南](/ios/) `ios` | ✓ | ✓ [iOS integration guide](/en/ios/) | ✓ [iOS 導入ガイド](/ja/ios/) | ✓ [iOS 연동 가이드](/ko/ios/) |
 | [检查点与恢复](/sdk/checkpoints/) `sdk/checkpoints` | ✓ | ✓ [Checkpoints and resume](/en/sdk/checkpoints/) | ✓ [チェックポイントと再開](/ja/sdk/checkpoints/) | ✓ [체크포인트와 재개](/ko/sdk/checkpoints/) |
 | [错误处理与重试](/sdk/errors-and-retries/) `sdk/errors-and-retries` | ✓ | ✓ [Errors and retries](/en/sdk/errors-and-retries/) | ✓ [エラー処理と再試行](/ja/sdk/errors-and-retries/) | ✓ [오류 처리와 재시도](/ko/sdk/errors-and-retries/) |
+| [长对话、交接与子代理](/sdk/handoff-and-subagents/) `sdk/handoff-and-subagents` | ✓ | ✓ [Long sessions, handoff, and subagents](/en/sdk/handoff-and-subagents/) | ✓ [長いセッション、ハンドオフ、サブエージェント](/ja/sdk/handoff-and-subagents/) | ✓ [긴 세션, 핸드오프, 서브에이전트](/ko/sdk/handoff-and-subagents/) |
 | [关闭会话与等待资源收尾](/sdk/lifecycle/) `sdk/lifecycle` | ✓ | ✓ [Close sessions and await resource cleanup](/en/sdk/lifecycle/) | ✓ [セッションを閉じてリソースのクリーンアップを待つ](/ja/sdk/lifecycle/) | ✓ [세션 닫기와 리소스 정리 대기](/ko/sdk/lifecycle/) |
-| [主线上的上下文与子代理](/sdk/mainline-context/) `sdk/mainline-context` | ✓ | ✓ [Context and subagents on the main line](/en/sdk/mainline-context/) | ✓ [メインラインのコンテキストとサブエージェント](/ja/sdk/mainline-context/) | ✓ [메인라인의 컨텍스트와 서브에이전트](/ko/sdk/mainline-context/) |
 | [任务进行中追加输入](/sdk/midturn-input/) `sdk/midturn-input` | ✓ | ✓ [Add input to a running task](/en/sdk/midturn-input/) | ✓ [タスクの実行中に入力を追加する](/ja/sdk/midturn-input/) | ✓ [작업 진행 중 입력 추가](/ko/sdk/midturn-input/) |
 | [平台装配与 bundle](/sdk/platform-bundle/) `sdk/platform-bundle` | ✓ | ✓ [Platform assembly and the bundle](/en/sdk/platform-bundle/) | ✓ [プラットフォームアセンブリとバンドル](/ja/sdk/platform-bundle/) | ✓ [플랫폼 어셈블리와 번들](/ko/sdk/platform-bundle/) |
 | [SDK 2.0 扩展入口：归档宿主、缓存宿主与统一 API](/sdk/sdk2-preview/) `sdk/sdk2-preview` | ✓ | ✓ [SDK 2.0 extension entries: archive host, cache host and the unified API](/en/sdk/sdk2-preview/) | 回落 | 回落 |
