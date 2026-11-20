@@ -118,7 +118,7 @@ session.bridges.onQuestion = (request) => { /* answerQuestion */ };
 - HTTP ステータス、ネットワークエラー、取得失敗はツールの実際の結果に従って解釈します。検索結果が空でもサイトが存在しないことにはならず、既知のドメインは WebFetch に明示的に読ませることができます。
 - 機能スイッチ、実行境界、ホストをまたぐリダイレクトの承認ルールは[モバイルアプリ向けの公開ネットワークツール](/ja/sdk/platform-bundle/#移动应用的公网工具)を参照。
 
-SDK 2.0 はサーバー側では `@tansr/serve` 0.13.0 / 0.14.0 とともに公開済みです（`@tansr/serve/extensions` の明示的ホストと `/api` 統一呼び出し面）。HarmonyOS 側では 0.2.0 HAR 以降、明示的なトランスポート入口 `NativeSdk2Transport`、薄いクライアント `Sdk2Client` / `Sdk2Executor`、ローカル RDB アーカイブレシーバー（`openSdk2RdbArchiveReceiver`。本文暗号化は任意で `openSdk2EncryptedRdbArchiveReceiver`、鍵は HUKS が保管）、RDB 耐久実行ジャーナル `openSdk2RdbExecutionJournal`、アーカイブ同期 `Sdk2ArchiveSyncClient` とレプリカレシーバー、そしてターミナルサービスクライアント `TerminalClient` がパッケージに含まれます。これらは加法的な機能で、明示的に組み立てなければ同期ストアは作られず SDK 2.0 リクエストも送られず、SDK1 のセッション挙動は変わりません。実機での受け入れはリリース受領書の範囲外です。2026-10-10 のリリース候補より後にメインラインへ入った暗号化メモリ公開、ソース保持移行の鍵ローテーション、暗号化増分 RDB プロファイル、読み取り専用レプリカなどの永続化機能は**まだどの HAR バージョンでも公開されておらず**、本ページでは説明しません。組み立てと境界は [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/)を参照。
+SDK 2.0 はサーバー側では `@tansr/serve` 0.13.0 / 0.14.0 とともに公開済みです（`@tansr/serve/extensions` の明示的ホストと `/api` 統一呼び出し面）。HarmonyOS 側では 0.2.0 HAR 以降、明示的なトランスポート入口 `NativeSdk2Transport`、薄いクライアント `Sdk2Client` / `Sdk2Executor`、ローカル RDB アーカイブレシーバー（`openSdk2RdbArchiveReceiver`。本文暗号化は任意で `openSdk2EncryptedRdbArchiveReceiver`、鍵は HUKS が保管）、RDB 耐久実行ジャーナル `openSdk2RdbExecutionJournal`、アーカイブ同期 `Sdk2ArchiveSyncClient` とレプリカレシーバー、そしてターミナルサービスクライアント `TerminalClient` がパッケージに含まれます。これらは加法的な機能で、明示的に組み立てなければ同期ストアは作られず SDK 2.0 リクエストも送られず、SDK1 のセッション挙動は変わりません。実機での受け入れはリリース受領書の範囲外です。今手元にある 0.2.0 の HAR には、暗号化メモリの公開、ソース保持移行の鍵ローテーション、暗号化増分 RDB プロファイル、読み取り専用レプリカはまだありません。このページはそのパッケージに既にある能力だけを書きます。組み立てと境界は [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/)を参照。
 
 ## 音声：2 つのチェーン
 

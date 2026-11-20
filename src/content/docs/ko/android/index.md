@@ -135,7 +135,7 @@ val session = client.openSession(scope, CreateSessionRequest(), bridges = dialog
 - 전용 검색/웹 페이지/HTTP 결과 표시 투영(`com.tansr.sdk.view.SearchResultDetails` / `NetworkResultDetails`)은 0.5.0부터 `:core`와 함께 배포됩니다. 검색 카드는 출처, 잘림, 빈 결과 힌트를 유지하고, 웹 페이지와 HTTP 카드는 원래 본문을 유지하며 실제 HTTP 상태를 표시합니다. `toolCardArtifact`의 기존 사용법은 바뀌지 않습니다. 0.4.0 이전은 계속 기존 도구 카드로 결과를 표시합니다.
 - 기능 스위치, 실행 경계, 호스트 간 리디렉션 승인 규칙은 [모바일 앱용 공개 네트워크 도구](/ko/sdk/platform-bundle/#移动应用的公网工具)를 참조하십시오.
 
-SDK 2.0은 서버 쪽에서 `@tansr/serve` 0.13.0 / 0.14.0과 함께 배포되었습니다(`@tansr/serve/extensions`의 명시적 호스트와 `/api` 통합 호출면). Android 쪽에서는 0.5.0부터 단말 측 얇은 클라이언트가 패키지에 포함됩니다. `:core`의 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`, 아카이브 동기화 `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`, 터미널 서비스 클라이언트 `TerminalClient`, 그리고 선택 모듈 `:receiver-android`의 SQLite 아카이브 수신기/동기화 저장소/내구성 실행 저널입니다. 이는 추가적인 기능이며 SDK 2.0을 연동하지 않는 앱은 `:receiver-android`를 추가하지 않고 SDK1 세션 동작은 변하지 않습니다. 2026-10-10 이후 메인라인에 들어간 암호화 메모리 공개 미디어, 암호화 증분 SQLite 프로파일, 읽기 전용 복제본 등의 영속화 기능은 **아직 어떤 Maven 버전으로도 배포되지 않았으며** 이 페이지에서는 설명하지 않습니다. 조립과 경계는 [SDK 2.0 확장 입구](/ko/sdk/sdk2-preview/)를 참조하십시오.
+SDK 2.0은 서버 쪽에서 `@tansr/serve` 0.13.0 / 0.14.0과 함께 배포되었습니다(`@tansr/serve/extensions`의 명시적 호스트와 `/api` 통합 호출면). Android 쪽에서는 0.5.0부터 단말 측 얇은 클라이언트가 패키지에 포함됩니다. `:core`의 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`, 아카이브 동기화 `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`, 터미널 서비스 클라이언트 `TerminalClient`, 그리고 선택 모듈 `:receiver-android`의 SQLite 아카이브 수신기/동기화 저장소/내구성 실행 저널입니다. 이는 추가적인 기능이며 SDK 2.0을 연동하지 않는 앱은 `:receiver-android`를 추가하지 않고 SDK1 세션 동작은 변하지 않습니다. Maven의 0.5.0에는 암호화 메모리 공개 미디어, 암호화 증분 SQLite 프로필, 읽기 전용 복제본이 아직 없습니다. 이 페이지는 그 버전에 이미 있는 능력만 씁니다. 조립과 경계는 [SDK 2.0 확장 입구](/ko/sdk/sdk2-preview/)를 참조하십시오.
 
 ## 음성: 두 갈래 체인
 

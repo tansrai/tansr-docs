@@ -135,7 +135,7 @@ val session = client.openSession(scope, CreateSessionRequest(), bridges = dialog
 - 専用の検索 / ウェブページ / HTTP 結果表示の投影（`com.tansr.sdk.view.SearchResultDetails` / `NetworkResultDetails`）は 0.5.0 以降 `:core` とともに公開されています。検索カードは出典、切り詰め、空結果のヒントを保持し、ウェブページと HTTP のカードは元の本文を保持して実際の HTTP ステータスを表示します。`toolCardArtifact` の既存の使い方は変わりません。0.4.0 以前は引き続き従来のツールカードで結果を表示します。
 - 機能スイッチ、実行境界、ホストをまたぐリダイレクトの承認ルールは[モバイルアプリ向けの公開ネットワークツール](/ja/sdk/platform-bundle/#移动应用的公网工具)を参照。
 
-SDK 2.0 はサーバー側では `@tansr/serve` 0.13.0 / 0.14.0 とともに公開済みです（`@tansr/serve/extensions` の明示的ホストと `/api` 統一呼び出し面）。Android 側では 0.5.0 以降、端末側の薄いクライアントがパッケージに含まれます。`:core` の `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、アーカイブ同期の `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`、ターミナルサービスクライアント `TerminalClient`、そして任意モジュール `:receiver-android` の SQLite アーカイブレシーバー / 同期ストア / 耐久実行ジャーナルです。これらは加法的な機能で、SDK 2.0 を組み込まないアプリは `:receiver-android` を追加せず、SDK1 のセッション挙動は変わりません。2026-10-10 より後にメインラインへ入った暗号化メモリ公開メディア、暗号化増分 SQLite プロファイル、読み取り専用コピーなどの永続化機能は**まだどの Maven バージョンでも公開されておらず**、本ページでは説明しません。組み立てと境界は [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/)を参照。
+SDK 2.0 はサーバー側では `@tansr/serve` 0.13.0 / 0.14.0 とともに公開済みです（`@tansr/serve/extensions` の明示的ホストと `/api` 統一呼び出し面）。Android 側では 0.5.0 以降、端末側の薄いクライアントがパッケージに含まれます。`:core` の `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、アーカイブ同期の `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`、ターミナルサービスクライアント `TerminalClient`、そして任意モジュール `:receiver-android` の SQLite アーカイブレシーバー / 同期ストア / 耐久実行ジャーナルです。これらは加法的な機能で、SDK 2.0 を組み込まないアプリは `:receiver-android` を追加せず、SDK1 のセッション挙動は変わりません。Maven の 0.5.0 には、暗号化メモリの公開媒体、暗号化増分 SQLite プロファイル、読み取り専用コピーはまだありません。このページはその版に既にある能力だけを書きます。組み立てと境界は [SDK 2.0 拡張の入口](/ja/sdk/sdk2-preview/)を参照。
 
 ## 音声：2 つのチェーン
 

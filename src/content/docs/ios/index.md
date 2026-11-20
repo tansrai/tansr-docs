@@ -117,7 +117,7 @@ handler 以任务运行、按 `callId` 配对：重放的重复帧去重，`serv
 - HTTP 状态不代替工具成败，4xx / 5xx 仍需检查；搜索空结果不代表已知网址无法访问。旧历史缺少这些元数据时保持未知，不补造。
 - 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
 
-SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；iOS 侧自公开包 0.4.0 起随包提供端侧接口：`TansrCore` 的 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、档案同步 `Sdk2ArchiveSync` 与副本接收 `Sdk2ReplicatedArchive`、终端服务客户端 `TerminalClient`，`TansrClient` 的 SQLite 档案接收器 / 同步库 / 耐久执行日志（私有目录、Data Protection Keychain 保管密钥）。它们是加法能力：不显式装配就不建同步库、不发 `archive-sync-v1` 请求，SDK1 会话行为不变。发布记录登记本轮为模拟器 ad-hoc 签名验收、无真机验证；2026-10-10 之后进入主线的加密记忆发布、设备存储保源迁移与终端持久化档位**尚未随任何 SPM 版本发布**，本页不描述。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；iOS 侧自公开包 0.4.0 起随包提供端侧接口：`TansrCore` 的 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、档案同步 `Sdk2ArchiveSync` 与副本接收 `Sdk2ReplicatedArchive`、终端服务客户端 `TerminalClient`，`TansrClient` 的 SQLite 档案接收器 / 同步库 / 耐久执行日志（私有目录、Data Protection Keychain 保管密钥）。它们是加法能力：不显式装配就不建同步库、不发 `archive-sync-v1` 请求，SDK1 会话行为不变。发布记录登记本轮为模拟器 ad-hoc 签名验收、无真机验证；你现在安装的 SPM 0.4.0 还没有加密记忆发布、设备存储保源迁移和终端持久化档位。本页只写这个包里已经有的能力。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 语音：两条链
 

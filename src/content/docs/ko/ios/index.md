@@ -117,7 +117,7 @@ handler는 태스크로 실행되고 `callId`로 대응됩니다. 재전송된 �
 - HTTP 상태는 도구 성패를 대신하지 않으며 4xx / 5xx는 계속 확인해야 합니다. 검색 결과가 비어 있다고 알려진 URL에 접근할 수 없는 것은 아닙니다. 옛 기록에 이 메타데이터가 없으면 알 수 없음으로 두고 지어내지 마십시오.
 - 기능 스위치, 실행 경계, 호스트 간 리디렉션 승인 규칙은 [모바일 앱용 공개 네트워크 도구](/ko/sdk/platform-bundle/#移动应用的公网工具)를 참조하십시오.
 
-SDK 2.0은 서버 쪽에서 `@tansr/serve` 0.13.0 / 0.14.0과 함께 배포되었습니다(`@tansr/serve/extensions`의 명시적 호스트와 `/api` 통합 호출면). iOS 쪽에서는 공개 패키지 0.4.0부터 단말 측 인터페이스가 패키지에 포함됩니다. `TansrCore`의 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`, 아카이브 동기화 `Sdk2ArchiveSync`와 복제본 수신 `Sdk2ReplicatedArchive`, 터미널 서비스 클라이언트 `TerminalClient`, `TansrClient`의 SQLite 아카이브 수신기/동기화 저장소/내구성 실행 저널(비공개 디렉터리, 키는 Data Protection Keychain이 보관). 이는 추가적인 기능이며 명시적으로 조립하지 않으면 동기화 저장소를 만들지 않고 `archive-sync-v1` 요청도 보내지 않으며 SDK1 세션 동작은 변하지 않습니다. 배포 기록에는 이번 라운드가 시뮬레이터 ad-hoc 서명 검수이며 실기기 검증은 없다고 등재되어 있습니다. 2026-10-10 이후 메인라인에 들어간 암호화 메모리 게시, 기기 저장소 원본 보존 마이그레이션, 터미널 영속화 프로파일은 **아직 어떤 SPM 버전으로도 배포되지 않았으며** 이 페이지에서는 설명하지 않습니다. 조립과 경계는 [SDK 2.0 확장 입구](/ko/sdk/sdk2-preview/)를 참조하십시오.
+SDK 2.0은 서버 쪽에서 `@tansr/serve` 0.13.0 / 0.14.0과 함께 배포되었습니다(`@tansr/serve/extensions`의 명시적 호스트와 `/api` 통합 호출면). iOS 쪽에서는 공개 패키지 0.4.0부터 단말 측 인터페이스가 패키지에 포함됩니다. `TansrCore`의 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`, 아카이브 동기화 `Sdk2ArchiveSync`와 복제본 수신 `Sdk2ReplicatedArchive`, 터미널 서비스 클라이언트 `TerminalClient`, `TansrClient`의 SQLite 아카이브 수신기/동기화 저장소/내구성 실행 저널(비공개 디렉터리, 키는 Data Protection Keychain이 보관). 이는 추가적인 기능이며 명시적으로 조립하지 않으면 동기화 저장소를 만들지 않고 `archive-sync-v1` 요청도 보내지 않으며 SDK1 세션 동작은 변하지 않습니다. 배포 기록에는 이번 라운드가 시뮬레이터 ad-hoc 서명 검수이며 실기기 검증은 없다고 등재되어 있습니다. 지금 설치하는 SPM 0.4.0에는 암호화 메모리 게시, 기기 저장소 원본 보존 마이그레이션, 터미널 영속화 프로필이 아직 없습니다. 이 페이지는 그 패키지에 이미 있는 능력만 씁니다. 조립과 경계는 [SDK 2.0 확장 입구](/ko/sdk/sdk2-preview/)를 참조하십시오.
 
 ## 음성: 두 갈래 체인
 

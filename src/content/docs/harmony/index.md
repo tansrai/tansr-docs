@@ -118,7 +118,7 @@ session.bridges.onQuestion = (request) => { /* answerQuestion */ };
 - HTTP 状态、网络错误与抓取失败按工具实际结果解释；搜索空结果不等于网站不存在，已知域名可明确让 WebFetch 读取。
 - 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
 
-SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；鸿蒙侧自 0.2.0 HAR 起随包提供显式传输入口 `NativeSdk2Transport`、薄客户端 `Sdk2Client` / `Sdk2Executor`、本机 RDB 档案接收器（`openSdk2RdbArchiveReceiver`，可选正文加密 `openSdk2EncryptedRdbArchiveReceiver`，密钥由 HUKS 保管）、RDB 耐久执行日志 `openSdk2RdbExecutionJournal`、档案同步 `Sdk2ArchiveSyncClient` 与副本接收器，以及终端服务客户端 `TerminalClient`。它们是加法能力：不显式装配就不建同步库、不发 SDK 2.0 请求，SDK1 会话行为不变；真机验收不在发行回执范围。2026-10-10 发行候选之后进入主线的加密记忆发布、保源迁移轮钥、加密增量 RDB 档位与只读副本等持久化能力**尚未随任何 HAR 版本发布**，本页不描述。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；鸿蒙侧自 0.2.0 HAR 起随包提供显式传输入口 `NativeSdk2Transport`、薄客户端 `Sdk2Client` / `Sdk2Executor`、本机 RDB 档案接收器（`openSdk2RdbArchiveReceiver`，可选正文加密 `openSdk2EncryptedRdbArchiveReceiver`，密钥由 HUKS 保管）、RDB 耐久执行日志 `openSdk2RdbExecutionJournal`、档案同步 `Sdk2ArchiveSyncClient` 与副本接收器，以及终端服务客户端 `TerminalClient`。它们是加法能力：不显式装配就不建同步库、不发 SDK 2.0 请求，SDK1 会话行为不变；真机验收不在发行回执范围。你现在拿到的 0.2.0 HAR 还没有加密记忆发布、保源迁移轮钥、加密增量 RDB 档位和只读副本。本页只写这个包里已经有的能力。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 语音：两条链
 

@@ -162,7 +162,7 @@ Relative to 0.18.1, the `src` changes of `@tansr/sdk` 0.19.0 (2026-10-10, shippe
 - **`SpeakInput.voiceRef?`**: the token tier's direct `session.platform.speak()` can name an application-private voice resource, mutually exclusive with the system `voice`.
 - **`AppQuotaSchema` / `AppQuota` and the contract types for realtime connections and temporary document uploads**: exports of types and zod shapes only; in-process sessions do not consume them.
 
-Some changes after 0.19.0 have not shipped in any npm release (for example primary / standby adjudication for model roles, function-level tool permissions, finding a private voice by task, and same-identity isolation of token renewal). This page does not describe them. When a conversation runs long, the goal changes, or you hand work to subagents, see [Long sessions, handoff, and subagents](/en/sdk/handoff-and-subagents/). The `@tansr/sdk` 0.20.1 and CLI 0.11.0 you install today do not include the calls on that page.
+When a conversation runs long, the goal changes, or you hand work to subagents, see [Long sessions, handoff, and subagents](/en/sdk/handoff-and-subagents/). The `@tansr/sdk` 0.20.1 and CLI 0.11.0 you install today do not include the calls on that page.
 
 ## Related
 

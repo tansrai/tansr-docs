@@ -135,7 +135,7 @@ val session = client.openSession(scope, CreateSessionRequest(), bridges = dialog
 - 专用的搜索 / 网页 / HTTP 结果展示投影（`com.tansr.sdk.view.SearchResultDetails` / `NetworkResultDetails`）自 0.5.0 起随 `:core` 发布：搜索卡保留来源、截断与空结果提示，网页与 HTTP 卡保留原正文并显示实际 HTTP 状态；`toolCardArtifact` 原有用法不变。0.4.0 及更早版本仍按原有工具卡显示结果。
 - 能力开关、执行边界与跨主机跳转的审批规则见[移动应用的公网工具](/sdk/platform-bundle/#移动应用的公网工具)。
 
-SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；Android 侧自 0.5.0 起随包提供端侧薄客户端：`:core` 的 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、档案同步 `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`、终端服务客户端 `TerminalClient`，以及可选模块 `:receiver-android` 的 SQLite 档案接收器 / 同步库 / 耐久执行日志。它们是加法能力：不接 SDK 2.0 的 App 不引入 `:receiver-android`，SDK1 会话行为不变。2026-10-10 之后进入主线的加密记忆发布介质、加密增量 SQLite 档位与只读副本等持久化能力**尚未随任何 Maven 版本发布**，本页不描述。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
+SDK 2.0 在服务端已随 `@tansr/serve` 0.13.0 / 0.14.0 发布（`@tansr/serve/extensions` 显式宿主与 `/api` 统一调用面）；Android 侧自 0.5.0 起随包提供端侧薄客户端：`:core` 的 `Sdk2Client` / `Sdk2Executor` / `Sdk2ClientToolAdapter`、档案同步 `Sdk2ArchiveSyncClient` / `Sdk2ReplicatedArchiveStore`、终端服务客户端 `TerminalClient`，以及可选模块 `:receiver-android` 的 SQLite 档案接收器 / 同步库 / 耐久执行日志。它们是加法能力：不接 SDK 2.0 的 App 不引入 `:receiver-android`，SDK1 会话行为不变。Maven 上的 0.5.0 还没有加密记忆发布介质、加密增量 SQLite 档位和只读副本。本页只写这个版本里已经有的能力。装配与边界见 [SDK 2.0 扩展入口](/sdk/sdk2-preview/)。
 
 ## 语音：两条链
 
